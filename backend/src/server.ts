@@ -23,24 +23,18 @@ app.use(express.json());
 
 // Configuration de la base de données
 const dbConfig = {
-   host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT),
-  
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
 };
-
-
 
 // Initialisation de Stripe avec votre clé secrète
 
-const stripe = new Stripe(
-    process.env.STRIPE_SECRET_KEY as string,
-    {
-        apiVersion: "2025-05-28.basil",
-    },
-);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+    apiVersion: "2025-05-28.basil",
+});
 
 // Configuration PayPal
 const paypalClient = new paypal.core.PayPalHttpClient(
@@ -862,7 +856,6 @@ app.get("/dashboard-stats", async (req: Request, res: Response) => {
             total,
         }));
 
-       
         const recentBookings = bookings.slice(0, 6);
 
         // 8. Construction de la réponse
