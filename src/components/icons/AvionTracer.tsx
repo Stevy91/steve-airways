@@ -1,4 +1,3 @@
-import React from "react";
 import { PlaneIcon } from "lucide-react";
 
 export function NoFlightIcon({ size = 24, color = "currentColor" }) {
