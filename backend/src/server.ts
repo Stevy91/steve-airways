@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import { OkPacket } from "mysql2";
 import { COUNTRIES } from "./constants/country";
-const router = express.Router();
+
 
 // Configuration de l'environnement
 dotenv.config();
@@ -989,46 +989,7 @@ const transporter = nodemailer.createTransport({
     logger: true, // Active les logs détaillés
 });
 // Définissez la route
-router.post("/send-ticket", async (req, res) => {
-    console.log("Requête reçue:", req.body); // Log le corps de la requête
-    console.log("Headers:", req.headers); // Log les headers
-    try {
-        const { to, subject, html, bookingReference } = req.body;
 
-        const mailOptions = {
-            from: `"Compagnie Aérienne" <no-reply@airline.com>`,
-            to,
-            subject,
-            html,
-            attachments: [
-                {
-                    filename: `ticket-${bookingReference}.pdf`,
-                    path: "/chemin/vers/ticket.pdf",
-                },
-            ],
-        };
-
-        await transporter.sendMail(mailOptions);
-        res.json({ success: true });
-    } catch (error) {
-        if (error instanceof Error) {
-            console.error("Erreur détaillée:", error.message);
-            res.status(500).json({
-                error: "Échec envoi email",
-                details: error.message,
-            });
-        } else {
-            console.error("Erreur inconnue:", error);
-            res.status(500).json({
-                error: "Échec envoi email",
-                details: "Erreur inattendue",
-            });
-        }
-    }
-});
-
-// Montez le routeur sous /api
-app.use("/api", router);
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 3011;
