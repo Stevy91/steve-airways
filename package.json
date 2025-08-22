@@ -4,13 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-     "build": "tsc && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "serve -s dist -l 3000"
-   
-  },
+  "dev": "vite",
+  "build": "tsc && vite build",
+  "start": "vite preview --port 3000"
+},
+
 
 
 
