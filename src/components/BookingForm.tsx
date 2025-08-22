@@ -143,7 +143,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                 params.append("return_date", selectedDateReturn);
             }
 
-            const response = await fetch(`http://localhost:3003/flights?${params.toString()}`);
+            const response = await fetch(`http://localhost:3011/flights?${params.toString()}`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
@@ -175,7 +175,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
     };
 
     useEffect(() => {
-        fetch(`http://localhost:3003/locations`)
+        fetch(`http://localhost:3011/locations`)
             .then((res) => res.json())
             .then((data) => {
                 setLocations(data);

@@ -23,16 +23,15 @@ app.use(express.json());
 
 // Configuration de la base de données
 const dbConfig = {
-   host: process.env.DB_HOST,     // fourni par GoDaddy
-  user: process.env.DB_USER,     // utilisateur MySQL
-  password: process.env.DB_PASS, // mot de passe
-  database: process.env.DB_NAME, // nom de la base
-  port: Number(process.env.DB_PORT) || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+   host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT),
   
 };
+
+
 
 // Initialisation de Stripe avec votre clé secrète
 
@@ -1039,7 +1038,7 @@ router.post("/send-ticket", async (req, res) => {
 app.use("/api", router);
 
 // Démarrer le serveur
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3011;
 app.listen(PORT, () => {
     console.log(`Serveur en écoute sur le port ${PORT}`);
 });
