@@ -23,10 +23,15 @@ app.use(express.json());
 
 // Configuration de la base de données
 const dbConfig = {
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "flight_booking",
+   host: process.env.DB_HOST,     // fourni par GoDaddy
+  user: process.env.DB_USER,     // utilisateur MySQL
+  password: process.env.DB_PASS, // mot de passe
+  database: process.env.DB_NAME, // nom de la base
+  port: Number(process.env.DB_PORT) || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  
 };
 
 // Initialisation de Stripe avec votre clé secrète
@@ -37,6 +42,7 @@ const stripe = new Stripe(
         apiVersion: "2025-05-28.basil",
     },
 );
+
 // Configuration PayPal
 const paypalClient = new paypal.core.PayPalHttpClient(
     new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID || "your_paypal_client_id", process.env.PAYPAL_SECRET || "your_paypal_secret"),
