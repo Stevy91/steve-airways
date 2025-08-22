@@ -11,7 +11,7 @@ export default defineConfig({
     },
     server: {
         port: 3000,
-        strictPort: true,
+        host: "0.0.0.0", // important si tu veux tester en local sur réseau
         proxy: {
             "/api": {
                 target: "http://localhost:3003",
@@ -31,7 +31,7 @@ export default defineConfig({
         },
     },
     preview: {
-        port: 3000,
-        strictPort: true,
+        port: process.env.PORT ? parseInt(process.env.PORT) : 3000, // Render fournit PORT
+        host: "0.0.0.0", // indispensable pour Render
     },
 });
