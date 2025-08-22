@@ -29,15 +29,6 @@
       "@assets/*": ["./src/assets/*"]
     }
   },
-  "include": [
-    "src",
-    "**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
