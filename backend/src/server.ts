@@ -175,7 +175,7 @@ function getCountryName(code: string): string | null {
     return country ? country.name : null;
 }
 // Routes pour les vols
-async function getflightall(req: Request, res: Response) {
+app.get("/flightall", async (req: Request, res: Response) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute<Flight[]>("SELECT * FROM flights");
@@ -185,10 +185,7 @@ async function getflightall(req: Request, res: Response) {
         console.error(err);
         res.status(500).json({ error: "Erreur serveur" });
     }
-};
-app.get("/flightall", getflightall);
-app.get("/api/flightall", getflightall); // ✅ route compatible prod avec /api
-// Locations (accessible via /locations ou /api/locations)
+});
 
 
 
@@ -290,21 +287,16 @@ app.get("/flights", async (req: Request, res: Response) => {
 });
 
 // Routes pour les localisations
-
-
-async function getLocations(req: Request, res: Response) {
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute("SELECT * FROM locations");
-    await connection.end();
-    res.json(rows);
-  } catch (err) {
-    console.error("Erreur locations:", err);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-}
-app.get("/locations", getLocations);
-app.get("/api/locations", getLocations); // ✅ route compatible prod avec /api
+app.get("/locations", async (req: Request, res: Response) => {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [allRows] = await connection.execute<Location[]>("SELECT * FROM locations");
+        await connection.end();
+        res.json(allRows);
+    } catch (err) {
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
 
 // utils/errorHandling.ts
 export function getErrorDetails(error: unknown): {
@@ -1002,7 +994,7 @@ const transporter = nodemailer.createTransport({
 
 
 // Démarrer le serveur
-const PORT = process.env.PORT || 3011;
+const PORT = process.env.PORT || 3014;
 app.listen(PORT, () => {
     console.log(`Serveur en écoute sur le port ${PORT}`);
 });

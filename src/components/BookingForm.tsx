@@ -143,7 +143,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                 params.append("return_date", selectedDateReturn);
             }
 
-            const response = await fetch(`https://steve-airways.onrender.com/flights?${params.toString()}`);
+            const response = await fetch(`http://localhost:3003/flights?${params.toString()}`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
