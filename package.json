@@ -1,13 +1,13 @@
 {
-  "name": "my-project",
+  "name": "frontend",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "start": "vite preview --host 0.0.0.0 --port 3000"
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite preview"
   },
 
   "dependencies": {

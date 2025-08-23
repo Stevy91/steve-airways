@@ -23,11 +23,11 @@ app.use(express.json());
 
 // Configuration de la base de données
 const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: 10000,
+     host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
 };
 
 // Initialisation de Stripe avec votre clé secrète
@@ -994,7 +994,7 @@ const transporter = nodemailer.createTransport({
 
 
 // Démarrer le serveur
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3014;
 app.listen(PORT, () => {
     console.log(`Serveur en écoute sur le port ${PORT}`);
 });

@@ -1,12 +1,13 @@
 {
-  "name": "backend-ts-template",
+  "name": "backend",
   "version": "1.0.0",
   "main": "dist/server.js",
-  "scripts": {
-    "start": "node dist/server.js",
-    "dev": "ts-node src/server.ts",
-    "build": "tsc"
-  },
+ "scripts": {
+ "dev": "ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+},
+
   "dependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
     "@paypal/react-paypal-js": "^8.8.3",
