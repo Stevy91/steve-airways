@@ -13,14 +13,16 @@ export default defineConfig({
     port: 3000,
     host: "0.0.0.0",
     proxy: process.env.NODE_ENV === "development" ? {
-      "/api": {
-        target: "steve-airways-production.up.railway.app",
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-        ws: true,
-      },
-    } : undefined,
+  "/api": {
+    target: "https://steve-airways-production.up.railway.app",
+    changeOrigin: true,
+    secure: false,
+    // ne pas réécrire le chemin si ton backend a les routes avec /api
+    // rewrite: (path) => path.replace(/^\/api/, ""),
+    ws: true,
+  },
+} : undefined,
+
   },
   preview: {
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
