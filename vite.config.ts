@@ -14,7 +14,7 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: process.env.NODE_ENV === "development" ? {
       "/api": {
-        target: "http://localhost:3014",
+        target: "steve-airways-production.up.railway.app",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ""),
