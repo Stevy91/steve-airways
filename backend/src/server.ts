@@ -12,7 +12,7 @@ app.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello from backend!' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
