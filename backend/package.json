@@ -1,5 +1,5 @@
 {
-  "name": "backend-steve",
+  "name": "backend",
   "version": "1.0.0",
   "main": "dist/server.js",
   "type": "module",
