@@ -17,11 +17,14 @@ app.get('/api/hello', (req, res) => {
 // Servir le frontend build
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
-
-// Toute route non-API renvoie index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  } else {
+    res.status(404).send({ error: 'API route not found' });
+  }
 });
+
 
 // Port Railway
 const PORT = process.env.PORT || 8080;
