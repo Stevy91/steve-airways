@@ -1,13 +1,9 @@
 {
-  "name": "frontend",
-  "private": true,
+  "name": "steve-airways-frontend",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "vite preview"
+    "build": "vite build"
   },
   "dependencies": {
     "@iconify/react": "^6.0.0",
