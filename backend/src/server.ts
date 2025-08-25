@@ -994,7 +994,7 @@ const transporter = nodemailer.createTransport({
 
 
 // Démarrer le serveur
-const PORT = process.env.PORT || 3014;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Serveur en écoute sur le port ${PORT}`);
 });
