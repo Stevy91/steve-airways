@@ -23,13 +23,12 @@ app.use(express.json());
 
 // Configuration de la base de données
 const dbConfig = {
-     host: process.env.DB_HOST,
+  host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT
+  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306, // ⚡ convertir en number
 };
-
 // Initialisation de Stripe avec votre clé secrète
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -982,14 +981,15 @@ app.delete("/deleteflights/:id", async (req, res) => {
 });
 
 const transporter = nodemailer.createTransport({
-    host: "localhost",
-    port: 1025,
-    secure: false,
-    // Options supplémentaires pour plus de stabilité
-    connectionTimeout: 5000,
-    socketTimeout: 5000,
-    logger: true, // Active les logs détaillés
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
+
 // Définissez la route
 
 

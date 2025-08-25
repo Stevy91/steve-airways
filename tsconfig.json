@@ -6,6 +6,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",          // nécessaire pour React 18+
+    "resolveJsonModule": true,   // permet d'importer des JSON
+    "isolatedModules": true      // requis par Vite
+  },
+  "include": ["src"],            // inclut ton dossier source
+  "exclude": ["node_modules", "dist"]
 }

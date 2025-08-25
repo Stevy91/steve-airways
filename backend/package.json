@@ -2,17 +2,13 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "dist/server.js",
- "scripts": {
- "dev": "ts-node src/server.ts",
+  "scripts": {
+    "dev": "ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
-},
-
+  },
   "dependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
-    "@paypal/react-paypal-js": "^8.8.3",
-    "@stripe/react-stripe-js": "^3.7.0",
-    "@stripe/stripe-js": "^7.4.0",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
@@ -33,7 +29,6 @@
     "@types/node": "^20.19.2",
     "@types/nodemailer": "^6.4.17",
     "@types/paypal__checkout-server-sdk": "^1.0.8",
-    "@types/stripe": "^8.0.416",
     "ts-node": "^10.9.1",
     "typescript": "^5.8.3"
   }
