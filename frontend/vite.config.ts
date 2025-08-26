@@ -2,9 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: "https://steve-airways-production.up.railway.app/",
+  base: "/", // ✅ chemins relatifs → fonctionne partout
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -26,4 +26,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
