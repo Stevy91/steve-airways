@@ -1014,13 +1014,12 @@ app.post("/api/send-ticket", async (req, res) => {
       html,
       text,
     });
-
-    res.json({ success: true });
+   res.json({ success: true });
   } catch (err) {
-    console.error("Send email error:", err);
+    console.error("Full sendMail error:", err); // ← log complet
     res.status(500).json({
       error: "Internal server error",
-      details: err instanceof Error ? err.message : undefined,
+      details: err instanceof Error ? err.message : JSON.stringify(err),
     });
   }
 });
