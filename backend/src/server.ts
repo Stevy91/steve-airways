@@ -29,6 +29,8 @@ app.get('/api/hello', (req: Request, res: Response) => {
 });
 
 // Routes pour les localisations
+
+
 app.get("/api/locations", async (req: Request, res: Response) => {
   try {
     const connection = await mysql.createConnection(dbConfig);
@@ -36,10 +38,11 @@ app.get("/api/locations", async (req: Request, res: Response) => {
     await connection.end();
     res.json(allRows);
   } catch (err) {
-    console.error(err);
+    console.error("Erreur MySQL:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
 
 
 const PORT = process.env.PORT || 8080;
