@@ -283,7 +283,7 @@ app.get("/flights", async (req: Request, res: Response) => {
 });
 
 // Routes pour les localisations
-app.get("/locations", async (req: Request, res: Response) => {
+app.get("api/locations", async (req: Request, res: Response) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [allRows] = await connection.execute<Location[]>("SELECT * FROM locations");
