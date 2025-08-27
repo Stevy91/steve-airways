@@ -29,13 +29,10 @@ const dbConfig = {
     database: process.env.DB_NAME || "flight_booking",
 };
 
-// Initialisation de Stripe avec votre clé secrète
-const stripe = new Stripe(
-    process.env.STRIPE_SECRET_KEY || "sk_test_51IxWQcCWPjcmZuUZWSL4zHnXrXHKt9LVLqywJN4vJedfCFgDxAd0R05HcRfTV1EUg52QXiLdDsN1VyDPYyGiyGlh009r4VgWCh",
-    {
-        apiVersion: "2025-05-28.basil",
-    },
-);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-05-28.basil",
+});
+
 
 // Configuration PayPal
 const paypalClient = new paypal.core.PayPalHttpClient(
