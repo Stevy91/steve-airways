@@ -198,7 +198,7 @@ app.get("/api/flightall", async (req: Request, res: Response) => {
     }
 });
 
-app.get("/flights", async (req: Request, res: Response) => {
+app.get("/api/flights", async (req: Request, res: Response) => {
     try {
         const {
             from,
@@ -329,7 +329,7 @@ function generateBookingRef(): string {
 }
 
 
-app.post("/create-payment-intent", async (req: Request, res: Response) => {
+app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
 
     try {
         // 1. Validation renforcée
@@ -422,7 +422,7 @@ app.post("/create-payment-intent", async (req: Request, res: Response) => {
 });
 
 
-app.post("/confirm-booking", async (req: Request, res: Response) => {
+app.post("/api/confirm-booking", async (req: Request, res: Response) => {
  
     const connection = await pool.getConnection();
 
@@ -611,7 +611,7 @@ interface FlightWithAirports extends mysql.RowDataPacket {
     arrival_code: string;
 }
 
-app.get("/locationstables", async (req: Request, res: Response) => {
+app.get("/api/locationstables", async (req: Request, res: Response) => {
     try {
        
         const [locations] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM locations");
@@ -637,7 +637,7 @@ function formatDate(date: Date): string {
 }
 // Route pour ajouter un nouveau vol
 
-app.get("/flighttableplane", async (req: Request, res: Response) => {
+app.get("/api/flighttableplane", async (req: Request, res: Response) => {
     let connection;
     try {
     
@@ -707,7 +707,7 @@ app.get("/flighttableplane", async (req: Request, res: Response) => {
     }
 });
 
-app.get("/flighttablehelico", async (req: Request, res: Response) => {
+app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
     let connection;
     try {
       
@@ -778,7 +778,7 @@ app.get("/flighttablehelico", async (req: Request, res: Response) => {
 });
 
 // Endpoint pour les données du dashboard
-app.get("/dashboard-stats", async (req: Request, res: Response) => {
+app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     let connection;
     try {
        
@@ -892,7 +892,7 @@ app.get("/dashboard-stats", async (req: Request, res: Response) => {
 });
 
 
-app.post("/addflighttable", async (req: Request, res: Response) => {
+app.post("/api/addflighttable", async (req: Request, res: Response) => {
     console.log("Données reçues:", req.body); // Ajouté pour le debug
     // Vérifier que toutes les valeurs requises sont présentes
     const requiredFields = ["flight_number", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
@@ -947,7 +947,7 @@ app.post("/addflighttable", async (req: Request, res: Response) => {
 
 
 // Route pour supprimer un vol
-app.delete("/deleteflights/:id", async (req: Request, res: Response) => {
+app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
     const flightId = Number(req.params.id);
    
 
@@ -992,7 +992,7 @@ app.delete("/deleteflights/:id", async (req: Request, res: Response) => {
 
 
 // -------------------- Send Ticket --------------------
-app.post("/send-ticket", async (req: Request, res: Response) => {
+app.post("/api/send-ticket", async (req: Request, res: Response) => {
     try {
         const { to, subject, text, html } = req.body;
         await transporter.sendMail({ from: "no-reply@example.com", to, subject, text, html });
