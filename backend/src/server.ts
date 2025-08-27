@@ -31,10 +31,6 @@ const dbConfig = {
 
 
 
-// Configuration PayPal
-const paypalClient = new paypal.core.PayPalHttpClient(
-    new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID || "your_paypal_client_id", process.env.PAYPAL_SECRET || "your_paypal_secret"),
-);
 
 // Interfaces
 interface Flight extends mysql.RowDataPacket {
