@@ -1003,8 +1003,9 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 // -------------------- Send Ticket --------------------
 app.post("/api/send-ticket", async (req: Request, res: Response) => {
     try {
-        const { from, to, subject, html } = req.body;
-        await transporter.sendMail({ from, to, subject, html });
+        const { to, subject, html } = req.body;
+           const text = html.replace(/<[^>]+>/g, "");
+        await transporter.sendMail({  from: process.env.SMTP_USER, to, subject, text });
         res.json({ success: true });
     } catch (err) {
         console.error(err);
