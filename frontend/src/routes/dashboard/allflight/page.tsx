@@ -48,7 +48,7 @@ const FlightTable = () => {
         const fetchFlights = async () => {
             try {
                 console.log("Début de la récupération des vols...");
-                const response = await fetch("http://localhost:3003/flighttableplane");
+                const response = await fetch("https://steve-airways-production.up.railway.app/api/flighttableplane");
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
@@ -71,7 +71,7 @@ const FlightTable = () => {
     }, []);
 
     useEffect(() => {
-        fetch("/api/locations")
+        fetch("https://steve-airways-production.up.railway.app/api/locations")
             .then((res) => res.json())
             .then((data) => {
                 setLocations(data);
@@ -84,7 +84,7 @@ const FlightTable = () => {
 
     const handleAddFlight = async (flightData: any) => {
         try {
-            const response = await fetch("http://localhost:3003/addflighttable", {
+            const response = await fetch("https://steve-airways-production.up.railway.app/api/addflighttable", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -106,7 +106,7 @@ const FlightTable = () => {
             }
 
             // Rechargement des données
-            const updatedResponse = await fetch("http://localhost:3003/flighttableplane"); // Changé le endpoint
+            const updatedResponse = await fetch("https://steve-airways-production.up.railway.app/api/flighttableplane"); // Changé le endpoint
             if (!updatedResponse.ok) {
                 throw new Error("Erreur lors du chargement des vols");
             }
@@ -126,7 +126,7 @@ const FlightTable = () => {
     };
     const deleteFlight = async (flightId: number) => {
         try {
-            const response = await fetch(`http://localhost:3003/deleteflights/${flightId}`, {
+            const response = await fetch(`https://steve-airways-production.up.railway.app/api/deleteflights/${flightId}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
             });

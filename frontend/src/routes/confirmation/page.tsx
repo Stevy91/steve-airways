@@ -1113,7 +1113,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
         const emailContent = generateEmailContent(bookingData, bookingReference);
         const recipientEmail = bookingData.passengersData.adults[0].email;
 
-        const response = await fetch("http://localhost:3003/api/send-ticket", {
+        const response = await fetch("https://steve-airways-production.up.railway.app/api/api/send-ticket", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -1192,12 +1192,12 @@ export default function BookingConfirmation() {
                             >
                                 Book Another Flight
                             </button>
-                            <button
+                            {/* <button
                                 onClick={() => handlePrint(bookingData)}
                                 className="ml-3 inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >
                                 Print Confirmation
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>

@@ -156,9 +156,9 @@ const mapFlight = (flight: any, locations: Location[]): Flight => {
 const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) => {
     try {
         const [locationsRes, flightAllRes, filteredFlightsRes] = await Promise.all([
-            fetch(`http://localhost:3005/locations`, { signal }),
-            fetch(`http://localhost:3005/flightall`, { signal }),
-            fetch(`http://localhost:3005/flights?${params.toString()}`, { signal }),
+            fetch(`https://steve-airways-production.up.railway.app/api/locations`, { signal }),
+            fetch(`https://steve-airways-production.up.railway.app/api/flightall`, { signal }),
+            fetch(`https://steve-airways-production.up.railway.app/api/flights?${params.toString()}`, { signal }),
         ]);
 
         if (!locationsRes.ok || !flightAllRes.ok || !filteredFlightsRes.ok) {
@@ -181,7 +181,7 @@ const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) =>
             returnParams.set("to", params.get("from") || "");
             returnParams.set("date", params.get("return_date") || "");
 
-            const returnFlightsRes = await fetch(`http://localhost:3005/flights?${returnParams.toString()}`, { signal });
+            const returnFlightsRes = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${returnParams.toString()}`, { signal });
             if (returnFlightsRes.ok) {
                 const returnData = await returnFlightsRes.json();
                 returnFlights = Array.isArray(returnData) ? returnData : returnData.outbound || [];

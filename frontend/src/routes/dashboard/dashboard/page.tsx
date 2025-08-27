@@ -54,7 +54,7 @@ const DashboardPage = () => {
             try {
                 setLoading(true);
 
-                const response = await fetch("http://localhost:3003/dashboard-stats");
+                const response = await fetch("https://steve-airways-production.up.railway.app/api/dashboard-stats");
 
                 if (!response.ok) {
                     throw new Error(`Erreur HTTP: ${response.status}`);

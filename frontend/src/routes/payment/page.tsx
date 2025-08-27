@@ -388,7 +388,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 (paymentData.passengersData.children?.length || 0) +
                 (paymentData.passengersData.infants?.length || 0);
 
-            const response = await fetch("http://localhost:3003/create-payment-intent", {
+            const response = await fetch("https://steve-airways-production.up.railway.app/api/create-payment-intent", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -461,7 +461,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 returnDate: paymentData.return?.date,
             };
 
-            const response = await fetch("http://localhost:3003/confirm-booking", {
+            const response = await fetch("https://steve-airways-production.up.railway.app/api/confirm-booking", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bookingRequest),
