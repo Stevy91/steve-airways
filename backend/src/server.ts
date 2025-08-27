@@ -982,6 +982,11 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
     }
 });
 
+
+
+
+
+// -------------------- Send Ticket --------------------
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
@@ -992,20 +997,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Erreur connexion SMTP :", error);
-  } else {
-    console.log("Connexion SMTP réussie !");
-  }
-});
-
-// -------------------- Send Ticket --------------------
 app.post("/api/send-ticket", async (req, res) => {
   try {
     const { to, subject, html } = req.body;
+
     if (!to || !subject || !html) {
       return res.status(400).json({ error: "Missing email data" });
     }
@@ -1022,14 +1017,13 @@ app.post("/api/send-ticket", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("Send email error:", err);
     res.status(500).json({
       error: "Internal server error",
       details: err instanceof Error ? err.message : undefined,
     });
   }
 });
-
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

@@ -1130,8 +1130,9 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
         });
 
         if (!response.ok) {
-            throw new Error("Failed to send email");
-        }
+  const errorData = await response.json();
+  throw new Error(`Failed to send email: ${errorData.error || JSON.stringify(errorData)}`);
+}
 
         console.log("Email sent successfully");
     } catch (error) {
