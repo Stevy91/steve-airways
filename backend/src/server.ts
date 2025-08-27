@@ -597,7 +597,7 @@ interface FlightWithAirports extends mysql.RowDataPacket {
     arrival_code: string;
 }
 
-app.get("/locationstable", async (req: Request, res: Response) => {
+app.get("/locationstables", async (req: Request, res: Response) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
         const [locations] = await connection.execute<mysql.RowDataPacket[]>("SELECT * FROM locations");
