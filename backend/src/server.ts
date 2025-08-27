@@ -10,18 +10,19 @@ app.use(cors());
 app.use(express.json());
 
 // Configuration MySQL
-const dbConfig = {
-  host: process.env.DB_HOST || "nozomi.proxy.rlwy.net",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "ZJSOiwrLEsrtuQVoKfhuiwSdiiPGiZet",
-  database: process.env.DB_NAME || "railway",
+
+const pool = mysql.createPool({
+  host: 'nozomi.proxy.rlwy.net',
+  user: 'root',
+  password: 'ZJSOiwrLEsrtuQVoKfhuiwSdiiPGiZet',
+  database: 'railway',
+  port: 20921,          // Important : port spécifique fourni par Railway
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-};
-
+});
 // Création d'un pool de connexions
-const pool: Pool = mysql.createPool(dbConfig);
+
 
 // Interface pour typage des locations
 interface Location extends mysql.RowDataPacket {
