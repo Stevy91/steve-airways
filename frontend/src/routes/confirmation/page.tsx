@@ -1108,37 +1108,60 @@ const handlePrint = (bookingData: BookingData) => {
     }
 };
 
-const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string): Promise<void> => {
-    try {
-        const emailContent = generateEmailContent(bookingData, bookingReference);
-        const recipientEmail = bookingData.passengersData.adults[0].email;
-        if (!recipientEmail) {
-            throw new Error("Recipient email not found");
-        }
+// const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string): Promise<void> => {
+//     try {
+//         const emailContent = generateEmailContent(bookingData, bookingReference);
+//         const recipientEmail = bookingData.passengersData.adults[0].email;
+//         if (!recipientEmail) {
+//             throw new Error("Recipient email not found");
+//         }
 
-        const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                to: recipientEmail,
-                subject: `Your Flight Booking Confirmation - ${bookingReference}`,
-                html: emailContent,
-                bookingReference: bookingReference,
-            }),
-        });
+//         const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json",
+//             },
+//             body: JSON.stringify({
+//                 to: recipientEmail,
+//                 subject: `Your Flight Booking Confirmation - ${bookingReference}`,
+//                 html: emailContent,
+//                 bookingReference: bookingReference,
+//             }),
+//         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Failed to send email: ${errorData.error || JSON.stringify(errorData)}`);
-        }
+//         if (!response.ok) {
+//             const errorData = await response.json();
+//             throw new Error(`Failed to send email: ${errorData.error || JSON.stringify(errorData)}`);
+//         }
 
-        console.log("Email sent successfully");
-    } catch (error) {
-        console.error("Error sending email:", error);
-    }
+//         console.log("Email sent successfully");
+//     } catch (error) {
+//         console.error("Error sending email:", error);
+//     }
+// };
+
+const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
+  const recipientEmail = bookingData.passengersData.adults[0].email;
+  const emailContent = generateEmailContent(bookingData, bookingReference);
+
+  const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: recipientEmail,
+      subject: `Your Flight Booking Confirmation - ${bookingReference}`,
+      html: emailContent,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to send email: ${errorData.error}`);
+  }
+
+  console.log("Email sent successfully");
 };
+
 
 export default function BookingConfirmation() {
     const location = useLocation();
