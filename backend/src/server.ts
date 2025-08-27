@@ -37,23 +37,6 @@ const pool = mysql.createPool({
 // -------------------- Nodemailer --------------------
 
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Erreur connexion SMTP :", error);
-  } else {
-    console.log("Connexion SMTP réussie !");
-  }
-});
 
 // Interface pour typage des locations
 interface Flight extends mysql.RowDataPacket {
@@ -999,18 +982,52 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
     }
 });
 
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: true,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("Erreur connexion SMTP :", error);
+  } else {
+    console.log("Connexion SMTP réussie !");
+  }
+});
 
 // -------------------- Send Ticket --------------------
-app.post("/api/send-ticket", async (req: Request, res: Response) => {
-    try {
-        const { to, subject, html } = req.body;
-           const text = html.replace(/<[^>]+>/g, "");
-        await transporter.sendMail({  from: process.env.SMTP_USER, to, subject, text });
-        res.json({ success: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erreur serveur", details: err instanceof Error ? err.message : undefined });
+app.post("/api/send-ticket", async (req, res) => {
+  try {
+    const { to, subject, html } = req.body;
+    if (!to || !subject || !html) {
+      return res.status(400).json({ error: "Missing email data" });
     }
+
+    const text = html.replace(/<[^>]+>/g, ""); // fallback texte
+
+    await transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal server error",
+      details: err instanceof Error ? err.message : undefined,
+    });
+  }
 });
 
 
