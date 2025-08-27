@@ -35,16 +35,17 @@ const pool = mysql.createPool({
 
 
 // -------------------- Nodemailer --------------------
+
+
 const transporter = nodemailer.createTransport({
-    host: "localhost",
-    port: 1025,
-    secure: false,
-    connectionTimeout: 5000,
-    socketTimeout: 5000,
-    logger: true,
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: true, // 465 pour Gmail
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
-
-
 
 // Interface pour typage des locations
 interface Flight extends mysql.RowDataPacket {
@@ -995,7 +996,7 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 app.post("/api/send-ticket", async (req: Request, res: Response) => {
     try {
         const { to, subject, text, html } = req.body;
-        await transporter.sendMail({ from: "no-reply@example.com", to, subject, text, html });
+        await transporter.sendMail({ from: "stevesainthubert@gmail.com", to, subject, text, html });
         res.json({ success: true });
     } catch (err) {
         console.error(err);

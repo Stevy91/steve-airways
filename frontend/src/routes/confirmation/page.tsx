@@ -1113,7 +1113,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
         const emailContent = generateEmailContent(bookingData, bookingReference);
         const recipientEmail = bookingData.passengersData.adults[0].email;
 
-        const response = await fetch("https://steve-airways-production.up.railway.app/api/api/send-ticket", {
+        const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
