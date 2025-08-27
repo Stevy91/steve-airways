@@ -38,7 +38,7 @@ app.get("/api/locations", async (req: Request, res: Response) => {
     await connection.end();
     res.json(allRows);
   } catch (err) {
-    console.error("Erreur MySQL:", err);
+    console.error("Errewur MySQL:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
