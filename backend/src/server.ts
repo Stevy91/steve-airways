@@ -29,9 +29,6 @@ const dbConfig = {
     database: process.env.DB_NAME || "flight_booking",
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
-});
 
 
 // Configuration PayPal
