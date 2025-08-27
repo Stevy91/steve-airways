@@ -40,7 +40,7 @@ const pool = mysql.createPool({
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: true, // 465 pour Gmail
+  secure: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -995,8 +995,8 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 // -------------------- Send Ticket --------------------
 app.post("/api/send-ticket", async (req: Request, res: Response) => {
     try {
-        const { to, subject, text, html } = req.body;
-        await transporter.sendMail({ from: "info@lenational.org", to, subject, text, html });
+        const { from, to, subject, html } = req.body;
+        await transporter.sendMail({ from, to, subject, html });
         res.json({ success: true });
     } catch (err) {
         console.error(err);

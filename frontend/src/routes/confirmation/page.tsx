@@ -1112,6 +1112,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     try {
         const emailContent = generateEmailContent(bookingData, bookingReference);
         const recipientEmail = bookingData.passengersData.adults[0].email;
+        const textContent = emailContent.replace(/<[^>]+>/g, "");
 
         const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
             method: "POST",
@@ -1119,9 +1120,10 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
+                from: process.env.SMTP_USER,
                 to: recipientEmail,
                 subject: `Your Flight Booking Confirmation - ${bookingReference}`,
-                html: emailContent,
+                html: textContent,
                 bookingReference: bookingReference,
             }),
         });
