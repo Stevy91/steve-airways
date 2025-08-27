@@ -29,7 +29,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/node": "^24.0.7",
+    "@types/nodemailer": "^7.0.1",
+    "@types/paypal__checkout-server-sdk": "^1.0.8",
     "@types/prop-types": "^15.7.15",
     "@types/react": "^19.1.2",
     "@types/react-date-range": "^1.4.10",
