@@ -29,16 +29,18 @@ app.get('/api/hello', (req: Request, res: Response) => {
 });
 
 // Routes pour les localisations
-app.get("api/locations", async (req: Request, res: Response) => {
-    try {
-        const connection = await mysql.createConnection(dbConfig);
-        const [allRows] = await connection.execute<Location[]>("SELECT * FROM locations");
-        await connection.end();
-        res.json(allRows);
-    } catch (err) {
-        res.status(500).json({ error: "Erreur serveur" });
-    }
+app.get("/api/locations", async (req: Request, res: Response) => {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    const [allRows] = await connection.execute<Location[]>("SELECT * FROM locations");
+    await connection.end();
+    res.json(allRows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
+
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
