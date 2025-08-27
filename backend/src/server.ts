@@ -996,7 +996,7 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 app.post("/api/send-ticket", async (req: Request, res: Response) => {
     try {
         const { to, subject, text, html } = req.body;
-        await transporter.sendMail({ from: "stevesainthubert@gmail.com", to, subject, text, html });
+        await transporter.sendMail({ from: "info@lenational.org", to, subject, text, html });
         res.json({ success: true });
     } catch (err) {
         console.error(err);
