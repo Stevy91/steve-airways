@@ -1008,7 +1008,7 @@ app.post("/api/send-ticket", async (req, res) => {
     const text = html.replace(/<[^>]+>/g, ""); // fallback texte
 
     await transporter.sendMail({
-      from: process.env.SMTP_USER,
+      from: 'info@lenational.org',
       to,
       subject,
       html,

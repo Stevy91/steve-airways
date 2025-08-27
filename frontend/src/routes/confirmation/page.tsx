@@ -1112,8 +1112,8 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     try {
         const emailContent = generateEmailContent(bookingData, bookingReference);
         const recipientEmail = bookingData.passengersData.adults[0].email;
-            if (!recipientEmail) {
-        throw new Error("Recipient email not found");
+        if (!recipientEmail) {
+            throw new Error("Recipient email not found");
         }
 
         const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
@@ -1130,9 +1130,9 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
         });
 
         if (!response.ok) {
-  const errorData = await response.json();
-  throw new Error(`Failed to send email: ${errorData.error || JSON.stringify(errorData)}`);
-}
+            const errorData = await response.json();
+            throw new Error(`Failed to send email: ${errorData.error || JSON.stringify(errorData)}`);
+        }
 
         console.log("Email sent successfully");
     } catch (error) {
