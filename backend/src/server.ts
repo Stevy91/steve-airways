@@ -29,8 +29,15 @@ const dbConfig = {
     database: process.env.DB_NAME || "flight_booking",
 };
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-05-28.basil",
+});
 
 
+// Configuration PayPal
+const paypalClient = new paypal.core.PayPalHttpClient(
+    new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID || "your_paypal_client_id", process.env.PAYPAL_SECRET || "your_paypal_secret"),
+);
 
 // Interfaces
 interface Flight extends mysql.RowDataPacket {
