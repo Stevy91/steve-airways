@@ -47,6 +47,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("Erreur connexion SMTP :", error);
+  } else {
+    console.log("Connexion SMTP réussie !");
+  }
+});
+
 // Interface pour typage des locations
 interface Flight extends mysql.RowDataPacket {
     id: number | string;
