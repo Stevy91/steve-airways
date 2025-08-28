@@ -1165,96 +1165,9 @@ const handlePrint = (bookingData: BookingData) => {
 
 
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
-      const apiKey = 'api-3E50B3ECEA894D1E8A8FFEF38495B5C4'; /*process.env.SMTP2GO_API_KEY;*/
+  const apiKey = 'api-3E50B3ECEA894D1E8A8FFEF38495B5C4'; // ou process.env.SMTP2GO_API_KEY
   const recipientEmail = bookingData.passengersData.adults[0].email;
   const emailContent = generateEmailContent(bookingData, bookingReference);
-  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
-
-//   const customerHtmlBody = `
-//     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-//       <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
-//         <h1 style="margin: 0; font-family: 'Times New Roman', Times, serif;">Trogon Airways</h1>
-//         <p style="margin: 5px 0 0; font-size: 1.2em;">Your Booking is Confirmed</p>
-//       </div>
-
-//       <div style="padding: 20px;">
-//         <p>Dear ${booking.passengers[0]?.firstName || 'Customer'},</p>
-//         <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
-//       </div>
-
-//       <!-- E-Ticket Section -->
-//       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
-//         <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
-//           <table width="100%" style="border-collapse: collapse;">
-//             <tr>
-//               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
-//                 <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
-//                 <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Boarding Pass</span>
-//               </td>
-//               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
-//                 <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
-//                 <p style="margin: 0; font-size: 0.8em; text-align: center;">${booking.id}</p>
-//               </td>
-//             </tr>
-//             <tr>
-//               <td colspan="2" style="padding-top: 20px;">
-//                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Itinerary</h3>
-//                 ${booking.flights.map((flight, index) => `
-//                   <div style="margin-bottom: 15px;">
-//                     <p style="margin: 0; font-size: 0.9em; color: #555;">${booking.bookingType === 'round-trip' ? (index === 0 ? 'Outbound' : 'Return') : 'Flight'}</p>
-//                     <table width="100%" style="font-size: 1em;">
-//                       <tr>
-//                         <td><strong>From:</strong> ${flight.departureCity.name}</td>
-//                         <td><strong>To:</strong> ${flight.arrivalCity.name}</td>
-//                       </tr>
-//                       <tr>
-//                         <td><strong>Departs:</strong> ${formatDateTime(flight.departureTime)}</td>
-//                         <td><strong>Arrives:</strong> ${formatDateTime(flight.arrivalTime)}</td>
-//                       </tr>
-//                       <tr>
-//                         <td colspan="2"><strong>Flight:</strong> ${flight.flightNumber}</td>
-//                       </tr>
-//                     </table>
-//                   </div>
-//                 `).join('')}
-//               </td>
-//             </tr>
-//             <tr>
-//               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
-//                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passengers</h3>
-//                 <p style="margin: 0;">${booking.passengers.map(p => `${p.firstName} ${p.lastName}`).join(', ')}</p>
-//               </td>
-//             </tr>
-//              <tr>
-//               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
-//                 <table width="100%">
-//                   <tr>
-//                     <td>
-//                       <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
-//                       <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${booking.id}</p>
-//                       <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${formatDate(booking.bookingDate)}</p>
-//                     </td>
-//                     <td style="text-align: right;">
-//                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
-//                        <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${booking.totalPrice.toFixed(2)}</p>
-//                        <p style="margin: 0; font-size: 0.9em;"><strong>Status:</strong> ${paymentStatusText}</p>
-//                     </td>
-//                   </tr>
-//                 </table>
-//               </td>
-//             </tr>
-//           </table>
-//         </div>
-//       </div>
-//       <!-- End E-Ticket Section -->
-
-//       <div style="padding: 20px; font-size: 0.9em; color: #555;">
-//         <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
-//         <p>We look forward to welcoming you on board.</p>
-//         <p>Sincerely,<br>The Trogon Airways Team</p>
-//       </div>
-//     </div>
-//   `;
 
   const customerPayload = {
     api_key: apiKey,
@@ -1264,21 +1177,27 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     html_body: emailContent,
   };
 
-  const response = await fetch("await fetch('https://api.smtp2go.com/v3/email/send", {
+  const response = await fetch("https://api.smtp2go.com/v3/email/send", {
     method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(customerPayload),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(customerPayload),
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Failed to send email: ${errorData.error}`);
+  let responseData;
+  try {
+    responseData = await response.json();
+  } catch (err) {
+    const text = await response.text();
+    throw new Error(`Failed to send email, non-JSON response: ${text}`);
   }
 
-  console.log("Email sent successfully");
+  if (!response.ok) {
+    throw new Error(`Failed to send email: ${responseData?.error || JSON.stringify(responseData)}`);
+  }
+
+  console.log("✅ Email sent successfully", responseData);
 };
+
 
 
 
