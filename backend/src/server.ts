@@ -592,6 +592,8 @@ app.post("/api/confirm-booking-paylater", async (req, res) => {
         await connection.beginTransaction();
 
         const { passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+         const typeVol = passengers[0]?.typeVol || "plane";
+        const typeVolV = passengers[0]?.typeVolV || "onway";
 
         if (!passengers || passengers.length === 0) {
             throw new Error("Liste de passagers invalide");
@@ -627,8 +629,8 @@ app.post("/api/confirm-booking-paylater", async (req, res) => {
                 contactInfo.email,
                 contactInfo.phone,
                 "pending", // ✅ statut correct pour Pay Later
-                passengers[0]?.typeVol || "plane",
-                passengers[0]?.typeVolV || "onway",
+                typeVol,
+                typeVolV,
                 1,
                 contactInfo.email,
                 now,
