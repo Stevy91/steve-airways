@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
-import { format, parseISO } from 'date-fns';
+import { format, parseISO } from "date-fns";
 
 interface Passenger {
     firstName: string;
@@ -152,25 +152,25 @@ const printStyles = `
   }
 `;
 
-const generateEmailContent = (bookingData: BookingData, bookingReference: string): string => {
+const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
     const outboundFlight = bookingData.outbound;
     const returnFlight = bookingData.return;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
-      // --- Helper to format dates ---
-  const formatDateTime = (dateString: string) => {
-    try {
-      return format(parseISO(dateString), 'MMM d, yyyy, p'); 
-    } catch (e) {
-      return 'Invalid Date';
-    }
-  };
-   const formatDate = (dateString: string) => {
-    try {
-      return format(parseISO(dateString), 'MMM d, yyyy');
-    } catch (e) {
-      return 'Invalid Date';
-    }
-  };
+    // --- Helper to format dates ---
+    const formatDateTime = (dateString: string) => {
+        try {
+            return format(parseISO(dateString), "MMM d, yyyy, p");
+        } catch (e) {
+            return "Invalid Date";
+        }
+    };
+    const formatDate = (dateString: string) => {
+        try {
+            return format(parseISO(dateString), "MMM d, yyyy");
+        } catch (e) {
+            return "Invalid Date";
+        }
+    };
 
     return `
     <style>
@@ -188,6 +188,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
         <h1 style="margin: 0; font-family: 'Times New Roman', Times, serif;">Trogon Airways</h1>
+       
         <p style="margin: 5px 0 0; font-size: 1.2em;">Your Booking is Confirmed</p>
       </div>
 
@@ -210,6 +211,13 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                 <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
               </td>
             </tr>
+            <div style="padding: 20px; text-align: center;">
+ 
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}</p>
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</p>
+               
+            </div>
+
             <tr>
               <td colspan="2" style="padding-top: 20px;">
               
@@ -254,7 +262,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                             </div>
                         </div>
                         </div>
-                        `: ""
+                        `
+                                 : ""
                          }
                     </td>
                   </tr>
@@ -304,6 +313,740 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
   `;
 };
 
+const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: BookingData; paymentMethod: string }) => {
+    return (
+        <div
+            className="print-section"
+            style={{
+                maxWidth: "100%",
+                margin: "0 auto",
+                padding: "10px",
+                boxSizing: "border-box",
+            }}
+        >
+            <h1
+                style={{
+                    marginBottom: "10px",
+                    textAlign: "center",
+                    fontSize: "18px",
+                    fontWeight: 700,
+                }}
+            >
+                Trogon Airways - Booking Confirmation
+            </h1>
+
+            <div
+                style={{
+                    marginBottom: "15px",
+                    textAlign: "center",
+                }}
+            >
+                <div
+                    style={{
+                        marginBottom: "5px",
+                        display: "inline-flex",
+                        height: "30px",
+                        width: "30px",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "9999px",
+                        backgroundColor: "#dcfce7",
+                    }}
+                >
+                    <CheckCircle2
+                        style={{
+                            height: "20px",
+                            width: "20px",
+                            color: "#16a34a",
+                        }}
+                    />
+                </div>
+                <h2
+                    style={{
+                        fontSize: "14px",
+                        fontWeight: 700,
+                    }}
+                >
+                    Flight Type: {bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}
+                </h2>
+                <h2
+                    style={{
+                        fontSize: "14px",
+                        fontWeight: 700,
+                    }}
+                >
+                    Booking Reference: {bookingData.bookingReference}
+                </h2>
+                <p
+                    style={{
+                        color: "#4b5563",
+                        fontSize: "12px",
+                    }}
+                >
+                    Payment Method: {paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}
+                    
+                </p>
+            </div>
+
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px",
+                    marginBottom: "10px",
+                }}
+            >
+                <div
+                    style={{
+                        borderRadius: "5px",
+                        border: "1px solid #e5e7eb",
+                        padding: "10px",
+                        pageBreakInside: "avoid",
+                    }}
+                >
+                    <h2
+                        style={{
+                            marginBottom: "5px",
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            color: "#1f2937",
+                        }}
+                    >
+                        Outbound Flight
+                    </h2>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            fontSize: "12px",
+                        }}
+                    >
+                        <div
+                            style={{
+                                flexShrink: 0,
+                                paddingTop: "2px",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    height: "20px",
+                                    width: "20px",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    borderRadius: "9999px",
+                                    backgroundColor: "#dbeafe",
+                                }}
+                            >
+                                <svg
+                                    style={{
+                                        height: "12px",
+                                        width: "12px",
+                                        color: "#2563eb",
+                                    }}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M8 7l4-4m0 0l4 4m-4-4v18"
+                                    ></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div
+                            style={{
+                                marginLeft: "8px",
+                                flex: 1,
+                            }}
+                        >
+                            <h3
+                                style={{
+                                    fontSize: "12px",
+                                    fontWeight: 500,
+                                    color: "#111827",
+                                    marginBottom: "4px",
+                                }}
+                            >
+                                {bookingData.fromCity} ({bookingData.from}) to {bookingData.toCity} ({bookingData.to})
+                            </h3>
+                            <p
+                                style={{
+                                    color: "#6b7280",
+                                    marginBottom: "4px",
+                                }}
+                            >
+                                {new Date(bookingData.outbound.date).toLocaleDateString("en-US", {
+                                    weekday: "short",
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                })}
+                            </p>
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 1fr",
+                                    gap: "8px",
+                                    marginTop: "4px",
+                                }}
+                            >
+                                <div>
+                                    <p
+                                        style={{
+                                            fontSize: "10px",
+                                            fontWeight: 500,
+                                            color: "#6b7280",
+                                            marginBottom: "2px",
+                                        }}
+                                    >
+                                        Departure
+                                    </p>
+                                    <p
+                                        style={{
+                                            fontWeight: 500,
+                                            fontSize: "12px",
+                                        }}
+                                    >
+                                        {bookingData.outbound.departure_time}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p
+                                        style={{
+                                            fontSize: "10px",
+                                            fontWeight: 500,
+                                            color: "#6b7280",
+                                            marginBottom: "2px",
+                                        }}
+                                    >
+                                        Arrival
+                                    </p>
+                                    <p
+                                        style={{
+                                            fontWeight: 500,
+                                            fontSize: "12px",
+                                        }}
+                                    >
+                                        {bookingData.outbound.arrival_time}
+                                    </p>
+                                </div>
+                            </div>
+                            <p
+                                style={{
+                                    marginTop: "4px",
+                                    fontSize: "10px",
+                                    color: "#6b7280",
+                                }}
+                            >
+                                Flight number: {bookingData.outbound.noflight}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {bookingData.return && (
+                    <div
+                        style={{
+                            borderRadius: "5px",
+                            border: "1px solid #e5e7eb",
+                            padding: "10px",
+                            pageBreakInside: "avoid",
+                        }}
+                    >
+                        <h2
+                            style={{
+                                marginBottom: "5px",
+                                fontSize: "14px",
+                                fontWeight: 700,
+                                color: "#1f2937",
+                            }}
+                        >
+                            Return Flight
+                        </h2>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                fontSize: "12px",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    flexShrink: 0,
+                                    paddingTop: "2px",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        height: "20px",
+                                        width: "20px",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        borderRadius: "9999px",
+                                        backgroundColor: "#dbeafe",
+                                    }}
+                                >
+                                    <svg
+                                        style={{
+                                            height: "12px",
+                                            width: "12px",
+                                            color: "#2563eb",
+                                        }}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M16 17l-4 4m0 0l-4-4m4 4V3"
+                                        ></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div
+                                style={{
+                                    marginLeft: "8px",
+                                    flex: 1,
+                                }}
+                            >
+                                <h3
+                                    style={{
+                                        fontSize: "12px",
+                                        fontWeight: 500,
+                                        color: "#111827",
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    {bookingData.toCity} ({bookingData.to}) to {bookingData.fromCity} ({bookingData.from})
+                                </h3>
+                                <p
+                                    style={{
+                                        color: "#6b7280",
+                                        marginBottom: "4px",
+                                    }}
+                                >
+                                    {new Date(bookingData.return.date).toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric",
+                                    })}
+                                </p>
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr",
+                                        gap: "8px",
+                                        marginTop: "4px",
+                                    }}
+                                >
+                                    <div>
+                                        <p
+                                            style={{
+                                                fontSize: "10px",
+                                                fontWeight: 500,
+                                                color: "#6b7280",
+                                                marginBottom: "2px",
+                                            }}
+                                        >
+                                            Departure
+                                        </p>
+                                        <p
+                                            style={{
+                                                fontWeight: 500,
+                                                fontSize: "12px",
+                                            }}
+                                        >
+                                            {bookingData.return.departure_time}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p
+                                            style={{
+                                                fontSize: "10px",
+                                                fontWeight: 500,
+                                                color: "#6b7280",
+                                                marginBottom: "2px",
+                                            }}
+                                        >
+                                            Arrival
+                                        </p>
+                                        <p
+                                            style={{
+                                                fontWeight: 500,
+                                                fontSize: "12px",
+                                            }}
+                                        >
+                                            {bookingData.return.arrival_time}
+                                        </p>
+                                    </div>
+                                </div>
+                                <p
+                                    style={{
+                                        marginTop: "4px",
+                                        fontSize: "10px",
+                                        color: "#6b7280",
+                                    }}
+                                >
+                                    Flight number: {bookingData.return.noflight}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div
+                style={{
+                    borderRadius: "5px",
+                    border: "1px solid #e5e7eb",
+                    padding: "10px",
+                    marginBottom: "10px",
+                    pageBreakInside: "avoid",
+                }}
+            >
+                <h2
+                    style={{
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#1f2937",
+                    }}
+                >
+                    Passenger Details
+                </h2>
+                <div
+                    style={{
+                        overflowX: "auto",
+                        fontSize: "10px",
+                    }}
+                >
+                    <table
+                        style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            fontSize: "10px",
+                        }}
+                    >
+                        <thead
+                            style={{
+                                backgroundColor: "#f9fafb",
+                            }}
+                        >
+                            <tr>
+                                <th
+                                    style={{
+                                        padding: "4px 8px",
+                                        textAlign: "left",
+                                        fontWeight: 500,
+                                        color: "#6b7280",
+                                        fontSize: "10px",
+                                    }}
+                                >
+                                    Name
+                                </th>
+                                <th
+                                    style={{
+                                        padding: "4px 8px",
+                                        textAlign: "left",
+                                        fontWeight: 500,
+                                        color: "#6b7280",
+                                        fontSize: "10px",
+                                    }}
+                                >
+                                    Type
+                                </th>
+                                <th
+                                    style={{
+                                        padding: "4px 8px",
+                                        textAlign: "left",
+                                        fontWeight: 500,
+                                        color: "#6b7280",
+                                        fontSize: "10px",
+                                    }}
+                                >
+                                    Email
+                                </th>
+                                <th
+                                    style={{
+                                        padding: "4px 8px",
+                                        textAlign: "left",
+                                        fontWeight: 500,
+                                        color: "#6b7280",
+                                        fontSize: "10px",
+                                    }}
+                                >
+                                    Phone
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            style={{
+                                backgroundColor: "white",
+                            }}
+                        >
+                            {bookingData.passengersData?.adults?.map((passenger: Passenger, index: number) => (
+                                <tr
+                                    key={`adult-${index}`}
+                                    style={{
+                                        borderBottom: "1px solid #e5e7eb",
+                                    }}
+                                >
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.firstName} {passenger.lastName}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        Adult
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.email}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.phone}
+                                    </td>
+                                </tr>
+                            ))}
+                            {bookingData.passengersData?.children?.map((passenger: Passenger, index: number) => (
+                                <tr
+                                    key={`child-${index}`}
+                                    style={{
+                                        borderBottom: "1px solid #e5e7eb",
+                                    }}
+                                >
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.firstName} {passenger.lastName}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        Child
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.email || "-"}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.phone || "-"}
+                                    </td>
+                                </tr>
+                            ))}
+                            {bookingData.passengersData?.infants?.map((passenger: Passenger, index: number) => (
+                                <tr
+                                    key={`infant-${index}`}
+                                    style={{
+                                        borderBottom: "1px solid #e5e7eb",
+                                    }}
+                                >
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.firstName} {passenger.lastName}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        Infant
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.email || "-"}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: "4px 8px",
+                                            fontSize: "10px",
+                                        }}
+                                    >
+                                        {passenger.phone || "-"}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div
+                style={{
+                    borderRadius: "5px",
+                    border: "1px solid #e5e7eb",
+                    padding: "10px",
+                    pageBreakInside: "avoid",
+                }}
+            >
+                <h2
+                    style={{
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#1f2937",
+                    }}
+                >
+                    Payment Summary
+                </h2>
+                <div
+                    style={{
+                        marginTop: "8px",
+                        fontSize: "12px",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: "4px",
+                        }}
+                    >
+                        <span
+                            style={{
+                                color: "#6b7280",
+                                fontSize: "12px",
+                            }}
+                        >
+                            Subtotal
+                        </span>
+                        <span
+                            style={{
+                                fontWeight: 500,
+                                fontSize: "12px",
+                            }}
+                        >
+                            ${(bookingData.totalPrice * 0.9).toFixed(2)}
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: "4px",
+                        }}
+                    >
+                        <span
+                            style={{
+                                color: "#6b7280",
+                                fontSize: "12px",
+                            }}
+                        >
+                            Taxes & Fees
+                        </span>
+                        <span
+                            style={{
+                                fontWeight: 500,
+                                fontSize: "12px",
+                            }}
+                        >
+                            ${(bookingData.totalPrice * 0.1).toFixed(2)}
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            borderTop: "1px solid #e5e7eb",
+                            paddingTop: "8px",
+                            marginTop: "8px",
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontWeight: 700,
+                                color: "#111827",
+                                fontSize: "12px",
+                            }}
+                        >
+                            Total
+                        </span>
+                        <span
+                            style={{
+                                fontWeight: 700,
+                                color: "#111827",
+                                fontSize: "12px",
+                            }}
+                        >
+                            ${bookingData.totalPrice.toFixed(2)}
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            paddingTop: "4px",
+                            textAlign: "right",
+                            fontSize: "10px",
+                            color: "#6b7280",
+                        }}
+                    >
+                        Paid with {paymentMethod === "paypal" ? "PayPal" : "Credit Card"}
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style={{
+                    marginTop: "10px",
+                    textAlign: "center",
+                    fontSize: "10px",
+                    color: "#6b7280",
+                    pageBreakInside: "avoid",
+                }}
+            >
+                <p>Thank you for choosing Trogon Airways. We wish you a pleasant journey!</p>
+            </div>
+        </div>
+    );
+};
 // const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string): Promise<void> => {
 //     try {
 //         const emailContent = generateEmailContent(bookingData, bookingReference);
@@ -435,6 +1178,10 @@ export default function BookingConfirmation() {
 
             <div className="w-full">
                 <div className="overflow-hidden">
+                    <PrintableContent
+                        bookingData={bookingData}
+                        paymentMethod={paymentMethod}
+                    />
                     <div className="no-print border-t border-gray-200 bg-gray-50 px-6 py-5">
                         <div className="flex justify-between">
                             <button
