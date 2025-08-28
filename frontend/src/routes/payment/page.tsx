@@ -214,7 +214,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     );
 };
 const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
-   const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
+    const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
     return (
         <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
@@ -599,19 +599,28 @@ const PayPalPayment = ({ totalPrice, onSuccess }: { totalPrice: number; onSucces
     );
 };
 
-const PayLaterPayment = ({ paymentData, onSuccess }: { paymentData: PaymentData; onSuccess: (data: { bookingId: number; reference: string }) => void }) => {
+const PayLaterPayment = ({
+    paymentData,
+    onSuccess,
+}: {
+    paymentData: PaymentData;
+    onSuccess: (data: { bookingId: number; reference: string }) => void;
+}) => {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handlePayLater = async () => {
+    const handlePayLater = async (event: React.FormEvent) => {
+        event.preventDefault();
         setProcessing(true);
         setError(null);
 
-        try {
-            // Transformer les passagers
-            const transformedPassengers = transformPassengers(paymentData.passengersData, paymentData.outbound.type, paymentData.outbound.typev);
+        let bookingRequest;
 
-            const bookingRequest = {
+        try {
+            const transformedPassengers = transformPassengers(paymentData.passengersData, paymentData.outbound.type, paymentData.outbound.typev);
+            if (!transformedPassengers?.length) throw new Error("Données passagers invalides");
+
+            bookingRequest = {
                 paymentIntentId: null, // pas de paiement immédiat
                 paymentMethod: "paylater",
                 passengers: transformedPassengers,
@@ -632,7 +641,7 @@ const PayLaterPayment = ({ paymentData, onSuccess }: { paymentData: PaymentData;
                 body: JSON.stringify(bookingRequest),
             });
 
-            if (!response.ok) throw new Error("Échec de la réservation Pay Later");
+            if (!response.ok) throw new Error("Échec de la réservation steve");
 
             const responseData = await response.json();
 
@@ -640,9 +649,8 @@ const PayLaterPayment = ({ paymentData, onSuccess }: { paymentData: PaymentData;
                 bookingId: responseData.bookingId,
                 reference: responseData.bookingReference,
             });
-        } catch (err) {
-            console.error(err);
-            setError("Impossible de confirmer la réservation Pay Later.");
+        } catch (err: unknown) {
+            setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
         } finally {
             setProcessing(false);
         }
@@ -661,7 +669,6 @@ const PayLaterPayment = ({ paymentData, onSuccess }: { paymentData: PaymentData;
         </div>
     );
 };
-
 
 // Page de paiement principale
 export default function Pay() {
@@ -693,7 +700,7 @@ export default function Pay() {
                 state: {
                     bookingData: {
                         ...paymentData,
-                        bookingReference: successData.reference, 
+                        bookingReference: successData.reference,
                     },
                     paymentMethod,
                 },
@@ -856,35 +863,37 @@ export default function Pay() {
                                 )}
 
                                 {paymentMethod === "stripe" ? (
-    <Elements stripe={stripePromise}>
-        <StripePaymentForm
-            totalPrice={paymentData.totalPrice}
-            onSuccess={handlePaymentSuccess}
-            paymentData={paymentData} 
-        />
-    </Elements>
-) : paymentMethod === "paypal" ? (
-    <PayPalScriptProvider
-        options={{
-            clientId: paypalClientId || "", // obligatoire et non null
-            components: "buttons",
-            currency: "USD",
-        }}
-    >
-        <PayPalPayment
-            totalPrice={paymentData.totalPrice}
-            onSuccess={() =>
-                handlePaymentSuccess({
-                    bookingId: 0,
-                    reference: "TEMPORARY_REF",
-                })
-            }
-        />
-    </PayPalScriptProvider>
-) : (
-    <PayLaterPayment paymentData={paymentData} onSuccess={handlePaymentSuccess} />
-)}
-
+                                    <Elements stripe={stripePromise}>
+                                        <StripePaymentForm
+                                            totalPrice={paymentData.totalPrice}
+                                            onSuccess={handlePaymentSuccess}
+                                            paymentData={paymentData}
+                                        />
+                                    </Elements>
+                                ) : paymentMethod === "paypal" ? (
+                                    <PayPalScriptProvider
+                                        options={{
+                                            clientId: paypalClientId || "", // obligatoire et non null
+                                            components: "buttons",
+                                            currency: "USD",
+                                        }}
+                                    >
+                                        <PayPalPayment
+                                            totalPrice={paymentData.totalPrice}
+                                            onSuccess={() =>
+                                                handlePaymentSuccess({
+                                                    bookingId: 0,
+                                                    reference: "TEMPORARY_REF",
+                                                })
+                                            }
+                                        />
+                                    </PayPalScriptProvider>
+                                ) : (
+                                    <PayLaterPayment
+                                        paymentData={paymentData}
+                                        onSuccess={handlePaymentSuccess}
+                                    />
+                                )}
                             </div>
                         </div>
 
