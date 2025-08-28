@@ -593,19 +593,21 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     try {
         await connection.beginTransaction();
 
-        // 1. Validation complète des données
-        const requiredFields = ["paymentIntentId", "passengers", "contactInfo", "flightId", "totalPrice"];
+    
 
-        for (const field of requiredFields) {
-            if (!req.body[field]) {
-                throw new Error(`Champ requis manquant: ${field}`);
-            }
-        }
-
-        const {paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+        const {paymentMethod, paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
         const typeVol = passengers[0]?.typeVol || "plane";
         const typeVolV = passengers[0]?.typeVolV || "onway";
+const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
+if (paymentMethod !== "paylater") {
+    requiredFields.push("paymentIntentId");
+}
 
+for (const field of requiredFields) {
+    if (!req.body[field]) {
+        throw new Error(`Champ requis manquant: ${field}`);
+    }
+}
 
         // 3. Validation des passagers
         if (!Array.isArray(passengers) || passengers.length === 0) {
