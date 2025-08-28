@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
-const SENDER_EMAIL = 'info@kashpaw.com'; // A reasonable "from" address
+const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
 
 interface Passenger {
     firstName: string;
@@ -198,43 +198,54 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
             <tr>
               <td colspan="2" style="padding-top: 20px;">
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Itinerary</h3>
+                <tr>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <table width="100%">
+                  <tr>
+                    <td>
+                      <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
+                      <div class="flight-card">
+                        <div class="flight-header">Outbound Flight</div>
+                        <div class="flight-details">
+                            <div>
+                            <strong>From:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
+                            <strong>To:</strong> ${bookingData.toCity} (${bookingData.to})<br>
+                            <strong>Date:</strong> ${new Date(outboundFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                            </div>
+                            <div>
+                            <strong>Departure:</strong> ${outboundFlight.departure_time}<br>
+                            <strong>Arrival:</strong> ${outboundFlight.arrival_time}<br>
+                            <strong>Flight Number:</strong> ${outboundFlight.noflight}
+                            </div>
+                        </div>
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                         ${
+                             returnFlight
+                                 ? `
                         <div class="flight-card">
-          <div class="flight-header">Outbound Flight</div>
-          <div class="flight-details">
-            <div>
-              <strong>From:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
-              <strong>To:</strong> ${bookingData.toCity} (${bookingData.to})<br>
-              <strong>Date:</strong> ${new Date(outboundFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </div>
-            <div>
-              <strong>Departure:</strong> ${outboundFlight.departure_time}<br>
-              <strong>Arrival:</strong> ${outboundFlight.arrival_time}<br>
-              <strong>Flight Number:</strong> ${outboundFlight.noflight}
-            </div>
-          </div>
-        </div>
-        
-        ${
-            returnFlight
-                ? `
-        <div class="flight-card">
-          <div class="flight-header">Return Flight</div>
-          <div class="flight-details">
-            <div>
-              <strong>From:</strong> ${bookingData.toCity} (${bookingData.to})<br>
-              <strong>To:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
-              <strong>Date:</strong> ${new Date(returnFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </div>
-            <div>
-              <strong>Departure:</strong> ${returnFlight.departure_time}<br>
-              <strong>Arrival:</strong> ${returnFlight.arrival_time}<br>
-              <strong>Flight Number:</strong> ${returnFlight.noflight}
-            </div>
-          </div>
-        </div>
-        `
-                : ""
-        }
+                        <div class="flight-header">Return Flight</div>
+                        <div class="flight-details">
+                            <div>
+                            <strong>From:</strong> ${bookingData.toCity} (${bookingData.to})<br>
+                            <strong>To:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
+                            <strong>Date:</strong> ${new Date(returnFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                            </div>
+                            <div>
+                            <strong>Departure:</strong> ${returnFlight.departure_time}<br>
+                            <strong>Arrival:</strong> ${returnFlight.arrival_time}<br>
+                            <strong>Flight Number:</strong> ${returnFlight.noflight}
+                            </div>
+                        </div>
+                        </div>
+                        `: ""
+                         }
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
               </td>
             </tr>
             <tr>
@@ -246,7 +257,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                  <p style="margin: 0;">${bookingData.passengersData?.infants?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email || "-"}${passenger.email || "-"}`).join("")}</p>
               </td>
             </tr>
-             <tr>
+            <tr>
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
                 <table width="100%">
                   <tr>
@@ -277,10 +288,6 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     </div>
   `;
 };
-
-
-
-
 
 // const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string): Promise<void> => {
 //     try {
@@ -336,43 +343,39 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 //   console.log("Email sent successfully");
 // };
 
-
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
-  const apiKey = 'api-3E50B3ECEA894D1E8A8FFEF38495B5C4'; // ou process.env.SMTP2GO_API_KEY
-  const recipientEmail = bookingData.passengersData.adults[0].email;
-  const emailContent = generateEmailContent(bookingData, bookingReference);
+    const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4"; // ou process.env.SMTP2GO_API_KEY
+    const recipientEmail = bookingData.passengersData.adults[0].email;
+    const emailContent = generateEmailContent(bookingData, bookingReference);
 
-  const customerPayload = {
-    api_key: apiKey,
-    to: [recipientEmail],
-    sender: SENDER_EMAIL,
-    subject: `Your Trogon Airways E-Ticket - Booking ID: ${bookingReference}`,
-    html_body: emailContent,
-  };
+    const customerPayload = {
+        api_key: apiKey,
+        to: [recipientEmail],
+        sender: SENDER_EMAIL,
+        subject: `Your Trogon Airways E-Ticket - Booking ID: ${bookingReference}`,
+        html_body: emailContent,
+    };
 
-  const response = await fetch("https://api.smtp2go.com/v3/email/send", {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(customerPayload),
-  });
+    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(customerPayload),
+    });
 
-  let responseData;
-  try {
-    responseData = await response.json();
-  } catch (err) {
-    const text = await response.text();
-    throw new Error(`Failed to send email, non-JSON response: ${text}`);
-  }
+    let responseData;
+    try {
+        responseData = await response.json();
+    } catch (err) {
+        const text = await response.text();
+        throw new Error(`Failed to send email, non-JSON response: ${text}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`Failed to send email: ${responseData?.error || JSON.stringify(responseData)}`);
-  }
+    if (!response.ok) {
+        throw new Error(`Failed to send email: ${responseData?.error || JSON.stringify(responseData)}`);
+    }
 
-  console.log("✅ Email sent successfully", responseData);
+    console.log("✅ Email sent successfully", responseData);
 };
-
-
-
 
 export default function BookingConfirmation() {
     const location = useLocation();
@@ -417,7 +420,6 @@ export default function BookingConfirmation() {
 
             <div className="w-full">
                 <div className="overflow-hidden">
-                   
                     <div className="no-print border-t border-gray-200 bg-gray-50 px-6 py-5">
                         <div className="flex justify-between">
                             <button
