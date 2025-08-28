@@ -154,12 +154,10 @@ const printStyles = `
 const generateEmailContent = (bookingData: BookingData, bookingReference: string): string => {
     const outboundFlight = bookingData.outbound;
     const returnFlight = bookingData.return;
+    const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
 
     return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
+    <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
@@ -171,17 +169,36 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         .passenger-table th { background-color: #f2f2f2; }
         .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
       </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Your Flight Booking Confirmation</h1>
-          <p>Booking Reference: <strong>${bookingReference}</strong></p>
-        </div>
-        
-        <h2>Flight Details</h2>
-        
-        <div class="flight-card">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+        <h1 style="margin: 0; font-family: 'Times New Roman', Times, serif;">Trogon Airways</h1>
+        <p style="margin: 5px 0 0; font-size: 1.2em;">Your Booking is Confirmed</p>
+      </div>
+
+      <div style="padding: 20px;">
+        <p></p>${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`)}</p>
+       
+        <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
+      </div>
+
+      <!-- E-Ticket Section -->
+      <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
+        <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+          <table width="100%" style="border-collapse: collapse;">
+            <tr>
+              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
+                <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Boarding Pass</span>
+              </td>
+              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+                <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
+                <p style="margin: 0; font-size: 0.8em; text-align: center;">${bookingReference}</p>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding-top: 20px;">
+                <h3 style="color: #1A237E; margin: 0 0 10px 0;">Itinerary</h3>
+                        <div class="flight-card">
           <div class="flight-header">Outbound Flight</div>
           <div class="flight-details">
             <div>
@@ -218,63 +235,46 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         `
                 : ""
         }
-        
-        <h2>Passenger Information</h2>
-        <table class="passenger-table">
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Email</th>
-          </tr>
-          ${bookingData.passengersData?.adults
-              ?.map(
-                  (passenger: Passenger) => `
-            <tr>
-              <td>${passenger.firstName} ${passenger.lastName}</td>
-              <td>Adult</td>
-              <td>${passenger.email}</td>
+              </td>
             </tr>
-          `,
-              )
-              .join("")}
-          ${bookingData.passengersData?.children
-              ?.map(
-                  (passenger: Passenger) => `
             <tr>
-              <td>${passenger.firstName} ${passenger.lastName}</td>
-              <td>Child</td>
-              <td>${passenger.email || "-"}</td>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passengers</h3>
+            
+                 <p style="margin: 0;">${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email} `).join("")}</p>
+                 <p style="margin: 0;">${bookingData.passengersData?.children?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email || "-"}`).join("")}</p>
+                 <p style="margin: 0;">${bookingData.passengersData?.infants?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email || "-"}${passenger.email || "-"}`).join("")}</p>
+              </td>
             </tr>
-          `,
-              )
-              .join("")}
-          ${bookingData.passengersData?.infants
-              ?.map(
-                  (passenger: Passenger) => `
-            <tr>
-              <td>${passenger.firstName} ${passenger.lastName}</td>
-              <td>Infant</td>
-              <td>${passenger.email || "-"}</td>
+             <tr>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <table width="100%">
+                  <tr>
+                    <td>
+                      <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${bookingReference}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${outboundFlight.departure_time}</p>
+                    </td>
+                    <td style="text-align: right;">
+                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
+                       <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+                       <p style="margin: 0; font-size: 0.9em;"><strong>Status:</strong> pay</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
             </tr>
-          `,
-              )
-              .join("")}
-        </table>
-        
-        <div style="margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-radius: 5px;">
-          <h3>Payment Summary</h3>
-          <p>Subtotal: $${(bookingData.totalPrice * 0.9).toFixed(2)}</p>
-          <p>Taxes & Fees: $${(bookingData.totalPrice * 0.1).toFixed(2)}</p>
-          <p><strong>Total Paid: $${bookingData.totalPrice.toFixed(2)}</strong></p>
-        </div>
-        
-        <div class="footer">
-          <p>Thank you for choosing our airline. We wish you a pleasant journey!</p>
-          <p>For any questions, please contact our customer service.</p>
+          </table>
         </div>
       </div>
-    </body>
-    </html>
+      <!-- End E-Ticket Section -->
+
+      <div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+        <p>We look forward to welcoming you on board.</p>
+        <p>Sincerely,<br>The Trogon Airways Team</p>
+      </div>
+    </div>
   `;
 };
 
