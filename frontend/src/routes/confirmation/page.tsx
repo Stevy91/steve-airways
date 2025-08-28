@@ -45,7 +45,6 @@ interface BookingData {
     from: string;
     to: string;
     bookingReference?: string;
-   
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -159,17 +158,15 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const returnFlight = bookingData.return;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
     // --- Helper to format dates ---
-  
-
 
     const formatDate = (dateString?: string) => {
-    if (!dateString) return "N/A"; // valeur par défaut si undefined
-    const parsedDate = parseISO(dateString);
-    if (!isValid(parsedDate)) return "Invalid date"; // vérifie que c'est une date valide
-    return format(parsedDate, "EEE, dd MMM");
+        if (!dateString) return "N/A"; // valeur par défaut si undefined
+        const parsedDate = parseISO(dateString);
+        if (!isValid(parsedDate)) return "Invalid date"; // vérifie que c'est une date valide
+        return format(parsedDate, "EEE, dd MMM");
     };
 
-const formatDateToday = () => format(new Date(), "EEE, dd MMM");
+    const formatDateToday = () => format(new Date(), "EEE, dd MMM");
     return `
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
@@ -200,7 +197,10 @@ const formatDateToday = () => format(new Date(), "EEE, dd MMM");
       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
        <div style="padding: 20px; text-align: center;">
  
-                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}</p>
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${paymentMethod === "paypal" ? "PayPal" 
+  : paymentMethod === "paylater" ? "Pay Later" 
+  : "Credit/Debit Card"}
+</p>
                 <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</p>
                
             </div>
@@ -294,7 +294,13 @@ const formatDateToday = () => format(new Date(), "EEE, dd MMM");
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
                        <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
-                       <p style="margin: 0; font-size: 0.9em;"><strong>Status:</strong> pay</p>
+                       <p style="margin: 0; font-size: 0.9em;"><strong>Status:</strong>${paymentMethod === "paypal" ? (
+  <span> Paid</span>
+) : paymentMethod === "paylater" ? (
+  "Unpaid"
+) : (
+  <span> Paid</span>
+)}</p>
                     </td>
                   </tr>
                 </table>
@@ -315,14 +321,12 @@ const formatDateToday = () => format(new Date(), "EEE, dd MMM");
 };
 
 const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: BookingData; paymentMethod: string }) => {
-    
     const formatDate = (dateString?: string) => {
-    if (!dateString) return "N/A"; // valeur par défaut si undefined
-    const parsedDate = parseISO(dateString);
-    if (!isValid(parsedDate)) return "Invalid date"; // vérifie que c'est une date valide
-    return format(parsedDate, "EEE, dd MMM");
+        if (!dateString) return "N/A"; // valeur par défaut si undefined
+        const parsedDate = parseISO(dateString);
+        if (!isValid(parsedDate)) return "Invalid date"; // vérifie que c'est une date valide
+        return format(parsedDate, "EEE, dd MMM");
     };
-
 
     return (
         <div
@@ -394,7 +398,6 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     }}
                 >
                     Payment Method: {paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}
-                    
                 </p>
             </div>
 
@@ -489,7 +492,6 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     marginBottom: "4px",
                                 }}
                             >
-                                
                                 {formatDate(bookingData.outbound.date)}
                             </p>
                             <div
@@ -638,7 +640,6 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         marginBottom: "4px",
                                     }}
                                 >
-                                  
                                     {formatDate(bookingData.return.date)}
                                 </p>
                                 <div
@@ -1030,7 +1031,15 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                             color: "#6b7280",
                         }}
                     >
-                        Paid with {paymentMethod === "paypal" ? "PayPal" : "Credit Card"}
+                        {paymentMethod === "paypal" ? (
+  <span><strong>Paid with</strong>: PayPal</span>
+) : paymentMethod === "paylater" ? (
+  "Pay Later"
+) : (
+  <span><strong>Paid with</strong>: Credit/Debit Card</span>
+)}
+
+
                     </div>
                 </div>
             </div>
@@ -1050,11 +1059,10 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
     );
 };
 
-
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
     const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4"; // ou process.env.SMTP2GO_API_KEY
     const recipientEmail = bookingData.passengersData.adults[0].email;
-    
+
     const emailContent = generateEmailContent(bookingData, bookingReference, "Unknown");
 
     const customerPayload = {
