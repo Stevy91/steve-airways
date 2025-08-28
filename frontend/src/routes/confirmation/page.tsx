@@ -176,7 +176,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       </div>
 
       <div style="padding: 20px;">
-        <p></p>${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`)}</p>
+        <p></p>DEAR, ${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`)}</p>
        
         <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
       </div>
@@ -192,14 +192,10 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
               </td>
               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
                 <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
-                <p style="margin: 0; font-size: 0.8em; text-align: center;">${bookingReference}</p>
               </td>
             </tr>
             <tr>
-              <td colspan="2" style="padding-top: 20px;">
-                <h3 style="color: #1A237E; margin: 0 0 10px 0;">Itinerary</h3>
-                <tr>
-              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+             
                 <table width="100%">
                   <tr>
                     <td>
@@ -244,7 +240,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                   </tr>
                 </table>
-              </td>
+        
             </tr>
               </td>
             </tr>
