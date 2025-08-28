@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 
 interface Passenger {
     firstName: string;
@@ -160,8 +160,16 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
     // --- Helper to format dates ---
   
-const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
+
+    const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A"; // valeur par défaut si undefined
+    const parsedDate = parseISO(dateString);
+    if (!isValid(parsedDate)) return "Invalid date"; // vérifie que c'est une date valide
+    return format(parsedDate, "EEE, dd MMM");
+    };
+
+const formatDateToday = () => format(new Date(), "EEE, dd MMM");
     return `
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
@@ -177,7 +185,7 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
       </style>
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-family: 'Times New Roman', Times, serif;">Trogon Airways</h1>
+        <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
        
         <p style="margin: 5px 0 0; font-size: 1.2em;">Your Booking is Confirmed</p>
       </div>
@@ -198,7 +206,7 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
             </div>
         <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
           <table width="100%" style="border-collapse: collapse;">
-            <tr>
+            <tr> 
               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
                 <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
                 <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Boarding Pass</span>
@@ -280,7 +288,8 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                     <td>
                       <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${bookingReference}</p>
-                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${bookingData.passengersData?.adults?.map((passenger: Passenger) => ` ${formatDate(passenger.created_at)}`)}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${formatDateToday()}
+</p>
                     </td>
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
@@ -306,7 +315,14 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
 };
 
 const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: BookingData; paymentMethod: string }) => {
-    const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
+    
+    const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A"; // valeur par défaut si undefined
+    const parsedDate = parseISO(dateString);
+    if (!isValid(parsedDate)) return "Invalid date"; // vérifie que c'est une date valide
+    return format(parsedDate, "EEE, dd MMM");
+    };
+
 
     return (
         <div
@@ -1033,59 +1049,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
         </div>
     );
 };
-// const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string): Promise<void> => {
-//     try {
-//         const emailContent = generateEmailContent(bookingData, bookingReference);
-//         const recipientEmail = bookingData.passengersData.adults[0].email;
-//         if (!recipientEmail) {
-//             throw new Error("Recipient email not found");
-//         }
 
-//         const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
-//             method: "POST",
-//             headers: {
-//                 "Content-Type": "application/json",
-//             },
-//             body: JSON.stringify({
-//                 to: recipientEmail,
-//                 subject: `Your Flight Booking Confirmation - ${bookingReference}`,
-//                 html: emailContent,
-//                 bookingReference: bookingReference,
-//             }),
-//         });
-
-//         if (!response.ok) {
-//             const errorData = await response.json();
-//             throw new Error(`Failed to send email: ${errorData.error || JSON.stringify(errorData)}`);
-//         }
-
-//         console.log("Email sent successfully");
-//     } catch (error) {
-//         console.error("Error sending email:", error);
-//     }
-// };
-
-// const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
-//   const recipientEmail = bookingData.passengersData.adults[0].email;
-//   const emailContent = generateEmailContent(bookingData, bookingReference);
-
-//   const response = await fetch("https://steve-airways-production.up.railway.app/api/send-ticket", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({
-//       to: recipientEmail,
-//       subject: `Your Flight Booking Confirmation - ${bookingReference}`,
-//       html: emailContent,
-//     }),
-//   });
-
-//   if (!response.ok) {
-//     const errorData = await response.json();
-//     throw new Error(`Failed to send email: ${errorData.error}`);
-//   }
-
-//   console.log("Email sent successfully");
-// };
 
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
     const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4"; // ou process.env.SMTP2GO_API_KEY

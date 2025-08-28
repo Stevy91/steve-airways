@@ -584,6 +584,144 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
     }
 });
 
+
+app.post("/api/confirm-booking-paylater", async (req, res) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const { passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+
+        if (!passengers || passengers.length === 0) {
+            throw new Error("Liste de passagers invalide");
+        }
+          // 4. Vérification des vols
+        const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+        const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
+            flightIds,
+        ]);
+
+        if (flights.length !== flightIds.length) {
+            throw new Error("Un ou plusieurs vols introuvables");
+        }
+
+        const now = new Date();
+        const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+
+        const [bookingResult] = await connection.query<mysql.OkPacket>(
+            `INSERT INTO bookings (
+                flight_id, payment_intent_id,
+                total_price, contact_email, contact_phone,
+                status, type_vol, type_v, guest_user, guest_email,
+                created_at, updated_at, departure_date,
+                return_date, passenger_count, booking_reference, return_flight_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                flightId,
+                 null, // pas de paymentIntent
+                totalPrice,
+                contactInfo.email,
+                contactInfo.phone,
+                "pending_payment", // ⚠️ clé pour "Pay Later"
+                passengers[0]?.typeVol || "plane",
+                passengers[0]?.typeVolV || "onway",
+                1,
+                contactInfo.email,
+                now,
+                now,
+                departureDate || null,
+                returnDate || null,
+                passengers.length,
+                bookingReference,
+                returnFlightId || null,
+            ],
+        );
+
+              // 6. Insertion des passagers avec gestion d'erreur
+        for (const passenger of passengers) {
+            console.log("Inserting passenger:", {
+                firstName: passenger.firstName,
+                lastName: passenger.lastName,
+                type: passenger.type,
+                // Ajoutez d'autres champs pertinents
+            });
+            try {
+                await connection.query(
+                    `INSERT INTO passengers (
+                        booking_id, first_name, middle_name, last_name,
+                        date_of_birth, gender, title, address, type,
+                        type_vol, type_v, country, nationality,
+                        phone, email, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        bookingResult.insertId,
+                        passenger.firstName,
+                        passenger.middleName || null,
+                        passenger.lastName,
+                        passenger.dateOfBirth || null,
+                        passenger.gender || "other",
+                        passenger.title || "Mr",
+                        passenger.address || null,
+                        passenger.type,
+                        passenger.typeVol || "plane",
+                        passenger.typeVolV || "onway",
+                        getCountryName(passenger.country) || passenger.country,
+                        passenger.nationality || null,
+                        passenger.phone || contactInfo.phone,
+                        passenger.email || contactInfo.email,
+                        now,
+                        now,
+                    ],
+                );
+            } catch (passengerError) {
+                console.error("Erreur insertion passager:", passengerError);
+                throw new Error(`Échec création passager: ${passenger.firstName} ${passenger.lastName}`);
+            }
+        }
+
+        // 5. Mise à jour des sièges pour tous les vols concernés
+        for (const flight of flights) {
+            await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
+        }
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            bookingId: bookingResult.insertId,
+            bookingReference,
+            status: "pending_payment",
+        });
+    } catch (error: unknown) {
+        try {
+            await connection.rollback();
+        } catch (rollbackError) {
+            console.error("Échec rollback:", rollbackError);
+        }
+
+        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+        console.error("Erreur réservation:", {
+            message: errorMessage,
+            stack: error instanceof Error ? error.stack : undefined,
+            body: req.body,
+        });
+
+        res.status(500).json({
+            error: "Échec de la réservation",
+            details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+            reference: Date.now().toString(36),
+        });
+    } finally {
+        try {
+            connection.release();
+        } catch (releaseError) {
+            console.error("Échec libération connexion:", releaseError);
+        }
+    }
+});
+
 //--------------------------------------------------dashboard-----------------------------------------
 
 interface FlightWithAirports extends mysql.RowDataPacket {

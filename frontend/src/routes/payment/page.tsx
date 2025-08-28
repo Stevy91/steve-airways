@@ -599,13 +599,78 @@ const PayPalPayment = ({ totalPrice, onSuccess }: { totalPrice: number; onSucces
     );
 };
 
+const PayLaterPayment = ({ paymentData, onSuccess }: { paymentData: PaymentData; onSuccess: (data: { bookingId: number; reference: string }) => void }) => {
+    const [processing, setProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handlePayLater = async () => {
+        setProcessing(true);
+        setError(null);
+
+        try {
+            // Transformer les passagers
+            const transformedPassengers = transformPassengers(paymentData.passengersData, paymentData.outbound.type, paymentData.outbound.typev);
+
+            const bookingRequest = {
+                paymentIntentId: null, // pas de paiement immédiat
+                paymentMethod: "paylater",
+                passengers: transformedPassengers,
+                contactInfo: {
+                    email: paymentData.passengersData.adults[0].email,
+                    phone: paymentData.passengersData.adults[0].phone,
+                },
+                flightId: paymentData.outbound.flightId,
+                returnFlightId: paymentData.return?.flightId,
+                totalPrice: paymentData.totalPrice,
+                departureDate: paymentData.outbound.date,
+                returnDate: paymentData.return?.date,
+            };
+
+            const response = await fetch("https://steve-airways-production.up.railway.app/api/confirm-booking-paylater", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(bookingRequest),
+            });
+
+            if (!response.ok) throw new Error("Échec de la réservation Pay Later");
+
+            const responseData = await response.json();
+
+            onSuccess({
+                bookingId: responseData.bookingId,
+                reference: responseData.bookingReference,
+            });
+        } catch (err) {
+            console.error(err);
+            setError("Impossible de confirmer la réservation Pay Later.");
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    return (
+        <div>
+            {error && <p className="mb-2 text-sm text-red-500">{error}</p>}
+            <button
+                onClick={handlePayLater}
+                disabled={processing}
+                className={`w-full rounded-md px-4 py-3 font-medium ${processing ? "bg-gray-400" : "bg-yellow-500 hover:bg-yellow-600"} text-white transition-colors`}
+            >
+                {processing ? "Processing..." : `Reserve and Pay Later (${paymentData.totalPrice.toFixed(2)}$)`}
+            </button>
+        </div>
+    );
+};
+
+
 // Page de paiement principale
 export default function Pay() {
     const location = useLocation();
     const navigate = useNavigate();
     const [currentStep] = useState(2);
     const bookingData = location.state as PassengerData;
-    const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">("stripe");
+    const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal" | "paylater">("stripe");
+
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error] = useState<string | null>(null);
@@ -752,6 +817,19 @@ export default function Pay() {
                                             />
                                         </div>
                                     </label>
+
+                                    <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            checked={paymentMethod === "paylater"}
+                                            onChange={() => setPaymentMethod("paylater")}
+                                            className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <div className="ml-3 flex items-center">
+                                            <h1>Pay Later</h1>
+                                        </div>
+                                    </label>
                                 </div>
 
                                 {error && (
@@ -778,32 +856,35 @@ export default function Pay() {
                                 )}
 
                                 {paymentMethod === "stripe" ? (
-                                    <Elements stripe={stripePromise}>
-                                        <StripePaymentForm
-                                            totalPrice={paymentData.totalPrice}
-                                            onSuccess={handlePaymentSuccess}
-                                            paymentData={paymentData} 
-                                        />
-                                    </Elements>
-                                ) : (
-                                    <PayPalScriptProvider
-                                        options={{
-                                            clientId: paypalClientId || "", // obligatoire et non null
-                                            components: "buttons",
-                                            currency: "USD",
-                                        }}
-                                    >
-                                        <PayPalPayment
-                                            totalPrice={paymentData.totalPrice}
-                                            onSuccess={() =>
-                                                handlePaymentSuccess({
-                                                    bookingId: 0, // à remplacer par l'ID réel
-                                                    reference: "TEMPORARY_REF", // à remplacer par la référence réelle
-                                                })
-                                            }
-                                        />
-                                    </PayPalScriptProvider>
-                                )}
+    <Elements stripe={stripePromise}>
+        <StripePaymentForm
+            totalPrice={paymentData.totalPrice}
+            onSuccess={handlePaymentSuccess}
+            paymentData={paymentData} 
+        />
+    </Elements>
+) : paymentMethod === "paypal" ? (
+    <PayPalScriptProvider
+        options={{
+            clientId: paypalClientId || "", // obligatoire et non null
+            components: "buttons",
+            currency: "USD",
+        }}
+    >
+        <PayPalPayment
+            totalPrice={paymentData.totalPrice}
+            onSuccess={() =>
+                handlePaymentSuccess({
+                    bookingId: 0,
+                    reference: "TEMPORARY_REF",
+                })
+            }
+        />
+    </PayPalScriptProvider>
+) : (
+    <PayLaterPayment paymentData={paymentData} onSuccess={handlePaymentSuccess} />
+)}
+
                             </div>
                         </div>
 
