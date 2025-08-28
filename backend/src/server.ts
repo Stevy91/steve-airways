@@ -602,7 +602,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
             }
         }
 
-        const {passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+        const {paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
         const typeVol = passengers[0]?.typeVol || "plane";
         const typeVolV = passengers[0]?.typeVolV || "onway";
 
@@ -645,7 +645,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 flightId,
-                null,
+                paymentIntentId,
                 totalPrice,
                 contactInfo.email,
                 contactInfo.phone,

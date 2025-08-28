@@ -621,7 +621,7 @@ const PayLaterPayment = ({
             if (!transformedPassengers?.length) throw new Error("Données passagers invalides");
 
             bookingRequest = {
-                paymentIntentId: null, // pas de paiement immédiat
+                paymentIntentId: 0, // pas de paiement immédiat
                 paymentMethod: "paylater",
                 passengers: transformedPassengers,
                 contactInfo: {
