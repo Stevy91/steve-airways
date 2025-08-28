@@ -296,13 +296,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
                        <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
-                       <p style="margin: 0; font-size: 0.9em;"><strong>Status:</strong>${paymentMethod === "paypal" ? (
-  <span> Paid</span>
-) : paymentMethod === "paylater" ? (
-  "Unpaid"
-) : (
-  <span> Paid</span>
-)}</p>
+                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>${paymentMethod === "paypal" ? ("Paid") : paymentMethod === "paylater" ? ("Unpaid") : ("Paid")}</p>
                     </td>
                   </tr>
                 </table>
