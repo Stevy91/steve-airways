@@ -128,12 +128,12 @@ const mapFlight = (flight: any, locations: Location[]): Flight => {
     const date = new Date(flight.departure_time);
     const isoDate = date.toISOString().split("T")[0];
 
-    const departureTime = departure.toLocaleTimeString("fr-FR", {
+    const departureTime = departure.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
     });
 
-    const arrivalTime = arrival.toLocaleTimeString("fr-FR", {
+    const arrivalTime = arrival.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
     });

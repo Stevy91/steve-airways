@@ -9,6 +9,7 @@ interface Passenger {
     lastName: string;
     email?: string;
     phone?: string;
+    created_at: string;
 }
 
 interface FlightSegment {
@@ -44,6 +45,7 @@ interface BookingData {
     from: string;
     to: string;
     bookingReference?: string;
+   
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -157,20 +159,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const returnFlight = bookingData.return;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
     // --- Helper to format dates ---
-    const formatDateTime = (dateString: string) => {
-        try {
-            return format(parseISO(dateString), "MMM d, yyyy, p");
-        } catch (e) {
-            return "Invalid Date";
-        }
-    };
-    const formatDate = (dateString: string) => {
-        try {
-            return format(parseISO(dateString), "MMM d, yyyy");
-        } catch (e) {
-            return "Invalid Date";
-        }
-    };
+  
+const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
     return `
     <style>
@@ -235,7 +225,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                             <div>
                             <strong>From:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
                             <strong>To:</strong> ${bookingData.toCity} (${bookingData.to})<br>
-                            <strong>Date:</strong> ${new Date(outboundFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                            <strong>Date:</strong> ${formatDate(outboundFlight.date)}
                             </div>
                             <div>
                             <strong>Departure:</strong> ${outboundFlight.departure_time}<br>
@@ -290,7 +280,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     <td>
                       <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${bookingReference}</p>
-                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${new Date(outboundFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${bookingData.passengersData?.adults?.map((passenger: Passenger) => ` ${formatDate(passenger.created_at)}`)}</p>
                     </td>
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
@@ -316,6 +306,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 };
 
 const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: BookingData; paymentMethod: string }) => {
+    const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
+
     return (
         <div
             className="print-section"
@@ -481,12 +473,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     marginBottom: "4px",
                                 }}
                             >
-                                {new Date(bookingData.outbound.date).toLocaleDateString("en-US", {
-                                    weekday: "short",
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                })}
+                                
+                                {formatDate(bookingData.outbound.date)}
                             </p>
                             <div
                                 style={{
@@ -634,12 +622,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         marginBottom: "4px",
                                     }}
                                 >
-                                    {new Date(bookingData.return.date).toLocaleDateString("en-US", {
-                                        weekday: "short",
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                    })}
+                                  
+                                    {formatDate(bookingData.return.date)}
                                 </p>
                                 <div
                                     style={{
@@ -1106,7 +1090,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string) => {
     const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4"; // ou process.env.SMTP2GO_API_KEY
     const recipientEmail = bookingData.passengersData.adults[0].email;
-    const emailContent = generateEmailContent(bookingData, bookingReference);
+    
+    const emailContent = generateEmailContent(bookingData, bookingReference, "Unknown");
 
     const customerPayload = {
         api_key: apiKey,

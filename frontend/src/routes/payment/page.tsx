@@ -4,6 +4,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { ChevronLeft, MapPin } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 // Types
 interface PaymentData {
@@ -213,10 +214,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     );
 };
 const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
-    const formatDate = (dateString: string) => {
-        const options: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" };
-        return new Date(dateString).toLocaleDateString("en-US", options);
-    };
+   const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
     return (
         <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">

@@ -1,4 +1,5 @@
 import { PlaneTakeoff, PlaneLanding, Clock4, Users } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 type Flight = {
     id: number;
@@ -22,7 +23,7 @@ type FlightDetailProps = {
 
 export default function FlightDetail({ flight, onBookNow, isReturnFlight = false }: FlightDetailProps) {
     const hasSeats = flight.seat !== "0"; // Vérifie si des places sont disponibles
-
+const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
     return (
         <div className="mt-4 w-full rounded-lg border border-gray-300 bg-white p-4 shadow">
             <div className="flex items-center justify-between">
@@ -48,7 +49,7 @@ export default function FlightDetail({ flight, onBookNow, isReturnFlight = false
                 <div className="flex items-center space-x-4">
                     <Clock4 className="h-5 w-5 text-blue-600" />
                     <span>
-                        {flight.date} – {flight.time}
+                        {formatDate(flight.date)} – {flight.time}
                     </span>
                 </div>
 

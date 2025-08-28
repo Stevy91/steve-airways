@@ -2,6 +2,7 @@ import { useState, useCallback, memo } from "react";
 import { ChevronLeft, MapPin } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { COUNTRIES } from "../../constants/country";
+import { format, parseISO } from "date-fns";
 
 interface Flight {
     id: number;
@@ -330,10 +331,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
 });
 
 const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
-    const formatDate = (dateString: string) => {
-        const options: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" };
-        return new Date(dateString).toLocaleDateString("en-US", options);
-    };
+    const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
     return (
         <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
@@ -417,10 +415,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
 };
 
 const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
-    const formatDate = (dateString: string) => {
-        const options: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" };
-        return new Date(dateString).toLocaleDateString("en-US", options);
-    };
+    const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
     return (
         <div className="mx-10 mb-10 flex items-center justify-between rounded-md bg-yellow-400 p-4 text-black shadow-sm">
@@ -432,7 +427,7 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
                     <span>{formatDate(bookingData.departureDate)}</span>
                     {bookingData.returnDate && (
                         <>
-                            <span>| </span>
+                            <span>|</span>
                             <span>{formatDate(bookingData.returnDate)}</span>
                         </>
                     )}
