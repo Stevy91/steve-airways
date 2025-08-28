@@ -200,6 +200,12 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 
       <!-- E-Ticket Section -->
       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
+       <div style="padding: 20px; text-align: center;">
+ 
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}</p>
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</p>
+               
+            </div>
         <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
           <table width="100%" style="border-collapse: collapse;">
             <tr>
@@ -211,12 +217,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                 <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
               </td>
             </tr>
-            <div style="padding: 20px; text-align: center;">
- 
-                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}</p>
-                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</p>
-               
-            </div>
+           
+            
 
             <tr>
               <td colspan="2" style="padding-top: 20px;">
@@ -288,7 +290,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     <td>
                       <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${bookingReference}</p>
-                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${formatDateTime(outboundFlight.departure_time)}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${new Date(outboundFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
                     </td>
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
