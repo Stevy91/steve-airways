@@ -620,7 +620,7 @@ app.post("/api/confirm-booking-paylater", async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 flightId,
-                 null, // pas de paymentIntent
+                0, // pas de paymentIntent
                 totalPrice,
                 contactInfo.email,
                 contactInfo.phone,
