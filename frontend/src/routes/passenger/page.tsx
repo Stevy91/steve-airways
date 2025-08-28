@@ -432,7 +432,7 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
                     <span>{formatDate(bookingData.departureDate)}</span>
                     {bookingData.returnDate && (
                         <>
-                            <span>|</span>
+                            <span>| </span>
                             <span>{formatDate(bookingData.returnDate)}</span>
                         </>
                     )}
