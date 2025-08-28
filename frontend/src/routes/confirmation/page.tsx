@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
-
+import { format, parseISO } from 'date-fns';
 interface Passenger {
     firstName: string;
     lastName: string;
@@ -155,6 +155,20 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const outboundFlight = bookingData.outbound;
     const returnFlight = bookingData.return;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
+      const formatDateTime = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), 'MMM d, yyyy, p'); 
+    } catch (e) {
+      return 'Invalid Date';
+    }
+  };
+   const formatDate = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), 'MMM d, yyyy');
+    } catch (e) {
+      return 'Invalid Date';
+    }
+  };
 
     return `
     <style>
@@ -248,9 +262,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passengers</h3>
             
-                 <p style="margin: 0;">${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email} `).join("")}</p>
-                 <p style="margin: 0;">${bookingData.passengersData?.children?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email || "-"}`).join("")}</p>
-                 <p style="margin: 0;">${bookingData.passengersData?.infants?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName} ${passenger.email || "-"}${passenger.email || "-"}`).join("")}</p>
+                 <p style="margin: 0;">${bookingData.passengersData?.adults?.map((passenger: Passenger) => `Adult: ${passenger.firstName} ${passenger.lastName} &nbsp;&nbsp;&nbsp;&nbsp; Email: ${passenger.email} `).join("")}</p>
+                 <p style="margin: 0;">${bookingData.passengersData?.children?.map((passenger: Passenger) => `Child: ${passenger.firstName} ${passenger.lastName}`).join("")}</p>
+                 <p style="margin: 0;">${bookingData.passengersData?.infants?.map((passenger: Passenger) => `Infant: ${passenger.firstName} ${passenger.lastName}`).join("")}</p>
               </td>
             </tr>
             <tr>
@@ -260,7 +274,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     <td>
                       <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${bookingReference}</p>
-                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${outboundFlight.departure_time}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${formatDateTime(outboundFlight.departure_time)}</p>
                     </td>
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
