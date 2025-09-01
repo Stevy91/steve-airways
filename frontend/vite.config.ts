@@ -35,3 +35,16 @@ export default defineConfig({
         strictPort: true,
     },
 });
+// import { defineConfig } from "vite";
+// import react from "@vitejs/plugin-react";
+
+// export default defineConfig({
+//   base: "/",
+//   plugins: [react()],
+//   server: {
+//     // Pour Vite, utilisez cette approche pour le routing SPA
+//   },
+//   build: {
+//     outDir: "dist",
+//   },
+// });

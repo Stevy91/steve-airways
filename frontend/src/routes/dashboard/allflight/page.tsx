@@ -7,7 +7,6 @@ interface Flight {
     type: string;
 
 
-    air_line: string;
     airline: string;
     from?: string;
     to?: string;
@@ -133,72 +132,71 @@ const FlightTable = () => {
         setShowModal(true);
     };
 
-    const handleAddFlight = async (flightData: any) => {
-        try {
-            setSubmitting(true);
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/addflighttable", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(flightData),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Erreur ajout vol");
-            setFlights((prev) => [...prev, data]);
-            setShowModal(false);
-            showNotification("Vol ajouté avec succès", "success");
-        } catch (err: any) {
-            showNotification(err.message || "Erreur inconnue", "error");
-        } finally {
-            setSubmitting(false);
+  const handleAddFlight = async (flightData: any) => {
+    try {
+      setSubmitting(true);
+      const res = await fetch(
+        "https://steve-airways-production.up.railway.app/api/addflighttable",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(flightData),
         }
-    };
+      );
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Erreur ajout vol");
+      }
+      
+      // Rafraîchir les données après ajout
+      await fetchFlights();
+      
+      setShowModal(false);
+      showNotification("Vol ajouté avec succès", "success");
+      
+    } catch (err: any) {
+      showNotification(err.message || "Erreur inconnue", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    const handleUpdateFlight = async (flightId: number, updatedData: any) => {
-        try {
-            setSubmitting(true);
-            console.log("🔄 Envoi UPDATE pour flight ID:", flightId);
-            console.log("📦 Données envoyées:", updatedData);
-
-            const res = await fetch(`https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedData),
-            });
-
-            console.log("📨 Status réponse:", res.status);
-            console.log("📨 Headers réponse:", Object.fromEntries(res.headers.entries()));
-
-            // Vérifiez le content-type
-            const contentType = res.headers.get("content-type");
-            console.log("📨 Content-Type:", contentType);
-
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error("❌ Erreur réponse:", errorText);
-                throw new Error(`Erreur ${res.status}: ${errorText}`);
-            }
-
-            if (contentType && contentType.includes("application/json")) {
-                const data = await res.json();
-                console.log("✅ Réponse JSON:", data);
-                setFlights((prev) => prev.map((f) => (f.id === flightId ? data : f)));
-                setEditingFlight(null);
-                setShowModal(false);
-                showNotification("Vol modifié avec succès", "success");
-            } else {
-                const text = await res.text();
-                console.error("❌ Réponse non-JSON:", text.substring(0, 200));
-                throw new Error("Le serveur a retourné une réponse non-JSON");
-            }
-        } catch (err: any) {
-            console.error("❌ Erreur complète:", err);
-            showNotification(err.message || "Erreur inconnue lors de la modification", "error");
-        } finally {
-            setSubmitting(false);
+  const handleUpdateFlight = async (flightId: number, updatedData: any) => {
+    try {
+      setSubmitting(true);
+      const res = await fetch(
+        `https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedData),
         }
-    };
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Erreur ${res.status}: ${errorText}`);
+      }
+
+      const data = await res.json();
+      
+      // Rafraîchir les données après modification
+      await fetchFlights();
+      
+      setEditingFlight(null);
+      setShowModal(false);
+      showNotification("Vol modifié avec succès", "success");
+      
+    } catch (err: any) {
+      console.error("❌ Erreur complète:", err);
+      showNotification(err.message || "Erreur inconnue lors de la modification", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
     const deleteFlight = async (flightId: number) => {
         try {
@@ -285,27 +283,17 @@ const FlightTable = () => {
                                 <td className="px-4 py-2">{flight.seats_available}</td>
                                 <td className="relative px-4 py-2">
                                     <button
-                                        onClick={() => toggleDropdown(index)}
-                                        className="flex rounded bg-blue-600 px-3 py-1 text-white"
+                                        className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
+                                        onClick={() => handleEditClick(flight)}
                                     >
-                                        ▤<ChevronDown className="ml-1 h-4 w-4" />
+                                        <Pencil className="h-4 w-4 text-blue-500" />
                                     </button>
-                                    {openDropdown === index && (
-                                        <div className="absolute right-0 z-10 mt-2 w-40 rounded border bg-white shadow-md">
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
-                                                onClick={() => handleEditClick(flight)}
-                                            >
-                                                <Pencil className="h-4 w-4 text-blue-500" /> Modifier
-                                            </button>
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                                onClick={() => deleteFlight(flight.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-red-500" /> Supprimer
-                                            </button>
-                                        </div>
-                                    )}
+                                    <button
+                                        className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                        onClick={() => deleteFlight(flight.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                    </button>
                                 </td>
                             </tr>
                         ))}

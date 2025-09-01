@@ -91,6 +91,9 @@ export interface DashboardStats {
     recentBookings: Booking[];
 }
 
+export interface BookingStats{
+     recentBookings: Booking[];
+}
 interface Location extends mysql.RowDataPacket {
     id: number;
     name: string;
@@ -1042,6 +1045,56 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
             bookingsByStatus,
             revenueByMonth,
             bookingsByFlightType,
+            recentBookings,
+        };
+
+        res.json(response);
+    } catch (error) {
+        console.error("Dashboard error:", error);
+        res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+    } 
+});
+
+// Endpoint pour les données du dashboard
+app.get("/api/booking-plane", async (req: Request, res: Response) => {
+    let connection;
+    try {
+       
+
+        // 1. Récupérer les réservations avec un typage explicite
+   const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+  `SELECT 
+      id, booking_reference, total_price, status, created_at, 
+      passenger_count, contact_email, type_vol, type_v
+   FROM bookings 
+   WHERE type_vol = ?
+   ORDER BY created_at DESC`,
+  ["plane"]
+);
+
+
+        // Convertir en type Booking[]
+        const bookings: Booking[] = bookingRows.map((row) => ({
+            id: row.id,
+            booking_reference: row.booking_reference,
+            total_price: Number(row.total_price),
+            status: row.status,
+            created_at: new Date(row.created_at).toISOString(),
+            passenger_count: row.passenger_count,
+            contact_email: row.contact_email,
+            type_vol: row.type_vol,
+            type_v: row.type_v,
+        }));
+
+    
+   
+
+       
+        const recentBookings = bookings.slice(0, 6);
+
+        // 8. Construction de la réponse
+        const response: BookingStats = {
+     
             recentBookings,
         };
 

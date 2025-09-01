@@ -20,6 +20,7 @@ import FlightTableHelico from "./routes/dashboard/allflighthelico/page";
 import FaqPage from "./routes/faqs/page";
 import "./lib/fontawesome"; // important
 import { CharterPage } from "./routes/charter/page";
+import ViewBookingPlane from "./routes/dashboard/viewbookingplane/page";
 
 // export default function App() {
 //   const router = createBrowserRouter([
@@ -157,7 +158,8 @@ const router = createBrowserRouter([
       { path: "reports", element: <h1 className="title">Reports</h1> },
       { path: "flights", element: <FlightTable /> },
       { path: "flights-helico", element: <FlightTableHelico /> },
-      { path: "seat-type", element: <h1 className="title">Seat Type</h1> },
+      { path: "bookings-plane", element: <ViewBookingPlane /> },
+      { path: "bookings-helico", element: <h1 className="title">View Bookings</h1> },
       { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
       { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
       { path: "user", element: <h1 className="title">All Users</h1> },
