@@ -54,7 +54,7 @@ const ViewBookingPlane = () => {
             try {
                 setLoading(true);
 
-                const response = await fetch("https://steve-airways-production.up.railway.app/api/dashboard-stats");
+                const response = await fetch("https://steve-airways-production.up.railway.app/api/booking-plane");
 
                 if (!response.ok) {
                     throw new Error(`Erreur HTTP: ${response.status}`);
@@ -152,6 +152,7 @@ const ViewBookingPlane = () => {
                                             <td className="table-cell text-center">${booking.total_price}</td>
                                             <td className="table-cell text-center">{booking.passenger_count}</td>
                                             <td className="table-cell text-center">
+                                             
                                                 <p
                                                     className={`rounded-3xl px-2 pb-1 text-center text-slate-50 ${
                                                         booking.status === "confirmed"
@@ -161,7 +162,7 @@ const ViewBookingPlane = () => {
                                                               : "bg-red-500"
                                                     }`}
                                                 >
-                                                    {booking.status}
+                                                    {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : ""}
                                                 </p>
                                             </td>
                                             <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
