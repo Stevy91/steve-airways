@@ -6,8 +6,8 @@ interface Flight {
     flight_number: string;
     type: string;
 
+
     airline: string;
-    air_line: string;
     from?: string;
     to?: string;
     departure: string;
@@ -340,7 +340,7 @@ const FlightTable = () => {
                                 const flightData = {
                                     flight_number: formData.get("flight_number") as string,
                                     type: "plane",
-                                    airline: formData.get("air_line") as string,
+                                    airline: formData.get("airline") as string,
                                     departure_location_id: selectedDeparture,
                                     arrival_location_id: selectedDestination,
                                     departure_time: formData.get("departure_time") as string,
@@ -377,7 +377,7 @@ const FlightTable = () => {
                                 type="text"
                                 name="airline"
                                 placeholder="Compagnie aérienne"
-                                defaultValue={editingFlight?.air_line || ""}
+                                defaultValue={editingFlight?.airline || ""}
                                 className="w-full rounded-full border px-3 py-2"
                                 required
                             />
