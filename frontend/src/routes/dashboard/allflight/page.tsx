@@ -7,6 +7,7 @@ interface Flight {
     type: string;
 
 
+    air_line: string;
     airline: string;
     from?: string;
     to?: string;

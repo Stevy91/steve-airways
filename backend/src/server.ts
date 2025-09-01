@@ -50,7 +50,7 @@ interface Flight extends mysql.RowDataPacket {
     type: string;
     flight_number?: string;
 
-    air_line: string;
+    airline: string;
     from: string;
     to: string;
     departure: string;
@@ -840,7 +840,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
             id: flight.id,
             flight_number: flight.flight_number,
             type: flight.type,
-            air_line: flight.airline,
+            airline: flight.airline,
             from: `${flight.departure_airport_name} (${flight.departure_code})`,
             to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
             departure: formatDate(flight.departure_time),
@@ -910,7 +910,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
             id: flight.id,
             flight_number: flight.flight_number,
             type: flight.type,
-            air_line: flight.airline,
+            airline: flight.airline,
             from: `${flight.departure_airport_name} (${flight.departure_code})`,
             to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
             departure: formatDate(flight.departure_time),
@@ -1076,7 +1076,7 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
             [
                 req.body.flight_number ?? null,
                 req.body.type ?? null,
-                req.body.air_line ?? null,
+                req.body.airline ?? null,
                 req.body.departure_location_id ?? null,
                 req.body.arrival_location_id ?? null,
                 req.body.departure_time ?? null,
