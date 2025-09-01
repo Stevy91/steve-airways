@@ -1,5 +1,5 @@
 "use client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { NoFlightIcon } from "./icons/AvionTracer";
 import { useEffect, useRef } from "react";
@@ -47,6 +47,8 @@ export default function DateCarousel({
     returnDate = "",
     flightType = "plane", // Valeur par défaut
 }: DateCarouselProps) {
+          const { lang } = useParams<{ lang: string }>();
+  const currentLang = lang || "en"; // <-- ici on définit currentLang
     const navigate = useNavigate();
     const containerRef = useRef<HTMLDivElement>(null);
     const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -110,7 +112,7 @@ export default function DateCarousel({
         params.append("infants", currentSearchParams.get("infants") || passengers.infant.toString());
         params.append("trip_type", currentSearchParams.get("trip_type") || tripType);
 
-        navigate(`/flights?${params.toString()}`);
+        navigate(`/${currentLang}/flights?${params.toString()}`);
     };
 
     return (

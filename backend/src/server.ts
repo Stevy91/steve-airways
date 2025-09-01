@@ -1154,43 +1154,7 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 
 
 
-// -------------------- Send Ticket --------------------
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
-app.post("/api/send-ticket", async (req, res) => {
-  try {
-    const { to, subject, html } = req.body;
-
-    if (!to || !subject || !html) {
-      return res.status(400).json({ error: "Missing email data" });
-    }
-
-    const text = html.replace(/<[^>]+>/g, ""); // fallback texte
-
-    await transporter.sendMail({
-      from: 'info@lenational.org',
-      to,
-      subject,
-      html,
-      text,
-    });
-   res.json({ success: true });
-  } catch (err) {
-    console.error("Full sendMail error:", err); // ← log complet
-    res.status(500).json({
-      error: "Internal server error",
-      details: err instanceof Error ? err.message : JSON.stringify(err),
-    });
-  }
-});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

@@ -4,9 +4,10 @@ import { UserIcon, PlaneIcon, CalendarIcon, MapPinIcon, ChevronDown } from "luci
 import { useEffect, useRef, useState } from "react";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { useNavigate } from "react-router-dom";
-import { Icon } from "@iconify/react";
 
+import { Icon } from "@iconify/react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 type Location = {
     id: number;
@@ -20,7 +21,11 @@ interface BookingFormProps {
 }
 
 export default function BookingForm({ onSearch }: BookingFormProps) {
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
+
     const navigate = useNavigate();
+    const params = new URLSearchParams();
     const [selectedTab, setSelectedTab] = useState("plane");
     const [selectedTabTrip, setSelectedTabTrip] = useState("onway");
     const [passengerDropdownOpen, setPassengerDropdownOpen] = useState(false);
@@ -31,9 +36,8 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
     const [selectedDeparture, setSelectedDeparture] = useState("");
     const [selectedDestination, setSelectedDestination] = useState("");
     const [selectedDate, setSelectedDate] = useState("");
-  
 
-
+    const { t, i18n } = useTranslation();
     const [selectedDeparture2, setSelectedDeparture2] = useState("");
     const [selectedDestination2, setSelectedDestination2] = useState("");
     const [selectedDate2, setSelectedDate2] = useState("");
@@ -49,8 +53,6 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         date2: "",
         returnDate: "",
     });
-
-  
 
     const getFilteredDestinations = () => {
         const departureCode = selectedTabTrip === "onway" ? selectedDeparture : selectedDeparture2;
@@ -83,32 +85,32 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
 
         if (selectedTabTrip === "onway") {
             if (!selectedDeparture) {
-                newErrors.departure = "Please select a departure";
+                newErrors.departure = t("Please select a departure");
                 isValid = false;
             }
             if (!selectedDestination) {
-                newErrors.destination = "Please select a destination";
+                newErrors.destination = t("Please select a destination");
                 isValid = false;
             }
             if (!selectedDate) {
-                newErrors.date = "Please select a date";
+                newErrors.date = t("Please select a date");
                 isValid = false;
             }
         } else {
             if (!selectedDeparture2) {
-                newErrors.departure2 = "Please select a departure";
+                newErrors.departure2 = t("Please select a departure");
                 isValid = false;
             }
             if (!selectedDestination2) {
-                newErrors.destination2 = "Please select a destination";
+                newErrors.destination2 = t("Please select a destination");
                 isValid = false;
             }
             if (!selectedDate2) {
-                newErrors.date2 = "Please select a departure date";
+                newErrors.date2 = t("Please select a departure date");
                 isValid = false;
             }
             if (!selectedDateReturn) {
-                newErrors.returnDate = "Please select a return date";
+                newErrors.returnDate = t("Please select a return date");
                 isValid = false;
             }
         }
@@ -153,7 +155,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
             const flights = await response.json();
             onSearch(flights);
 
-            navigate(`/flights?${params.toString()}`, {
+            navigate(`/${currentLang}/flights?${params.toString()}`, {
                 state: {
                     flights,
                     searchParams: {
@@ -182,7 +184,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
             });
     }, []);
 
-    const updatePassenger = (type: string, delta: number) => {
+    const updatePassengerPlane = (type: string, delta: number) => {
         setPassengers((prev) => {
             const currentValue = prev[type as keyof typeof prev];
             let newValue = currentValue + delta;
@@ -193,6 +195,25 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                 newValue = Math.max(0, Math.min(newValue, 12));
             } else if (type === "infant") {
                 newValue = Math.max(0, Math.min(newValue, 2));
+            }
+
+            if (type === "adult" && newValue < 1) return prev;
+
+            return { ...prev, [type]: newValue };
+        });
+    };
+
+        const updatePassengerHelico = (type: string, delta: number) => {
+        setPassengers((prev) => {
+            const currentValue = prev[type as keyof typeof prev];
+            let newValue = currentValue + delta;
+
+            if (type === "adult") {
+                newValue = Math.max(1, Math.min(newValue, 6));
+            } else if (type === "child") {
+                newValue = Math.max(0, Math.min(newValue, 6));
+            } else if (type === "infant") {
+                newValue = Math.max(0, Math.min(newValue, 1));
             }
 
             if (type === "adult" && newValue < 1) return prev;
@@ -223,7 +244,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                         }`}
                         type="button"
                     >
-                        <PlaneIcon className="mr-2 h-4 w-4" /> Plane
+                        <PlaneIcon className="mr-2 h-4 w-4" /> {t("Air Plane")}
                     </button>
                     <button
                         onClick={() => setSelectedTab("helicopter")}
@@ -236,7 +257,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                             icon="mdi:helicopter"
                             className="mr-2 h-4 w-4"
                         />
-                        Helicopter
+                        {t("Helicopter")}
                     </button>
                 </div>
 
@@ -256,7 +277,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             }`}
                                             type="button"
                                         >
-                                            One way
+                                            {t("One way")}
                                         </button>
                                         <button
                                             onClick={() => setSelectedTabTrip("roundtrip")}
@@ -265,7 +286,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             }`}
                                             type="button"
                                         >
-                                            Round Trip
+                                            {t("Round Trip")}
                                         </button>
                                     </div>
                                     <div className="mt-[-150px] flex cursor-pointer items-center rounded-full bg-gray-200 px-4 py-2 font-bold text-blue-800 md:mt-[-130px]">
@@ -279,7 +300,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             >
                                                 <UserIcon className="mr-2 h-4 w-4 text-blue-500" />
                                                 <span className="text-sm text-blue-500">
-                                                    {passengers.adult + passengers.child + passengers.infant} Traveler
+                                                    {passengers.adult + passengers.child + passengers.infant} {t("Traveler")}
                                                     {passengers.adult + passengers.child + passengers.infant > 1 ? "s" : ""}
                                                 </span>
                                                 <ChevronDown className="ml-2 h-4 w-4 text-blue-500" />
@@ -296,7 +317,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                                     {type} {type === "adult" ? "(12+ max)" : type === "child" ? "(0-12)" : "(0-2)"}
                                                                 </div>
                                                                 <div className="text-sm text-gray-500">
-                                                                    {type === "adult" ? "Required" : "Optional"}
+                                                                    {type === "adult" ? t("Required") : t("Optional")}
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
@@ -307,7 +328,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                                             : "bg-gray-200 hover:bg-gray-300"
                                                                     }`}
                                                                     type="button"
-                                                                    onClick={() => updatePassenger(type, -1)}
+                                                                    onClick={() => updatePassengerPlane(type, -1)}
                                                                     disabled={
                                                                         passengers[type as keyof typeof passengers] <= (type === "adult" ? 1 : 0)
                                                                     }
@@ -323,7 +344,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                                             : "bg-gray-200 hover:bg-gray-300"
                                                                     }`}
                                                                     type="button"
-                                                                    onClick={() => updatePassenger(type, 1)}
+                                                                    onClick={() => updatePassengerPlane(type, 1)}
                                                                     disabled={
                                                                         passengers[type as keyof typeof passengers] >=
                                                                         (type === "adult" ? 12 : type === "child" ? 12 : 2)
@@ -343,7 +364,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                 {selectedTabTrip === "onway" ? (
                                     <div className="mb-6 mt-40 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-20 md:grid-cols-3">
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">From</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("From")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -360,7 +381,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Departure
+                                                        {t("Select Departure")}
                                                     </option>
                                                     {locations.map((loc) => (
                                                         <option
@@ -375,7 +396,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.departure && <p className="mt-1 text-xs text-red-500">{errors.departure}</p>}
                                         </div>
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">To</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("To")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -392,7 +413,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Destination
+                                                        {t("Select Destination")}
                                                     </option>
                                                     {getFilteredDestinations().map((loc) => (
                                                         <option
@@ -427,7 +448,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                 ) : (
                                     <div className="mb-6 mt-40 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-20 md:grid-cols-3">
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">From</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("From")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -444,7 +465,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Departure
+                                                        {t("Select Departure")}
                                                     </option>
                                                     {locations.map((loc) => (
                                                         <option
@@ -459,7 +480,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.departure2 && <p className="mt-1 text-xs text-red-500">{errors.departure2}</p>}
                                         </div>
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">To</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("A")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -476,7 +497,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Destination
+                                                        {t("Select Destination")}
                                                     </option>
                                                     {getFilteredDestinations().map((loc) => (
                                                         <option
@@ -491,7 +512,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.destination2 && <p className="mt-1 text-xs text-red-500">{errors.destination2}</p>}
                                         </div>
                                         <div className="relative">
-                                            <label className="mb-1 block font-medium text-gray-600">Departure Date</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("Departure Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <input
@@ -508,7 +529,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.date2 && <p className="mt-1 text-xs text-red-500">{errors.date2}</p>}
                                         </div>
                                         <div className="relative">
-                                            <label className="mb-1 block font-medium text-gray-600">Return Date</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("Return Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <input
@@ -532,7 +553,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                     type="submit"
                                     className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
                                 >
-                                    Search Flight
+                                    {t("Search Flight")}
                                 </button>
                             </form>
                         </>
@@ -551,7 +572,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             }`}
                                             type="button"
                                         >
-                                            One way
+                                            {t("One way")}
                                         </button>
                                         <button
                                             onClick={() => setSelectedTabTrip("roundtrip")}
@@ -560,7 +581,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             }`}
                                             type="button"
                                         >
-                                            Round Trip
+                                            {t("Round Trip")}
                                         </button>
                                     </div>
                                     <div className="mt-[-150px] flex cursor-pointer items-center rounded-full bg-gray-200 px-4 py-2 font-bold text-blue-800 md:mt-[-130px]">
@@ -574,7 +595,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             >
                                                 <UserIcon className="mr-2 h-4 w-4 text-blue-500" />
                                                 <span className="text-sm text-blue-500">
-                                                    {passengers.adult + passengers.child + passengers.infant} Traveler
+                                                    {passengers.adult + passengers.child + passengers.infant} {t("Traveler")}
                                                     {passengers.adult + passengers.child + passengers.infant > 1 ? "s" : ""}
                                                 </span>
                                                 <ChevronDown className="ml-2 h-4 w-4 text-blue-500" />
@@ -588,25 +609,41 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         >
                                                             <div>
                                                                 <div className="font-medium capitalize">
-                                                                    {type} {type === "adult" ? "(12+)" : type === "child" ? "(2-12)" : "(0-2)"}
+                                                                    {type} {type === "adult" ? "(6+ max)" : type === "child" ? "(0-6)" : "(0-2)"}
                                                                 </div>
                                                                 <div className="text-sm text-gray-500">
-                                                                    {type === "adult" ? "Required" : "Optional"}
+                                                                    {type === "adult" ? t("Required") : t("Optional")}
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
                                                                 <button
-                                                                    className="rounded bg-gray-200 px-2 py-1 text-lg"
+                                                                    className={`rounded px-2 py-1 text-lg ${
+                                                                        passengers[type as keyof typeof passengers] <= (type === "adult" ? 1 : 0)
+                                                                            ? "bg-gray-100 text-gray-400"
+                                                                            : "bg-gray-200 hover:bg-gray-300"
+                                                                    }`}
                                                                     type="button"
-                                                                    onClick={() => updatePassenger(type, -1)}
+                                                                    onClick={() => updatePassengerPlane(type, -1)}
+                                                                    disabled={
+                                                                        passengers[type as keyof typeof passengers] <= (type === "adult" ? 1 : 0)
+                                                                    }
                                                                 >
                                                                     -
                                                                 </button>
                                                                 <span className="w-4 text-center">{passengers[type as keyof typeof passengers]}</span>
                                                                 <button
-                                                                    className="rounded bg-gray-200 px-2 py-1 text-lg"
+                                                                    className={`rounded px-2 py-1 text-lg ${
+                                                                        passengers[type as keyof typeof passengers] >=
+                                                                        (type === "adult" ? 6 : type === "child" ? 6 : 2)
+                                                                            ? "bg-gray-100 text-gray-400"
+                                                                            : "bg-gray-200 hover:bg-gray-300"
+                                                                    }`}
                                                                     type="button"
-                                                                    onClick={() => updatePassenger(type, 1)}
+                                                                    onClick={() => updatePassengerPlane(type, 1)}
+                                                                    disabled={
+                                                                        passengers[type as keyof typeof passengers] >=
+                                                                        (type === "adult" ? 6 : type === "child" ? 6 : 2)
+                                                                    }
                                                                 >
                                                                     +
                                                                 </button>
@@ -622,7 +659,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                 {selectedTabTrip === "onway" ? (
                                     <div className="mb-6 mt-40 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-20 md:grid-cols-3">
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">From</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("From")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -639,7 +676,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Departure
+                                                        {t("Select Departure")}
                                                     </option>
                                                     {locations.map((loc) => (
                                                         <option
@@ -654,7 +691,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.departure && <p className="mt-1 text-xs text-red-500">{errors.departure}</p>}
                                         </div>
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">To</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("To")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -671,7 +708,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Destination
+                                                        {t("Select Destination")}
                                                     </option>
                                                     {getFilteredDestinations().map((loc) => (
                                                         <option
@@ -706,7 +743,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                 ) : (
                                     <div className="mb-6 mt-40 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-20 md:grid-cols-3">
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">From</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("From")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -723,7 +760,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Departure
+                                                        {t("Select Departure")}
                                                     </option>
                                                     {locations.map((loc) => (
                                                         <option
@@ -738,7 +775,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.departure2 && <p className="mt-1 text-xs text-red-500">{errors.departure2}</p>}
                                         </div>
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">To</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("To")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -755,7 +792,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         value=""
                                                         disabled
                                                     >
-                                                        Select Destination
+                                                        {t("Select Destination")}
                                                     </option>
                                                     {getFilteredDestinations().map((loc) => (
                                                         <option
@@ -770,7 +807,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.destination2 && <p className="mt-1 text-xs text-red-500">{errors.destination2}</p>}
                                         </div>
                                         <div className="relative">
-                                            <label className="mb-1 block font-medium text-gray-600">Departure Date</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("Departure Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <input
@@ -787,7 +824,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.date2 && <p className="mt-1 text-xs text-red-500">{errors.date2}</p>}
                                         </div>
                                         <div className="relative">
-                                            <label className="mb-1 block font-medium text-gray-600">Return Date</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("Return Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <input
@@ -809,9 +846,9 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                 <button
                                     onClick={handleSearch}
                                     type="submit"
-                                    className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                                    className="mt-6 w-80 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
                                 >
-                                    Search Flight Helicopter
+                                    {t("Search Flight Helicopter")}
                                 </button>
                             </form>
                         </>

@@ -1,8 +1,9 @@
 import { useState, useCallback, memo } from "react";
 import { ChevronLeft, MapPin } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { COUNTRIES } from "../../constants/country";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface Flight {
     id: number;
@@ -57,11 +58,12 @@ interface ValidationErrors {
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
+      const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
             <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
             <div className="relative z-10 flex items-center justify-between">
-                {["Flight", "Passenger", "Pay", "Confirmation"].map((step, idx) => {
+                {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
                     const isActive = idx === currentStep;
 
@@ -332,15 +334,16 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
 
 const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
+         const { t, i18n } = useTranslation();
 
     return (
         <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
             <div className="mx-auto w-fit rounded-full border border-blue-500 bg-white px-4 py-1 text-sm font-bold text-red-600">
-                {bookingData.tripType === "roundtrip" ? "Round Trip" : "One Way"}
+                {bookingData.tripType === "roundtrip" ? t("Round Trip") : t("One Way")}
             </div>
 
             <div className="relative mt-4 flex flex-col items-start pl-6">
-                <div className="absolute bottom-3 left-0 top-3 z-0 h-[60px] w-0.5 bg-red-600"></div>
+                <div className="absolute bottom-3 left-0 top-3 z-0 h-[85px] w-0.5 bg-red-600"></div>
                 <div className="z-10 mb-6 flex items-start gap-3">
                     <div className="relative -left-8 z-10 mt-0.5">
                         <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
@@ -349,7 +352,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                         <p className="font-bold text-black">
                             {bookingData.outbound.departure_time} - {bookingData.fromCity} ({bookingData.from})
                         </p>
-                        <p className="mt-1 text-[11px] text-black">Flight #{bookingData.outbound.noflight}</p>
+                        <p className="mt-1 text-[11px] text-black">{t("Flight")} <span className="text-red-600 font-bold"># {bookingData.outbound.noflight}</span></p>
                     </div>
                 </div>
 
@@ -374,7 +377,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                             <p className="font-bold text-black">
                                 {bookingData.return.departure_time} - {bookingData.toCity} ({bookingData.to})
                             </p>
-                            <p className="mt-1 text-[11px] text-black">Flight #{bookingData.return.noflight}</p>
+                            <p className="mt-1 text-[11px] text-black">{t("Flight")} <span className="text-red-600 font-bold"># {bookingData.return.noflight}</span></p>
                         </div>
                     </div>
 
@@ -390,21 +393,21 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
             )}
 
             <div className="mt-4">
-                <p className="mb-2 text-base font-bold text-red-600">Booking Details</p>
+                <p className="mb-2 text-base font-bold text-red-600">{t("Booking Details")}</p>
                 <div className="grid grid-cols-2 gap-y-1 text-[13px] font-semibold text-black">
-                    <p>Departure</p>
+                    <p>{t("Departure")}</p>
                     <p className="text-right">{formatDate(bookingData.departureDate)}</p>
                     {bookingData.returnDate && (
                         <>
-                            <p>Return</p>
+                            <p>{t("Return")}</p>
                             <p className="text-right">{formatDate(bookingData.returnDate)}</p>
                         </>
                     )}
-                    <p>Adults</p>
+                    <p>{t("Adults")}</p>
                     <p className="text-right">{bookingData.passengers.adults}</p>
-                    <p>Children</p>
+                    <p>{t("Children")}</p>
                     <p className="text-right">{bookingData.passengers.children}</p>
-                    <p>Infants</p>
+                    <p>{t("Infants")}</p>
                     <p className="text-right">{bookingData.passengers.infants}</p>
                 </div>
             </div>
@@ -416,6 +419,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
 
 const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
+      const { t, i18n } = useTranslation();
 
     return (
         <div className="mx-10 mb-10 flex items-center justify-between rounded-md bg-yellow-400 p-4 text-black shadow-sm">
@@ -433,26 +437,26 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
                     )}
                     <span>|</span>
                     <span>
-                        {bookingData.passengers.adults} Adult{bookingData.passengers.adults > 1 ? "s" : ""}
+                        {bookingData.passengers.adults} {t("Adult")}{bookingData.passengers.adults > 1 ? "s" : ""}
                         {bookingData.passengers.children > 0 && (
                             <>
-                                , {bookingData.passengers.children} Child{bookingData.passengers.children > 1 ? "ren" : ""}
+                                , {bookingData.passengers.children} {t("Child")}{bookingData.passengers.children > 1 ? t("ren") : ""}
                             </>
                         )}
                         {bookingData.passengers.infants > 0 && (
                             <>
-                                , {bookingData.passengers.infants} Infant{bookingData.passengers.infants > 1 ? "s" : ""}
+                                , {bookingData.passengers.infants} {t("Infant")}{bookingData.passengers.infants > 1 ? "s" : ""}
                             </>
                         )}
                     </span>
                     <span>|</span>
-                    <span>{bookingData.tripType === "roundtrip" ? "Round Trip" : "One Way"}</span>
+                    <span>{bookingData.tripType === "roundtrip" ? t("Round Trip") : "One Way"}</span>
                     <span>|</span>
-                    <span>{bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</span>
+                    <span>{bookingData.tabType === "helicopter" ? t("Helicopter") : "Plane"}</span>
                 </div>
             </div>
             <div className="text-right">
-                <p className="text-xs font-semibold uppercase text-gray-700">Total Price</p>
+                <p className="text-xs font-semibold uppercase text-gray-700">{t("Total Price")}</p>
                 <div className="flex items-center text-lg font-bold">
                     <span>${bookingData.totalPrice}</span>
                     <span className="ml-1 text-sm font-medium">USD</span>
@@ -463,9 +467,12 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
 };
 
 export default function Passenger() {
+       const { lang } = useParams<{ lang: string }>();
+  const currentLang = lang || "en"; // <-- ici on définit currentLang
     const navigate = useNavigate();
     const location = useLocation();
     const bookingData = location.state as PassengerData;
+    const { t, i18n } = useTranslation();
     const [currentStep] = useState(1);
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({
         adults: {},
@@ -645,103 +652,114 @@ export default function Passenger() {
     }
 
     return (
-        <div className="min-h-screen bg-[#eeeeef] font-sans">
-            <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
-                <Stepper currentStep={currentStep} />
-                <FlightSummaryCard bookingData={bookingData} />
-
-                <div className="flex flex-col lg:flex-row">
-                    <div className="w-full lg:w-3/4 lg:pr-6">
-                        <h2 className="mb-6 text-2xl font-bold text-gray-800">Passenger Information</h2>
-
-                        {passengersData.adults.map((adult, index) => (
-                            <PassengerForm
-                                key={`adult-${index}`}
-                                type="adults"
-                                index={index}
-                                passenger={adult}
-                                onChange={handlePassengerChange}
-                                errors={validationErrors.adults[index] || {}}
-                            />
-                        ))}
-
-                        {passengersData.children.map((child, index) => (
-                            <PassengerForm
-                                key={`child-${index}`}
-                                type="children"
-                                index={index}
-                                passenger={child}
-                                isChild
-                                onChange={handlePassengerChange}
-                                errors={validationErrors.children[index] || {}}
-                            />
-                        ))}
-
-                        {passengersData.infants.map((infant, index) => (
-                            <PassengerForm
-                                key={`infant-${index}`}
-                                type="infants"
-                                index={index}
-                                passenger={infant}
-                                isInfant
-                                onChange={handlePassengerChange}
-                                errors={validationErrors.infants[index] || {}}
-                            />
-                        ))}
-                    </div>
-
-                    <div className="mt-6 w-full lg:mt-0 lg:w-1/4">
-                        <BookingSummary bookingData={bookingData} />
-                    </div>
-                </div>
-
-                <div className="mt-8 flex justify-between">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="mt-6 flex w-48 items-center gap-8 rounded-full bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-600"
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                        Back
-                    </button>
-                    <button
-                        onClick={() => {
-                            if (validateAllPassengers()) {
-                                const paymentData = {
-                                    ...bookingData,
-                                    passengersData,
-                                    outbound: {
-                                        ...bookingData.outbound,
-                                        flightId: bookingData.outbound.id,
-                                        type: bookingData.tabType === "helicopter" ? "helicopter" : "plane",
-                                        typev: bookingData.tripType === "roundtrip" ? "roundtrip" : "onway",
-                                    },
-                                    return: bookingData.return
-                                        ? {
-                                              ...bookingData.return,
-                                              flightId: bookingData.return.id,
-                                              type: bookingData.tabType === "helicopter" ? "helicopter" : "plane",
-                                              typev: bookingData.tripType === "roundtrip" ? "roundtrip" : "onway",
-                                          }
-                                        : undefined,
-                                };
-
-                                navigate("/pay", {
-                                    state: paymentData,
-                                });
-                            } else {
-                                // Scroll vers la première erreur après un léger délai
-                                setTimeout(() => {
-                                    const firstError = document.querySelector(".border-red-500");
-                                    firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
-                                }, 100);
-                            }
-                        }}
-                        className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
-                    >
-                        Continue to Payment
-                    </button>
+        <>
+            <div
+                className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
+                style={{ backgroundImage: "url(/plane-bg.jpg)" }}
+            >
+                <div className="px-4">
+                    <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
+                
                 </div>
             </div>
-        </div>
+            <div className="min-h-screen font-sans mx-auto max-w-7xl px-4 pb-20">
+                <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
+                    <Stepper currentStep={currentStep} />
+                    <FlightSummaryCard bookingData={bookingData} />
+
+                    <div className="flex flex-col lg:flex-row">
+                        <div className="w-full lg:w-3/4 lg:pr-6">
+                            <h2 className="mb-6 text-2xl font-bold text-gray-800">Passenger Information</h2>
+
+                            {passengersData.adults.map((adult, index) => (
+                                <PassengerForm
+                                    key={`adult-${index}`}
+                                    type="adults"
+                                    index={index}
+                                    passenger={adult}
+                                    onChange={handlePassengerChange}
+                                    errors={validationErrors.adults[index] || {}}
+                                />
+                            ))}
+
+                            {passengersData.children.map((child, index) => (
+                                <PassengerForm
+                                    key={`child-${index}`}
+                                    type="children"
+                                    index={index}
+                                    passenger={child}
+                                    isChild
+                                    onChange={handlePassengerChange}
+                                    errors={validationErrors.children[index] || {}}
+                                />
+                            ))}
+
+                            {passengersData.infants.map((infant, index) => (
+                                <PassengerForm
+                                    key={`infant-${index}`}
+                                    type="infants"
+                                    index={index}
+                                    passenger={infant}
+                                    isInfant
+                                    onChange={handlePassengerChange}
+                                    errors={validationErrors.infants[index] || {}}
+                                />
+                            ))}
+                        </div>
+
+                        <div className="mt-6 w-full lg:mt-0 lg:w-1/4">
+                            <BookingSummary bookingData={bookingData} />
+                        </div>
+                    </div>
+
+                    <div className="mt-8 flex justify-between">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="mt-6 flex w-48 items-center gap-8 rounded-full bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-600"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                            Back
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (validateAllPassengers()) {
+                                    const paymentData = {
+                                        ...bookingData,
+                                        passengersData,
+                                        outbound: {
+                                            ...bookingData.outbound,
+                                            flightId: bookingData.outbound.id,
+                                            type: bookingData.tabType === "helicopter" ? "helicopter" : "plane",
+                                            typev: bookingData.tripType === "roundtrip" ? "roundtrip" : "onway",
+                                        },
+                                        return: bookingData.return
+                                            ? {
+                                                  ...bookingData.return,
+                                                  flightId: bookingData.return.id,
+                                                  type: bookingData.tabType === "helicopter" ? "helicopter" : "plane",
+                                                  typev: bookingData.tripType === "roundtrip" ? "roundtrip" : "onway",
+                                              }
+                                            : undefined,
+                                    };
+
+                                    navigate(`/${currentLang}/pay`, {
+                                        state: paymentData,
+                                    });
+                                } else {
+                                    // Scroll vers la première erreur après un léger délai
+                                    setTimeout(() => {
+                                        const firstError = document.querySelector(".border-red-500");
+                                        firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                    }, 100);
+                                }
+                            }}
+                            className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                        >
+                            Continue to Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </>
     );
 }

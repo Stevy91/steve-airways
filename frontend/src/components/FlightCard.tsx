@@ -1,6 +1,7 @@
 import { Plane, Sofa } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "react-i18next";
 // src/types/flight.ts
 export interface UIFlight {
   id: string | number;
@@ -24,6 +25,7 @@ type FlightCardProps = {
     onToggle: () => void;
 };
 export default function FlightCard({ flight, onToggle }: FlightCardProps) {
+          const { t, i18n } = useTranslation();
     const hasSeats = flight.seat !== "0"; // Vérifie si des places sont disponibles
 
     return (
@@ -73,7 +75,7 @@ export default function FlightCard({ flight, onToggle }: FlightCardProps) {
                         }}
                         className="w-full rounded-lg bg-blue-50 px-4 py-2 text-center text-blue-600 transition hover:bg-blue-100 md:w-40"
                     >
-                        <div className="text-sm">À partir de</div>
+                        <div className="text-sm">{t("starting from")}</div>
                         <div className="text-xl font-bold">${flight.price}</div>
                     </button>
                 ) : (
@@ -82,7 +84,7 @@ export default function FlightCard({ flight, onToggle }: FlightCardProps) {
                             <div>
                                 <Sofa className="mx-auto h-5 w-5 text-red-600" />
                             </div>
-                            <div className="text-sm">No seat</div>
+                            <div className="text-sm">{t("No seat")}</div>
                         </div>
                     </button>
                 )}

@@ -1,8 +1,9 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
 import { format, parseISO, isValid } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface Passenger {
     firstName: string;
@@ -158,7 +159,6 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const returnFlight = bookingData.return;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
 
-    
     // --- Helper to format dates ---
 
     const formatDate = (dateString?: string) => {
@@ -199,9 +199,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
        <div style="padding: 20px; text-align: center;">
  
-                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${paymentMethod === "paypal" ? "PayPal" 
-  : paymentMethod === "paylater" ? "Pay Later" 
-  : "Credit/Debit Card"}
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${
+                    paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? "Pay Later" : "Credit/Debit Card"
+                }
 </p>
                 <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</p>
                
@@ -296,7 +296,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     <td style="text-align: right;">
                        <h3 style="color: #1A237E; margin: 0;">Payment</h3>
                        <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
-                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>${paymentMethod === "paypal" ? ("Paid") : paymentMethod === "paylater" ? ("Unpaid") : ("Paid")}</p>
+                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>${paymentMethod === "paypal" ? "Paid" : paymentMethod === "paylater" ? "Unpaid" : "Paid"}</p>
                     </td>
                   </tr>
                 </table>
@@ -393,7 +393,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         fontSize: "12px",
                     }}
                 >
-                    Payment Method: {paymentMethod === "paypal" ? "PayPal" : "Credit/Debit Card"}
+                    Payment Method: {paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? "Pay Later" : "Credit/Debit Card"}
                 </p>
             </div>
 
@@ -1028,14 +1028,16 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         }}
                     >
                         {paymentMethod === "paypal" ? (
-  <span><strong>Paid with</strong>: PayPal</span>
-) : paymentMethod === "paylater" ? (
-  "Pay Later"
-) : (
-  <span><strong>Paid with</strong>: Credit/Debit Card</span>
-)}
-
-
+                            <span>
+                                <strong>Paid with</strong>: PayPal
+                            </span>
+                        ) : paymentMethod === "paylater" ? (
+                            "Pay Later"
+                        ) : (
+                            <span>
+                                <strong>Paid with</strong>: Credit/Debit Card
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -1091,15 +1093,18 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
 };
 
 export default function BookingConfirmation() {
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
     const location = useLocation();
     const navigate = useNavigate();
     const bookingData = location.state?.bookingData as BookingData;
     const paymentMethod = location.state?.paymentMethod;
     const [currentStep] = useState(3);
+    const { t, i18n } = useTranslation();
 
     useEffect(() => {
         if (!bookingData) {
-            navigate("/flights");
+            navigate(`/${currentLang}/flights`);
         }
     }, [bookingData, navigate]);
 
@@ -1115,7 +1120,7 @@ export default function BookingConfirmation() {
                 <div className="text-center">
                     <p className="text-red-500">No booking data found</p>
                     <button
-                        onClick={() => navigate("/flights")}
+                        onClick={() => navigate(`/${currentLang}/flights`)}
                         className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
                     >
                         Return to Flights
@@ -1126,35 +1131,46 @@ export default function BookingConfirmation() {
     }
 
     return (
-        <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
-            <style>{printStyles}</style>
+        <>
+            <div
+                className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
+                style={{ backgroundImage: "url(/plane-bg.jpg)" }}
+            >
+                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                <div className="px-4">
+                    <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Booking details")}</h1>
+                </div>
+            </div>
+            <div className="relative z-10 mx-auto mb-6 mt-[-100px] w-full max-w-7xl rounded bg-white px-4 py-5 shadow-lg">
+                <style>{printStyles}</style>
 
-            <Stepper currentStep={currentStep} />
+                <Stepper currentStep={currentStep} />
 
-            <div className="w-full">
-                <div className="overflow-hidden">
-                    <PrintableContent
-                        bookingData={bookingData}
-                        paymentMethod={paymentMethod}
-                    />
-                    <div className="no-print border-t border-gray-200 bg-gray-50 px-6 py-5">
-                        <div className="flex justify-between">
-                            <button
-                                onClick={() => navigate("/")}
-                                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            >
-                                Book Another Flight
-                            </button>
-                            {/* <button
+                <div className="w-full">
+                    <div className="overflow-hidden">
+                        <PrintableContent
+                            bookingData={bookingData}
+                            paymentMethod={paymentMethod}
+                        />
+                        <div className="no-print border-t border-gray-200 bg-gray-50 px-6 py-5">
+                            <div className="flex justify-between">
+                                <button
+                                    onClick={() => navigate("/")}
+                                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                >
+                                    Book Another Flight
+                                </button>
+                                {/* <button
                                 onClick={() => handlePrint(bookingData)}
                                 className="ml-3 inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >
                                 Print Confirmation
                             </button> */}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

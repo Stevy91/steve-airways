@@ -1,15 +1,15 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, PlaneIcon, PlaneTakeoff, PlaneLanding} from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, PlaneIcon, PlaneTakeoff, PlaneLanding } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { addDays, isSameDay, parseISO, format } from "date-fns";
 import DateCarousel from "../../components/DateCarousel";
 import FlightCard from "../../components/FlightCard";
 import FlightDetail from "../../components/FlightDetail";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import Spinner from "../../components/Spinner";
 import ErrorAlert from "../../components/ErrorAlert";
 import EmptyState from "../../components/EmptyState";
-
+import { useTranslation } from "react-i18next";
 
 type FlightType = "plane" | "helicopter";
 
@@ -25,7 +25,6 @@ interface Flight {
     type: FlightType | string;
     seat: string;
     noflight: string;
-   
 }
 
 interface Location {
@@ -53,11 +52,12 @@ interface BookingState {
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
+      const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
             <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
             <div className="relative z-10 flex items-center justify-between">
-                {["Flight", "Passenger", "Pay", "Confirmation"].map((step, idx) => {
+                {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
                     const isActive = idx === currentStep;
 
@@ -181,7 +181,9 @@ const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) =>
             returnParams.set("to", params.get("from") || "");
             returnParams.set("date", params.get("return_date") || "");
 
-            const returnFlightsRes = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${returnParams.toString()}`, { signal });
+            const returnFlightsRes = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${returnParams.toString()}`, {
+                signal,
+            });
             if (returnFlightsRes.ok) {
                 const returnData = await returnFlightsRes.json();
                 returnFlights = Array.isArray(returnData) ? returnData : returnData.outbound || [];
@@ -195,6 +197,8 @@ const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) =>
 };
 
 export default function FlightSelection() {
+       const { lang } = useParams<{ lang: string }>();
+  const currentLang = lang || "en"; // <-- ici on définit currentLang
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [currentStep] = useState(0);
@@ -204,6 +208,7 @@ export default function FlightSelection() {
     const [startReturnIndex, setStartReturnIndex] = useState(0);
     const [isOpen, setIsOpen] = useState<number | null>(null);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const { t, i18n } = useTranslation();
     const [state, setState] = useState<FlightSelectionState>({
         allFlights: [],
         filteredFlights: [],
@@ -410,7 +415,7 @@ export default function FlightSelection() {
             const formattedDate = format(selectedDate, "yyyy-MM-dd");
             const params = new URLSearchParams(searchParams);
             params.set("date", formattedDate);
-            navigate(`/flights?${params.toString()}`);
+            navigate(`/${currentLang}/flights?${params.toString()}`);
         },
         [allDates, visibleCount, searchParams, navigate],
     );
@@ -429,7 +434,7 @@ export default function FlightSelection() {
             const formattedDate = format(selectedDate, "yyyy-MM-dd");
             const params = new URLSearchParams(searchParams);
             params.set("return_date", formattedDate);
-            navigate(`/flights?${params.toString()}`);
+            navigate(`/${currentLang}/flights?${params.toString()}`);
         },
         [allReturnDates, visibleCount, searchParams, navigate],
     );
@@ -447,7 +452,7 @@ export default function FlightSelection() {
                 const formattedDate = format(selectedDate, "yyyy-MM-dd");
                 const params = new URLSearchParams(searchParams);
                 params.set("date", formattedDate);
-                navigate(`/flights?${params.toString()}`);
+                navigate(`/${currentLang}/flights?${params.toString()}`);
             }
 
             return newIndex;
@@ -468,7 +473,7 @@ export default function FlightSelection() {
                 const formattedDate = format(selectedDate, "yyyy-MM-dd");
                 const params = new URLSearchParams(searchParams);
                 params.set("date", formattedDate);
-                navigate(`/flights?${params.toString()}`);
+                navigate(`/${currentLang}/flights?${params.toString()}`);
             }
 
             return newIndex;
@@ -488,7 +493,7 @@ export default function FlightSelection() {
                 const formattedDate = format(selectedDate, "yyyy-MM-dd");
                 const params = new URLSearchParams(searchParams);
                 params.set("return_date", formattedDate);
-                navigate(`/flights?${params.toString()}`);
+                navigate(`/${currentLang}/flights?${params.toString()}`);
             }
 
             return newIndex;
@@ -509,7 +514,7 @@ export default function FlightSelection() {
                 const formattedDate = format(selectedDate, "yyyy-MM-dd");
                 const params = new URLSearchParams(searchParams);
                 params.set("return_date", formattedDate);
-                navigate(`/flights?${params.toString()}`);
+                navigate(`/${currentLang}/flights?${params.toString()}`);
             }
 
             return newIndex;
@@ -674,228 +679,240 @@ export default function FlightSelection() {
     }
 
     return (
-        <div className="h-full bg-[#eeeeef] font-sans">
-            <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
-                <Stepper currentStep={currentStep} />
-                <div className="flex text-center">
-                    <h2 className="mb-4 px-4 text-2xl font-bold">Choose Flights</h2>
-                    <button className="mb-4 items-center justify-center rounded-lg border border-blue-700 pl-2 pr-2 text-center">
-                        <CalendarDays className="ml-7 h-5 w-5 text-blue-700" />
-                        <span className="font-bold text-blue-700">Calendar</span>
-                    </button>
+        <>
+            <div
+                className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
+                style={{ backgroundImage: "url(/plane-bg.jpg)" }}
+            >
+                <div className="px-4">
+                    <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
+                    <p className="text-xl">{t("We fly to connect people.")}</p>
                 </div>
-
-                {/* Outbound Flight Section */}
-                <RouteHeader
-                    from={fromParam}
-                    to={toParam}
-                    locations={state.locations}
-                    prefix="Depart Flight"
-                />
-                {booking.showOutboundSelection ? (
-                    <>
-                        <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
-                            <button
-                                className="p-2 disabled:opacity-30"
-                                onClick={handlePrevClick}
-                                disabled={startIndex === 0}
-                                aria-label="Dates précédentes"
-                            >
-                                <ChevronLeft className="h-5 w-5 text-blue-700" />
-                            </button>
-
-                            <DateCarousel
-                                allDates={allDates}
-                                selectedDateIndex={selectedDateIndex}
-                                setSelectedDateIndex={handleDateSelect}
-                                startIndex={startIndex}
-                                visibleCount={visibleCount}
-                                from={from}
-                                to={to}
-                                date={date1}
-                                passengers={passengers}
-                                tripType={selectedTabTrip}
-                                tabType={selectedTab}
-                                label="Vol Aller"
-                                isReturnDateCarousel={false}
-                                returnDate={returnDateParam || undefined}
-                            />
-
-                            <button
-                                className="p-2 disabled:opacity-30"
-                                onClick={handleNextClick}
-                                disabled={startIndex + visibleCount >= allDates.length}
-                                aria-label="Dates suivantes"
-                            >
-                                <ChevronRight className="h-5 w-5 text-blue-700" />
-                            </button>
-                        </div>
-
-                        {filteredFlights.length > 0 ? (
-                            <div className="mb-[80px] space-y-4">
-                                {filteredFlights.map((flight) => (
-                                    <div key={`${flight.id}-${flight.date}`}>
-                                        <FlightCard
-                                            flight={flight}
-                                            isOpen={isOpen === flight.id}
-                                            onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
-                                        />
-                                        {isOpen === flight.id && (
-                                            <FlightDetail
-                                                flight={flight}
-                                                onBookNow={(f) => handleBookNow(f, false)}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <EmptyState
-                                icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
-                                title="Aucun vol disponible"
-                                description="Aucun vol ne correspond à vos critères pour cette date."
-                            />
-                        )}
-                    </>
-                ) : (
-                    booking.outbound && renderBookingConfirmation(booking.outbound, false)
-                )}
-
-                {/* Return Flight Section */}
-                {selectedTabTrip === "roundtrip" && (
-                    <>
-                        <RouteHeader
-                            from={toParam}
-                            to={fromParam}
-                            locations={state.locations}
-                            prefix="Return Flight"
-                        />
-
-                        {booking.showReturnSelection ? (
-                            <>
-                                <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
-                                    <button
-                                        className="p-2 disabled:opacity-30"
-                                        onClick={handleReturnPrevClick}
-                                        disabled={startReturnIndex === 0}
-                                        aria-label="Dates précédentes retour"
-                                    >
-                                        <ChevronLeft className="h-5 w-5 text-blue-700" />
-                                    </button>
-
-                                    <DateCarousel
-                                        allDates={allReturnDates}
-                                        selectedDateIndex={selectedReturnDateIndex}
-                                        setSelectedDateIndex={handleReturnDateSelect}
-                                        startIndex={startReturnIndex}
-                                        visibleCount={visibleCount}
-                                        from={to}
-                                        to={from}
-                                        date={date1}
-                                        passengers={passengers}
-                                        tripType={selectedTabTrip}
-                                        tabType={selectedTab}
-                                        label="Vol Retour"
-                                        isReturnDateCarousel={true}
-                                        returnDate={returnDateParam || undefined}
-                                        flightType={selectedTab} // Ajoutez cette ligne
-                                    />
-
-                                    <button
-                                        className="p-2 disabled:opacity-30"
-                                        onClick={handleReturnNextClick}
-                                        disabled={startReturnIndex + visibleCount >= allReturnDates.length}
-                                        aria-label="Dates suivantes retour"
-                                    >
-                                        <ChevronRight className="h-5 w-5 text-blue-700" />
-                                    </button>
-                                </div>
-
-                                {filteredReturnFlights.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {filteredReturnFlights.map((flight) => (
-                                            <div key={`return-${flight.id}-${flight.date}`}>
-                                                <FlightCard
-                                                    flight={flight}
-                                                    isOpen={isOpen === flight.id}
-                                                    onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
-                                                />
-                                                {isOpen === flight.id && (
-                                                    <FlightDetail
-                                                        flight={flight}
-                                                        onBookNow={(f) => handleBookNow(f, true)}
-                                                        isReturnFlight
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <EmptyState
-                                        icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
-                                        title="Aucun vol de retour disponible"
-                                        description="Aucun vol ne correspond à vos critères pour cette date de retour."
-                                    />
-                                )}
-                            </>
-                        ) : (
-                            booking.return && renderBookingConfirmation(booking.return, true)
-                        )}
-                    </>
-                )}
-
-                {/* Continue Button */}
-                {/* Continue Button */}
-                {booking.outbound &&
-                    !booking.showOutboundSelection &&
-                    (selectedTabTrip === "oneway" || (selectedTabTrip === "roundtrip" && booking.return && !booking.showReturnSelection)) && (
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                onClick={() => {
-                                    const fromLocation = state.locations.find((loc) => loc.code === fromParam);
-                                    const toLocation = state.locations.find((loc) => loc.code === toParam);
-
-                                    // Préparation des données de réservation avec les IDs des vols
-                                    const bookingData = {
-                                        outbound: {
-                                            ...booking.outbound!,
-                                            flightId: booking.outbound!.id, // ID du vol aller
-                                        },
-                                        return: booking.return
-                                            ? {
-                                                  ...booking.return,
-                                                  flightId: booking.return.id, // ID du vol retour
-                                              }
-                                            : undefined,
-                                        passengers: {
-                                            adults: passengers.adult,
-                                            children: passengers.child,
-                                            infants: passengers.infant,
-                                        },
-                                        tripType: selectedTabTrip,
-                                        tabType: selectedTab,
-                                        from: fromParam,
-                                        to: toParam,
-                                        fromCity: fromLocation?.city || fromParam,
-                                        toCity: toLocation?.city || toParam,
-                                        departureDate: dateParam,
-                                        returnDate: returnDateParam,
-                                        totalPrice:
-                                            calculateTotalPrice(booking.outbound!) + (booking.return ? calculateTotalPrice(booking.return) : 0),
-                                    };
-
-                                    // Navigation vers la page des passagers avec les données de réservation
-                                    navigate("/passenger", {
-                                        state: bookingData,
-                                    });
-                                }}
-                                className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
-                            >
-                                Continue to Passenger
-                            </button>
-                        </div>
-                    )}
             </div>
-        </div>
+ 
+            <div className="h-full font-sans mx-auto max-w-7xl px-4 py-12" >
+                <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
+                    <Stepper currentStep={currentStep} />
+                    <div className="flex text-center">
+                        <h2 className="mb-4 px-4 text-2xl font-bold">{t("Choose Flights")}</h2>
+                        <button className="mb-4 items-center justify-center rounded-lg border border-blue-700 pl-2 pr-2 text-center">
+                            <CalendarDays className="ml-7 h-5 w-5 text-blue-700" />
+                            <span className="font-bold text-blue-700">{t("Calendar")}</span>
+                        </button>
+                    </div>
+
+                    {/* Outbound Flight Section */}
+                    <RouteHeader
+                        from={fromParam}
+                        to={toParam}
+                        locations={state.locations}
+                        prefix={t("Depart Flight")}
+                    />
+                    {booking.showOutboundSelection ? (
+                        <>
+                            <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
+                                <button
+                                    className="p-2 disabled:opacity-30"
+                                    onClick={handlePrevClick}
+                                    disabled={startIndex === 0}
+                                    aria-label="Dates précédentes"
+                                >
+                                    <ChevronLeft className="h-5 w-5 text-blue-700" />
+                                </button>
+
+                                <DateCarousel
+                                    allDates={allDates}
+                                    selectedDateIndex={selectedDateIndex}
+                                    setSelectedDateIndex={handleDateSelect}
+                                    startIndex={startIndex}
+                                    visibleCount={visibleCount}
+                                    from={from}
+                                    to={to}
+                                    date={date1}
+                                    passengers={passengers}
+                                    tripType={selectedTabTrip}
+                                    tabType={selectedTab}
+                                    label="Vol Aller"
+                                    isReturnDateCarousel={false}
+                                    returnDate={returnDateParam || undefined}
+                                />
+
+                                <button
+                                    className="p-2 disabled:opacity-30"
+                                    onClick={handleNextClick}
+                                    disabled={startIndex + visibleCount >= allDates.length}
+                                    aria-label="Dates suivantes"
+                                >
+                                    <ChevronRight className="h-5 w-5 text-blue-700" />
+                                </button>
+                            </div>
+
+                            {filteredFlights.length > 0 ? (
+                                <div className="mb-[80px] space-y-4">
+                                    {filteredFlights.map((flight) => (
+                                        <div key={`${flight.id}-${flight.date}`}>
+                                            <FlightCard
+                                                flight={flight}
+                                                isOpen={isOpen === flight.id}
+                                                onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
+                                            />
+                                            {isOpen === flight.id && (
+                                                <FlightDetail
+                                                    flight={flight}
+                                                    onBookNow={(f) => handleBookNow(f, false)}
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState
+                                    icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
+                                    title={t("No flights available")}
+                                    description={t("No flight matches your criteria for this date.")}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        booking.outbound && renderBookingConfirmation(booking.outbound, false)
+                    )}
+
+                    {/* Return Flight Section */}
+                    {selectedTabTrip === "roundtrip" && (
+                        <>
+                            <RouteHeader
+                                from={toParam}
+                                to={fromParam}
+                                locations={state.locations}
+                                prefix={t("Return Flight")}
+                            />
+
+                            {booking.showReturnSelection ? (
+                                <>
+                                    <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
+                                        <button
+                                            className="p-2 disabled:opacity-30"
+                                            onClick={handleReturnPrevClick}
+                                            disabled={startReturnIndex === 0}
+                                            aria-label="Dates précédentes retour"
+                                        >
+                                            <ChevronLeft className="h-5 w-5 text-blue-700" />
+                                        </button>
+
+                                        <DateCarousel
+                                            allDates={allReturnDates}
+                                            selectedDateIndex={selectedReturnDateIndex}
+                                            setSelectedDateIndex={handleReturnDateSelect}
+                                            startIndex={startReturnIndex}
+                                            visibleCount={visibleCount}
+                                            from={to}
+                                            to={from}
+                                            date={date1}
+                                            passengers={passengers}
+                                            tripType={selectedTabTrip}
+                                            tabType={selectedTab}
+                                            label="Vol Retour"
+                                            isReturnDateCarousel={true}
+                                            returnDate={returnDateParam || undefined}
+                                            flightType={selectedTab} // Ajoutez cette ligne
+                                        />
+
+                                        <button
+                                            className="p-2 disabled:opacity-30"
+                                            onClick={handleReturnNextClick}
+                                            disabled={startReturnIndex + visibleCount >= allReturnDates.length}
+                                            aria-label="Dates suivantes retour"
+                                        >
+                                            <ChevronRight className="h-5 w-5 text-blue-700" />
+                                        </button>
+                                    </div>
+
+                                    {filteredReturnFlights.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {filteredReturnFlights.map((flight) => (
+                                                <div key={`return-${flight.id}-${flight.date}`}>
+                                                    <FlightCard
+                                                        flight={flight}
+                                                        isOpen={isOpen === flight.id}
+                                                        onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
+                                                    />
+                                                    {isOpen === flight.id && (
+                                                        <FlightDetail
+                                                            flight={flight}
+                                                            onBookNow={(f) => handleBookNow(f, true)}
+                                                            isReturnFlight
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <EmptyState
+                                            icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
+                                            title={t("No flights available")}
+                                            description={t("No flight matches your criteria for this return date.")}
+                                        />
+                                    )}
+                                </>
+                            ) : (
+                                booking.return && renderBookingConfirmation(booking.return, true)
+                            )}
+                        </>
+                    )}
+
+                    {/* Continue Button */}
+                    {/* Continue Button */}
+                    {booking.outbound &&
+                        !booking.showOutboundSelection &&
+                        (selectedTabTrip === "oneway" || (selectedTabTrip === "roundtrip" && booking.return && !booking.showReturnSelection)) && (
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        const fromLocation = state.locations.find((loc) => loc.code === fromParam);
+                                        const toLocation = state.locations.find((loc) => loc.code === toParam);
+
+                                        // Préparation des données de réservation avec les IDs des vols
+                                        const bookingData = {
+                                            outbound: {
+                                                ...booking.outbound!,
+                                                flightId: booking.outbound!.id, // ID du vol aller
+                                            },
+                                            return: booking.return
+                                                ? {
+                                                      ...booking.return,
+                                                      flightId: booking.return.id, // ID du vol retour
+                                                  }
+                                                : undefined,
+                                            passengers: {
+                                                adults: passengers.adult,
+                                                children: passengers.child,
+                                                infants: passengers.infant,
+                                            },
+                                            tripType: selectedTabTrip,
+                                            tabType: selectedTab,
+                                            from: fromParam,
+                                            to: toParam,
+                                            fromCity: fromLocation?.city || fromParam,
+                                            toCity: toLocation?.city || toParam,
+                                            departureDate: dateParam,
+                                            returnDate: returnDateParam,
+                                            totalPrice:
+                                                calculateTotalPrice(booking.outbound!) + (booking.return ? calculateTotalPrice(booking.return) : 0),
+                                        };
+
+                                        // Navigation vers la page des passagers avec les données de réservation
+                                        navigate(`/${currentLang}/passenger`, {
+                                            state: bookingData,
+                                        });
+                                    }}
+                                    className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                                >
+                                    {t("Continue to Passenger")}
+                                </button>
+                            </div>
+                        )}
+                </div>
+            </div>
+        </>
     );
 }

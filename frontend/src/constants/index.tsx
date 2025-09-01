@@ -1,50 +1,54 @@
 import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact } from "lucide-react";
 import { HelicopterIcon } from "../components/icons/HelicopterIcon";
+import { useParams } from "react-router-dom";
 
-export const navbarLinks = [
-    {
-        title: "Dashboard",
-        links: [
-            {
-                label: "Dashboard",
-                icon: LayoutDashboard,
-                path: "/dashboard",
-            },
-        ],
-    },
-    {
-        title: "Air plane",
-        icon: Plane,
-        links: [
-            { label: "All flights", icon: Plane, path: "/dashboard/flights" },
-            { label: "Seat Type", icon: Armchair, path: "/dashboard/seat-type" },
-            { label: "Airport", icon: TowerControl, path: "/dashboard/airport" },
-        ],
-    },
-    {
-        title: "Helico",
-        icon: HelicopterIcon,
-        links: [
-            { label: "All flights Helico", icon: HelicopterIcon, path: "/dashboard/flights-helico" },
-            { label: "Airport Helico", icon: TowerControl, path: "/dashboard/airport-helico" },
-        ],
-    },
-    {
-        title: "Users",
-        icon: Users,
-        links: [
-            { label: "All Users", icon: UserRound, path: "/dashboard/user" },
-            { label: "Role Manager", icon: Lock, path: "/dashboard/roleUser" },
-        ],
-    },
-    {
-        title: "Settings",
-        icon: Settings,
-        links: [
-            { label: "Settings", icon: Settings, path: "/dashboard/settings" },
-        ],
-    },
+function useLang() {
+  const { lang } = useParams();
+  return lang || "en"; // valeur par défaut
+}
+
+
+export const NavbarLinks = (lang: string) => [
+  {
+    title: "Dashboard",
+    links: [
+      { label: "Dashboard", icon: LayoutDashboard, path: `/${lang}/dashboard` },
+    ],
+  },
+  {
+    title: "Air plane",
+    icon: Plane,
+    links: [
+      { label: "All flights", icon: Plane, path: `/${lang}/dashboard/flights` },
+      { label: "Seat Type", icon: Armchair, path: `/${lang}/dashboard/seat-type` },
+      { label: "Airport", icon: TowerControl, path: `/${lang}/dashboard/airport` },
+    ],
+  },
+  {
+    title: "Helico",
+    icon: HelicopterIcon,
+    links: [
+      { label: "All flights Helico", icon: HelicopterIcon, path: `/${lang}/dashboard/flights-helico` },
+      { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
+    ],
+  },
+  {
+    title: "Users",
+    icon: Users,
+    links: [
+      { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
+      { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+    ],
+  },
+  {
+    title: "Settings",
+    icon: Settings,
+    links: [
+      { label: "Settings", icon: Settings, path: `/${lang}/dashboard/settings` },
+    ],
+  },
 ];
+
 
 export const headerHomeLinks = [
     {

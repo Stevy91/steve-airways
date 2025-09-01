@@ -1,5 +1,6 @@
 import { PlaneTakeoff, PlaneLanding, Clock4, Users } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 type Flight = {
     id: number;
@@ -22,6 +23,7 @@ type FlightDetailProps = {
 };
 
 export default function FlightDetail({ flight, onBookNow, isReturnFlight = false }: FlightDetailProps) {
+          const { t, i18n } = useTranslation();
     const hasSeats = flight.seat !== "0"; // Vérifie si des places sont disponibles
 const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
     return (
@@ -33,17 +35,17 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                 <span className="text-xl font-bold text-red-600">${flight.price}</span>
             </div>
 
-            <p className="mb-2 text-sm text-gray-600">Trogon Airways – Flight {flight.noflight}</p>
+            <p className="mb-2 text-sm text-gray-600">Trogon Airways – {t("Flight")} {flight.noflight}</p>
 
             <div className="mb-4 space-y-2 text-sm text-gray-800">
                 <div className="flex items-center space-x-4">
                     <PlaneTakeoff className="h-5 w-5 text-blue-600" />
-                    <strong className="pr-4">Departs:</strong> {flight.from}
+                    <strong className="pr-4">{t("Departs")}:</strong> {flight.from}
                 </div>
 
                 <div className="flex items-center space-x-4">
                     <PlaneLanding className="h-5 w-5 text-blue-600" />
-                    <strong className="pr-4">Arrives:</strong> {flight.to}
+                    <strong className="pr-4">{t("Arrives")}:</strong> {flight.to}
                 </div>
 
                 <div className="flex items-center space-x-4">
@@ -64,14 +66,14 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                             onClick={() => onBookNow(flight)}
                             className="w-full rounded bg-blue-500 py-2 font-semibold text-white hover:bg-blue-600"
                         >
-                            {isReturnFlight ? "Confirm Return Flight" : "Book Now"}
+                            {isReturnFlight ? "Confirm Return Flight" : t("Book Now")}
                         </button>
                     ) : (
                         <button
                             disabled
                             className="w-full cursor-not-allowed rounded bg-gray-400 py-2 font-semibold text-white"
                         >
-                            No seats available
+                            {t("No seats available")}
                         </button>
                     )}
                 </div>

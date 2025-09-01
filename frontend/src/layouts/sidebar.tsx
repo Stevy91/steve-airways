@@ -1,6 +1,6 @@
 import { forwardRef, useState } from "react";
-import { NavLink } from "react-router-dom";
-import { navbarLinks } from "../constants";
+import { NavLink, useParams } from "react-router-dom";
+import { NavbarLinks} from "../constants";
 import { cn } from "../utils/cn";
 import logoT from "../assets/logoT.png";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -11,6 +11,8 @@ interface SidebarProps {
 
 export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, ref) => {
     const [openGroup, setOpenGroup] = useState<string | null>(null);
+      const { lang } = useParams();
+  const links = NavbarLinks(lang || "en");
 
     const toggleGroup = (title: string) => {
         setOpenGroup((prev) => (prev === title ? null : title));
@@ -40,7 +42,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
             </div>
 
             <div className="flex w-full flex-col gap-y-4 overflow-y-auto p-3">
-                {navbarLinks.map((navbarLink) => {
+                {links.map((navbarLink) => {
                     const isDashboard = navbarLink.title === "Dashboard";
 
                     // S'il n'y a qu'un lien, on le sort pour un lien direct
