@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import paypal from "@paypal/checkout-server-sdk";
 import nodemailer from "nodemailer";
 import { OkPacket } from "mysql2";
+
 import { COUNTRIES } from "./constants/country";
 
 dotenv.config();
@@ -1104,6 +1105,62 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
         }
     }
 });
+
+
+
+app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
+    const flightId = req.params.id;
+
+    const allowedFields = [
+        "flight_number",
+        "type",
+        "air_line",
+        "departure_location_id",
+        "arrival_location_id",
+        "departure_time",
+        "arrival_time",
+        "price",
+        "seats_available",
+    ];
+
+    const setFields: string[] = [];
+    const values: any[] = [];
+
+    for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+            setFields.push(`${field} = ?`);
+            values.push(req.body[field]);
+        }
+    }
+
+    if (setFields.length === 0) {
+        return res.status(400).json({ error: "Aucun champ à mettre à jour" });
+    }
+
+    try {
+        const [result] = await pool.execute<ResultSetHeader>(
+            `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
+            [...values, flightId]
+        );
+
+        // Récupérer le vol mis à jour
+        const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [flightId]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Vol non trouvé" });
+        }
+
+        res.status(200).json(rows[0]);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(error);
+            res.status(500).json({ error: "Erreur MySQL", details: error.message });
+        } else {
+            res.status(500).json({ error: "Erreur inconnue" });
+        }
+    }
+});
+
 
 
 // Route pour supprimer un vol
