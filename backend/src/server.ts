@@ -1114,7 +1114,7 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
     const allowedFields = [
         "flight_number",
         "type",
-        "air_line",
+        "airline",
         "departure_location_id",
         "arrival_location_id",
         "departure_time",

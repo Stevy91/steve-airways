@@ -5,6 +5,8 @@ interface Flight {
     id: number;
     flight_number: string;
     type: string;
+
+    airline: string;
     air_line: string;
     from?: string;
     to?: string;
@@ -150,79 +152,52 @@ const FlightTable = () => {
         }
     };
 
-    // const handleUpdateFlight = async (flightId: number, updatedData: any) => {
-    //     try {
-    //         setSubmitting(true);
-    //         const res = await fetch(`https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`, {
-    //             method: "PUT",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify(updatedData),
-    //         });
-    //         const data = await res.json();
-    //         if (!res.ok) throw new Error(data.error || "Erreur update vol");
-    //         setFlights((prev) => prev.map((f) => (f.id === flightId ? data : f)));
-    //         setEditingFlight(null);
-    //         setShowModal(false);
-    //         showNotification("Vol modifié avec succès", "success");
-    //     } catch (err: any) {
-    //         showNotification(err.message || "Erreur inconnue", "error");
-    //     } finally {
-    //         setSubmitting(false);
-    //     }
-    // };
-
-
     const handleUpdateFlight = async (flightId: number, updatedData: any) => {
-  try {
-    setSubmitting(true);
-    console.log("🔄 Envoi UPDATE pour flight ID:", flightId);
-    console.log("📦 Données envoyées:", updatedData);
+        try {
+            setSubmitting(true);
+            console.log("🔄 Envoi UPDATE pour flight ID:", flightId);
+            console.log("📦 Données envoyées:", updatedData);
 
-    const res = await fetch(
-      `https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`,
-      {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedData),
-      }
-    );
+            const res = await fetch(`https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedData),
+            });
 
-    console.log("📨 Status réponse:", res.status);
-    console.log("📨 Headers réponse:", Object.fromEntries(res.headers.entries()));
+            console.log("📨 Status réponse:", res.status);
+            console.log("📨 Headers réponse:", Object.fromEntries(res.headers.entries()));
 
-    // Vérifiez le content-type
-    const contentType = res.headers.get('content-type');
-    console.log("📨 Content-Type:", contentType);
+            // Vérifiez le content-type
+            const contentType = res.headers.get("content-type");
+            console.log("📨 Content-Type:", contentType);
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Erreur réponse:", errorText);
-      throw new Error(`Erreur ${res.status}: ${errorText}`);
-    }
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error("❌ Erreur réponse:", errorText);
+                throw new Error(`Erreur ${res.status}: ${errorText}`);
+            }
 
-    if (contentType && contentType.includes('application/json')) {
-      const data = await res.json();
-      console.log("✅ Réponse JSON:", data);
-      setFlights((prev) => prev.map((f) => (f.id === flightId ? data : f)));
-      setEditingFlight(null);
-      setShowModal(false);
-      showNotification("Vol modifié avec succès", "success");
-    } else {
-      const text = await res.text();
-      console.error("❌ Réponse non-JSON:", text.substring(0, 200));
-      throw new Error("Le serveur a retourné une réponse non-JSON");
-    }
-    
-  } catch (err: any) {
-    console.error("❌ Erreur complète:", err);
-    showNotification(err.message || "Erreur inconnue lors de la modification", "error");
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+            if (contentType && contentType.includes("application/json")) {
+                const data = await res.json();
+                console.log("✅ Réponse JSON:", data);
+                setFlights((prev) => prev.map((f) => (f.id === flightId ? data : f)));
+                setEditingFlight(null);
+                setShowModal(false);
+                showNotification("Vol modifié avec succès", "success");
+            } else {
+                const text = await res.text();
+                console.error("❌ Réponse non-JSON:", text.substring(0, 200));
+                throw new Error("Le serveur a retourné une réponse non-JSON");
+            }
+        } catch (err: any) {
+            console.error("❌ Erreur complète:", err);
+            showNotification(err.message || "Erreur inconnue lors de la modification", "error");
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const deleteFlight = async (flightId: number) => {
         try {
@@ -299,7 +274,7 @@ const FlightTable = () => {
                                 </td>
                                 <td className="px-4 py-2">{flight.flight_number}</td>
                                 <td className="px-4 py-2">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
-                                <td className="px-4 py-2">{flight.air_line}</td>
+                                <td className="px-4 py-2">{flight.airline}</td>
                                 <td className="px-4 py-2">{flight.from}</td>
                                 <td className="px-4 py-2">{flight.to}</td>
 
@@ -356,40 +331,40 @@ const FlightTable = () => {
                             </button>
                         </div>
 
-                       <form
-  onSubmit={async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    const formData = new FormData(e.currentTarget);
-    
-    const flightData = {
-      flight_number: formData.get("flight_number") as string,
-      type: "plane",
-      air_line: formData.get("air_line") as string,
-      departure_location_id: selectedDeparture,
-      arrival_location_id: selectedDestination,
-      departure_time: formData.get("departure_time") as string,
-      arrival_time: formData.get("arrival_time") as string,
-      price: Number(formData.get("price")), // Convertir en number
-      seats_available: Number(formData.get("seats_available")), // Convertir en number
-    };
+                        <form
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                setSubmitting(true);
+                                const formData = new FormData(e.currentTarget);
 
-    console.log("Données à envoyer:", flightData);
+                                const flightData = {
+                                    flight_number: formData.get("flight_number") as string,
+                                    type: "plane",
+                                    airline: formData.get("air_line") as string,
+                                    departure_location_id: selectedDeparture,
+                                    arrival_location_id: selectedDestination,
+                                    departure_time: formData.get("departure_time") as string,
+                                    arrival_time: formData.get("arrival_time") as string,
+                                    price: Number(formData.get("price")), // Convertir en number
+                                    seats_available: Number(formData.get("seats_available")), // Convertir en number
+                                };
 
-    try {
-      if (editingFlight) {
-        await handleUpdateFlight(editingFlight.id, flightData);
-      } else {
-        await handleAddFlight(flightData);
-      }
-    } catch (err) {
-      console.error("Erreur dans le formulaire:", err);
-    } finally {
-      setSubmitting(false);
-    }
-  }}
-  className="space-y-4"
->
+                                console.log("Données à envoyer:", flightData);
+
+                                try {
+                                    if (editingFlight) {
+                                        await handleUpdateFlight(editingFlight.id, flightData);
+                                    } else {
+                                        await handleAddFlight(flightData);
+                                    }
+                                } catch (err) {
+                                    console.error("Erreur dans le formulaire:", err);
+                                } finally {
+                                    setSubmitting(false);
+                                }
+                            }}
+                            className="space-y-4"
+                        >
                             <input
                                 type="text"
                                 name="flight_number"
@@ -400,7 +375,7 @@ const FlightTable = () => {
                             />
                             <input
                                 type="text"
-                                name="air_line"
+                                name="airline"
                                 placeholder="Compagnie aérienne"
                                 defaultValue={editingFlight?.air_line || ""}
                                 className="w-full rounded-full border px-3 py-2"
