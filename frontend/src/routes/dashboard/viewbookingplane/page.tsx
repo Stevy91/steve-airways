@@ -51,20 +51,30 @@ const ViewBookingPlane = () => {
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
 
-      const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
+    const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
 
+const handleViewDetails = async (id: number) => {
+  try {
+    const res = await fetch(`https://steve-airways-production.up.railway.app/api/bookingplane/${id}`);
 
-      const handleViewDetails = async (id: number) => {
-    try {
-      const res = await fetch(`/api/booking-plane/${id}`);
-      const apiData = await res.json();
-      const mapped = mapApiBookingToBookingDetails(apiData);
-      setSelectedBooking(mapped);
-      setOpen(true);
-    } catch (err) {
-      console.error("Erreur fetch booking:", err);
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`Erreur API (${res.status}):`, text);
+      alert("Réservation introuvable ou erreur serveur");
+      return;
     }
-  };
+
+    const apiData = await res.json();
+    const mapped = mapApiBookingToBookingDetails(apiData);
+    setSelectedBooking(mapped);
+    setOpen(true);
+  } catch (err) {
+    console.error("Erreur fetch booking:", err);
+    alert("Impossible de récupérer les détails de la réservation");
+  }
+};
+
+
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -191,17 +201,11 @@ const ViewBookingPlane = () => {
                                         </td>
                                         <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
                                         <td className="table-cell text-center">
-                                          
+                                            
 
                                              <button
-                                                onClick={() => {
-                                                    fetch(`https://steve-airways-production.up.railway.app/api/bookingplane/${booking.id}`)
-                                                    .then(res => res.json())
-                                                    .then(booking => {
-                                                    setSelectedBooking(booking);
-                                                    setOpen(true);
-                                                    });
-                                                }}
+                                               onClick={() => {handleViewDetails(booking.id)
+                                                 setOpen(true);}}
                                                 className="flex w-full gap-2 rounded-lg p-2 text-center hover:bg-amber-500"
                                             >
                                                 <Eye className="h-6 w-4" /> <span>View Details</span>
@@ -212,16 +216,15 @@ const ViewBookingPlane = () => {
                             </tbody>
                         </table>
                         {/* Popup modal */}
-                       
 
-                              <BookingDetailsModal
-        open={open}
-        data={selectedBooking}
-        onClose={() => setOpen(false)}
-        onSave={(updated) => {
-          console.log("Saving...", updated);
-        }}
-      /> 
+                        <BookingDetailsModal
+                            open={open}
+                            data={selectedBooking}
+                            onClose={() => setOpen(false)}
+                            onSave={(updated) => {
+                                console.log("Saving...", updated);
+                            }}
+                        />
                     </div>
                 </div>
             </div>
@@ -232,21 +235,27 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => ({
   reference: apiData.booking_reference,
   contactEmail: apiData.contact_email,
   bookedOn: new Date(apiData.created_at).toLocaleDateString(),
-  paymentStatus: apiData.status,
-  paymentIntentId: apiData.payment_intent_id || "",
-  flights: apiData.flights.map((f: any) => ({
-    code: f.code,
-    from: f.from,
-    to: f.to,
-    date: f.date,
-  })),
-  passengers: apiData.passengers.map((p: any) => ({
-    name: p.name,
-    email: p.email,
-    dob: p.dob,
-  })),
+  paymentStatus: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1), // 'confirmed' => 'Confirmed'
   totalPrice: `$${apiData.total_price}`,
+  typeVol: apiData.type_vol,
+  typeV: apiData.type_v,
   adminNotes: apiData.admin_notes || "",
+
+  // Passagers
+  passengers: apiData.passengers.map((p: any) => ({
+    name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
+    email: p.email,
+    dob: p.date_of_birth,
+  })),
+
+  // Vols
+  flights: apiData.flights.map((f: any) => ({
+    code: f.code, // flight_number
+    from: f.departure_airport_name,
+    to: f.arrival_airport_name,
+    date: new Date(f.date).toLocaleString(), // departure_time
+  })),
 });
+
 
 export default ViewBookingPlane;

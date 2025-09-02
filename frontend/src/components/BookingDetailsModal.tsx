@@ -23,6 +23,8 @@ export type BookingDetails = {
   passengers: Passenger[];
   totalPrice: string;
   adminNotes?: string;
+  typeVol?: string;
+  typeV?: string;
 };
 
 type BookingDetailsModalProps = {
