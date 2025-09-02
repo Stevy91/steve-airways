@@ -1106,6 +1106,33 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
 });
 // ✅ 2. Endpoint pour les détails d’une réservation
 
+// PUT - Update payment status
+app.put("/api/booking-plane/:id/payment-status", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { paymentStatus } = req.body;
+
+  if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
+    return res.status(400).json({ error: "Invalid payment status" });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+
+    const [result] = await connection.query(
+      `UPDATE bookings SET status = ? WHERE id = ?`,
+      [paymentStatus, id]
+    );
+
+    res.json({ success: true, bookingId: id, newStatus: paymentStatus });
+  } catch (err) {
+    console.error("Error updating payment status:", err);
+    res.status(500).json({ error: "Failed to update payment status" });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 
 
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {

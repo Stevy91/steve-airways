@@ -55,7 +55,7 @@ const ViewBookingPlane = () => {
 
 const handleViewDetails = async (id: number) => {
   try {
-    const res = await fetch(`https://steve-airways-production.up.railway.app/api/bookingplane/${id}`);
+    const res = await fetch(`https://steve-airways-production.up.railway.app/api/booking-plane-pop/${id}`);
 
     if (!res.ok) {
       const text = await res.text();
@@ -222,7 +222,7 @@ const handleViewDetails = async (id: number) => {
                             data={selectedBooking}
                             onClose={() => setOpen(false)}
                             onSave={(updated) => {
-                                console.log("Saving...", updated);
+                                console.log("Saving...", updated.reference);
                             }}
                         />
                     </div>
