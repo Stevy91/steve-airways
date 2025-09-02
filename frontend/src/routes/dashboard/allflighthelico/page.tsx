@@ -34,7 +34,7 @@ type Notification = {
     type: "success" | "error";
 };
 
-const FlightTable = () => {
+const FlightTableHelico = () => {
     const [flights, setFlights] = useState<Flight[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -472,4 +472,4 @@ const FlightTable = () => {
     );
 };
 
-export default FlightTable;
+export default FlightTableHelico;
