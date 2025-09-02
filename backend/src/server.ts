@@ -1104,60 +1104,92 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
     } 
 });
+// ✅ 2. Endpoint pour les détails d’une réservation
 
 
-app.post("/api/addflighttable", async (req: Request, res: Response) => {
-    console.log("Données reçues:", req.body); // Ajouté pour le debug
-    // Vérifier que toutes les valeurs requises sont présentes
-    const requiredFields = ["flight_number", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
 
-    for (const field of requiredFields) {
-        if (req.body[field] === undefined) {
-            return res.status(400).json({
-                error: `Le champ ${field} est requis`,
-                details: `Received: ${req.body[field]}`,
-            });
-        }
+app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
+  try {
+    const bookingId = req.params.id;
+
+    // Récupérer la réservation
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM bookings WHERE id = ?`,
+      [bookingId]
+    );
+
+    if (bookingRows.length === 0) {
+      return res.status(404).json({ error: "Booking not found" });
     }
 
-    try {
-        const [result] = await pool.execute<ResultSetHeader>(
-            `INSERT INTO flights 
-             (flight_number, type, airline, departure_location_id, arrival_location_id, 
-              departure_time, arrival_time, price, seats_available)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                req.body.flight_number ?? null,
-                req.body.type ?? null,
-                req.body.airline ?? null,
-                req.body.departure_location_id ?? null,
-                req.body.arrival_location_id ?? null,
-                req.body.departure_time ?? null,
-                req.body.arrival_time ?? null,
-                req.body.price ?? null,
-                req.body.seats_available ?? null,
-            ],
-        );
-        console.log("Résultat INSERT:", result); // Ajouté pour le debug
+    const booking = bookingRows[0];
 
-        const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [result.insertId]);
+    // Récupérer les passagers liés
+    const [passengerRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+          id, 
+          booking_id, 
+          first_name, middle_name, last_name,
+          date_of_birth, gender, title, address, type,
+          type_vol, type_v, country, nationality,
+          phone, email, created_at, updated_at
+       FROM passengers 
+       WHERE booking_id = ?`,
+      [bookingId]
+    );
 
-        res.status(201).json(rows[0]);
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error("Erreur MySQL:", error);
-            res.status(500).json({
-                error: "Erreur lors de l'ajout du vol",
-                details: error.message,
-            });
-        } else {
-            console.error("Erreur inconnue:", error);
-            res.status(500).json({
-                error: "Erreur inconnue lors de l'ajout du vol",
-            });
-        }
-    }
+    // Récupérer les vols liés avec JOIN sur locations
+    const flightIds = [booking.flight_id];
+    if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
+
+    const flightQuery = `
+      SELECT 
+          f.id,
+          f.flight_number AS code,
+          f.type,
+          f.airline,
+          f.departure_time AS date,
+          f.arrival_time,
+          f.price,
+          f.seats_available,
+          dep.name AS departure_airport_name,
+          dep.city AS departure_city,
+          dep.code AS departure_code,
+          arr.name AS arrival_airport_name,
+          arr.city AS arrival_city,
+          arr.code AS arrival_code
+      FROM flights f
+      JOIN locations dep ON f.departure_location_id = dep.id
+      JOIN locations arr ON f.arrival_location_id = arr.id
+      WHERE f.id IN (?)
+    `;
+
+    const [flightRows] = await pool.query<mysql.RowDataPacket[]>(
+      flightQuery,
+      [flightIds]
+    );
+
+    const details = {
+      id: booking.id,
+      booking_reference: booking.booking_reference,
+      total_price: Number(booking.total_price),
+      status: booking.status,
+      created_at: new Date(booking.created_at).toISOString(),
+      passenger_count: booking.passenger_count,
+      contact_email: booking.contact_email,
+      type_vol: booking.type_vol,
+      type_v: booking.type_v,
+      passengers: passengerRows,
+      flights: flightRows,
+    };
+
+    res.json(details);
+  } catch (error) {
+    console.error("Booking detail error:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération du détail de la réservation" });
+  }
 });
+
 
 
 
