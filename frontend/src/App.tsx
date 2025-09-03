@@ -21,6 +21,7 @@ import FaqPage from "./routes/faqs/page";
 import "./lib/fontawesome"; // important
 import { CharterPage } from "./routes/charter/page";
 import ViewBookingPlane from "./routes/dashboard/viewbookingplane/page";
+import ViewBookingHelico from "./routes/dashboard/viewbookinghelico/page";
 
 // export default function App() {
 //   const router = createBrowserRouter([
@@ -159,7 +160,7 @@ const router = createBrowserRouter([
       { path: "flights", element: <FlightTable /> },
       { path: "flights-helico", element: <FlightTableHelico /> },
       { path: "bookings-plane", element: <ViewBookingPlane /> },
-      { path: "bookings-helico", element: <h1 className="title">View Bookings</h1> },
+      { path: "bookings-helico", element: <ViewBookingHelico /> },
       { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
       { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
       { path: "user", element: <h1 className="title">All Users</h1> },

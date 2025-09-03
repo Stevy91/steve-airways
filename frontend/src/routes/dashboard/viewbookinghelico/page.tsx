@@ -44,7 +44,7 @@ interface DashboardStats {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-const ViewBookingPlane = () => {
+const ViewBookingHelico = () => {
     const { theme } = useTheme();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -136,7 +136,7 @@ const ViewBookingPlane = () => {
 
     return (
         <div className="flex flex-col gap-y-4">
-            <h1 className="title">View Booking Air Plane</h1>
+            <h1 className="title">View Booking Helico</h1>
 
             {/* Tableau des Dernières Réservations */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
@@ -276,4 +276,4 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
     };
 };
 
-export default ViewBookingPlane;
+export default ViewBookingHelico;
