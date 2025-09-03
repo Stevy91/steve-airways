@@ -46,6 +46,15 @@ const FlightTableHelico = () => {
     const [selectedDestination, setSelectedDestination] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
+    const [loadingLocations, setLoadingLocations] = useState(true);
+    // 🔹 Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5; // nombre de vols par page
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(flights.length / itemsPerPage);
 
     // Fetch flights
     const fetchFlights = async () => {
@@ -65,13 +74,21 @@ const FlightTableHelico = () => {
         fetchFlights();
     }, []);
 
-    // Fetch locations
+    // Charger les locations au montage
     useEffect(() => {
         const fetchLocations = async () => {
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/locations");
-            const data = await res.json();
-            setLocations(data);
+            try {
+                setLoadingLocations(true);
+                const res = await fetch("https://steve-airways-production.up.railway.app/api/locations");
+                const data = await res.json();
+                setLocations(data);
+            } catch (err) {
+                console.error("Erreur lors du chargement des locations:", err);
+            } finally {
+                setLoadingLocations(false);
+            }
         };
+
         fetchLocations();
     }, []);
 
@@ -205,7 +222,7 @@ const FlightTableHelico = () => {
         <div className="p-6">
             {notification && (
                 <div
-                    className={`fixed right-4 top-4 z-50 rounded px-4 py-2 text-white ${
+                    className={`fixed right-4 top-4 z-50 rounded table-cell text-center text-white ${
                         notification.type === "success" ? "bg-green-500" : "bg-red-500"
                     }`}
                 >
@@ -222,74 +239,93 @@ const FlightTableHelico = () => {
                         setSelectedDestination("");
                         setShowModal(true);
                     }}
-                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    className="rounded bg-blue-600 table-cell text-center text-white hover:bg-blue-700"
                 >
                     Add new flight
                 </button>
             </div>
+            {loading && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                </div>
+            )}
 
-            <div className="relative overflow-x-auto rounded bg-white shadow">
-                {loading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
-                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+            <div className="card col-span-1 md:col-span-2 lg:col-span-4">
+                <div className="card-body overflow-auto p-0">
+                    <div className="relative w-full flex-shrink-0 overflow-auto rounded-none [scrollbar-width:_thin]">
+                        <table className="table">
+                            <thead className="table-header">
+                                <tr className="table-row">
+                                    <th className="table-head text-center">Numéro de vol</th>
+                                    <th className="table-head text-center">Type</th>
+                                    <th className="table-head text-center">Compagnie</th>
+                                    <th className="table-head text-center">Départ</th>
+                                    <th className="table-head text-center">Destination</th>
+                                    <th className="table-head text-center">Départ heure</th>
+                                    <th className="table-head text-center">Arrivée heure</th>
+                                    <th className="table-head text-center">Prix</th>
+                                    <th className="table-head text-center">Sièges</th>
+                                    <th className="table-head text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="table-body">
+                                {currentFlights.map((flight, index) => (
+                                    <tr
+                                        key={flight.id}
+                                        className="border-b hover:bg-gray-50"
+                                    >
+                                       
+                                        <td className="table-cell text-center">{flight.flight_number}</td>
+                                        <td className="table-cell text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
+                                        <td className="table-cell text-center">{flight.airline}</td>
+                                        <td className="table-cell text-center">{flight.from}</td>
+                                        <td className="table-cell text-center">{flight.to}</td>
+
+                                        <td className="table-cell text-center">{flight.departure}</td>
+                                        <td className="table-cell text-center">{flight.arrival}</td>
+                                        <td className="table-cell text-center">${flight.price}</td>
+                                        <td className="table-cell text-center">{flight.seats_available}</td>
+                                        <td className="relative table-cell text-center">
+                                            <button
+                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
+                                                onClick={() => handleEditClick(flight)}
+                                            >
+                                                <Pencil className="h-4 w-4 text-blue-500" />
+                                            </button>
+                                            <button
+                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                onClick={() => deleteFlight(flight.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                )}
+                </div>
+                {/* 🔹 Pagination */}
+                <div className="mt-4 flex justify-center gap-2">
+                    <span>
+                        Page {currentPage} / {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="rounded bg-blue-700 px-3 py-1 text-sm hover:bg-orange-400 disabled:bg-gray-200 text-gray-50"
+                    >
+                        Previous
+                    </button>
 
-                <table className="min-w-full text-left text-sm">
-                    <thead className="border-b bg-gray-50">
-                        <tr>
-                            <th className="px-4 py-2">
-                                <input type="checkbox" />
-                            </th>
-                            <th className="px-4 py-2">Numéro de vol</th>
-                            <th className="px-4 py-2">Type</th>
-                            <th className="px-4 py-2">Compagnie</th>
-                            <th className="px-4 py-2">Départ</th>
-                            <th className="px-4 py-2">Destination</th>
-                            <th className="px-4 py-2">Départ heure</th>
-                            <th className="px-4 py-2">Arrivée heure</th>
-                            <th className="px-4 py-2">Prix</th>
-                            <th className="px-4 py-2">Sièges</th>
-                            <th className="px-4 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {flights.map((flight, index) => (
-                            <tr
-                                key={flight.id}
-                                className="border-b hover:bg-gray-50"
-                            >
-                                <td className="px-4 py-2">
-                                    <input type="checkbox" />
-                                </td>
-                                <td className="px-4 py-2">{flight.flight_number}</td>
-                                <td className="px-4 py-2">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
-                                <td className="px-4 py-2">{flight.airline}</td>
-                                <td className="px-4 py-2">{flight.from}</td>
-                                <td className="px-4 py-2">{flight.to}</td>
-
-                                <td className="px-4 py-2">{flight.departure}</td>
-                                <td className="px-4 py-2">{flight.arrival}</td>
-                                <td className="px-4 py-2">${flight.price}</td>
-                                <td className="px-4 py-2">{flight.seats_available}</td>
-                                <td className="relative px-4 py-2">
-                                    <button
-                                        className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
-                                        onClick={() => handleEditClick(flight)}
-                                    >
-                                        <Pencil className="h-4 w-4 text-blue-500" />
-                                    </button>
-                                    <button
-                                        className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                        onClick={() => deleteFlight(flight.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="rounded bg-blue-700 px-3 py-1 text-sm hover:bg-orange-400 disabled:bg-gray-200 text-gray-50"
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
 
             {/* Modal Add/Edit */}
@@ -371,13 +407,14 @@ const FlightTableHelico = () => {
                                 required
                             />
 
-                            <div className="flex items-center rounded-full border p-2">
+                            <div className="relative flex items-center rounded-full border p-2">
                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                 <select
                                     value={selectedDeparture}
                                     onChange={(e) => setSelectedDeparture(e.target.value)}
-                                    className="w-full bg-transparent outline-none"
+                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
                                     required
+                                    disabled={loadingLocations} // Désactive pendant chargement
                                 >
                                     <option
                                         value=""
@@ -385,40 +422,97 @@ const FlightTableHelico = () => {
                                     >
                                         Sélectionner le départ
                                     </option>
-                                    {locations.map((loc) => (
-                                        <option
-                                            key={loc.id}
-                                            value={loc.id}
-                                        >
-                                            {loc.city} ({loc.code})
-                                        </option>
-                                    ))}
+                                    {!loadingLocations &&
+                                        locations
+                                            .filter((loc) => String(loc.id) !== selectedDestination)
+                                            .map((loc) => (
+                                                <option
+                                                    key={loc.id}
+                                                    value={loc.id}
+                                                >
+                                                    {loc.city} ({loc.code})
+                                                </option>
+                                            ))}
                                 </select>
+
+                                {loadingLocations && (
+                                    <div className="absolute right-3">
+                                        <svg
+                                            className="h-5 w-5 animate-spin text-gray-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex items-center rounded-full border p-2">
+                            <div className="relative flex items-center rounded-full border p-2">
                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                 <select
                                     value={selectedDestination}
                                     onChange={(e) => setSelectedDestination(e.target.value)}
-                                    className="w-full bg-transparent outline-none"
+                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
                                     required
+                                    disabled={loadingLocations} // Désactive pendant chargement
                                 >
                                     <option
                                         value=""
                                         disabled
                                     >
-                                        Sélectionner la destination
+                                        Sélectionner le départ
                                     </option>
-                                    {locations.map((loc) => (
-                                        <option
-                                            key={loc.id}
-                                            value={loc.id}
-                                        >
-                                            {loc.city} ({loc.code})
-                                        </option>
-                                    ))}
+                                    {!loadingLocations &&
+                                        locations
+                                            .filter((loc) => String(loc.id) !== selectedDeparture)
+                                            .map((loc) => (
+                                                <option
+                                                    key={loc.id}
+                                                    value={loc.id}
+                                                >
+                                                    {loc.city} ({loc.code})
+                                                </option>
+                                            ))}
                                 </select>
+
+                                {loadingLocations && (
+                                    <div className="absolute right-3">
+                                        <svg
+                                            className="h-5 w-5 animate-spin text-gray-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
 
                             <input
@@ -456,7 +550,7 @@ const FlightTableHelico = () => {
 
                             <button
                                 type="submit"
-                                className="relative flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-white"
+                                className="relative flex items-center justify-center rounded bg-blue-600 table-cell text-center text-white"
                                 disabled={submitting}
                             >
                                 {submitting && (

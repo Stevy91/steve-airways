@@ -42,6 +42,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
     const [selectedDestination2, setSelectedDestination2] = useState("");
     const [selectedDate2, setSelectedDate2] = useState("");
     const [selectedDateReturn, setSelectedDateReturn] = useState("");
+    const [loadingLocations, setLoadingLocations] = useState(true);
 
     // State pour les erreurs de validation
     const [errors, setErrors] = useState({
@@ -176,12 +177,22 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         }
     };
 
+    // Charger les locations au montage
     useEffect(() => {
-        fetch(`https://steve-airways-production.up.railway.app/api/locations`)
-            .then((res) => res.json())
-            .then((data) => {
+        const fetchLocations = async () => {
+            try {
+                setLoadingLocations(true);
+                const res = await fetch(`https://steve-airways-production.up.railway.app/api/locations`);
+                const data = await res.json();
                 setLocations(data);
-            });
+            } catch (err) {
+                console.error("Erreur lors du chargement des locations:", err);
+            } finally {
+                setLoadingLocations(false);
+            }
+        };
+
+        fetchLocations();
     }, []);
 
     const updatePassengerPlane = (type: string, delta: number) => {
@@ -203,7 +214,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         });
     };
 
-        const updatePassengerHelico = (type: string, delta: number) => {
+    const updatePassengerHelico = (type: string, delta: number) => {
         setPassengers((prev) => {
             const currentValue = prev[type as keyof typeof prev];
             let newValue = currentValue + delta;
@@ -375,6 +386,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     id="from"
                                                     className="w-full bg-transparent outline-none"
+                                                    disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -383,15 +395,40 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     >
                                                         {t("Select Departure")}
                                                     </option>
-                                                    {locations.map((loc) => (
-                                                        <option
-                                                            key={loc.id}
-                                                            value={loc.code}
-                                                        >
-                                                            {loc.city} ({loc.code})
-                                                        </option>
-                                                    ))}
+                                                    {!loadingLocations &&
+                                                        locations.map((loc) => (
+                                                            <option
+                                                                key={loc.id}
+                                                                value={loc.code}
+                                                            >
+                                                                {loc.city} ({loc.code})
+                                                            </option>
+                                                        ))}
                                                 </select>
+                                                {loadingLocations && (
+                                                    <div className="absolute right-3">
+                                                        <svg
+                                                            className="h-5 w-5 animate-spin text-gray-500"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle
+                                                                className="opacity-25"
+                                                                cx="12"
+                                                                cy="12"
+                                                                r="10"
+                                                                stroke="currentColor"
+                                                                strokeWidth="4"
+                                                            ></circle>
+                                                            <path
+                                                                className="opacity-75"
+                                                                fill="currentColor"
+                                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            ></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                             {errors.departure && <p className="mt-1 text-xs text-red-500">{errors.departure}</p>}
                                         </div>
@@ -407,6 +444,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     id="to"
                                                     className="w-full bg-transparent outline-none"
+                                                    disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -415,15 +453,40 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     >
                                                         {t("Select Destination")}
                                                     </option>
-                                                    {getFilteredDestinations().map((loc) => (
-                                                        <option
-                                                            key={loc.id}
-                                                            value={loc.code}
-                                                        >
-                                                            {loc.city} ({loc.code})
-                                                        </option>
-                                                    ))}
+                                                    {!loadingLocations &&
+                                                        getFilteredDestinations().map((loc) => (
+                                                            <option
+                                                                key={loc.id}
+                                                                value={loc.code}
+                                                            >
+                                                                {loc.city} ({loc.code})
+                                                            </option>
+                                                        ))}
                                                 </select>
+                                                {loadingLocations && (
+                                                    <div className="absolute right-3">
+                                                        <svg
+                                                            className="h-5 w-5 animate-spin text-gray-500"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle
+                                                                className="opacity-25"
+                                                                cx="12"
+                                                                cy="12"
+                                                                r="10"
+                                                                stroke="currentColor"
+                                                                strokeWidth="4"
+                                                            ></circle>
+                                                            <path
+                                                                className="opacity-75"
+                                                                fill="currentColor"
+                                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            ></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                             {errors.destination && <p className="mt-1 text-xs text-red-500">{errors.destination}</p>}
                                         </div>
@@ -459,6 +522,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setErrors({ ...errors, departure2: "" });
                                                     }}
                                                     className="w-full bg-transparent outline-none"
+                                                    disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -467,15 +531,40 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     >
                                                         {t("Select Departure")}
                                                     </option>
-                                                    {locations.map((loc) => (
-                                                        <option
-                                                            key={loc.id}
-                                                            value={loc.code}
-                                                        >
-                                                            {loc.city} ({loc.code})
-                                                        </option>
-                                                    ))}
+                                                    {!loadingLocations &&
+                                                        locations.map((loc) => (
+                                                            <option
+                                                                key={loc.id}
+                                                                value={loc.code}
+                                                            >
+                                                                {loc.city} ({loc.code})
+                                                            </option>
+                                                        ))}
                                                 </select>
+                                                {loadingLocations && (
+                                                    <div className="absolute right-3">
+                                                        <svg
+                                                            className="h-5 w-5 animate-spin text-gray-500"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle
+                                                                className="opacity-25"
+                                                                cx="12"
+                                                                cy="12"
+                                                                r="10"
+                                                                stroke="currentColor"
+                                                                strokeWidth="4"
+                                                            ></circle>
+                                                            <path
+                                                                className="opacity-75"
+                                                                fill="currentColor"
+                                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            ></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                             {errors.departure2 && <p className="mt-1 text-xs text-red-500">{errors.departure2}</p>}
                                         </div>
@@ -491,6 +580,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setErrors({ ...errors, destination2: "" });
                                                     }}
                                                     className="w-full bg-transparent outline-none"
+                                                    disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -499,15 +589,40 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     >
                                                         {t("Select Destination")}
                                                     </option>
-                                                    {getFilteredDestinations().map((loc) => (
-                                                        <option
-                                                            key={loc.id}
-                                                            value={loc.code}
-                                                        >
-                                                            {loc.city} ({loc.code})
-                                                        </option>
-                                                    ))}
+                                                    {!loadingLocations &&
+                                                        getFilteredDestinations().map((loc) => (
+                                                            <option
+                                                                key={loc.id}
+                                                                value={loc.code}
+                                                            >
+                                                                {loc.city} ({loc.code})
+                                                            </option>
+                                                        ))}
                                                 </select>
+                                                {loadingLocations && (
+                                                    <div className="absolute right-3">
+                                                        <svg
+                                                            className="h-5 w-5 animate-spin text-gray-500"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle
+                                                                className="opacity-25"
+                                                                cx="12"
+                                                                cy="12"
+                                                                r="10"
+                                                                stroke="currentColor"
+                                                                strokeWidth="4"
+                                                            ></circle>
+                                                            <path
+                                                                className="opacity-75"
+                                                                fill="currentColor"
+                                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            ></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                             {errors.destination2 && <p className="mt-1 text-xs text-red-500">{errors.destination2}</p>}
                                         </div>

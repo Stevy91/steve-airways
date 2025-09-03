@@ -18,10 +18,7 @@ export type BookingDetails = {
   typeV?: string;
   adminNotes?: string;
 };
-type Notification = {
-    message: string;
-    type: "success" | "error";
-};
+
 
 type BookingDetailsModalProps = {
   open: boolean;
@@ -40,12 +37,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
   const [booking, setBooking] = useState<BookingDetails | undefined>(data);
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<string>(data?.paymentStatus || "pending");
-  const [notification, setNotification] = useState<Notification | null>(null);
+ 
   const dialogRef = useRef<HTMLDivElement | null>(null);
-          const showNotification = (message: string, type: "success" | "error") => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 5000);
-    };
+     
 
   useEffect(() => {
     if (data) {
@@ -88,7 +82,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
       // Met à jour le state local pour refléter le nouveau statut
       setBooking((prev) => (prev ? { ...prev, paymentStatus: data.newStatus } : prev));
-      showNotification("Vol ajouté avec succès", "success");
+    
 
       // Callback pour le parent
       onSave && onSave({ ...booking, paymentStatus: data.newStatus });

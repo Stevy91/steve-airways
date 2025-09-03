@@ -350,5 +350,7 @@
   "Payment Method":"Mode de paiement",
     "Reserve and Pay Later":"Réservez et payez plus tard",
   "Processing...":"Traitement...",
-  "Pay Later":"Payer plus tard"
+  "Pay Later":"Payer plus tard",
+  "Loading...":"Chargement...",
+  "Loading flights...":"Chargement des vols..."
 }

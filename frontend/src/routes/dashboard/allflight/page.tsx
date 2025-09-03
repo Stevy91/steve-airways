@@ -46,6 +46,16 @@ const FlightTable = () => {
     const [selectedDestination, setSelectedDestination] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
+    const [loadingLocations, setLoadingLocations] = useState(true);
+
+    // 🔹 Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5; // nombre de vols par page
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(flights.length / itemsPerPage);
 
     // Fetch flights
     const fetchFlights = async () => {
@@ -65,13 +75,21 @@ const FlightTable = () => {
         fetchFlights();
     }, []);
 
-    // Fetch locations
+    // Charger les locations au montage
     useEffect(() => {
         const fetchLocations = async () => {
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/locations");
-            const data = await res.json();
-            setLocations(data);
+            try {
+                setLoadingLocations(true);
+                const res = await fetch("https://steve-airways-production.up.railway.app/api/locations");
+                const data = await res.json();
+                setLocations(data);
+            } catch (err) {
+                console.error("Erreur lors du chargement des locations:", err);
+            } finally {
+                setLoadingLocations(false);
+            }
         };
+
         fetchLocations();
     }, []);
 
@@ -233,15 +251,12 @@ const FlightTable = () => {
                 </div>
             )}
 
-  
-
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                 <div className="card-body overflow-auto p-0">
                     <div className="relative w-full flex-shrink-0 overflow-auto rounded-none [scrollbar-width:_thin]">
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
-
                                     <th className="table-head text-center">Numéro de vol</th>
                                     <th className="table-head text-center">Type</th>
                                     <th className="table-head text-center">Compagnie</th>
@@ -255,23 +270,21 @@ const FlightTable = () => {
                                 </tr>
                             </thead>
                             <tbody className="table-body">
-                                {flights.map((flight, index) => (
+                                {currentFlights.map((flight, index) => (
                                     <tr
                                         key={flight.id}
                                         className="border-b hover:bg-gray-50"
                                     >
-                                       
-                                        <td className="table-head text-center">{flight.flight_number}</td>
-                                        <td className="table-head text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
-                                        <td className="table-head text-center">{flight.airline}</td>
-                                        <td className="table-head text-center">{flight.from}</td>
-                                        <td className="table-head text-center">{flight.to}</td>
-
-                                        <td className="table-head text-center">{flight.departure}</td>
-                                        <td className="table-head text-center">{flight.arrival}</td>
-                                        <td className="table-head text-center">${flight.price}</td>
-                                        <td className="table-head text-center">{flight.seats_available}</td>
-                                        <td className="relative px-4 py-2">
+                                        <td className="table-cell text-center">{flight.flight_number}</td>
+                                        <td className="table-cell text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
+                                        <td className="table-cell text-center">{flight.airline}</td>
+                                        <td className="table-cell text-center">{flight.from}</td>
+                                        <td className="table-cell text-center">{flight.to}</td>
+                                        <td className="table-cell text-center">{flight.departure}</td>
+                                        <td className="table-cell text-center">{flight.arrival}</td>
+                                        <td className="table-cell text-center">${flight.price}</td>
+                                        <td className="table-cell text-center">{flight.seats_available}</td>
+                                        <td className="relative px-4 py-2 table-cell text-center">
                                             <button
                                                 className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
                                                 onClick={() => handleEditClick(flight)}
@@ -290,6 +303,27 @@ const FlightTable = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+                {/* 🔹 Pagination */}
+                <div className="mt-4 flex justify-center gap-2">
+                    <span>
+                        Page {currentPage} / {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="rounded bg-blue-700 px-3 py-1 text-sm hover:bg-orange-400 disabled:bg-gray-200 text-gray-50"
+                    >
+                        Previous
+                    </button>
+
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="rounded bg-blue-700 px-3 py-1 text-sm hover:bg-orange-400 disabled:bg-gray-200 text-gray-50"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
 
@@ -363,13 +397,14 @@ const FlightTable = () => {
                                 required
                             />
 
-                            <div className="flex items-center rounded-full border p-2">
+                            <div className="relative flex items-center rounded-full border p-2">
                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                 <select
                                     value={selectedDeparture}
                                     onChange={(e) => setSelectedDeparture(e.target.value)}
-                                    className="w-full bg-transparent outline-none"
+                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
                                     required
+                                    disabled={loadingLocations} // Désactive pendant chargement
                                 >
                                     <option
                                         value=""
@@ -377,40 +412,97 @@ const FlightTable = () => {
                                     >
                                         Sélectionner le départ
                                     </option>
-                                    {locations.map((loc) => (
-                                        <option
-                                            key={loc.id}
-                                            value={loc.id}
-                                        >
-                                            {loc.city} ({loc.code})
-                                        </option>
-                                    ))}
+                                    {!loadingLocations &&
+                                        locations
+                                            .filter((loc) => String(loc.id) !== selectedDestination)
+                                            .map((loc) => (
+                                                <option
+                                                    key={loc.id}
+                                                    value={loc.id}
+                                                >
+                                                    {loc.city} ({loc.code})
+                                                </option>
+                                            ))}
                                 </select>
+
+                                {loadingLocations && (
+                                    <div className="absolute right-3">
+                                        <svg
+                                            className="h-5 w-5 animate-spin text-gray-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex items-center rounded-full border p-2">
+                            <div className="relative flex items-center rounded-full border p-2">
                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                 <select
                                     value={selectedDestination}
                                     onChange={(e) => setSelectedDestination(e.target.value)}
-                                    className="w-full bg-transparent outline-none"
+                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
                                     required
+                                    disabled={loadingLocations} // Désactive pendant chargement
                                 >
                                     <option
                                         value=""
                                         disabled
                                     >
-                                        Sélectionner la destination
+                                        Sélectionner le départ
                                     </option>
-                                    {locations.map((loc) => (
-                                        <option
-                                            key={loc.id}
-                                            value={loc.id}
-                                        >
-                                            {loc.city} ({loc.code})
-                                        </option>
-                                    ))}
+                                    {!loadingLocations &&
+                                        locations
+                                            .filter((loc) => String(loc.id) !== selectedDeparture)
+                                            .map((loc) => (
+                                                <option
+                                                    key={loc.id}
+                                                    value={loc.id}
+                                                >
+                                                    {loc.city} ({loc.code})
+                                                </option>
+                                            ))}
                                 </select>
+
+                                {loadingLocations && (
+                                    <div className="absolute right-3">
+                                        <svg
+                                            className="h-5 w-5 animate-spin text-gray-500"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
 
                             <input

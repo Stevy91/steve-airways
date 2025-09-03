@@ -351,5 +351,8 @@
   "Payment Method":"Payment Method",
   "Reserve and Pay Later":"Reserve and Pay Later",
   "Processing...":"Processing...",
-  "Pay Later":"Pay Later"
+  "Pay Later":"Pay Later",
+  "Loading...":"Loading...",
+  "Loading flights...":"Loading flights..."
+
 }

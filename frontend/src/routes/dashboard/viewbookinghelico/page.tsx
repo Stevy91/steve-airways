@@ -50,6 +50,13 @@ const ViewBookingHelico = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 5; // Nombre de réservations par page
+
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
+    const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
 
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
 
@@ -110,11 +117,8 @@ const ViewBookingHelico = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col gap-y-4">
-                <h1 className="title">Dashboard</h1>
-                <div className="flex h-64 items-center justify-center">
-                    <p>Chargement des données...</p>
-                </div>
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
             </div>
         );
     }
@@ -157,7 +161,7 @@ const ViewBookingHelico = () => {
                                 </tr>
                             </thead>
                             <tbody className="table-body">
-                                {stats.recentBookings.map((booking) => (
+                                {currentBookings.map((booking) => (
                                     <tr
                                         key={booking.id}
                                         className="table-row"
@@ -188,13 +192,13 @@ const ViewBookingHelico = () => {
                                             <span
                                                 className={`rounded-3xl text-center ${
                                                     booking.status === "confirmed"
-                                                        ? "bg-green-100 text-green-800 ring-1 ring-green-200 px-5"
+                                                        ? "bg-green-100 px-5 text-green-800 ring-1 ring-green-200"
                                                         : booking.status === "pending"
-                                                          ? "bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200 px-3"
-                                                          : "bg-red-100 text-red-800 ring-1 ring-red-200 px-2"
+                                                          ? "bg-yellow-100 px-3 text-yellow-800 ring-1 ring-yellow-200"
+                                                          : "bg-red-100 px-2 text-red-800 ring-1 ring-red-200"
                                                 }`}
                                             >
-                                         {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : "Cancelled"}
+                                                {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : "Cancelled"}
                                             </span>
                                         </td>
                                         <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
@@ -213,6 +217,28 @@ const ViewBookingHelico = () => {
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* 🔹 Pagination */}
+                        <div className="mt-4 flex justify-center gap-2">
+                            <span>
+                                Page {currentPage} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                            >
+                                Previous
+                            </button>
+
+                            <button
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                            >
+                                Next
+                            </button>
+                        </div>
                         {/* Popup modal */}
 
                         <BookingDetailsModal

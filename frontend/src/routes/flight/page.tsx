@@ -52,7 +52,7 @@ interface BookingState {
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
-      const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
             <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
@@ -197,8 +197,8 @@ const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) =>
 };
 
 export default function FlightSelection() {
-       const { lang } = useParams<{ lang: string }>();
-  const currentLang = lang || "en"; // <-- ici on définit currentLang
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [currentStep] = useState(0);
@@ -209,6 +209,9 @@ export default function FlightSelection() {
     const [isOpen, setIsOpen] = useState<number | null>(null);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const { t, i18n } = useTranslation();
+    const [loadingOutbound, setLoadingOutbound] = useState(false);
+    const [loadingReturn, setLoadingReturn] = useState(false);
+
     const [state, setState] = useState<FlightSelectionState>({
         allFlights: [],
         filteredFlights: [],
@@ -274,15 +277,17 @@ export default function FlightSelection() {
 
         const loadData = async () => {
             try {
-                const [locations, allFlights, filteredFlights, returnFlights] = await fetchFlightData(searchParams, controller.signal);
+                setLoadingOutbound(true);
+                if (tripTypeParam === "roundtrip") {
+                    setLoadingReturn(true);
+                }
 
-                const safeFilteredFlights = Array.isArray(filteredFlights) ? filteredFlights : [];
-                const safeReturnFlights = Array.isArray(returnFlights) ? returnFlights : [];
+                const [locations, allFlights, filteredFlights, returnFlights] = await fetchFlightData(searchParams, controller.signal);
 
                 setState({
                     allFlights: allFlights.map((f: any) => mapFlight(f, locations)),
-                    filteredFlights: safeFilteredFlights.map((f: any) => mapFlight(f, locations)),
-                    returnFlights: safeReturnFlights.map((f: any) => mapFlight(f, locations)),
+                    filteredFlights: filteredFlights.map((f: any) => mapFlight(f, locations)),
+                    returnFlights: returnFlights.map((f: any) => mapFlight(f, locations)),
                     locations,
                     loading: false,
                     error: null,
@@ -295,13 +300,15 @@ export default function FlightSelection() {
                         error: error instanceof Error ? error.message : "Erreur inconnue",
                     }));
                 }
+            } finally {
+                setLoadingOutbound(false);
+                setLoadingReturn(false);
             }
         };
 
         loadData();
-
         return () => controller.abort();
-    }, [searchParams]);
+    }, [searchParams, tripTypeParam]);
 
     const allDates = useMemo(() => {
         if (!state.allFlights.length) return [];
@@ -662,8 +669,9 @@ export default function FlightSelection() {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#eeeeef]">
                 <Spinner size="lg" />
-                <p className="ml-4 text-lg">Chargement des vols en cours...</p>
+                <p className="ml-4 text-lg text-blue-700">{t("Loading...")}</p>
             </div>
+            
         );
     }
 
@@ -689,8 +697,8 @@ export default function FlightSelection() {
                     <p className="text-xl">{t("We fly to connect people.")}</p>
                 </div>
             </div>
- 
-            <div className="h-full font-sans mx-auto max-w-7xl px-4 py-12" >
+
+            <div className="mx-auto h-full max-w-7xl px-4 py-12 font-sans">
                 <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
                     <Stepper currentStep={currentStep} />
                     <div className="flex text-center">
@@ -747,7 +755,12 @@ export default function FlightSelection() {
                                 </button>
                             </div>
 
-                            {filteredFlights.length > 0 ? (
+                            {loadingOutbound ? (
+                                <div className="flex h-40 items-center justify-center">
+                                    <Spinner size="md" />
+                                    <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
+                                </div>
+                            ) : filteredFlights.length > 0 ? (
                                 <div className="mb-[80px] space-y-4">
                                     {filteredFlights.map((flight) => (
                                         <div key={`${flight.id}-${flight.date}`}>
@@ -827,7 +840,12 @@ export default function FlightSelection() {
                                         </button>
                                     </div>
 
-                                    {filteredReturnFlights.length > 0 ? (
+                                    {loadingReturn ? (
+                                        <div className="flex h-40 items-center justify-center">
+                                            <Spinner size="md" />
+                                            <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
+                                        </div>
+                                    ) : filteredReturnFlights.length > 0 ? (
                                         <div className="space-y-4">
                                             {filteredReturnFlights.map((flight) => (
                                                 <div key={`return-${flight.id}-${flight.date}`}>
