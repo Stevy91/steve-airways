@@ -71,30 +71,60 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         );
     }
 
-    const handleSave = async () => {
-        if (!booking) return;
+    // const handleSave = async () => {
+    //     if (!booking) return;
+
+    //     try {
+    //         const response = await fetch(`https://steve-airways-production.up.railway.app/api/booking-plane/${booking.reference}/payment-status`, {
+    //             method: "PUT",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //             body: JSON.stringify({ paymentStatus: booking.paymentStatus }),
+    //         });
+
+    //         if (!response.ok) {
+    //             throw new Error("Erreur API");
+    //         }
+
+    //         const result = await response.json();
+    //         console.log("✅ Payment status updated:", result);
+
+    //         onSave(booking); // callback parent
+    //         onClose();
+    //     } catch (err) {
+    //         console.error("❌ Failed to update payment status", err);
+    //         alert("Impossible de mettre à jour le paiement.");
+    //     }
+    // };
+
+    const handleSave = async (newStatus: "pending" | "confirmed" | "cancelled") => {
+        if (!booking) return; // <-- utilise booking ici
 
         try {
-            const response = await fetch(`https://steve-airways-production.up.railway.app/api/booking-plane/${booking.reference}/payment-status`, {
+            const res = await fetch(`https://steve-airways-production.up.railway.app/api/booking-plane/${booking.reference}/payment-status`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ paymentStatus: booking.paymentStatus }),
+                body: JSON.stringify({ paymentStatus: newStatus }),
             });
 
-            if (!response.ok) {
-                throw new Error("Erreur API");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Erreur API");
             }
 
-            const result = await response.json();
-            console.log("✅ Payment status updated:", result);
+            const data = await res.json();
+            console.log("✅ Payment status updated:", data);
 
-            onSave(booking); // callback parent
-            onClose();
+            // Met à jour le state local pour refléter le nouveau statut
+            setBooking((prev) => (prev ? { ...prev, status: data.newStatus } : prev));
+
+            // Appelle la callback si elle existe
+            onSave && onSave(data);
         } catch (err) {
             console.error("❌ Failed to update payment status", err);
-            alert("Impossible de mettre à jour le paiement.");
         }
     };
 

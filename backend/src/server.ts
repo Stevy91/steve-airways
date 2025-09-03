@@ -1107,10 +1107,37 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
 // ✅ 2. Endpoint pour les détails d’une réservation
 
 // PUT - Update payment status
-app.put("/api/booking-plane/:id/payment-status", async (req: Request, res: Response) => {
-  const { id } = req.params;
+// app.put("/api/booking-plane/:id/payment-status", async (req: Request, res: Response) => {
+//   const { id } = req.params;
+//   const { paymentStatus } = req.body;
+
+//   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
+//     return res.status(400).json({ error: "Invalid payment status" });
+//   }
+
+//   let connection;
+//   try {
+//     connection = await pool.getConnection();
+
+//     const [result] = await connection.query(
+//       `UPDATE bookings SET status = ? WHERE id = ?`,
+//       [paymentStatus, id]
+//     );
+
+//     res.json({ success: true, bookingId: id, newStatus: paymentStatus });
+//   } catch (err) {
+//     console.error("Error updating payment status:", err);
+//     res.status(500).json({ error: "Failed to update payment status" });
+//   } finally {
+//     if (connection) connection.release();
+//   }
+// });
+
+app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
+  const { reference } = req.params;
   const { paymentStatus } = req.body;
 
+  // Validation du statut
   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
     return res.status(400).json({ error: "Invalid payment status" });
   }
@@ -1119,12 +1146,19 @@ app.put("/api/booking-plane/:id/payment-status", async (req: Request, res: Respo
   try {
     connection = await pool.getConnection();
 
+    // On met à jour en utilisant booking_reference au lieu de id
     const [result] = await connection.query(
-      `UPDATE bookings SET status = ? WHERE id = ?`,
-      [paymentStatus, id]
+      `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
+      [paymentStatus, reference]
     );
 
-    res.json({ success: true, bookingId: id, newStatus: paymentStatus });
+    // Vérifie si une ligne a été mise à jour
+    const affectedRows = (result as any).affectedRows;
+    if (affectedRows === 0) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    res.json({ success: true, reference, newStatus: paymentStatus });
   } catch (err) {
     console.error("Error updating payment status:", err);
     res.status(500).json({ error: "Failed to update payment status" });
@@ -1132,7 +1166,6 @@ app.put("/api/booking-plane/:id/payment-status", async (req: Request, res: Respo
     if (connection) connection.release();
   }
 });
-
 
 
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
