@@ -10,6 +10,7 @@ import Spinner from "../../components/Spinner";
 import ErrorAlert from "../../components/ErrorAlert";
 import EmptyState from "../../components/EmptyState";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 
 type FlightType = "plane" | "helicopter";
 
@@ -537,7 +538,38 @@ export default function FlightSelection() {
         return Math.round(adultPrice + childPrice + infantPrice);
     };
 
+    // const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
+    //     const flightWithTotalPrice = {
+    //         ...flight,
+    //         totalPrice: calculateTotalPrice(flight),
+    //     };
+
+    //     if (isReturnFlight) {
+    //         setBooking({
+    //             ...booking,
+    //             return: flightWithTotalPrice,
+    //             showReturnSelection: false,
+    //         });
+    //     } else {
+    //         setBooking({
+    //             outbound: flightWithTotalPrice,
+    //             showOutboundSelection: false,
+    //             return: undefined,
+    //             showReturnSelection: selectedTabTrip === "roundtrip",
+    //         });
+    //     }
+    // };
+
     const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
+        const totalPassengers = passengers.adult + passengers.child + passengers.infant;
+        const availableSeats = Number(flight.seat); // Assure-toi que seat est un nombre
+
+        if (availableSeats < totalPassengers) {
+  
+             toast.error(`Impossible de steve : seulement ${availableSeats} siège(s) disponible(s) pour ${passengers} passager(s).`);
+            return; // Stoppe la réservation
+        }
+
         const flightWithTotalPrice = {
             ...flight,
             totalPrice: calculateTotalPrice(flight),
@@ -671,7 +703,6 @@ export default function FlightSelection() {
                 <Spinner size="lg" />
                 <p className="ml-4 text-lg text-blue-700">{t("Loading...")}</p>
             </div>
-            
         );
     }
 
