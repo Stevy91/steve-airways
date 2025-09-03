@@ -292,7 +292,6 @@ app.get("/api/flights", async (req: Request, res: Response) => {
 });
 
 
-
 // Endpoint pour récupérer les locations
 app.get('/api/locations', async (req: Request, res: Response) => {
   try {
@@ -416,7 +415,6 @@ app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
         });
     } 
 });
-
 
 
 app.post("/api/confirm-booking", async (req: Request, res: Response) => {
@@ -754,8 +752,6 @@ for (const field of requiredFields) {
 });
 
 
-
-
 //--------------------------------------------------dashboard-----------------------------------------
 
 interface FlightWithAirports extends mysql.RowDataPacket {
@@ -789,6 +785,7 @@ app.get("/api/locationstables", async (req: Request, res: Response) => {
         });
     }
 });
+
 function formatDate(date: Date): string {
     const d = new Date(date);
     return d.toLocaleString("fr-FR", {
@@ -941,6 +938,58 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
     }
 });
 
+app.post("/api/addflighttable", async (req: Request, res: Response) => {
+    console.log("Données reçues:", req.body); // Ajouté pour le debug
+    // Vérifier que toutes les valeurs requises sont présentes
+    const requiredFields = ["flight_number", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
+
+    for (const field of requiredFields) {
+        if (req.body[field] === undefined) {
+            return res.status(400).json({
+                error: `Le champ ${field} est requis`,
+                details: `Received: ${req.body[field]}`,
+            });
+        }
+    }
+
+    try {
+        const [result] = await pool.execute<ResultSetHeader>(
+            `INSERT INTO flights 
+             (flight_number, type, airline, departure_location_id, arrival_location_id, 
+              departure_time, arrival_time, price, seats_available)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                req.body.flight_number ?? null,
+                req.body.type ?? null,
+                req.body.airline ?? null,
+                req.body.departure_location_id ?? null,
+                req.body.arrival_location_id ?? null,
+                req.body.departure_time ?? null,
+                req.body.arrival_time ?? null,
+                req.body.price ?? null,
+                req.body.seats_available ?? null,
+            ],
+        );
+        console.log("Résultat INSERT:", result); // Ajouté pour le debug
+
+        const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [result.insertId]);
+
+        res.status(201).json(rows[0]);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Erreur MySQL:", error);
+            res.status(500).json({
+                error: "Erreur lors de l'ajout du vol",
+                details: error.message,
+            });
+        } else {
+            console.error("Erreur inconnue:", error);
+            res.status(500).json({
+                error: "Erreur inconnue lors de l'ajout du vol",
+            });
+        }
+    }
+});
 // Endpoint pour les données du dashboard
 app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     let connection;
@@ -1139,32 +1188,6 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 });
 // ✅ 2. Endpoint pour les détails d’une réservation
 
-// PUT - Update payment status
-// app.put("/api/booking-plane/:id/payment-status", async (req: Request, res: Response) => {
-//   const { id } = req.params;
-//   const { paymentStatus } = req.body;
-
-//   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
-//     return res.status(400).json({ error: "Invalid payment status" });
-//   }
-
-//   let connection;
-//   try {
-//     connection = await pool.getConnection();
-
-//     const [result] = await connection.query(
-//       `UPDATE bookings SET status = ? WHERE id = ?`,
-//       [paymentStatus, id]
-//     );
-
-//     res.json({ success: true, bookingId: id, newStatus: paymentStatus });
-//   } catch (err) {
-//     console.error("Error updating payment status:", err);
-//     res.status(500).json({ error: "Failed to update payment status" });
-//   } finally {
-//     if (connection) connection.release();
-//   }
-// });
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
@@ -1283,9 +1306,6 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
   }
 });
 
-
-
-
 app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
     const flightId = req.params.id;
 
@@ -1339,8 +1359,6 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
     }
 });
 
-
-
 // Route pour supprimer un vol
 app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
     const flightId = Number(req.params.id);
@@ -1384,10 +1402,6 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
         await pool.end();
     }
 });
-
-
-
-
 
 
 

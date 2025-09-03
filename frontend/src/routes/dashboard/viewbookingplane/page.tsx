@@ -20,6 +20,10 @@ type Booking = {
     type_vol: string;
     type_v: string;
 };
+type Notification = {
+    message: string;
+    type: "success" | "error";
+};
 
 interface ChartData {
     name: string;
@@ -50,8 +54,14 @@ const ViewBookingPlane = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const [notification, setNotification] = useState<Notification | null>(null);
 
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
+
+        const showNotification = (message: string, type: "success" | "error") => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 5000);
+    };
 
     const handleViewDetails = async (id: number) => {
         try {

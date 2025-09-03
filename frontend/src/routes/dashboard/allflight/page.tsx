@@ -6,7 +6,6 @@ interface Flight {
     flight_number: string;
     type: string;
 
-
     airline: string;
     from?: string;
     to?: string;
@@ -132,71 +131,63 @@ const FlightTable = () => {
         setShowModal(true);
     };
 
-  const handleAddFlight = async (flightData: any) => {
-    try {
-      setSubmitting(true);
-      const res = await fetch(
-        "https://steve-airways-production.up.railway.app/api/addflighttable",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(flightData),
+    const handleAddFlight = async (flightData: any) => {
+        try {
+            setSubmitting(true);
+            const res = await fetch("https://steve-airways-production.up.railway.app/api/addflighttable", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(flightData),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Erreur ajout vol");
+            }
+
+            // Rafraîchir les données après ajout
+            await fetchFlights();
+
+            setShowModal(false);
+            showNotification("Vol ajouté avec succès", "success");
+        } catch (err: any) {
+            showNotification(err.message || "Erreur inconnue", "error");
+        } finally {
+            setSubmitting(false);
         }
-      );
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Erreur ajout vol");
-      }
-      
-      // Rafraîchir les données après ajout
-      await fetchFlights();
-      
-      setShowModal(false);
-      showNotification("Vol ajouté avec succès", "success");
-      
-    } catch (err: any) {
-      showNotification(err.message || "Erreur inconnue", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    };
 
-  const handleUpdateFlight = async (flightId: number, updatedData: any) => {
-    try {
-      setSubmitting(true);
-      const res = await fetch(
-        `https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedData),
+    const handleUpdateFlight = async (flightId: number, updatedData: any) => {
+        try {
+            setSubmitting(true);
+            const res = await fetch(`https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedData),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Erreur ${res.status}: ${errorText}`);
+            }
+
+            const data = await res.json();
+
+            // Rafraîchir les données après modification
+            await fetchFlights();
+
+            setEditingFlight(null);
+            setShowModal(false);
+            showNotification("Vol modifié avec succès", "success");
+        } catch (err: any) {
+            console.error("❌ Erreur complète:", err);
+            showNotification(err.message || "Erreur inconnue lors de la modification", "error");
+        } finally {
+            setSubmitting(false);
         }
-      );
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Erreur ${res.status}: ${errorText}`);
-      }
-
-      const data = await res.json();
-      
-      // Rafraîchir les données après modification
-      await fetchFlights();
-      
-      setEditingFlight(null);
-      setShowModal(false);
-      showNotification("Vol modifié avec succès", "success");
-      
-    } catch (err: any) {
-      console.error("❌ Erreur complète:", err);
-      showNotification(err.message || "Erreur inconnue lors de la modification", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    };
 
     const deleteFlight = async (flightId: number) => {
         try {
@@ -236,69 +227,70 @@ const FlightTable = () => {
                     Add new flight
                 </button>
             </div>
+            {loading && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                </div>
+            )}
 
-            <div className="relative overflow-x-auto rounded bg-white shadow">
-                {loading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
-                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+  
+
+            <div className="card col-span-1 md:col-span-2 lg:col-span-4">
+                <div className="card-body overflow-auto p-0">
+                    <div className="relative w-full flex-shrink-0 overflow-auto rounded-none [scrollbar-width:_thin]">
+                        <table className="table">
+                            <thead className="table-header">
+                                <tr className="table-row">
+
+                                    <th className="table-head text-center">Numéro de vol</th>
+                                    <th className="table-head text-center">Type</th>
+                                    <th className="table-head text-center">Compagnie</th>
+                                    <th className="table-head text-center">Départ</th>
+                                    <th className="table-head text-center">Destination</th>
+                                    <th className="table-head text-center">Départ heure</th>
+                                    <th className="table-head text-center">Arrivée heure</th>
+                                    <th className="table-head text-center">Prix</th>
+                                    <th className="table-head text-center">Sièges</th>
+                                    <th className="table-head text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="table-body">
+                                {flights.map((flight, index) => (
+                                    <tr
+                                        key={flight.id}
+                                        className="border-b hover:bg-gray-50"
+                                    >
+                                       
+                                        <td className="table-head text-center">{flight.flight_number}</td>
+                                        <td className="table-head text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
+                                        <td className="table-head text-center">{flight.airline}</td>
+                                        <td className="table-head text-center">{flight.from}</td>
+                                        <td className="table-head text-center">{flight.to}</td>
+
+                                        <td className="table-head text-center">{flight.departure}</td>
+                                        <td className="table-head text-center">{flight.arrival}</td>
+                                        <td className="table-head text-center">${flight.price}</td>
+                                        <td className="table-head text-center">{flight.seats_available}</td>
+                                        <td className="relative px-4 py-2">
+                                            <button
+                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
+                                                onClick={() => handleEditClick(flight)}
+                                            >
+                                                <Pencil className="h-4 w-4 text-blue-500" />
+                                            </button>
+                                            <button
+                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                onClick={() => deleteFlight(flight.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-
-                <table className="min-w-full text-left text-sm">
-                    <thead className="border-b bg-gray-50">
-                        <tr>
-                            <th className="px-4 py-2">
-                                <input type="checkbox" />
-                            </th>
-                            <th className="px-4 py-2">Numéro de vol</th>
-                            <th className="px-4 py-2">Type</th>
-                            <th className="px-4 py-2">Compagnie</th>
-                            <th className="px-4 py-2">Départ</th>
-                            <th className="px-4 py-2">Destination</th>
-                            <th className="px-4 py-2">Départ heure</th>
-                            <th className="px-4 py-2">Arrivée heure</th>
-                            <th className="px-4 py-2">Prix</th>
-                            <th className="px-4 py-2">Sièges</th>
-                            <th className="px-4 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {flights.map((flight, index) => (
-                            <tr
-                                key={flight.id}
-                                className="border-b hover:bg-gray-50"
-                            >
-                                <td className="px-4 py-2">
-                                    <input type="checkbox" />
-                                </td>
-                                <td className="px-4 py-2">{flight.flight_number}</td>
-                                <td className="px-4 py-2">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
-                                <td className="px-4 py-2">{flight.airline}</td>
-                                <td className="px-4 py-2">{flight.from}</td>
-                                <td className="px-4 py-2">{flight.to}</td>
-
-                                <td className="px-4 py-2">{flight.departure}</td>
-                                <td className="px-4 py-2">{flight.arrival}</td>
-                                <td className="px-4 py-2">${flight.price}</td>
-                                <td className="px-4 py-2">{flight.seats_available}</td>
-                                <td className="relative px-4 py-2">
-                                    <button
-                                        className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
-                                        onClick={() => handleEditClick(flight)}
-                                    >
-                                        <Pencil className="h-4 w-4 text-blue-500" />
-                                    </button>
-                                    <button
-                                        className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                        onClick={() => deleteFlight(flight.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                </div>
             </div>
 
             {/* Modal Add/Edit */}

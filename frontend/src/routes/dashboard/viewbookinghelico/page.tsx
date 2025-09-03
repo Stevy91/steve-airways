@@ -79,7 +79,7 @@ const ViewBookingHelico = () => {
             try {
                 setLoading(true);
 
-                const response = await fetch("https://steve-airways-production.up.railway.app/api/booking-plane");
+                const response = await fetch("https://steve-airways-production.up.railway.app/api/booking-helico");
 
                 if (!response.ok) {
                     throw new Error(`Erreur HTTP: ${response.status}`);
