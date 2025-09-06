@@ -1,41 +1,69 @@
-import { Bell, ChevronsLeft, Moon, Sun } from "lucide-react";
+import { Bell, Check, ChevronsLeft, Moon, Sun } from "lucide-react";
 import { useTheme } from "../contexts/theme-context";
 import profileImg from "../assets/profile-image.jpg";
 import React, { useState, useRef, useEffect } from "react";
-import Notifications from "../components/Notifications";
+import { io } from "socket.io-client";
 
 type HeaderProps = {
     collapsed: boolean;
     setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
+interface Notification {
+    id: number;
+    message: string;
+    seen: boolean;
+    createdAt?: string;
+    created_at?: string;
+}
+
 export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const { theme, setTheme } = useTheme();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
-    const [open, setOpen] = useState(false);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
 
-    const notifications = [
-        { id: 1, text: "🔔 Nouvelle commande reçue" },
-        { id: 2, text: "👤 Nouvel utilisateur inscrit" },
-        { id: 3, text: "⚙️ Paramètres mis à jour" },
-        { id: 4, text: "📦 Livraison expédiée" },
-        { id: 5, text: "🔄 Mise à jour disponible" },
-    ];
+    // Récupérer les notifications au chargement du composant
+    const fetchNotifications = async () => {
+        try {
+            const res = await fetch("https://steve-airways-production.up.railway.app/api/notifications");
+            const data = await res.json();
+            if (data.success) {
+                setNotifications(data.notifications);
+                const unread = data.notifications.filter((n: Notification) => !n.seen).length;
+                setUnreadCount(unread);
+            }
+        } catch (error) {
+            console.error("Erreur récupération notifications:", error);
+        }
+    };
+
+    // Écouter les nouvelles notifications via Socket.io
+    useEffect(() => {
+        fetchNotifications();
+
+        const socket = io("https://steve-airways-production.up.railway.app");
+        socket.on("new-notification", (notif: Notification) => {
+            setNotifications((prev) => [notif, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+        });
+
+        return () => {
+            socket.close();
+        };
+    }, []);
 
     // Fermer les dropdown si clic à l'extérieur
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (
-                profileRef.current &&
-                !profileRef.current.contains(event.target as Node) &&
-                notifRef.current &&
-                !notifRef.current.contains(event.target as Node)
-            ) {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
+            }
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
                 setIsNotifOpen(false);
             }
         }
@@ -43,7 +71,6 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Ouvrir un seul menu à la fois
     const toggleProfile = () => {
         setIsProfileOpen(!isProfileOpen);
         if (!isProfileOpen) setIsNotifOpen(false);
@@ -52,6 +79,20 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const toggleNotif = () => {
         setIsNotifOpen(!isNotifOpen);
         if (!isNotifOpen) setIsProfileOpen(false);
+    };
+
+    const markAsSeen = async (id: number) => {
+        try {
+            await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, {
+                method: "PATCH",
+            });
+
+            setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, seen: true } : n)));
+
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error("Erreur marquer comme lu:", error);
+        }
     };
 
     return (
@@ -63,19 +104,6 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                 >
                     <ChevronsLeft className={collapsed ? "rotate-180" : ""} />
                 </button>
-                {/* <div className="input">
-                    <Search
-                        size={20}
-                        className="text-slate-300"
-                    />
-                    <input
-                        type="text"
-                        name="search"
-                        id="search"
-                        placeholder="Search..."
-                        className="w-full bg-transparent text-slate-900 outline-0 placeholder:text-slate-300 dark:text-slate-50"
-                    />
-                </div> */}
             </div>
 
             <div className="relative flex items-center gap-x-3">
@@ -96,8 +124,8 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
 
                 {/* Notifications */}
                 <div
-                    ref={notifRef}
                     className="relative"
+                    ref={notifRef}
                 >
                     <button
                         onClick={toggleNotif}
@@ -105,16 +133,40 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                         aria-label="Toggle notifications"
                     >
                         <Bell size={20} />
-                        {/* Badge rouge avec nombre */}
-                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-                            5
-                        </span>
+                        {unreadCount > 0 && (
+                            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                                {unreadCount}
+                            </span>
+                        )}
                     </button>
 
                     {isNotifOpen && (
-                        <div className="absolute right-0 z-20 mt-2 w-64 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 animate-in fade-in zoom-in-95 dark:bg-slate-800">
+                        <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-96 origin-top-right rounded-md bg-white p-4 shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
                             <div className="max-h-48 overflow-auto py-2">
-                               <Notifications/>
+                                <ul>
+                                    {notifications.map((n) => {
+                                        const dateStr = n.createdAt || n.created_at;
+                                        return (
+                                            <li
+                                                key={n.id}
+                                                className="flex items-center justify-between py-2"
+                                                style={{ fontWeight: n.seen ? "normal" : "bold" }}
+                                            >
+                                                <span>
+                                                    {n.message} - {dateStr ? new Date(dateStr).toLocaleString() : "Date inconnue"}
+                                                </span>
+                                                {!n.seen && (
+                                                    <button
+                                                        className="ml-4 rounded-xl bg-orange-700 p-1"
+                                                        onClick={() => markAsSeen(n.id)}
+                                                    >
+                                                        <Check className="h-5 w-5 text-white" />
+                                                    </button>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
                             </div>
                         </div>
                     )}
@@ -138,7 +190,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                     </button>
 
                     {isProfileOpen && (
-                        <div className="absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 animate-in fade-in zoom-in-95 dark:bg-slate-800">
+                        <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
                             <div className="py-2">
                                 <a
                                     href="#profile"
