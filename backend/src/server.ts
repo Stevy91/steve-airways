@@ -567,7 +567,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
         VALUES (?, ?, ?, ?, ?)`,
         [
             "booking",
-            `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+            ` ${bookingReference} avec ${passengers.length} passager(s).`,
             bookingResult.insertId,
             false,
             now,
@@ -575,7 +575,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
         );
         // Envoyer la notif au front
         io.emit("new-notification", {
-        message: `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+        message: ` ${bookingReference} avec ${passengers.length} passager(s).`,
         bookingId: bookingResult.insertId,
         createdAt: now,
         });
@@ -749,7 +749,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         VALUES (?, ?, ?, ?, ?)`,
         [
             "booking",
-            `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+            ` ${bookingReference} avec ${passengers.length} passager(s).`,
             bookingResult.insertId,
             false,
             now,
@@ -757,7 +757,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         );
                 // Envoyer la notif au front
         io.emit("new-notification", {
-        message: `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+        message: `${bookingReference} avec ${passengers.length} passager(s).`,
         bookingId: bookingResult.insertId,
         createdAt: now,
         });

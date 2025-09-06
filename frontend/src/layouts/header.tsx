@@ -2,6 +2,7 @@ import { Bell, ChevronsLeft, Moon, Sun } from "lucide-react";
 import { useTheme } from "../contexts/theme-context";
 import profileImg from "../assets/profile-image.jpg";
 import React, { useState, useRef, useEffect } from "react";
+import Notifications from "../components/Notifications";
 
 type HeaderProps = {
     collapsed: boolean;
@@ -12,6 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const { theme, setTheme } = useTheme();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [open, setOpen] = useState(false);
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
@@ -112,20 +114,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                     {isNotifOpen && (
                         <div className="absolute right-0 z-20 mt-2 w-64 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 animate-in fade-in zoom-in-95 dark:bg-slate-800">
                             <div className="max-h-48 overflow-auto py-2">
-                                {notifications.length === 0 ? (
-                                    <p className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300">Pas de notifications</p>
-                                ) : (
-                                    <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-                                        {notifications.map((notif) => (
-                                            <li
-                                                key={notif.id}
-                                                className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300"
-                                            >
-                                                {notif.text}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                               <Notifications/>
                             </div>
                         </div>
                     )}
