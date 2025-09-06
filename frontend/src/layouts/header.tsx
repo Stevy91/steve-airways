@@ -1,8 +1,7 @@
-import { Bell, Check, ChevronsLeft, Moon, Sun } from "lucide-react";
+import { Bell, ChevronsLeft, Moon, Sun, Check, Trash2 } from "lucide-react";
 import { useTheme } from "../contexts/theme-context";
 import profileImg from "../assets/profile-image.jpg";
 import React, { useState, useRef, useEffect } from "react";
-import { io } from "socket.io-client";
 
 type HeaderProps = {
     collapsed: boolean;
@@ -13,6 +12,7 @@ interface Notification {
     id: number;
     message: string;
     seen: boolean;
+    read_at?: string;
     createdAt?: string;
     created_at?: string;
 }
@@ -27,14 +27,32 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
 
+    // Filtrer les notifications pour n'afficher que celles non lues ou lues il y a moins de 2 jours
+    const getFilteredNotifications = (notifs: Notification[]) => {
+        const now = new Date();
+        return notifs.filter(notif => {
+            if (!notif.seen) return true;
+            
+            if (notif.read_at) {
+                const readDate = new Date(notif.read_at);
+                const diffTime = Math.abs(now.getTime() - readDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= 2;
+            }
+            
+            return false;
+        });
+    };
+
     // Récupérer les notifications au chargement du composant
     const fetchNotifications = async () => {
         try {
             const res = await fetch("https://steve-airways-production.up.railway.app/api/notifications");
             const data = await res.json();
             if (data.success) {
-                setNotifications(data.notifications);
-                const unread = data.notifications.filter((n: Notification) => !n.seen).length;
+                const filteredNotifs = getFilteredNotifications(data.notifications);
+                setNotifications(filteredNotifs);
+                const unread = filteredNotifs.filter((n: Notification) => !n.seen).length;
                 setUnreadCount(unread);
             }
         } catch (error) {
@@ -42,18 +60,29 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
         }
     };
 
-    // Écouter les nouvelles notifications via Socket.io
+    // Nettoyer les anciennes notifications
+    const cleanupOldNotifications = async () => {
+        try {
+            await fetch("https://steve-airways-production.up.railway.app/api/notifications/cleanup", {
+                method: "DELETE"
+            });
+            // Recharger les notifications après le nettoyage
+            fetchNotifications();
+        } catch (error) {
+            console.error("Erreur nettoyage notifications:", error);
+        }
+    };
+
     useEffect(() => {
         fetchNotifications();
+        // Nettoyer les anciennes notifications au chargement
+        cleanupOldNotifications();
 
-        const socket = io("https://steve-airways-production.up.railway.app");
-        socket.on("new-notification", (notif: Notification) => {
-            setNotifications((prev) => [notif, ...prev]);
-            setUnreadCount((prev) => prev + 1);
-        });
+        // Nettoyer toutes les heures
+        const cleanupInterval = setInterval(cleanupOldNotifications, 60 * 60 * 1000);
 
         return () => {
-            socket.close();
+            clearInterval(cleanupInterval);
         };
     }, []);
 
@@ -83,16 +112,37 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
 
     const markAsSeen = async (id: number) => {
         try {
-            await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, {
-                method: "PATCH",
+            await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, { 
+                method: "PATCH" 
             });
-
-            setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, seen: true } : n)));
-
-            setUnreadCount((prev) => Math.max(0, prev - 1));
+            
+            // Mettre à jour localement
+            setNotifications(prev => {
+                const updated = prev.map(n => 
+                    n.id === id ? { ...n, seen: true, read_at: new Date().toISOString() } : n
+                );
+                const filtered = getFilteredNotifications(updated);
+                setUnreadCount(filtered.filter(n => !n.seen).length);
+                return filtered;
+            });
+            
         } catch (error) {
             console.error("Erreur marquer comme lu:", error);
         }
+    };
+
+    // Fonction pour formater la date relative
+    const formatRelativeTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+
+        if (diffDays > 0) return `il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+        if (diffHours > 0) return `il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
+        return `il y a ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
     };
 
     return (
@@ -112,21 +162,12 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
                     aria-label="Toggle theme"
                 >
-                    <Sun
-                        size={20}
-                        className="dark:hidden"
-                    />
-                    <Moon
-                        size={20}
-                        className="hidden dark:block"
-                    />
+                    <Sun size={20} className="dark:hidden" />
+                    <Moon size={20} className="hidden dark:block" />
                 </button>
 
                 {/* Notifications */}
-                <div
-                    className="relative"
-                    ref={notifRef}
-                >
+                <div className="relative" ref={notifRef}>
                     <button
                         onClick={toggleNotif}
                         className="btn-ghost relative size-10"
@@ -142,41 +183,56 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
 
                     {isNotifOpen && (
                         <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-96 origin-top-right rounded-md bg-white p-4 shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
-                            <div className="max-h-48 overflow-auto py-2">
-                                <ul>
-                                    {notifications.map((n) => {
-                                        const dateStr = n.createdAt || n.created_at;
-                                        return (
-                                            <li
-                                                key={n.id}
-                                                className="flex items-center justify-between py-2"
-                                                style={{ fontWeight: n.seen ? "normal" : "bold" }}
-                                            >
-                                                <span>
-                                                    {n.message} - {dateStr ? new Date(dateStr).toLocaleString() : "Date inconnue"}
-                                                </span>
-                                                {!n.seen && (
-                                                    <button
-                                                        className="ml-4 rounded-xl bg-orange-700 p-1"
-                                                        onClick={() => markAsSeen(n.id)}
-                                                    >
-                                                        <Check className="h-5 w-5 text-white" />
-                                                    </button>
-                                                )}
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold">Notifications</h3>
+                                <button
+                                    onClick={cleanupOldNotifications}
+                                    className="text-sm text-gray-500 hover:text-gray-700"
+                                    title="Nettoyer les anciennes notifications"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                            <div className="max-h-64 overflow-auto">
+                                {notifications.length === 0 ? (
+                                    <p className="text-center text-gray-500 py-4">Aucune notification</p>
+                                ) : (
+                                    <ul>
+                                        {notifications.map((n) => {
+                                            const dateStr = n.createdAt || n.created_at;
+                                            return (
+                                                <li
+                                                    key={n.id}
+                                                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                                                    style={{ fontWeight: n.seen ? "normal" : "bold" }}
+                                                >
+                                                    <div className="flex-1">
+                                                        <p className="text-sm">{n.message}</p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {dateStr ? formatRelativeTime(dateStr) : "Date inconnue"}
+                                                        </p>
+                                                    </div>
+                                                    {!n.seen && (
+                                                        <button
+                                                            className="ml-4 rounded-xl bg-orange-700 p-1 hover:bg-orange-600"
+                                                            onClick={() => markAsSeen(n.id)}
+                                                            title="Marquer comme lu"
+                                                        >
+                                                            <Check className="h-4 w-4 text-white" />
+                                                        </button>
+                                                    )}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Profil */}
-                <div
-                    ref={profileRef}
-                    className="relative"
-                >
+                <div ref={profileRef} className="relative">
                     <button
                         onClick={toggleProfile}
                         className="size-10 overflow-hidden rounded-full ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
@@ -192,22 +248,13 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                     {isProfileOpen && (
                         <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
                             <div className="py-2">
-                                <a
-                                    href="#profile"
-                                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                                >
+                                <a href="#profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">
                                     Edit your profile
                                 </a>
-                                <a
-                                    href="#password"
-                                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                                >
+                                <a href="#password" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">
                                     Change your password
                                 </a>
-                                <a
-                                    href="#logout"
-                                    className="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400"
-                                >
+                                <a href="#logout" className="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400">
                                     Logout
                                 </a>
                             </div>

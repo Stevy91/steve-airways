@@ -810,10 +810,24 @@ app.get("/api/notifications", async (req: Request, res: Response) => {
     }
 });
 
+// app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => {
+//     const { id } = req.params;
+//     try {
+//         await pool.query("UPDATE notifications SET seen = TRUE WHERE id = ?", [id]);
+//         res.json({ success: true });
+//     } catch (error) {
+//         console.error("Erreur mise à jour notification:", error);
+//         res.status(500).json({ success: false, error: "Impossible de mettre à jour la notification" });
+//     }
+// });
+
 app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        await pool.query("UPDATE notifications SET seen = TRUE WHERE id = ?", [id]);
+        await pool.query(
+            "UPDATE notifications SET seen = TRUE, read_at = NOW() WHERE id = ?", 
+            [id]
+        );
         res.json({ success: true });
     } catch (error) {
         console.error("Erreur mise à jour notification:", error);
@@ -821,6 +835,17 @@ app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => 
     }
 });
 
+app.delete("/api/notifications/cleanup", async (req: Request, res: Response) => {
+    try {
+        await pool.query(
+            "DELETE FROM notifications WHERE seen = TRUE AND read_at < DATE_SUB(NOW(), INTERVAL 2 DAY)"
+        );
+        res.json({ success: true, message: "Notifications nettoyées" });
+    } catch (error) {
+        console.error("Erreur nettoyage notifications:", error);
+        res.status(500).json({ success: false, error: "Impossible de nettoyer les notifications" });
+    }
+});
 
 
 //--------------------------------------------------dashboard-----------------------------------------
