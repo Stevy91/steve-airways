@@ -727,6 +727,17 @@ for (const field of requiredFields) {
         for (const flight of flights) {
             await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
         }
+               await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+        VALUES (?, ?, ?, ?, ?)`,
+        [
+            "booking",
+            `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+            bookingResult.insertId,
+            false,
+            now,
+        ]
+        );
 
         await connection.commit();
 
@@ -763,6 +774,30 @@ for (const field of requiredFields) {
         }
     }
 });
+
+app.get("/api/notifications", async (req: Request, res: Response) => {
+    try {
+        const [rows] = await pool.query<mysql.RowDataPacket[]>(
+            "SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20"
+        );
+        res.json({ success: true, notifications: rows });
+    } catch (error) {
+        console.error("Erreur récupération notifications:", error);
+        res.status(500).json({ success: false, error: "Impossible de récupérer les notifications" });
+    }
+});
+
+app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await pool.query("UPDATE notifications SET seen = TRUE WHERE id = ?", [id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Erreur mise à jour notification:", error);
+        res.status(500).json({ success: false, error: "Impossible de mettre à jour la notification" });
+    }
+});
+
 
 
 //--------------------------------------------------dashboard-----------------------------------------
