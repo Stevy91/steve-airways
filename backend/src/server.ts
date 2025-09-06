@@ -2,6 +2,9 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mysql, { Pool } from 'mysql2/promise';
+import http from "http";
+import { Server } from "socket.io";
+
 
 
 import { ResultSetHeader, RowDataPacket } from "mysql2/promise";
@@ -15,6 +18,14 @@ import { COUNTRIES } from "./constants/country";
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+// Création du serveur Socket.IO
+export const io = new Server(server, {
+  cors: {
+    origin: "*", // ou ton domaine frontend
+    methods: ["GET", "POST"],
+  },
+});
 app.use(cors());
 app.use(express.json());
 
@@ -562,6 +573,12 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
             now,
         ]
         );
+        // Envoyer la notif au front
+        io.emit("new-notification", {
+        message: `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+        bookingId: bookingResult.insertId,
+        createdAt: now,
+        });
 
         await connection.commit();
 
@@ -613,16 +630,16 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         const {paymentMethod, paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
         const typeVol = passengers[0]?.typeVol || "plane";
         const typeVolV = passengers[0]?.typeVolV || "onway";
-const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
-if (paymentMethod !== "paylater") {
-    requiredFields.push("paymentIntentId");
-}
+        const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
+        if (paymentMethod !== "paylater") {
+            requiredFields.push("paymentIntentId");
+        }
 
-for (const field of requiredFields) {
-    if (!req.body[field]) {
-        throw new Error(`Champ requis manquant: ${field}`);
-    }
-}
+        for (const field of requiredFields) {
+            if (!req.body[field]) {
+                throw new Error(`Champ requis manquant: ${field}`);
+            }
+        }
 
         // 3. Validation des passagers
         if (!Array.isArray(passengers) || passengers.length === 0) {
@@ -738,6 +755,12 @@ for (const field of requiredFields) {
             now,
         ]
         );
+                // Envoyer la notif au front
+        io.emit("new-notification", {
+        message: `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+        bookingId: bookingResult.insertId,
+        createdAt: now,
+        });
 
         await connection.commit();
 
@@ -1454,6 +1477,6 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
