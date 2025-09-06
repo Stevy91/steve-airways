@@ -551,8 +551,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
             await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
         }
 
-        await connection.commit();
-        await connection.query(
+                await connection.query(
         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
         VALUES (?, ?, ?, ?, ?)`,
         [
@@ -563,6 +562,9 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
             now,
         ]
         );
+
+        await connection.commit();
+
 
         res.json({
             success: true,
