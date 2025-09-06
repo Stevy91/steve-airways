@@ -2,6 +2,7 @@ import { Plane, Sofa } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
+
 // src/types/flight.ts
 export interface UIFlight {
   id: string | number;
@@ -27,6 +28,9 @@ type FlightCardProps = {
 export default function FlightCard({ flight, onToggle }: FlightCardProps) {
           const { t, i18n } = useTranslation();
     const hasSeats = flight.seat !== "0"; // Vérifie si des places sont disponibles
+
+
+    
 
     return (
         <div className="mb-4 flex flex-col rounded-lg border border-blue-300 px-6 py-4 transition-all hover:shadow-md md:flex-row md:items-center">

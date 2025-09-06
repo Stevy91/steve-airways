@@ -120,6 +120,13 @@ const FlightTable = () => {
         }
     };
 
+    const formatForDateTimeLocal = (dbDate: string) => {
+    if (!dbDate) return "";
+    return dbDate.replace(" ", "T"); // "2025-09-05 16:13" -> "2025-09-05T16:13"
+};
+
+    
+
     const toggleDropdown = (index: number) => {
         setOpenDropdown(openDropdown === index ? null : index);
     };
@@ -506,17 +513,18 @@ const FlightTable = () => {
                             </div>
 
                             <input
-                                type="datetime-local"
+                                type="DATETIME"
                                 name="departure_time"
-                                defaultValue={formatDateForInput(editingFlight?.departure || "")}
+                                defaultValue={formatForDateTimeLocal(editingFlight?.departure || "")}
                                 className="w-full rounded-full border px-3 py-2"
                                 required
+                                
                             />
 
                             <input
                                 type="datetime-local"
                                 name="arrival_time"
-                                defaultValue={formatDateForInput(editingFlight?.arrival || "")}
+                                defaultValue={formatForDateTimeLocal(editingFlight?.arrival || "")}
                                 className="w-full rounded-full border px-3 py-2"
                                 required
                             />

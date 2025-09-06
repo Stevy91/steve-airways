@@ -786,12 +786,12 @@ export default function Pay() {
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                 <div className="px-4">
-                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Payment reservation")}</h1>
+                     {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Payment reservation")}</h1> */}
                    
                 </div>
             </div>
 
-            <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6  mx-auto max-w-7xl px-4 pb-20 shadow">
+            <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6  mx-auto max-w-7xl px-4 py-12 shadow">
                 <Stepper currentStep={currentStep} />
                 <div className="w-full">
                     <div className="overflow-hidden rounded-lg bg-white ">

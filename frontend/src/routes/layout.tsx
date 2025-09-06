@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import HeaderHomePage from "../layouts/headerHomePage";
+import { HeroSection } from "../layouts/HeroSection";
 
 const LayoutHome = () => {
     return (
@@ -9,7 +10,9 @@ const LayoutHome = () => {
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
 
                 {/* Header (transparent by default) */}
-                <HeaderHomePage />
+                {/*  */}
+               
+                <HeroSection />
 
                 {/* Hero Content */}
             </div>

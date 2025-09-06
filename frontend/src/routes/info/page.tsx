@@ -25,7 +25,7 @@ export default function TravelInfoPage() {
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                <div className="px-4">
+                <div className="px-4 pt-24">
                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Travel Information")}</h1>
                     <p className="text-xl">{t("Everything you need to know before your flight")}</p>
                 </div>

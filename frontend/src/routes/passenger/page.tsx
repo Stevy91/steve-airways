@@ -657,12 +657,13 @@ export default function Passenger() {
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
+                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
                 <div className="px-4">
-                    <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
+                    {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1> */}
                 
                 </div>
             </div>
-            <div className="min-h-screen font-sans mx-auto max-w-7xl px-4 pb-20">
+            <div className="min-h-screen font-sans mx-auto max-w-7xl px-4 py-12">
                 <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
                     <Stepper currentStep={currentStep} />
                     <FlightSummaryCard bookingData={bookingData} />

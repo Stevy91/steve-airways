@@ -1,4 +1,7 @@
 "use client";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import {parse, format } from "date-fns";
 import { UserIcon, PlaneIcon, CalendarIcon, MapPinIcon, ChevronDown } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
@@ -35,7 +38,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
 
     const [selectedDeparture, setSelectedDeparture] = useState("");
     const [selectedDestination, setSelectedDestination] = useState("");
-    const [selectedDate, setSelectedDate] = useState("");
+    const [selectedDate, setSelectedDate] = useState<string>("");
 
     const { t, i18n } = useTranslation();
     const [selectedDeparture2, setSelectedDeparture2] = useState("");
@@ -54,6 +57,13 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         date2: "",
         returnDate: "",
     });
+    /* helper : transforme "yyyy-MM-dd" -> Date locale (00:00 local) */
+const parseLocalDate = (isoDayString?: string | null) => {
+  if (!isoDayString) return null;
+  // normalise "2025-09-06", ou "2025-09-06T00:00:00", etc.
+  const day = isoDayString.split("T")[0]; 
+  return parse(day, "yyyy-MM-dd", new Date()); // crée Date en local
+};
 
     const getFilteredDestinations = () => {
         const departureCode = selectedTabTrip === "onway" ? selectedDeparture : selectedDeparture2;
@@ -494,17 +504,23 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             <label className="mb-1 block font-medium text-gray-600">Date</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                <input
-                                                    type="date"
-                                                    value={selectedDate}
-                                                    onChange={(e) => {
-                                                        setSelectedDate(e.target.value);
-                                                        setErrors({ ...errors, date: "" });
+
+                                              
+                                                <DatePicker
+                                                    selected={selectedDate ? parseLocalDate(selectedDate) : null}
+                                                    onChange={(date: Date | null) => {
+                                                        // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
+                                                        setSelectedDate(date ? format(date, "yyyy-MM-dd") : "");
                                                     }}
-                                                    id="date"
+                                                    minDate={new Date()}
+                                                    dateFormat="MMMM do, yyyy"
                                                     className="w-full bg-transparent outline-none"
+                                                    placeholderText={format(new Date(), "MMMM do, yyyy")}
+                                                    id="date"
+                                                    autoComplete="off"
                                                 />
                                             </div>
+
                                             {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
                                         </div>
                                     </div>
@@ -569,7 +585,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             {errors.departure2 && <p className="mt-1 text-xs text-red-500">{errors.departure2}</p>}
                                         </div>
                                         <div>
-                                            <label className="mb-1 block font-medium text-gray-600">{t("A")}</label>
+                                            <label className="mb-1 block font-medium text-gray-600">{t("To")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
@@ -630,15 +646,20 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             <label className="mb-1 block font-medium text-gray-600">{t("Departure Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                <input
-                                                    value={selectedDate2}
-                                                    onChange={(e) => {
-                                                        setSelectedDate2(e.target.value);
-                                                        setErrors({ ...errors, date2: "" });
+
+                                               
+                                                <DatePicker
+                                                    selected={selectedDate2 ? parseLocalDate(selectedDate2) : null}
+                                                    onChange={(date: Date | null) => {
+                                                        // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
+                                                        setSelectedDate2(date ? format(date, "yyyy-MM-dd") : "");
                                                     }}
-                                                    id="departure-date"
-                                                    type="date"
+                                                    minDate={new Date()}
+                                                    dateFormat="MMMM do, yyyy"
                                                     className="w-full bg-transparent outline-none"
+                                                    placeholderText={format(new Date(), "MMMM do, yyyy")}
+                                                    id="departure-date"
+                                                    autoComplete="off"
                                                 />
                                             </div>
                                             {errors.date2 && <p className="mt-1 text-xs text-red-500">{errors.date2}</p>}
@@ -647,15 +668,21 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             <label className="mb-1 block font-medium text-gray-600">{t("Return Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                <input
-                                                    value={selectedDateReturn}
-                                                    onChange={(e) => {
-                                                        setSelectedDateReturn(e.target.value);
-                                                        setErrors({ ...errors, returnDate: "" });
+
+                                              
+
+                                                <DatePicker
+                                                    selected={selectedDateReturn ? parseLocalDate(selectedDateReturn) : null}
+                                                    onChange={(date: Date | null) => {
+                                                        // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
+                                                        setSelectedDateReturn(date ? format(date, "yyyy-MM-dd") : "");
                                                     }}
-                                                    id="return-date"
-                                                    type="date"
+                                                    minDate={new Date()}
+                                                    dateFormat="MMMM do, yyyy"
                                                     className="w-full bg-transparent outline-none"
+                                                    placeholderText={format(new Date(), "MMMM do, yyyy")}
+                                                    id="return-date"
+                                                    autoComplete="off"
                                                 />
                                             </div>
                                             {errors.returnDate && <p className="mt-1 text-xs text-red-500">{errors.returnDate}</p>}
@@ -841,15 +868,20 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             <label className="mb-1 block font-medium text-gray-600">Date</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                <input
-                                                    type="date"
-                                                    value={selectedDate}
-                                                    onChange={(e) => {
-                                                        setSelectedDate(e.target.value);
-                                                        setErrors({ ...errors, date: "" });
+
+
+                                                 <DatePicker
+                                                    selected={selectedDate ? parseLocalDate(selectedDate) : null}
+                                                    onChange={(date: Date | null) => {
+                                                        // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
+                                                        setSelectedDate(date ? format(date, "yyyy-MM-dd") : "");
                                                     }}
-                                                    id="date"
+                                                    minDate={new Date()}
+                                                    dateFormat="MMMM do, yyyy"
                                                     className="w-full bg-transparent outline-none"
+                                                    placeholderText={format(new Date(), "MMMM do, yyyy")}
+                                                    id="date"
+                                                    autoComplete="off"
                                                 />
                                             </div>
                                             {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
@@ -925,15 +957,20 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             <label className="mb-1 block font-medium text-gray-600">{t("Departure Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                <input
-                                                    value={selectedDate2}
-                                                    onChange={(e) => {
-                                                        setSelectedDate2(e.target.value);
-                                                        setErrors({ ...errors, date2: "" });
+
+                                                
+                                                 <DatePicker
+                                                    selected={selectedDate2 ? parseLocalDate(selectedDate2) : null}
+                                                    onChange={(date: Date | null) => {
+                                                        // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
+                                                        setSelectedDate2(date ? format(date, "yyyy-MM-dd") : "");
                                                     }}
-                                                    id="departure-date"
-                                                    type="date"
+                                                    minDate={new Date()}
+                                                    dateFormat="MMMM do, yyyy"
                                                     className="w-full bg-transparent outline-none"
+                                                    placeholderText={format(new Date(), "MMMM do, yyyy")}
+                                                    id="departure-date"
+                                                    autoComplete="off"
                                                 />
                                             </div>
                                             {errors.date2 && <p className="mt-1 text-xs text-red-500">{errors.date2}</p>}
@@ -942,15 +979,20 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                             <label className="mb-1 block font-medium text-gray-600">{t("Return Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-                                                <input
-                                                    value={selectedDateReturn}
-                                                    onChange={(e) => {
-                                                        setSelectedDateReturn(e.target.value);
-                                                        setErrors({ ...errors, returnDate: "" });
+
+                                                
+                                                <DatePicker
+                                                    selected={selectedDateReturn ? parseLocalDate(selectedDateReturn) : null}
+                                                    onChange={(date: Date | null) => {
+                                                        // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
+                                                        setSelectedDateReturn(date ? format(date, "yyyy-MM-dd") : "");
                                                     }}
-                                                    id="return-date"
-                                                    type="date"
+                                                    minDate={new Date()}
+                                                    dateFormat="MMMM do, yyyy"
                                                     className="w-full bg-transparent outline-none"
+                                                    placeholderText={format(new Date(), "MMMM do, yyyy")}
+                                                    id="return-date"
+                                                    autoComplete="off"
                                                 />
                                             </div>
                                             {errors.returnDate && <p className="mt-1 text-xs text-red-500">{errors.returnDate}</p>}
@@ -961,7 +1003,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                 <button
                                     onClick={handleSearch}
                                     type="submit"
-                                    className="mt-6 w-80 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                                    className="mt-6 w-60 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
                                 >
                                     {t("Search Flight Helicopter")}
                                 </button>

@@ -353,6 +353,11 @@
   "Processing...":"Processing...",
   "Pay Later":"Pay Later",
   "Loading...":"Loading...",
-  "Loading flights...":"Loading flights..."
+  "Loading flights...":"Loading flights...",
+  "Cannot book: only":"Cannot book: only",
+  "seat(s) available for":"seat(s) available for",
+  "passenger(s)":"passenger(s)",
+  "Erreur lors du chargement des données":"Erreur lors du chargement des données"
+
 
 }

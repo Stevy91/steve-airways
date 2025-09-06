@@ -552,6 +552,17 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
         }
 
         await connection.commit();
+        await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+        VALUES (?, ?, ?, ?, ?)`,
+        [
+            "booking",
+            `Nouvelle réservation ${bookingReference} avec ${passengers.length} passager(s).`,
+            bookingResult.insertId,
+            false,
+            now,
+        ]
+        );
 
         res.json({
             success: true,

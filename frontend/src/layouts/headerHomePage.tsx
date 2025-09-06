@@ -36,11 +36,11 @@ const HeaderHomePage = () => {
         }
 
         i18n.changeLanguage(newLang);
-        setCurrentLang(newLang); // <-- important pour mettre à jour les liens
+        setCurrentLang(newLang);
 
-        // Mettre à jour l'URL sans recharger la page
+        // Conserver le path + query params
         const pathParts = window.location.pathname.split("/").slice(2);
-        const newPath = `/${newLang}/${pathParts.join("/")}`;
+        const newPath = `/${newLang}/${pathParts.join("/")}${window.location.search}`;
         window.history.replaceState(null, "", newPath);
     };
 
@@ -52,10 +52,11 @@ const HeaderHomePage = () => {
     //     { label: t("Support"), path: `/${currentLang}/support`, icon: Contact },
     // ];
     const headerHomeLinks = [
-  { label: t("Home"), path: "", icon: House },
-  { label: t("Travel Info"), path: "info", icon: Info },
-  { label: t("Support"), path: "support", icon: Contact },
-];
+        { label: t("Home"), path: "", icon: House },
+        { label: t("Travel Info"), path: "info", icon: Info },
+        { label: t("Charter"), path: "charter", icon: Contact },
+        { label: t("Support"), path: "support", icon: Contact },
+    ];
 
     return (
         <header className={`fixed z-50 w-full transition-all duration-300 ${scrolled ? "bg-white shadow-md" : "bg-transparent"}`}>

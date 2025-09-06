@@ -352,5 +352,8 @@
   "Processing...":"Traitement...",
   "Pay Later":"Payer plus tard",
   "Loading...":"Chargement...",
-  "Loading flights...":"Chargement des vols..."
+  "Loading flights...":"Chargement des vols...",
+  "Cannot book: only":"Impossible de réserver: seulement",
+  "seat(s) available for":"siège(s) disponible(s) pour",
+  "passenger(s)":"passager(s)"
 }

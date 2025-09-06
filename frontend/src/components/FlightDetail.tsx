@@ -1,7 +1,7 @@
 import { PlaneTakeoff, PlaneLanding, Clock4, Users } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 type Flight = {
     id: number;
@@ -13,37 +13,49 @@ type Flight = {
     time: string;
     price: number;
     type: string;
-    seat: string;
+    seat: string | number;
     noflight: string;
 };
 
 type FlightDetailProps = {
     flight: Flight;
     onBookNow: (flight: Flight) => void;
-    selectedPassengers: number; // nombre de passagers choisis
+    passengers: {
+        adult: number;
+        child: number;
+        infant: number;
+    };
     isReturnFlight?: boolean;
 };
 
-export default function FlightDetail({ flight, onBookNow, selectedPassengers, isReturnFlight = false }: FlightDetailProps) {
+export default function FlightDetail({ flight, onBookNow, passengers, isReturnFlight = false }: FlightDetailProps) {
     const { t } = useTranslation();
+    const hasSeats = Number(flight.seat) > 0;
 
-    const availableSeats = Number(flight.seat); // convertir en nombre
-    const hasSeats = availableSeats > 0;
+    
 
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
 
-   const handleBooking = () => {
-    const passengers = Number(selectedPassengers) || 1; // assure qu'on a un nombre
-    const availableSeats = Number(flight.seat); // convertir le nombre de sièges disponible en number
+    const handleBooking = () => {
+        const totalPassengers = passengers.adult + passengers.child + passengers.infant;
+        const availableSeats = Number(flight.seat);
 
-    if (availableSeats >= passengers) {
+        if (availableSeats < totalPassengers) {
+            toast.error(`${t("Cannot book: only")} ${availableSeats} ${t("seat(s) available for")} ${totalPassengers} ${t("passenger(s)")}.`, {
+                style: {
+                    background: "#dc2626",
+                    color: "#fff",
+                },
+                iconTheme: {
+                    primary: "#fff",
+                    secondary: "#dc2626",
+                },
+            });
+
+            return;
+        }
         onBookNow(flight);
-       
-    } else {
-        toast.error(`Impossible de steve : seulement ${availableSeats} siège(s) disponible(s) pour ${passengers} passager(s).`);
-    }
-};
-    
+    };
 
     return (
         <div className="mt-4 w-full rounded-lg border border-gray-300 bg-white p-4 shadow">
@@ -78,19 +90,25 @@ export default function FlightDetail({ flight, onBookNow, selectedPassengers, is
 
                 <div className="flex items-center space-x-4">
                     <Users className="h-5 w-5 text-blue-600" />
-                    <span>{availableSeats === 0 ? "No seats available" : `${availableSeats} seat${availableSeats !== 1 ? "s" : ""} available`}</span>
+                    <span>{hasSeats ? `${flight.seat} seat${Number(flight.seat) !== 1 ? "s" : ""} available` : "No seats available"}</span>
                 </div>
 
                 <div className="flex items-center">
-                    <button
-                        onClick={handleBooking}
-                        className={`w-full rounded py-2 font-semibold text-white ${
-                            Number(flight.seat) > 0 ? "bg-blue-500 hover:bg-blue-600" : "cursor-not-allowed bg-gray-400"
-                        }`}
-                        disabled={Number(flight.seat) === 0}
-                    >
-                        {Number(flight.seat) === 0 ? t("No seats available") : isReturnFlight ? "Confirm Return Flight" : t("Book Now")}
-                    </button>
+                    {hasSeats ? (
+                        <button
+                            onClick={handleBooking}
+                            className="w-full rounded bg-blue-500 py-2 font-semibold text-white hover:bg-blue-600"
+                        >
+                            {isReturnFlight ? "Confirm Return Flight" : t("Book Now")}
+                        </button>
+                    ) : (
+                        <button
+                            disabled
+                            className="w-full cursor-not-allowed rounded bg-gray-400 py-2 font-semibold text-white"
+                        >
+                            {t("No seats available")}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

@@ -24,7 +24,7 @@ interface Flight {
     time: string;
     price: number;
     type: FlightType | string;
-    seat: string;
+    seat: string | number;
     noflight: string;
 }
 
@@ -121,23 +121,22 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 };
 
 const mapFlight = (flight: any, locations: Location[]): Flight => {
-    const departure = new Date(flight.departure_time);
-    const arrival = new Date(flight.arrival_time);
     const depLoc = locations.find((l) => l.id === flight.departure_location_id);
     const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
 
     const date = new Date(flight.departure_time);
     const isoDate = date.toISOString().split("T")[0];
 
-    const departureTime = departure.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const extractTime = (isoString?: string) => {
+        if (!isoString) return "—";
+        const timePart = isoString.split("T")[1]; // "15:14:00.000Z"
+        if (!timePart) return "—";
+        return timePart.slice(0, 5); // "15:14"
+    };
 
-    const arrivalTime = arrival.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    // utilisation
+    const departureTime = extractTime(flight.departure_time);
+    const arrivalTime = extractTime(flight.arrival_time);
 
     return {
         id: flight.id,
@@ -163,7 +162,7 @@ const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) =>
         ]);
 
         if (!locationsRes.ok || !flightAllRes.ok || !filteredFlightsRes.ok) {
-            throw new Error("Erreur lors du chargement des données");
+            throw new Error("Error while loading the data");
         }
 
         const [locations, allFlights, filteredFlightsData] = await Promise.all([locationsRes.json(), flightAllRes.json(), filteredFlightsRes.json()]);
@@ -538,38 +537,7 @@ export default function FlightSelection() {
         return Math.round(adultPrice + childPrice + infantPrice);
     };
 
-    // const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
-    //     const flightWithTotalPrice = {
-    //         ...flight,
-    //         totalPrice: calculateTotalPrice(flight),
-    //     };
-
-    //     if (isReturnFlight) {
-    //         setBooking({
-    //             ...booking,
-    //             return: flightWithTotalPrice,
-    //             showReturnSelection: false,
-    //         });
-    //     } else {
-    //         setBooking({
-    //             outbound: flightWithTotalPrice,
-    //             showOutboundSelection: false,
-    //             return: undefined,
-    //             showReturnSelection: selectedTabTrip === "roundtrip",
-    //         });
-    //     }
-    // };
-
     const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
-        const totalPassengers = passengers.adult + passengers.child + passengers.infant;
-        const availableSeats = Number(flight.seat); // Assure-toi que seat est un nombre
-
-        if (availableSeats < totalPassengers) {
-  
-             toast.error(`Impossible de steve : seulement ${availableSeats} siège(s) disponible(s) pour ${passengers} passager(s).`);
-            return; // Stoppe la réservation
-        }
-
         const flightWithTotalPrice = {
             ...flight,
             totalPrice: calculateTotalPrice(flight),
@@ -590,6 +558,37 @@ export default function FlightSelection() {
             });
         }
     };
+
+    // const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
+    //     const totalPassengers = passengers.adult + passengers.child + passengers.infant;
+    //     const availableSeats = Number(flight.seat); // Assure-toi que seat est un nombre
+
+    //     if (availableSeats < totalPassengers) {
+
+    //          toast.error(`Impossible de steve : seulement ${availableSeats} siège(s) disponible(s) pour ${passengers} passager(s).`);
+    //         return; // Stoppe la réservation
+    //     }
+
+    //     const flightWithTotalPrice = {
+    //         ...flight,
+    //         totalPrice: calculateTotalPrice(flight),
+    //     };
+
+    //     if (isReturnFlight) {
+    //         setBooking({
+    //             ...booking,
+    //             return: flightWithTotalPrice,
+    //             showReturnSelection: false,
+    //         });
+    //     } else {
+    //         setBooking({
+    //             outbound: flightWithTotalPrice,
+    //             showOutboundSelection: false,
+    //             return: undefined,
+    //             showReturnSelection: selectedTabTrip === "roundtrip",
+    //         });
+    //     }
+    // };
 
     const handleChangeFlight = (isReturn: boolean) => {
         if (isReturn) {
@@ -723,9 +722,9 @@ export default function FlightSelection() {
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
-                <div className="px-4">
-                    <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
-                    <p className="text-xl">{t("We fly to connect people.")}</p>
+                <div className="px-4 pt-24">
+                    {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
+                    <p className="text-xl">{t("We fly to connect people.")}</p> */}
                 </div>
             </div>
 
@@ -804,6 +803,7 @@ export default function FlightSelection() {
                                                 <FlightDetail
                                                     flight={flight}
                                                     onBookNow={(f) => handleBookNow(f, false)}
+                                                    passengers={passengers}
                                                 />
                                             )}
                                         </div>
@@ -890,6 +890,7 @@ export default function FlightSelection() {
                                                             flight={flight}
                                                             onBookNow={(f) => handleBookNow(f, true)}
                                                             isReturnFlight
+                                                            passengers={passengers}
                                                         />
                                                     )}
                                                 </div>
