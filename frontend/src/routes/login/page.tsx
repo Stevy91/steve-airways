@@ -1,5 +1,5 @@
 // src/components/Login.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LogIn } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom"; // si tu utilises react-router-dom
 
@@ -11,6 +11,30 @@ export default function Login() {
   const navigate = useNavigate();
   const { lang } = useParams<{ lang: string }>();
   const currentLang = lang || "en"; // <-- ici on définit currentLang
+
+      useEffect(() => {
+          const token = localStorage.getItem("token");
+          if (!token) {
+              navigate(`/${currentLang}/login`);
+              return;
+          }
+  
+          const checkAdmin = async () => {
+              try {
+                  const res = await fetch("https://steve-airways-production.up.railway.app/api/profile", {
+                      headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const user = await res.json();
+                  if (user.role !== "admin") {
+                      navigate(`/${currentLang}/register`); // redirige si pas admin
+                  }
+              } catch {
+                  navigate(`/${currentLang}/login`);
+              }
+          };
+  
+          checkAdmin();
+      }, [navigate, currentLang]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

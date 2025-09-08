@@ -936,7 +936,7 @@ app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: R
 
 
 // Login
-app.post("/api/login", async (req: Request, res: Response) => {
+app.post("/api/login", adminOnly, async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {

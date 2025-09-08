@@ -41,8 +41,6 @@ export default function Register() {
         checkAdmin();
     }, [navigate, currentLang]);
 
-
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -50,16 +48,14 @@ export default function Register() {
         setLoading(true);
 
         try {
-           
-
-                const res = await fetch("https://steve-airways-production.up.railway.app/api/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
-        },
-        body: JSON.stringify({ name, phone, email, password, role: "user" }),
-    });
+            const res = await fetch("https://steve-airways-production.up.railway.app/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
+                },
+                body: JSON.stringify({ name, phone, email, password, role: "user" }),
+            });
 
             const data = await res.json();
 
