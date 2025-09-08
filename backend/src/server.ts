@@ -45,7 +45,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
-// Création d'un pool de connexions
+
 
 
 
