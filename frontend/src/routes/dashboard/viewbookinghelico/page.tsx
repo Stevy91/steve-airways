@@ -6,6 +6,7 @@ import { Footer } from "../../../layouts/footer";
 
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
+import { useAuth } from "../../../hooks/useAuth";
 
 // Types pour les données
 type Booking = {
@@ -59,6 +60,7 @@ const ViewBookingHelico = () => {
     const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
 
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
+     useAuth(); 
 
     const handleViewDetails = async (id: number) => {
         try {

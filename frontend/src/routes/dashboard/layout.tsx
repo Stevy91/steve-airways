@@ -5,11 +5,13 @@ import { Sidebar } from "../../layouts/sidebar";
 import { cn } from "../../utils/cn";
 import { Header } from "../../layouts/header";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 const Layout = () => {
     const isDesktopDevice = useMediaQuery("(min-width: 768px)");
     const [collapsed, setCollapsed] = useState(isDesktopDevice);
     const sidebarRef = useRef<HTMLDivElement>(null);
+     useAuth(); 
 
     useEffect(() => {
         setCollapsed(!isDesktopDevice);

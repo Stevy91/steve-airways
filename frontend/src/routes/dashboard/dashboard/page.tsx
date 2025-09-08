@@ -5,6 +5,7 @@ import { ShoppingCart, Gift, Tags, Plane } from "lucide-react";
 import { Footer } from "../../../layouts/footer";
 
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
+import { useAuth } from "../../../hooks/useAuth";
 
 // Types pour les données
 type Booking = {
@@ -48,6 +49,7 @@ const DashboardPage = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+ useAuth(); 
 
     useEffect(() => {
         const fetchDashboardData = async () => {

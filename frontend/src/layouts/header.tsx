@@ -3,6 +3,8 @@ import { useTheme } from "../contexts/theme-context";
 import profileImg from "../assets/profile-image.jpg";
 import React, { useState, useRef, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
+import { useNavigate, useParams } from "react-router-dom";
+import { useProfile } from "../hooks/useProfile";
 
 type HeaderProps = {
     collapsed: boolean;
@@ -25,9 +27,34 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [socket, setSocket] = useState<Socket | null>(null);
+    const navigate = useNavigate();
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
+    const user = useProfile();
+
+    const handleLogout = async () => {
+        try {
+            // Appel API logout (optionnel si tu veux juste supprimer le token côté client)
+            await fetch("https://steve-airways-production.up.railway.app/api/logout", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+
+            // Supprime le token côté client
+            localStorage.removeItem("token");
+
+            // Redirection vers login
+
+            navigate(`/${currentLang}/login`);
+        } catch (err) {
+            console.error("Erreur logout:", err);
+        }
+    };
 
     // Filtrer notifications pour n'afficher que non lues ou lues il y a moins de 2 jours
     const getFilteredNotifications = (notifs: Notification[]) => {
@@ -75,9 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
         try {
             await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, { method: "PATCH" });
             setNotifications((prev) => {
-                const updated = prev.map((n) =>
-                    n.id === id ? { ...n, seen: true, read_at: new Date().toISOString() } : n
-                );
+                const updated = prev.map((n) => (n.id === id ? { ...n, seen: true, read_at: new Date().toISOString() } : n));
                 const filtered = getFilteredNotifications(updated);
                 setUnreadCount(filtered.filter((n) => !n.seen).length);
                 return filtered;
@@ -147,7 +172,10 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     return (
         <header className="relative z-10 flex h-[60px] items-center justify-between bg-white px-4 shadow-md transition-colors dark:bg-slate-900">
             <div className="flex items-center gap-x-3">
-                <button className="btn-ghost size-10" onClick={() => setCollapsed(!collapsed)}>
+                <button
+                    className="btn-ghost size-10"
+                    onClick={() => setCollapsed(!collapsed)}
+                >
                     <ChevronsLeft className={collapsed ? "rotate-180" : ""} />
                 </button>
             </div>
@@ -158,12 +186,21 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
                     aria-label="Toggle theme"
                 >
-                    <Sun size={20} className="dark:hidden" />
-                    <Moon size={20} className="hidden dark:block" />
+                    <Sun
+                        size={20}
+                        className="dark:hidden"
+                    />
+                    <Moon
+                        size={20}
+                        className="hidden dark:block"
+                    />
                 </button>
 
                 {/* Notifications */}
-                <div className="relative" ref={notifRef}>
+                <div
+                    className="relative"
+                    ref={notifRef}
+                >
                     <button
                         onClick={toggleNotif}
                         className="btn-ghost relative size-10"
@@ -179,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
 
                     {isNotifOpen && (
                         <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-96 origin-top-right rounded-md bg-white p-4 shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="mb-3 flex items-center justify-between">
                                 <h3 className="font-semibold">Notifications</h3>
                                 <button
                                     onClick={cleanupOldNotifications}
@@ -191,7 +228,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                             </div>
                             <div className="max-h-64 overflow-auto">
                                 {notifications.length === 0 ? (
-                                    <p className="text-center text-gray-500 py-4">Aucune notification</p>
+                                    <p className="py-4 text-center text-gray-500">Aucune notification</p>
                                 ) : (
                                     <ul>
                                         {notifications.map((n) => {
@@ -199,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                                             return (
                                                 <li
                                                     key={n.id}
-                                                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                                                    className="flex items-center justify-between border-b border-gray-100 py-2 last:border-b-0"
                                                     style={{ fontWeight: n.seen ? "normal" : "bold" }}
                                                 >
                                                     <div className="flex-1">
@@ -228,14 +265,24 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                 </div>
 
                 {/* Profil */}
-                <div ref={profileRef} className="relative">
+                <div
+                    ref={profileRef}
+                    className="relative"
+                >
+                    <div className="flex gap-4">
+                        <span className="pt-2 font-bold">{user ? user.name : "..."}</span>
                     <button
                         onClick={toggleProfile}
                         className="size-10 overflow-hidden rounded-full ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
                         aria-label="Toggle profile menu"
                     >
-                        <img src={profileImg} alt="profile" className="size-full object-cover" />
+                        <img
+                            src={profileImg}
+                            alt="profile"
+                            className="size-full object-cover"
+                        />
                     </button>
+                    </div>
 
                     {isProfileOpen && (
                         <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
@@ -252,12 +299,12 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                                 >
                                     Change your password
                                 </a>
-                                <a
-                                    href="#logout"
-                                    className="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400"
+                                <button
+                                    onClick={handleLogout}
+                                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400"
                                 >
                                     Logout
-                                </a>
+                                </button>
                             </div>
                         </div>
                     )}

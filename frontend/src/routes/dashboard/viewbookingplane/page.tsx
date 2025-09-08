@@ -6,6 +6,7 @@ import { Footer } from "../../../layouts/footer";
 
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
+import { useAuth } from "../../../hooks/useAuth";
 
 // Types pour les données
 type Booking = {
@@ -65,6 +66,7 @@ const ViewBookingPlane = () => {
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
     const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
+     useAuth(); 
 
     const showNotification = (message: string, type: "success" | "error") => {
         setNotification({ message, type });

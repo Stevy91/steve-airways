@@ -1,6 +1,7 @@
 import { ChevronDown, MapPinIcon, Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Notifications from "../../../components/Notifications";
+import { useAuth } from "../../../hooks/useAuth";
 
 interface Flight {
     id: number;
@@ -48,6 +49,7 @@ const FlightTable = () => {
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
+     useAuth(); 
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);

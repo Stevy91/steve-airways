@@ -864,7 +864,7 @@ interface User extends mysql.RowDataPacket {
   name: string;
   email: string;
   password_hash: string;
-  phone: string;
+   phone?: string | null;
   created_at: Date;
 }
 
@@ -872,8 +872,39 @@ interface User extends mysql.RowDataPacket {
 //-------------------------user------------------------------------------------------
 
 // Register
-app.post("/api/register", async (req: Request, res: Response) => {
-  const { name, email, password, phone } = req.body;
+
+
+// Middleware général pour vérifier le token
+function authMiddleware(req: any, res: Response, next: any) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) return res.status(401).json({ error: "Token manquant" });
+
+  jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: "Token invalide" });
+    req.user = user;
+    next();
+  });
+}
+
+// Middleware adminOnly pour protéger certaines routes
+async function adminOnly(req: any, res: Response, next: any) {
+  const userId = req.user.id;
+  try {
+    const [rows] = await pool.query<User[]>("SELECT role FROM users WHERE id = ?", [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: "Utilisateur introuvable" });
+    if (rows[0].role !== "admin") return res.status(403).json({ error: "Accès refusé" });
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+}
+
+// Register (protégé)
+app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
+  const { name, email, password, phone, role } = req.body; // optionnel: permettre de créer admin
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Nom, email et mot de passe requis" });
@@ -888,8 +919,8 @@ app.post("/api/register", async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const [result] = await pool.execute<ResultSetHeader>(
-      "INSERT INTO users (name, email, password_hash, phone) VALUES (?, ?, ?, ?)",
-      [name, email, hashedPassword, phone ?? null]
+      "INSERT INTO users (name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)",
+      [name, email, hashedPassword, phone ?? null, role ?? "user"]
     );
 
     res.status(201).json({ success: true, id: (result as ResultSetHeader).insertId });
@@ -898,6 +929,8 @@ app.post("/api/register", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
+
 
 
 
@@ -1021,24 +1054,20 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 });
 
 
-
-
-function authMiddleware(req: any, res: Response, next: any) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) return res.status(401).json({ error: "Token manquant" });
-
-  jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: "Token invalide" });
-    req.user = user;
-    next();
-  });
-}
-
 app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
   const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, created_at FROM users WHERE id = ?", [req.user.id]);
   res.json(rows[0]);
+});
+
+const tokenBlacklist: string[] = [];
+
+app.post("/api/logout", authMiddleware, (req: any, res: Response) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token) {
+    tokenBlacklist.push(token); // ajouter à la blacklist
+  }
+  res.json({ success: true, message: "Déconnecté avec succès" });
 });
 
 

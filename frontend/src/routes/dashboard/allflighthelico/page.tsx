@@ -1,5 +1,6 @@
 import { ChevronDown, MapPinIcon, Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../../hooks/useAuth";
 
 interface Flight {
     id: number;
@@ -50,6 +51,7 @@ const FlightTableHelico = () => {
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5; // nombre de vols par page
+    useAuth();
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
