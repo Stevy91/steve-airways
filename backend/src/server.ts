@@ -1461,7 +1461,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
     } 
 });
-// ✅ 2. Endpoint pour les détails d’une réservation
+
 
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
