@@ -880,18 +880,15 @@ app.post("/api/register", async (req: Request, res: Response) => {
   }
 
   try {
-    // Vérifier si l'utilisateur existe déjà
     const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
     if (rows.length > 0) {
       return res.status(400).json({ error: "Email déjà utilisé" });
     }
 
-    // Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insertion en BDD
     const [result] = await pool.execute<ResultSetHeader>(
-      "INSERT INTO users (name, email, password_hash, phone) VALUES (?, ?, ?, ?, )",
+      "INSERT INTO users (name, email, password_hash, phone) VALUES (?, ?, ?, ?)",
       [name, email, hashedPassword, phone ?? null]
     );
 
@@ -901,6 +898,7 @@ app.post("/api/register", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
 
 
 // Login
