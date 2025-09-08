@@ -31,7 +31,7 @@ export default function Register() {
                 });
                 const user = await res.json();
                 if (user.role !== "admin") {
-                    navigate(`/${currentLang}/dashboard`); // redirige si pas admin
+                    navigate(`/${currentLang}/register`); // redirige si pas admin
                 }
             } catch {
                 navigate(`/${currentLang}/login`);
@@ -41,6 +41,8 @@ export default function Register() {
         checkAdmin();
     }, [navigate, currentLang]);
 
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -48,16 +50,22 @@ export default function Register() {
         setLoading(true);
 
         try {
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, phone, email, password }),
-            });
+           
+
+                const res = await fetch("https://steve-airways-production.up.railway.app/api/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
+        },
+        body: JSON.stringify({ name, phone, email, password, role: "user" }),
+    });
 
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.message || "Erreur lors de l'inscription");
+                console.error("Erreur API Register:", data);
+                throw new Error(data.error || "Erreur lors de l'inscription");
             }
 
             setSuccess("Compte créé avec succès !");

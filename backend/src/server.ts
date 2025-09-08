@@ -905,6 +905,7 @@ async function adminOnly(req: any, res: Response, next: any) {
 // Register (protégé)
 app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
   const { name, email, password, phone, role } = req.body; // optionnel: permettre de créer admin
+  console.log("Register body:", req.body);
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Nom, email et mot de passe requis" });
