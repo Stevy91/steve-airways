@@ -1,8 +1,24 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, RefObject, useRef } from "react";
 import { useLocation, Link, useParams } from "react-router-dom";
 import { FacebookIcon, InstagramIcon, GlobeIcon, Phone, ChevronDown, MenuIcon, XIcon, House, Info, Contact, Twitter } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@iconify/react";
+// Hook personnalisé pour détecter les clics à l'extérieur
+const useClickOutside = (ref: RefObject<HTMLElement | null>, callback: () => void) => {
+    useEffect(() => {
+        const handleClick = (event: MouseEvent) => {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
+                callback();
+            }
+        };
+
+        document.addEventListener("mousedown", handleClick);
+        return () => {
+            document.removeEventListener("mousedown", handleClick);
+        };
+    }, [ref, callback]);
+};
 
 export const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -14,6 +30,14 @@ export const Navbar = () => {
     const { lang } = useParams<{ lang: string }>();
     const { t, i18n } = useTranslation();
     const [currentLang, setCurrentLang] = useState(lang || "en");
+
+    // Référence pour le menu de langue
+    const languageMenuRef = useRef<HTMLDivElement>(null);
+
+    // Fermer le menu de langue en cliquant à l'extérieur
+    useClickOutside(languageMenuRef, () => {
+        setLanguageOpen(false);
+    });
 
     useEffect(() => {
         if (lang) i18n.changeLanguage(lang);
@@ -60,7 +84,7 @@ export const Navbar = () => {
     const headerHomeLinks = [
         { label: t("Home"), path: "", icon: House },
         { label: t("Travel Info"), path: "info", icon: Info },
-        { label: t("Charter"), path: "charter", icon: Contact },
+        { label: t("Charter"), path: "charter", icon: Icon, iconProps: { icon: "mdi:helicopter", className: "mr-2 h-4 w-4" } },
         { label: t("Support"), path: "support", icon: Contact },
     ];
 
@@ -114,7 +138,10 @@ export const Navbar = () => {
                             </span>
                         </a>
                         {/* language */}
-                        <div className="relative">
+                        <div
+                            className="relative"
+                            ref={languageMenuRef}
+                        >
                             <button
                                 onClick={() => setLanguageOpen(!languageOpen)}
                                 className="flex items-center rounded-md px-2 py-1 text-white"
@@ -193,7 +220,7 @@ export const Navbar = () => {
                                                     : `${isScrolled ? "text-blue-900" : "text-white"} hover:bg-red-400 hover:bg-opacity-20`
                                             }`}
                                         >
-                                            <link.icon className="h-4 w-4" />
+                                            {link.iconProps ? <link.icon {...link.iconProps} /> : <link.icon className="h-4 w-4" />}
                                             <span>{link.label}</span>
                                         </Link>
                                     );
@@ -208,14 +235,13 @@ export const Navbar = () => {
                                         <button
                                             onClick={() => setLanguageOpen(!languageOpen)}
                                             className={`flex items-center rounded-md px-2 py-1 text-white ${isScrolled ? "text-blue-900" : "text-white"}`}
-                                            
                                         >
                                             <img
                                                 src={currentLang === "en" ? "/assets/flag/us.png" : "/assets/flag/fr.png"}
                                                 alt={currentLang}
                                                 className="mr-2 h-5 w-5"
                                             />
-                                            {currentLang.toUpperCase()}
+                                            <span className={`${isScrolled ? "text-blue-900" : "text-white"}`}>{currentLang.toUpperCase()}</span>
                                             <ChevronDown className={`ml-1 h-4 w-4 ${isScrolled ? "text-blue-900" : "text-white"}`} />
                                         </button>
 
@@ -246,38 +272,36 @@ export const Navbar = () => {
                                             </ul>
                                         )}
                                     </div>
-                                     <button
-                                    onClick={() => setMenuOpen((prev) => !prev)}
-                                    className="text-gray-300 focus:outline-none"
-                                    aria-label="Toggle Menu"
-                                >
-                                    <svg
-                                       
-                                         className={`h-6 w-6 ${isScrolled ? "text-blue-900" : "text-white"}`}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
+                                    <button
+                                        onClick={() => setMenuOpen((prev) => !prev)}
+                                        className="text-gray-300 focus:outline-none"
+                                        aria-label="Toggle Menu"
                                     >
-                                        {menuOpen ? (
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M6 18L18 6M6 6l12 12"
-                                            />
-                                        ) : (
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M4 6h16M4 12h16M4 18h16"
-                                            />
-                                        )}
-                                    </svg>
-                                </button>
+                                        <svg
+                                            className={`h-6 w-6 ${isScrolled ? "text-blue-900" : "text-white"}`}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            {menuOpen ? (
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            ) : (
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M4 6h16M4 12h16M4 18h16"
+                                                />
+                                            )}
+                                        </svg>
+                                    </button>
                                 </div>
-                               
                             </div>
                         </div>
 
@@ -294,7 +318,7 @@ export const Navbar = () => {
                                                     onClick={() => setMenuOpen(false)}
                                                     className={`flex items-center space-x-2 rounded-md px-3 py-2 ${isActive ? "bg-red-500 text-white" : "text-gray-800 hover:bg-red-100"}`}
                                                 >
-                                                    <link.icon className="h-4 w-4" />
+                                                    {link.iconProps ? <link.icon {...link.iconProps} /> : <link.icon className="h-4 w-4" />}
                                                     <span>{link.label}</span>
                                                 </Link>
                                             </li>

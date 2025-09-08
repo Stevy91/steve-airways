@@ -12,6 +12,8 @@ import Stripe from "stripe";
 import paypal from "@paypal/checkout-server-sdk";
 import nodemailer from "nodemailer";
 import { OkPacket } from "mysql2";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 import { COUNTRIES } from "./constants/country";
 
@@ -46,9 +48,6 @@ const pool = mysql.createPool({
 // Création d'un pool de connexions
 
 
-// -------------------- Nodemailer --------------------
-
-
 
 // Interface pour typage des locations
 interface Flight extends mysql.RowDataPacket {
@@ -69,6 +68,8 @@ interface Flight extends mysql.RowDataPacket {
 
     seats_available: string;
 }
+
+
 
 // types/dashboard.ts
 export interface Booking {
@@ -810,16 +811,7 @@ app.get("/api/notifications", async (req: Request, res: Response) => {
     }
 });
 
-// app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => {
-//     const { id } = req.params;
-//     try {
-//         await pool.query("UPDATE notifications SET seen = TRUE WHERE id = ?", [id]);
-//         res.json({ success: true });
-//     } catch (error) {
-//         console.error("Erreur mise à jour notification:", error);
-//         res.status(500).json({ success: false, error: "Impossible de mettre à jour la notification" });
-//     }
-// });
+
 
 app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -866,6 +858,193 @@ interface FlightWithAirports extends mysql.RowDataPacket {
     arrival_city: string;
     arrival_code: string;
 }
+interface User extends mysql.RowDataPacket {
+  id: number;
+  name: string;
+  email: string;
+  password_hash: string;
+  phone: string;
+  created_at: Date;
+}
+
+
+//-------------------------user------------------------------------------------------
+
+// Register
+app.post("/api/register", async (req: Request, res: Response) => {
+  const { name, email, password, phone } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Nom, email et mot de passe requis" });
+  }
+
+  try {
+    // Vérifier si l'utilisateur existe déjà
+    const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
+    if (rows.length > 0) {
+      return res.status(400).json({ error: "Email déjà utilisé" });
+    }
+
+    // Hash du mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insertion en BDD
+    const [result] = await pool.execute<ResultSetHeader>(
+      "INSERT INTO users (name, email, password_hash, phone) VALUES (?, ?, ?, ?, )",
+      [name, email, hashedPassword, phone ?? null]
+    );
+
+    res.status(201).json({ success: true, id: (result as ResultSetHeader).insertId });
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+
+// Login
+app.post("/api/login", async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    // Vérifier si l'utilisateur existe
+    const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    }
+
+    const user = rows[0];
+
+    // Vérifier le mot de passe
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+    if (!validPassword) {
+      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+    }
+
+    // Générer un JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET || "secretKey",
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+//  Récupérer tous les utilisateurs (protégé)
+app.get("/api/users", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const [rows] = await pool.query<User[]>(
+      "SELECT id, name, email, phone, created_at FROM users"
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+//  Récupérer un utilisateur par ID (protégé)
+app.get("/api/users/:id", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const [rows] = await pool.query<User[]>(
+      "SELECT id, name, email, phone, created_at FROM users WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Utilisateur introuvable" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+//  Modifier un utilisateur (protégé)
+app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
+  const { name, email, password, phone } = req.body;
+  const userId = parseInt(req.params.id, 10);
+
+  // Vérifier que l’utilisateur connecté modifie son propre compte
+  if (req.user.id !== userId) {
+    return res.status(403).json({ error: "Non autorisé" });
+  }
+
+  try {
+    let hashedPassword;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    await pool.execute(
+      "UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email), password_hash = COALESCE(?, password_hash), phone = COALESCE(?, phone) WHERE id = ?",
+      [name, email, hashedPassword, phone, userId]
+    );
+
+    res.json({ success: true, message: "Utilisateur mis à jour" });
+  } catch (err) {
+    console.error("Error updating user:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+//  Supprimer un utilisateur (protégé)
+app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
+  const userId = parseInt(req.params.id, 10);
+
+  if (req.user.id !== userId) {
+    return res.status(403).json({ error: "Non autorisé" });
+  }
+
+  try {
+    await pool.execute("DELETE FROM users WHERE id = ?", [userId]);
+    res.json({ success: true, message: "Utilisateur supprimé" });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+
+
+
+function authMiddleware(req: any, res: Response, next: any) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) return res.status(401).json({ error: "Token manquant" });
+
+  jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: "Token invalide" });
+    req.user = user;
+    next();
+  });
+}
+
+app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
+  const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, created_at FROM users WHERE id = ?", [req.user.id]);
+  res.json(rows[0]);
+});
+
+
+
+//--------------------------fin user----------------------------
 
 app.get("/api/locationstables", async (req: Request, res: Response) => {
     try {

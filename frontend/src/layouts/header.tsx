@@ -2,6 +2,7 @@ import { Bell, ChevronsLeft, Moon, Sun, Check, Trash2 } from "lucide-react";
 import { useTheme } from "../contexts/theme-context";
 import profileImg from "../assets/profile-image.jpg";
 import React, { useState, useRef, useEffect } from "react";
+import { io, Socket } from "socket.io-client";
 
 type HeaderProps = {
     collapsed: boolean;
@@ -20,31 +21,30 @@ interface Notification {
 export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const { theme, setTheme } = useTheme();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [socket, setSocket] = useState<Socket | null>(null);
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
 
-    // Filtrer les notifications pour n'afficher que celles non lues ou lues il y a moins de 2 jours
+    // Filtrer notifications pour n'afficher que non lues ou lues il y a moins de 2 jours
     const getFilteredNotifications = (notifs: Notification[]) => {
         const now = new Date();
-        return notifs.filter(notif => {
+        return notifs.filter((notif) => {
             if (!notif.seen) return true;
-            
             if (notif.read_at) {
                 const readDate = new Date(notif.read_at);
                 const diffTime = Math.abs(now.getTime() - readDate.getTime());
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 return diffDays <= 2;
             }
-            
             return false;
         });
     };
 
-    // Récupérer les notifications au chargement du composant
+    // Récupérer notifications et initialiser badge
     const fetchNotifications = async () => {
         try {
             const res = await fetch("https://steve-airways-production.up.railway.app/api/notifications");
@@ -52,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
             if (data.success) {
                 const filteredNotifs = getFilteredNotifications(data.notifications);
                 setNotifications(filteredNotifs);
-                const unread = filteredNotifs.filter((n: Notification) => !n.seen).length;
+                const unread = filteredNotifs.filter((n) => !n.seen).length;
                 setUnreadCount(unread);
             }
         } catch (error) {
@@ -60,42 +60,76 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
         }
     };
 
-    // Nettoyer les anciennes notifications
+    // Nettoyer anciennes notifications
     const cleanupOldNotifications = async () => {
         try {
-            await fetch("https://steve-airways-production.up.railway.app/api/notifications/cleanup", {
-                method: "DELETE"
-            });
-            // Recharger les notifications après le nettoyage
+            await fetch("https://steve-airways-production.up.railway.app/api/notifications/cleanup", { method: "DELETE" });
             fetchNotifications();
         } catch (error) {
             console.error("Erreur nettoyage notifications:", error);
         }
     };
 
-    useEffect(() => {
-        fetchNotifications();
-        // Nettoyer les anciennes notifications au chargement
-        cleanupOldNotifications();
+    // Marquer une notification comme lue
+    const markAsSeen = async (id: number) => {
+        try {
+            await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, { method: "PATCH" });
+            setNotifications((prev) => {
+                const updated = prev.map((n) =>
+                    n.id === id ? { ...n, seen: true, read_at: new Date().toISOString() } : n
+                );
+                const filtered = getFilteredNotifications(updated);
+                setUnreadCount(filtered.filter((n) => !n.seen).length);
+                return filtered;
+            });
+        } catch (error) {
+            console.error("Erreur marquer comme lu:", error);
+        }
+    };
 
-        // Nettoyer toutes les heures
+    // Formater la date relative
+    const formatRelativeTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+
+        if (diffDays > 0) return `il y a ${diffDays} jour${diffDays > 1 ? "s" : ""}`;
+        if (diffHours > 0) return `il y a ${diffHours} heure${diffHours > 1 ? "s" : ""}`;
+        return `il y a ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`;
+    };
+
+    // Initialisation WebSocket
+    useEffect(() => {
+        const newSocket = io("https://steve-airways-production.up.railway.app");
+        setSocket(newSocket);
+
+        newSocket.on("new-notification", (notif: Notification) => {
+            setNotifications((prev) => {
+                const updated = [notif, ...prev];
+                setUnreadCount(updated.filter((n) => !n.seen).length);
+                return updated;
+            });
+        });
+
+        fetchNotifications();
+        cleanupOldNotifications();
         const cleanupInterval = setInterval(cleanupOldNotifications, 60 * 60 * 1000);
 
         return () => {
+            newSocket.disconnect();
             clearInterval(cleanupInterval);
         };
     }, []);
 
-    // Fermer les dropdown si clic à l'extérieur
+    // Fermer dropdowns si clic à l'extérieur
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-                setIsProfileOpen(false);
-            }
-            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-                setIsNotifOpen(false);
-            }
-        }
+        const handleClickOutside = (event: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) setIsProfileOpen(false);
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) setIsNotifOpen(false);
+        };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
@@ -110,48 +144,10 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
         if (!isNotifOpen) setIsProfileOpen(false);
     };
 
-    const markAsSeen = async (id: number) => {
-        try {
-            await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, { 
-                method: "PATCH" 
-            });
-            
-            // Mettre à jour localement
-            setNotifications(prev => {
-                const updated = prev.map(n => 
-                    n.id === id ? { ...n, seen: true, read_at: new Date().toISOString() } : n
-                );
-                const filtered = getFilteredNotifications(updated);
-                setUnreadCount(filtered.filter(n => !n.seen).length);
-                return filtered;
-            });
-            
-        } catch (error) {
-            console.error("Erreur marquer comme lu:", error);
-        }
-    };
-
-    // Fonction pour formater la date relative
-    const formatRelativeTime = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-        const diffMinutes = Math.floor(diffTime / (1000 * 60));
-
-        if (diffDays > 0) return `il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
-        if (diffHours > 0) return `il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
-        return `il y a ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-    };
-
     return (
         <header className="relative z-10 flex h-[60px] items-center justify-between bg-white px-4 shadow-md transition-colors dark:bg-slate-900">
             <div className="flex items-center gap-x-3">
-                <button
-                    className="btn-ghost size-10"
-                    onClick={() => setCollapsed(!collapsed)}
-                >
+                <button className="btn-ghost size-10" onClick={() => setCollapsed(!collapsed)}>
                     <ChevronsLeft className={collapsed ? "rotate-180" : ""} />
                 </button>
             </div>
@@ -238,23 +234,28 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                         className="size-10 overflow-hidden rounded-full ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
                         aria-label="Toggle profile menu"
                     >
-                        <img
-                            src={profileImg}
-                            alt="profile"
-                            className="size-full object-cover"
-                        />
+                        <img src={profileImg} alt="profile" className="size-full object-cover" />
                     </button>
 
                     {isProfileOpen && (
                         <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
                             <div className="py-2">
-                                <a href="#profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">
+                                <a
+                                    href="#profile"
+                                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
                                     Edit your profile
                                 </a>
-                                <a href="#password" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">
+                                <a
+                                    href="#password"
+                                    className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
                                     Change your password
                                 </a>
-                                <a href="#logout" className="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400">
+                                <a
+                                    href="#logout"
+                                    className="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400"
+                                >
                                     Logout
                                 </a>
                             </div>

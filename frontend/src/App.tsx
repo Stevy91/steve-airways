@@ -22,6 +22,11 @@ import "./lib/fontawesome"; // important
 import { CharterPage } from "./routes/charter/page";
 import ViewBookingPlane from "./routes/dashboard/viewbookingplane/page";
 import ViewBookingHelico from "./routes/dashboard/viewbookinghelico/page";
+import Terms from "./routes/terms/page";
+import Cookies from "./routes/cookies/page";
+import Privacy from "./routes/privacy/page";
+import Login from "./routes/login/page";
+import Register from "./routes/register/page";
 
 // export default function App() {
 //   const router = createBrowserRouter([
@@ -129,6 +134,26 @@ const router = createBrowserRouter([
         element: <CharterPage />,
       },
       {
+        path: ":lang/terms",
+        element: <Terms />,
+      },
+      {
+        path: ":lang/login",
+        element: <Login />,
+      },
+            {
+      path: ":lang/register",
+        element: <Register />,
+      },
+      {
+        path: ":lang/cookies",
+        element: <Cookies />,
+      },
+      {
+        path: ":lang/privacy",
+        element: <Privacy />,
+      },
+      {
         path: ":lang/support",
         element: <SupportPage />,
       },
@@ -161,6 +186,7 @@ const router = createBrowserRouter([
       { path: "flights-helico", element: <FlightTableHelico /> },
       { path: "bookings-plane", element: <ViewBookingPlane /> },
       { path: "bookings-helico", element: <ViewBookingHelico /> },
+      
       { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
       { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
       { path: "user", element: <h1 className="title">All Users</h1> },

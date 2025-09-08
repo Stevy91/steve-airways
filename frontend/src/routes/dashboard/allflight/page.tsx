@@ -121,10 +121,6 @@ const FlightTable = () => {
         }
     };
 
-    const formatForDateTimeLocal = (dbDate: string) => {
-    if (!dbDate) return "";
-    return dbDate.replace(" ", "T"); // "2025-09-05 16:13" -> "2025-09-05T16:13"
-};
 
     
 
@@ -515,9 +511,9 @@ const FlightTable = () => {
                             </div>
 
                             <input
-                                type="DATETIME"
+                                type="datetime-local"
                                 name="departure_time"
-                                defaultValue={formatForDateTimeLocal(editingFlight?.departure || "")}
+                                defaultValue={formatDateForInput(editingFlight?.departure || "")}
                                 className="w-full rounded-full border px-3 py-2"
                                 required
                                 
@@ -526,7 +522,7 @@ const FlightTable = () => {
                             <input
                                 type="datetime-local"
                                 name="arrival_time"
-                                defaultValue={formatForDateTimeLocal(editingFlight?.arrival || "")}
+                                defaultValue={formatDateForInput(editingFlight?.arrival || "")}
                                 className="w-full rounded-full border px-3 py-2"
                                 required
                             />
