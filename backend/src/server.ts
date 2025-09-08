@@ -33,8 +33,9 @@ app.use(express.json());
 
 // Configuration MySQL
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: process.env.STRIPE_API_VERSION as any,
 });
+
 const pool = mysql.createPool({
   host: 'nozomi.proxy.rlwy.net',
   user: 'root',
