@@ -490,9 +490,23 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
             flightIds,
         ]);
 
+
+if (flights.length !== flightIds.length) {
+    throw new Error("Un ou plusieurs vols introuvables");
+}
+
+for (const flight of flights) {
+    if (flight.seats_available < passengers.length) {
+        throw new Error(`Pas assez de sièges disponibles pour le vol ${flight.id}`);
+    }
+}
+
+
         if (flights.length !== flightIds.length) {
             throw new Error("Un ou plusieurs vols introuvables");
         }
+
+        
 
         // 5. Création de la réservation
         const now = new Date();
@@ -628,6 +642,8 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
         }
     }
 });
+
+
 
 
 app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {

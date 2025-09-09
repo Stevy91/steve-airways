@@ -386,6 +386,26 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
     const [error, setError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
+    const verifyFlightAvailability = async () => {
+    const response = await fetch("https://steve-airways-production.up.railway.app/api/verify-flight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            flightId: paymentData.outbound.flightId,
+            returnFlightId: paymentData.return?.flightId,
+            passengerCount: paymentData.passengersData.adults.length +
+                            paymentData.passengersData.children.length +
+                            paymentData.passengersData.infants.length,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Vol non disponible");
+    }
+};
+
+
     const createPaymentIntent = async () => {
         try {
             const passengerCount =
@@ -425,6 +445,8 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
 
         try {
             if (!stripe || !elements) throw new Error("Stripe n'est pas initialisé");
+            await verifyFlightAvailability();
+
 
             const { clientSecret } = await createPaymentIntent();
 
