@@ -13,12 +13,13 @@ export default function Privacy() {
 
     return (
         <>
+        <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                <HeroSection />
+           
                 <div className="px-4 pt-24">
                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("privacy_header_title")}</h1>
                     <p className="text-xl">{t("privacy_header_subtitle")}</p>

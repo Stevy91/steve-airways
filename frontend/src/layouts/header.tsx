@@ -273,10 +273,10 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                         <span className="pt-2 font-bold">{user ? user.name : "..."}</span>
                         <button
                             onClick={toggleProfile}
-                            className="size-10 overflow-hidden rounded-full ring-2 ring-transparent border transition focus:outline-none focus:ring-blue-500 text-center pl-2 bg-slate-500"
+                            className="size-10 overflow-hidden rounded-full border bg-slate-500 pl-2 text-center ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
                             aria-label="Toggle profile menu"
-                        >  
-                            <User className="h-5 w-5 text-blue-500"/>
+                        >
+                            <User className="h-5 w-5 text-blue-500" />
                         </button>
                     </div>
 

@@ -218,7 +218,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
 };
 const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
-      const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     return (
         <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
             <div className="mx-auto w-fit rounded-full border border-blue-500 bg-white px-4 py-1 text-sm font-bold text-red-600">
@@ -235,7 +235,9 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                         <p className="font-bold text-black">
                             {bookingData.outbound.departure_time} - {bookingData.fromCity} ({bookingData.from})
                         </p>
-                        <p className="mt-1 text-[11px] text-black">{t("Flight")} #{bookingData.outbound.noflight}</p>
+                        <p className="mt-1 text-[11px] text-black">
+                            {t("Flight")} #{bookingData.outbound.noflight}
+                        </p>
                     </div>
                 </div>
 
@@ -260,7 +262,9 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                             <p className="font-bold text-black">
                                 {bookingData.return.departure_time} - {bookingData.toCity} ({bookingData.to})
                             </p>
-                            <p className="mt-1 text-[11px] text-black">{t("Flight")} #{bookingData.return.noflight}</p>
+                            <p className="mt-1 text-[11px] text-black">
+                                {t("Flight")} #{bookingData.return.noflight}
+                            </p>
                         </div>
                     </div>
 
@@ -676,8 +680,8 @@ const PayLaterPayment = ({
 
 // Page de paiement principale
 export default function Pay() {
-         const { lang } = useParams<{ lang: string }>();
-  const currentLang = lang || "en"; // <-- ici on définit currentLang
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
     const location = useLocation();
     const navigate = useNavigate();
     const [currentStep] = useState(2);
@@ -737,7 +741,7 @@ export default function Pay() {
                 <div className="text-center text-red-500">
                     <p>No booking data found. Please start your booking again.</p>
                     <button
-                        onClick={() => navigate("/flights")}
+                        onClick={() => navigate(`/${currentLang}//flights`)}
                         className="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                     >
                         Return to Flights
@@ -749,7 +753,7 @@ export default function Pay() {
 
     if (paymentSuccess) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-50 z-[99999]">
+            <div className="z-[99999] flex min-h-screen items-center justify-center bg-gray-50">
                 <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-md">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                         <svg
@@ -777,58 +781,55 @@ export default function Pay() {
                 </div>
             </div>
         );
-    }
-
-    return (
-        <>
-            <div
-                className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
-                style={{ backgroundImage: "url(/plane-bg.jpg)" }}
-            >
-                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+    } else {
+        return (
+            <>
                 <HeroSection />
-                <div className="px-4">
-                     {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Payment reservation")}</h1> */}
-                   
+                <div
+                    className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
+                    style={{ backgroundImage: "url(/plane-bg.jpg)" }}
+                >
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+
+                    <div className="px-4">{/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Payment reservation")}</h1> */}</div>
                 </div>
-            </div>
 
-            <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6  mx-auto max-w-7xl px-4 py-12 shadow">
-                <Stepper currentStep={currentStep} />
-                <div className="w-full">
-                    <div className="overflow-hidden rounded-lg bg-white ">
-                        <div className="border-b border-gray-200 bg-yellow-400 px-6 py-5">
-                            <h2 className="text-2xl font-bold text-gray-800">{t("Complete Your Payment")}</h2>
-                            <p className="mt-1 text-gray-600">
-                                {t("Total Amount")}: <span className="font-bold text-red-600">${paymentData.totalPrice.toFixed(2)}</span>
-                            </p>
-                        </div>
+                <div className="relative z-10 mx-auto mt-[-100px] w-full max-w-7xl rounded bg-white p-6 px-4 py-12 shadow">
+                    <Stepper currentStep={currentStep} />
+                    <div className="w-full">
+                        <div className="overflow-hidden rounded-lg bg-white">
+                            <div className="border-b border-gray-200 bg-yellow-400 px-6 py-5">
+                                <h2 className="text-2xl font-bold text-gray-800">{t("Complete Your Payment")}</h2>
+                                <p className="mt-1 text-gray-600">
+                                    {t("Total Amount")}: <span className="font-bold text-red-600">${paymentData.totalPrice.toFixed(2)}</span>
+                                </p>
+                            </div>
 
-                        <div className="grid gap-8 p-6 md:grid-cols-3">
-                            <div className="md:col-span-2">
-                                <div className="mb-6">
-                                    <h3 className="mb-4 text-lg font-medium text-gray-900">{t("Payment Method")}</h3>
+                            <div className="grid gap-8 p-6 md:grid-cols-3">
+                                <div className="md:col-span-2">
+                                    <div className="mb-6">
+                                        <h3 className="mb-4 text-lg font-medium text-gray-900">{t("Payment Method")}</h3>
 
-                                    <div className="mb-6 flex space-x-4">
-                                        <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                checked={paymentMethod === "stripe"}
-                                                onChange={() => setPaymentMethod("stripe")}
-                                                className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <div className="ml-3 flex items-center">
-                                                <img
-                                                    src="/credit-card-icons.png"
-                                                    alt="Credit Cards"
-                                                    className="mr-3 h-8 w-auto"
+                                        <div className="mb-6 flex space-x-4">
+                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                                <input
+                                                    type="radio"
+                                                    name="paymentMethod"
+                                                    checked={paymentMethod === "stripe"}
+                                                    onChange={() => setPaymentMethod("stripe")}
+                                                    className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
                                                 />
-                                            </div>
-                                        </label>
+                                                <div className="ml-3 flex items-center">
+                                                    <img
+                                                        src="/credit-card-icons.png"
+                                                        alt="Credit Cards"
+                                                        className="mr-3 h-8 w-auto"
+                                                    />
+                                                </div>
+                                            </label>
 
-                                        {/* Option PayPal */}
-                                        {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                            {/* Option PayPal */}
+                                            {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
                                         <input
                                             type="radio"
                                             name="paymentMethod"
@@ -845,95 +846,96 @@ export default function Pay() {
                                         </div>
                                     </label> */}
 
-                                        <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                checked={paymentMethod === "paylater"}
-                                                onChange={() => setPaymentMethod("paylater")}
-                                                className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <div className="ml-3 flex items-center">
-                                                <h1>{t("Pay Later")}</h1>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    {error && (
-                                        <div className="mb-6 border-l-4 border-red-400 bg-red-50 p-4">
-                                            <div className="flex">
-                                                <div className="flex-shrink-0">
-                                                    <svg
-                                                        className="h-5 w-5 text-red-400"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
+                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                                <input
+                                                    type="radio"
+                                                    name="paymentMethod"
+                                                    checked={paymentMethod === "paylater"}
+                                                    onChange={() => setPaymentMethod("paylater")}
+                                                    className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <div className="ml-3 flex items-center">
+                                                    <h1>{t("Pay Later")}</h1>
                                                 </div>
-                                                <div className="ml-3">
-                                                    <p className="text-sm text-red-700">{error}</p>
-                                                </div>
-                                            </div>
+                                            </label>
                                         </div>
-                                    )}
 
-                                    {paymentMethod === "stripe" ? (
-                                        <Elements stripe={stripePromise}>
-                                            <StripePaymentForm
-                                                totalPrice={paymentData.totalPrice}
-                                                onSuccess={handlePaymentSuccess}
+                                        {error && (
+                                            <div className="mb-6 border-l-4 border-red-400 bg-red-50 p-4">
+                                                <div className="flex">
+                                                    <div className="flex-shrink-0">
+                                                        <svg
+                                                            className="h-5 w-5 text-red-400"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="ml-3">
+                                                        <p className="text-sm text-red-700">{error}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {paymentMethod === "stripe" ? (
+                                            <Elements stripe={stripePromise}>
+                                                <StripePaymentForm
+                                                    totalPrice={paymentData.totalPrice}
+                                                    onSuccess={handlePaymentSuccess}
+                                                    paymentData={paymentData}
+                                                />
+                                            </Elements>
+                                        ) : paymentMethod === "paypal" ? (
+                                            <PayPalScriptProvider
+                                                options={{
+                                                    clientId: paypalClientId || "", // obligatoire et non null
+                                                    components: "buttons",
+                                                    currency: "USD",
+                                                }}
+                                            >
+                                                <PayPalPayment
+                                                    totalPrice={paymentData.totalPrice}
+                                                    onSuccess={() =>
+                                                        handlePaymentSuccess({
+                                                            bookingId: 0,
+                                                            reference: "TEMPORARY_REF",
+                                                        })
+                                                    }
+                                                />
+                                            </PayPalScriptProvider>
+                                        ) : (
+                                            <PayLaterPayment
                                                 paymentData={paymentData}
+                                                onSuccess={handlePaymentSuccess}
                                             />
-                                        </Elements>
-                                    ) : paymentMethod === "paypal" ? (
-                                        <PayPalScriptProvider
-                                            options={{
-                                                clientId: paypalClientId || "", // obligatoire et non null
-                                                components: "buttons",
-                                                currency: "USD",
-                                            }}
-                                        >
-                                            <PayPalPayment
-                                                totalPrice={paymentData.totalPrice}
-                                                onSuccess={() =>
-                                                    handlePaymentSuccess({
-                                                        bookingId: 0,
-                                                        reference: "TEMPORARY_REF",
-                                                    })
-                                                }
-                                            />
-                                        </PayPalScriptProvider>
-                                    ) : (
-                                        <PayLaterPayment
-                                            paymentData={paymentData}
-                                            onSuccess={handlePaymentSuccess}
-                                        />
-                                    )}
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-1">
+                                    <BookingSummary bookingData={bookingData} />
                                 </div>
                             </div>
 
-                            <div className="md:col-span-1">
-                                <BookingSummary bookingData={bookingData} />
+                            <div className="flex justify-between px-6 py-4">
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className="inline-flex items-center rounded-md border border-gray-300 bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                >
+                                    <ChevronLeft className="-ml-1 mr-2 h-5 w-5 text-white" />
+                                    {t("Back")}
+                                </button>
                             </div>
-                        </div>
-
-                        <div className="flex justify-between px-6 py-4">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            >
-                                <ChevronLeft className="-ml-1 mr-2 h-5 w-5 text-white" />
-                                Back
-                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </>
-    );
+            </>
+        );
+    }
 }

@@ -252,38 +252,48 @@ app.get("/api/flights", async (req: Request, res: Response) => {
         }
 
         // Requête principale
+      
+
         const [flights] = await pool.query<Flight[]>(
             `SELECT f.*, 
                     dep.code as departure_code, 
                     arr.code as arrival_code
-             FROM flights f
-             JOIN locations dep ON f.departure_location_id = dep.id
-             JOIN locations arr ON f.arrival_location_id = arr.id
-             WHERE dep.code = ? 
-               AND arr.code = ? 
-               AND DATE(f.departure_time) = ?
-               AND f.type = ?
-             ORDER BY f.departure_time`,
-            [from, to, date, type],
+            FROM flights f
+            JOIN locations dep ON f.departure_location_id = dep.id
+            JOIN locations arr ON f.arrival_location_id = arr.id
+            WHERE dep.code = ? 
+            AND arr.code = ? 
+            AND f.type = ?
+            AND (
+                (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
+                OR DATE(f.departure_time) > ?
+            )
+            ORDER BY f.departure_time`,
+            [from, to, type, date, date]
         );
+
 
         // Gestion des vols aller-retour
         if (req.query.return_date) {
             const returnDate = req.query.return_date as string;
 
+
             const [returnFlights] = await pool.query<Flight[]>(
                 `SELECT f.*, 
                         dep.code as departure_code, 
                         arr.code as arrival_code
-                 FROM flights f
-                 JOIN locations dep ON f.departure_location_id = dep.id
-                 JOIN locations arr ON f.arrival_location_id = arr.id
-                 WHERE dep.code = ? 
-                   AND arr.code = ? 
-                   AND DATE(f.departure_time) = ?
-                   AND f.type = ?
-                 ORDER BY f.departure_time`,
-                [to, from, returnDate, type],
+                FROM flights f
+                JOIN locations dep ON f.departure_location_id = dep.id
+                JOIN locations arr ON f.arrival_location_id = arr.id
+                WHERE dep.code = ? 
+                AND arr.code = ? 
+                AND f.type = ?
+                AND (
+                    (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
+                    OR DATE(f.departure_time) > ?
+                )
+                ORDER BY f.departure_time`,
+                [to, from, type, returnDate, returnDate]
             );
 
           

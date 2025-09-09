@@ -21,12 +21,13 @@ export default function TravelInfoPage() {
     const { t, i18n } = useTranslation();
     return (
         <>
+        <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                <HeroSection />
+          
                 <div className="px-4 pt-24">
                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Travel Information")}</h1>
                     <p className="text-xl">{t("Everything you need to know before your flight")}</p>
@@ -38,7 +39,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faSuitcaseRolling}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("baggage_policy_title")}
                     </h2>
@@ -49,7 +50,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faClock}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("checkin_guidelines_title")}
                     </h2>
@@ -60,7 +61,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faBan}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("travel_restrictions_title")}
                     </h2>
@@ -71,7 +72,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faIdCard}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("id_and_docs_title")}
                     </h2>
@@ -82,7 +83,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faCloudSunRain}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("weather_and_delays_title")}
                     </h2>
@@ -93,7 +94,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faShieldHalved}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("security_procedures_title")}
                     </h2>
@@ -104,7 +105,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faChildReaching}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("children_and_minors_title")}
                     </h2>
@@ -115,7 +116,7 @@ export default function TravelInfoPage() {
                     <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
                         <FontAwesomeIcon
                             icon={faWheelchair}
-                            className="h-6 w-6 text-blue-700"
+                            className="h-6 w-6 text-blue-900"
                         />
                         {t("special_assistance_title")}
                     </h2>

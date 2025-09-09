@@ -50,11 +50,12 @@ interface BookingData {
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
+    const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
             <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
             <div className="relative z-10 flex items-center justify-between">
-                {["Flight", "Passenger", "Pay", "Confirmation"].map((step, idx) => {
+                {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
                     const isActive = idx === currentStep;
 
@@ -223,13 +224,14 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 
             <tr>
               <td colspan="2" style="padding-top: 20px;">
+              <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
               
                 <tr>
               <td colspan="2" style="padding-top: 20px;">
                 <table width="100%">
                   <tr>
                     <td>
-                      <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
+                      
                       <div class="flight-card">
                         <div class="flight-header">Outbound Flight</div>
                         <div class="flight-details">
@@ -250,13 +252,14 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                          ${
                              returnFlight
                                  ? `
+                                  <h3 style="color: #1A237E; margin: 0;"></h3>
                         <div class="flight-card">
                         <div class="flight-header">Return Flight</div>
                         <div class="flight-details">
                             <div>
                             <strong>From:</strong> ${bookingData.toCity} (${bookingData.to})<br>
                             <strong>To:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
-                            <strong>Date:</strong> ${new Date(returnFlight.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                            <strong>Date:</strong> ${formatDate(returnFlight.date)}
                             </div>
                             <div>
                             <strong>Departure:</strong> ${returnFlight.departure_time}<br>
@@ -318,6 +321,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 };
 
 const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: BookingData; paymentMethod: string }) => {
+    const { t, i18n } = useTranslation();
     const formatDate = (dateString?: string) => {
         if (!dateString) return "N/A"; // valeur par défaut si undefined
         const parsedDate = parseISO(dateString);
@@ -339,11 +343,12 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                 style={{
                     marginBottom: "10px",
                     textAlign: "center",
-                    fontSize: "18px",
+                    fontSize: "25px",
                     fontWeight: 700,
                 }}
+                className="text-blue-500"
             >
-                Trogon Airways - Booking Confirmation
+                Trogon Airways - {t("Booking Confirmation")}
             </h1>
 
             <div
@@ -366,35 +371,37 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                 >
                     <CheckCircle2
                         style={{
-                            height: "20px",
-                            width: "20px",
+                            height: "30px",
+                            width: "30px",
                             color: "#16a34a",
                         }}
                     />
                 </div>
                 <h2
                     style={{
-                        fontSize: "14px",
+                        fontSize: "18px",
                         fontWeight: 700,
                     }}
                 >
-                    Flight Type: {bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}
+                    {t("Flight Type")}: {bookingData.tabType === "helicopter" ? t("Helicopter") : t("Air Plane")}
                 </h2>
                 <h2
                     style={{
-                        fontSize: "14px",
+                        fontSize: "18px",
                         fontWeight: 700,
                     }}
                 >
-                    Booking Reference: {bookingData.bookingReference}
+                    {t("Booking Reference")}: {bookingData.bookingReference}
                 </h2>
                 <p
+                    className="text-blue-500"
                     style={{
                         color: "#4b5563",
-                        fontSize: "12px",
+                        fontSize: "15px",
                     }}
                 >
-                    Payment Method: {paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? "Pay Later" : "Credit/Debit Card"}
+                    {t("Payment Method")}:{" "}
+                    {paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? t("Pay Later") : "Credit/Debit Card"}
                 </p>
             </div>
 
@@ -409,7 +416,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                 <div
                     style={{
                         borderRadius: "5px",
-                        border: "1px solid #e5e7eb",
+                        border: "2px solid #437bec",
                         padding: "10px",
                         pageBreakInside: "avoid",
                     }}
@@ -417,18 +424,18 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     <h2
                         style={{
                             marginBottom: "5px",
-                            fontSize: "14px",
+                            fontSize: "22px",
                             fontWeight: 700,
                             color: "#1f2937",
                         }}
                     >
-                        Outbound Flight
+                        {t("Outbound Flight")}
                     </h2>
                     <div
                         style={{
                             display: "flex",
                             alignItems: "flex-start",
-                            fontSize: "12px",
+                            fontSize: "10px",
                         }}
                     >
                         <div
@@ -440,8 +447,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                             <div
                                 style={{
                                     display: "flex",
-                                    height: "20px",
-                                    width: "20px",
+                                    height: "35px",
+                                    width: "35px",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     borderRadius: "9999px",
@@ -450,8 +457,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                             >
                                 <svg
                                     style={{
-                                        height: "12px",
-                                        width: "12px",
+                                        height: "16px",
+                                        width: "16px",
                                         color: "#2563eb",
                                     }}
                                     fill="none"
@@ -475,18 +482,20 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         >
                             <h3
                                 style={{
-                                    fontSize: "12px",
+                                    fontSize: "20px",
                                     fontWeight: 500,
                                     color: "#111827",
                                     marginBottom: "4px",
                                 }}
                             >
-                                {bookingData.fromCity} ({bookingData.from}) to {bookingData.toCity} ({bookingData.to})
+                                {bookingData.fromCity} ({bookingData.from}) {t("to")} {bookingData.toCity} ({bookingData.to})
                             </h3>
                             <p
                                 style={{
-                                    color: "#6b7280",
+                                    color: "#457ff1",
                                     marginBottom: "4px",
+                                    fontSize: "12px",
+                                    fontWeight: "bold",
                                 }}
                             >
                                 {formatDate(bookingData.outbound.date)}
@@ -508,7 +517,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                             marginBottom: "2px",
                                         }}
                                     >
-                                        Departure
+                                        {t("Departure")}
                                     </p>
                                     <p
                                         style={{
@@ -528,7 +537,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                             marginBottom: "2px",
                                         }}
                                     >
-                                        Arrival
+                                        {t("Arrival")}
                                     </p>
                                     <p
                                         style={{
@@ -547,7 +556,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     color: "#6b7280",
                                 }}
                             >
-                                Flight number: {bookingData.outbound.noflight}
+                                {t("Flight number")}: {bookingData.outbound.noflight}
                             </p>
                         </div>
                     </div>
@@ -557,7 +566,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     <div
                         style={{
                             borderRadius: "5px",
-                            border: "1px solid #e5e7eb",
+                            border: "2px solid #437bec",
                             padding: "10px",
                             pageBreakInside: "avoid",
                         }}
@@ -565,12 +574,12 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         <h2
                             style={{
                                 marginBottom: "5px",
-                                fontSize: "14px",
+                                fontSize: "22px",
                                 fontWeight: 700,
                                 color: "#1f2937",
                             }}
                         >
-                            Return Flight
+                            {t("Return Flight")}
                         </h2>
                         <div
                             style={{
@@ -588,8 +597,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                 <div
                                     style={{
                                         display: "flex",
-                                        height: "20px",
-                                        width: "20px",
+                                        height: "35px",
+                                        width: "35px",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         borderRadius: "9999px",
@@ -598,8 +607,8 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                 >
                                     <svg
                                         style={{
-                                            height: "12px",
-                                            width: "12px",
+                                            height: "16px",
+                                            width: "16px",
                                             color: "#2563eb",
                                         }}
                                         fill="none"
@@ -623,18 +632,20 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                             >
                                 <h3
                                     style={{
-                                        fontSize: "12px",
+                                        fontSize: "20px",
                                         fontWeight: 500,
                                         color: "#111827",
                                         marginBottom: "4px",
                                     }}
                                 >
-                                    {bookingData.toCity} ({bookingData.to}) to {bookingData.fromCity} ({bookingData.from})
+                                    {bookingData.toCity} ({bookingData.to}) {t("to")} {bookingData.fromCity} ({bookingData.from})
                                 </h3>
                                 <p
                                     style={{
-                                        color: "#6b7280",
+                                        color: "#457ff1",
                                         marginBottom: "4px",
+                                        fontSize: "12px",
+                                        fontWeight: "bold",
                                     }}
                                 >
                                     {formatDate(bookingData.return.date)}
@@ -656,7 +667,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                                 marginBottom: "2px",
                                             }}
                                         >
-                                            Departure
+                                            {t("Departure")}
                                         </p>
                                         <p
                                             style={{
@@ -676,7 +687,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                                 marginBottom: "2px",
                                             }}
                                         >
-                                            Arrival
+                                            {t("Arrival")}
                                         </p>
                                         <p
                                             style={{
@@ -695,7 +706,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         color: "#6b7280",
                                     }}
                                 >
-                                    Flight number: {bookingData.return.noflight}
+                                    {t("Flight number")}: {bookingData.return.noflight}
                                 </p>
                             </div>
                         </div>
@@ -709,18 +720,19 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     border: "1px solid #e5e7eb",
                     padding: "10px",
                     marginBottom: "10px",
+                    marginTop: "50px",
                     pageBreakInside: "avoid",
                 }}
             >
                 <h2
                     style={{
                         marginBottom: "8px",
-                        fontSize: "14px",
+                        fontSize: "22px",
                         fontWeight: 700,
                         color: "#1f2937",
                     }}
                 >
-                    Passenger Details
+                    {t("Passenger Details")}
                 </h2>
                 <div
                     style={{
@@ -746,44 +758,44 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#6b7280",
-                                        fontSize: "10px",
+                                        color: "#457ff1",
+                                        fontSize: "14px",
                                     }}
                                 >
-                                    Name
+                                    {t("Name")}
                                 </th>
                                 <th
                                     style={{
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#6b7280",
-                                        fontSize: "10px",
+                                        color: "#457ff1",
+                                        fontSize: "14px",
                                     }}
                                 >
-                                    Type
+                                    {t("Type")}
                                 </th>
                                 <th
                                     style={{
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#6b7280",
-                                        fontSize: "10px",
+                                        color: "#457ff1",
+                                        fontSize: "14px",
                                     }}
                                 >
-                                    Email
+                                    {t("Email")}
                                 </th>
                                 <th
                                     style={{
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#6b7280",
-                                        fontSize: "10px",
+                                        color: "#457ff1",
+                                        fontSize: "14px",
                                     }}
                                 >
-                                    Phone
+                                    {t("Phone")}
                                 </th>
                             </tr>
                         </thead>
@@ -802,7 +814,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.firstName} {passenger.lastName}
@@ -810,15 +822,15 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
-                                        Adult
+                                        {t("Adult")}
                                     </td>
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.email}
@@ -826,7 +838,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.phone}
@@ -843,7 +855,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.firstName} {passenger.lastName}
@@ -851,15 +863,15 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
-                                        Child
+                                        {t("Child")}
                                     </td>
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.email || "-"}
@@ -867,7 +879,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.phone || "-"}
@@ -884,7 +896,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.firstName} {passenger.lastName}
@@ -892,15 +904,15 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
-                                        Infant
+                                        {t("Infant")}
                                     </td>
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.email || "-"}
@@ -908,7 +920,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     <td
                                         style={{
                                             padding: "4px 8px",
-                                            fontSize: "10px",
+                                            fontSize: "14px",
                                         }}
                                     >
                                         {passenger.phone || "-"}
@@ -926,17 +938,18 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     border: "1px solid #e5e7eb",
                     padding: "10px",
                     pageBreakInside: "avoid",
+                    marginTop: "35px",
                 }}
             >
                 <h2
                     style={{
                         marginBottom: "8px",
-                        fontSize: "14px",
+                        fontSize: "22px",
                         fontWeight: 700,
                         color: "#1f2937",
                     }}
                 >
-                    Payment Summary
+                    {t("Payment Summary")}
                 </h2>
                 <div
                     style={{
@@ -954,15 +967,15 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         <span
                             style={{
                                 color: "#6b7280",
-                                fontSize: "12px",
+                                fontSize: "14px",
                             }}
                         >
-                            Subtotal
+                            {t("Subtotal")}
                         </span>
                         <span
                             style={{
                                 fontWeight: 500,
-                                fontSize: "12px",
+                                fontSize: "14px",
                             }}
                         >
                             ${(bookingData.totalPrice * 0.9).toFixed(2)}
@@ -978,15 +991,15 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         <span
                             style={{
                                 color: "#6b7280",
-                                fontSize: "12px",
+                                fontSize: "14px",
                             }}
                         >
-                            Taxes & Fees
+                            {t("Taxes & Fees")}
                         </span>
                         <span
                             style={{
                                 fontWeight: 500,
-                                fontSize: "12px",
+                                fontSize: "14px",
                             }}
                         >
                             ${(bookingData.totalPrice * 0.1).toFixed(2)}
@@ -1005,16 +1018,16 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                             style={{
                                 fontWeight: 700,
                                 color: "#111827",
-                                fontSize: "12px",
+                                fontSize: "14px",
                             }}
                         >
-                            Total
+                            {t("Total")}
                         </span>
                         <span
                             style={{
                                 fontWeight: 700,
                                 color: "#111827",
-                                fontSize: "12px",
+                                fontSize: "14px",
                             }}
                         >
                             ${bookingData.totalPrice.toFixed(2)}
@@ -1024,19 +1037,19 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                         style={{
                             paddingTop: "4px",
                             textAlign: "right",
-                            fontSize: "10px",
+                            fontSize: "14px",
                             color: "#6b7280",
                         }}
                     >
                         {paymentMethod === "paypal" ? (
                             <span>
-                                <strong>Paid with</strong>: PayPal
+                                <strong>{t("Paid with")}</strong>: PayPal
                             </span>
                         ) : paymentMethod === "paylater" ? (
-                            "Pay Later"
+                            t("Pay Later")
                         ) : (
                             <span>
-                                <strong>Paid with</strong>: Credit/Debit Card
+                                <strong>{t("Paid with")}</strong>: Credit/Debit Card
                             </span>
                         )}
                     </div>
@@ -1047,12 +1060,12 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                 style={{
                     marginTop: "10px",
                     textAlign: "center",
-                    fontSize: "10px",
-                    color: "#6b7280",
+                    fontSize: "14px",
+                    color: "#457ff1",
                     pageBreakInside: "avoid",
                 }}
             >
-                <p>Thank you for choosing Trogon Airways. We wish you a pleasant journey!</p>
+                <p>{t("Thank you for choosing Trogon Airways. We wish you a pleasant journey!")}</p>
             </div>
         </div>
     );
@@ -1119,12 +1132,12 @@ export default function BookingConfirmation() {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
-                    <p className="text-red-500">No booking data found</p>
+                    <p className="text-red-500">{t("No booking data found")}</p>
                     <button
                         onClick={() => navigate(`/${currentLang}/flights`)}
                         className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
                     >
-                        Return to Flights
+                        {t("Return to Flights")}
                     </button>
                 </div>
             </div>
@@ -1133,12 +1146,13 @@ export default function BookingConfirmation() {
 
     return (
         <>
+            <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                <HeroSection />
+
                 <div className="px-4">
                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Booking details")}</h1>
                 </div>
@@ -1157,10 +1171,10 @@ export default function BookingConfirmation() {
                         <div className="no-print border-t border-gray-200 bg-gray-50 px-6 py-5">
                             <div className="flex justify-between">
                                 <button
-                                    onClick={() => navigate("/")}
+                                    onClick={() => navigate(`/${currentLang}/`)}
                                     className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                 >
-                                    Book Another Flight
+                                    {t("Book Another Flight")}
                                 </button>
                                 {/* <button
                                 onClick={() => handlePrint(bookingData)}

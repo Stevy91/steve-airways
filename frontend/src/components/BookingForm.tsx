@@ -1,7 +1,7 @@
 "use client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import {parse, format } from "date-fns";
+import { parse, format } from "date-fns";
 import { UserIcon, PlaneIcon, CalendarIcon, MapPinIcon, ChevronDown } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
@@ -58,12 +58,12 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         returnDate: "",
     });
     /* helper : transforme "yyyy-MM-dd" -> Date locale (00:00 local) */
-const parseLocalDate = (isoDayString?: string | null) => {
-  if (!isoDayString) return null;
-  // normalise "2025-09-06", ou "2025-09-06T00:00:00", etc.
-  const day = isoDayString.split("T")[0]; 
-  return parse(day, "yyyy-MM-dd", new Date()); // crée Date en local
-};
+    const parseLocalDate = (isoDayString?: string | null) => {
+        if (!isoDayString) return null;
+        // normalise "2025-09-06", ou "2025-09-06T00:00:00", etc.
+        const day = isoDayString.split("T")[0];
+        return parse(day, "yyyy-MM-dd", new Date()); // crée Date en local
+    };
 
     const getFilteredDestinations = () => {
         const departureCode = selectedTabTrip === "onway" ? selectedDeparture : selectedDeparture2;
@@ -298,7 +298,7 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             }`}
                                             type="button"
                                         >
-                                            {t("One way")}
+                                            {t("One Way")}
                                         </button>
                                         <button
                                             onClick={() => setSelectedTabTrip("roundtrip")}
@@ -505,7 +505,6 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
 
-                                              
                                                 <DatePicker
                                                     selected={selectedDate ? parseLocalDate(selectedDate) : null}
                                                     onChange={(date: Date | null) => {
@@ -647,7 +646,6 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
 
-                                               
                                                 <DatePicker
                                                     selected={selectedDate2 ? parseLocalDate(selectedDate2) : null}
                                                     onChange={(date: Date | null) => {
@@ -668,8 +666,6 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             <label className="mb-1 block font-medium text-gray-600">{t("Return Date")}</label>
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
-
-                                              
 
                                                 <DatePicker
                                                     selected={selectedDateReturn ? parseLocalDate(selectedDateReturn) : null}
@@ -714,7 +710,7 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             }`}
                                             type="button"
                                         >
-                                            {t("One way")}
+                                            {t("One Way")}
                                         </button>
                                         <button
                                             onClick={() => setSelectedTabTrip("roundtrip")}
@@ -869,8 +865,7 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
 
-
-                                                 <DatePicker
+                                                <DatePicker
                                                     selected={selectedDate ? parseLocalDate(selectedDate) : null}
                                                     onChange={(date: Date | null) => {
                                                         // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
@@ -958,8 +953,7 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
 
-                                                
-                                                 <DatePicker
+                                                <DatePicker
                                                     selected={selectedDate2 ? parseLocalDate(selectedDate2) : null}
                                                     onChange={(date: Date | null) => {
                                                         // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
@@ -980,7 +974,6 @@ const parseLocalDate = (isoDayString?: string | null) => {
                                             <div className="flex items-center rounded-full border p-2">
                                                 <CalendarIcon className="mr-2 h-4 w-4 text-red-500" />
 
-                                                
                                                 <DatePicker
                                                     selected={selectedDateReturn ? parseLocalDate(selectedDateReturn) : null}
                                                     onChange={(date: Date | null) => {

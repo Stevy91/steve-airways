@@ -59,7 +59,7 @@ interface ValidationErrors {
 }
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
-      const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
             <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
@@ -124,20 +124,21 @@ interface PassengerFormProps {
 }
 
 const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant = false, onChange, errors = {} }: PassengerFormProps) => {
+    const { t, i18n } = useTranslation();
     return (
         <div className="mb-8 rounded-lg border p-6 shadow-sm">
             <h3 className="mb-4 text-lg font-bold">
-                {isInfant ? `Infant ${index + 1}` : isChild ? `Child ${index + 1}` : `Adult Passenger ${index + 1}`}
+                {isInfant ? `${t("Infant")} ${index + 1}` : isChild ? `${t("Child")} ${index + 1}` : `${t("Adult Passenger")} ${index + 1}`}
             </h3>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <label className="mb-1 block font-medium text-gray-600">First Name *</label>
+                    <label className="mb-1 block font-medium text-gray-600">{t("First Name")} *</label>
                     <div className={`flex items-center rounded-full border p-2 ${errors.firstName ? "border-red-500" : ""}`}>
                         <input
                             type="text"
                             value={passenger.firstName}
-                            placeholder="First Name"
+                            placeholder={t("First Name")}
                             onChange={(e) => onChange(type, index, "firstName", e.target.value)}
                             className="input-style w-full bg-transparent outline-none"
                             required
@@ -146,12 +147,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                     {errors.firstName && <p className="mt-1 text-sm text-red-500">{errors.firstName}</p>}
                 </div>
                 <div>
-                    <label className="mb-1 block font-medium text-gray-600">Middle Name</label>
+                    <label className="mb-1 block font-medium text-gray-600">{t("Middle Name")}</label>
                     <div className="flex items-center rounded-full border p-2">
                         <input
                             type="text"
                             value={passenger.middle}
-                            placeholder="Middle Name"
+                            placeholder={t("Middle Name")}
                             onChange={(e) => onChange(type, index, "middle", e.target.value)}
                             className="input-style w-full bg-transparent outline-none"
                         />
@@ -159,12 +160,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                 </div>
 
                 <div>
-                    <label className="mb-1 block font-medium text-gray-600">Last Name *</label>
+                    <label className="mb-1 block font-medium text-gray-600">{t("Last Name")} *</label>
                     <div className={`flex items-center rounded-full border p-2 ${errors.lastName ? "border-red-500" : ""}`}>
                         <input
                             type="text"
                             value={passenger.lastName}
-                            placeholder="Last Name"
+                            placeholder={t("Last Name")}
                             onChange={(e) => onChange(type, index, "lastName", e.target.value)}
                             className="input-style w-full bg-transparent outline-none"
                             required
@@ -174,7 +175,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                 </div>
 
                 <div>
-                    <label className="mb-1 block font-medium text-gray-600">Date of Birth *</label>
+                    <label className="mb-1 block font-medium text-gray-600">{t("Date of Birth")} *</label>
                     <div className={`flex items-center rounded-full border p-2 ${errors.dob ? "border-red-500" : ""}`}>
                         <input
                             type="date"
@@ -189,7 +190,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
 
                 {!isInfant && (
                     <div>
-                        <label className="mb-1 block font-medium text-gray-600">Gender *</label>
+                        <label className="mb-1 block font-medium text-gray-600">{t("Gender")} *</label>
                         <div className={`flex items-center rounded-full border p-2 ${errors.gender ? "border-red-500" : ""}`}>
                             <select
                                 value={passenger.gender}
@@ -198,9 +199,9 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                 required
                             >
                                 <option value="">Select</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
+                                <option value="male">{t("Male")}</option>
+                                <option value="female">{t("Female")}</option>
+                                <option value="other">{t("Other")}</option>
                             </select>
                         </div>
                         {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender}</p>}
@@ -210,12 +211,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                 {/* Ajout du champ Nationality pour les enfants */}
                 {isChild && !isInfant && (
                     <div>
-                        <label className="mb-1 block font-medium text-gray-600">Nationality *</label>
+                        <label className="mb-1 block font-medium text-gray-600">{t("Nationality")} *</label>
                         <div className={`flex items-center rounded-full border p-2 ${errors.nationality ? "border-red-500" : ""}`}>
                             <input
                                 type="text"
                                 value={passenger.nationality}
-                                placeholder="Nationality"
+                                placeholder={t("Nationality")}
                                 onChange={(e) => onChange(type, index, "nationality", e.target.value)}
                                 className="input-style w-full bg-transparent outline-none"
                                 required
@@ -228,7 +229,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                 {!isChild && !isInfant && (
                     <>
                         <div>
-                            <label className="mb-1 block font-medium text-gray-600">Title *</label>
+                            <label className="mb-1 block font-medium text-gray-600">{t("Title")} *</label>
                             <div className={`flex items-center rounded-full border p-2 ${errors.title ? "border-red-500" : ""}`}>
                                 <select
                                     value={passenger.title}
@@ -246,11 +247,11 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                             {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
                         </div>
                         <div>
-                            <label className="mb-1 block font-medium text-gray-600">Address *</label>
+                            <label className="mb-1 block font-medium text-gray-600">{t("Address")} *</label>
                             <div className={`flex items-center rounded-full border p-2 ${errors.address ? "border-red-500" : ""}`}>
                                 <input
                                     type="text"
-                                    placeholder="Address"
+                                    placeholder={t("Address")}
                                     value={passenger.address}
                                     onChange={(e) => onChange(type, index, "address", e.target.value)}
                                     className="input-style w-full bg-transparent outline-none"
@@ -261,7 +262,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                         </div>
 
                         <div>
-                            <label className="mb-1 block font-medium text-gray-600">Country / Region of Residence *</label>
+                            <label className="mb-1 block font-medium text-gray-600">{t("Country / Region of Residence")} *</label>
                             <div className={`flex items-center rounded-full border p-2 ${errors.country ? "border-red-500" : ""}`}>
                                 <select
                                     value={passenger.country}
@@ -284,12 +285,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                         </div>
 
                         <div>
-                            <label className="mb-1 block font-medium text-gray-600">Nationality *</label>
+                            <label className="mb-1 block font-medium text-gray-600">{t("Nationality")} *</label>
                             <div className={`flex items-center rounded-full border p-2 ${errors.nationality ? "border-red-500" : ""}`}>
                                 <input
                                     type="text"
                                     value={passenger.nationality}
-                                    placeholder="Nationality"
+                                    placeholder={t("Nationality")}
                                     onChange={(e) => onChange(type, index, "nationality", e.target.value)}
                                     className="input-style w-full bg-transparent outline-none"
                                     required
@@ -299,11 +300,11 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                         </div>
 
                         <div>
-                            <label className="mb-1 block font-medium text-gray-600">Phone Number *</label>
+                            <label className="mb-1 block font-medium text-gray-600">{t("Phone Number")} *</label>
                             <div className={`flex items-center rounded-full border p-2 ${errors.phone ? "border-red-500" : ""}`}>
                                 <input
                                     type="tel"
-                                    placeholder="Phone Number"
+                                    placeholder={t("Phone Number")}
                                     value={passenger.phone}
                                     onChange={(e) => onChange(type, index, "phone", e.target.value)}
                                     className="input-style w-full bg-transparent outline-none"
@@ -313,11 +314,11 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                             {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                         </div>
                         <div>
-                            <label className="mb-1 block font-medium text-gray-600">Email Address*</label>
+                            <label className="mb-1 block font-medium text-gray-600">{t("Email Address")} *</label>
                             <div className={`flex items-center rounded-full border p-2 ${errors.email ? "border-red-500" : ""}`}>
                                 <input
                                     type="email"
-                                    placeholder="Email Address"
+                                    placeholder={t("Email Address")}
                                     value={passenger.email}
                                     onChange={(e) => onChange(type, index, "email", e.target.value)}
                                     className="input-style w-full bg-transparent outline-none"
@@ -335,7 +336,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
 
 const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
-         const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     return (
         <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
@@ -344,7 +345,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
             </div>
 
             <div className="relative mt-4 flex flex-col items-start pl-6">
-                <div className="absolute bottom-3 left-0 top-3 z-0 h-[85px] w-0.5 bg-red-600"></div>
+                {/* <div className="absolute bottom-3 left-0 top-3 z-0 h-[85px] w-0.5 bg-red-600"></div> */}
                 <div className="z-10 mb-6 flex items-start gap-3">
                     <div className="relative -left-8 z-10 mt-0.5">
                         <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
@@ -353,7 +354,9 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                         <p className="font-bold text-black">
                             {bookingData.outbound.departure_time} - {bookingData.fromCity} ({bookingData.from})
                         </p>
-                        <p className="mt-1 text-[11px] text-black">{t("Flight")} <span className="text-red-600 font-bold"># {bookingData.outbound.noflight}</span></p>
+                        <p className="mt-1 text-[11px] text-black">
+                            {t("Flight")} <span className="font-bold text-red-600"># {bookingData.outbound.noflight}</span>
+                        </p>
                     </div>
                 </div>
 
@@ -369,7 +372,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
 
             {bookingData.return && (
                 <div className="relative mt-6 flex flex-col items-start pl-6">
-                    <div className="absolute bottom-3 left-0 top-3 z-0 h-[79px] w-0.5 bg-red-600"></div>
+                    {/* <div className="absolute bottom-3 left-0 top-3 z-0 h-[79px] w-0.5 bg-red-600"></div> */}
                     <div className="z-10 mb-6 flex items-start gap-3">
                         <div className="relative -left-8 z-10 mt-0.5">
                             <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
@@ -378,7 +381,9 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                             <p className="font-bold text-black">
                                 {bookingData.return.departure_time} - {bookingData.toCity} ({bookingData.to})
                             </p>
-                            <p className="mt-1 text-[11px] text-black">{t("Flight")} <span className="text-red-600 font-bold"># {bookingData.return.noflight}</span></p>
+                            <p className="mt-1 text-[11px] text-black">
+                                {t("Flight")} <span className="font-bold text-red-600"># {bookingData.return.noflight}</span>
+                            </p>
                         </div>
                     </div>
 
@@ -413,14 +418,14 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                 </div>
             </div>
 
-            <div className="mt-4 text-center text-2xl font-extrabold text-red-600">${bookingData.totalPrice}</div>
+            {/* <div className="mt-4 text-center text-2xl font-extrabold text-red-600">${bookingData.totalPrice}</div> */}
         </div>
     );
 };
 
 const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
-      const { t, i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     return (
         <div className="mx-10 mb-10 flex items-center justify-between rounded-md bg-yellow-400 p-4 text-black shadow-sm">
@@ -438,22 +443,25 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
                     )}
                     <span>|</span>
                     <span>
-                        {bookingData.passengers.adults} {t("Adult")}{bookingData.passengers.adults > 1 ? "s" : ""}
+                        {bookingData.passengers.adults} {t("Adult")}
+                        {bookingData.passengers.adults > 1 ? "s" : ""}
                         {bookingData.passengers.children > 0 && (
                             <>
-                                , {bookingData.passengers.children} {t("Child")}{bookingData.passengers.children > 1 ? t("ren") : ""}
+                                , {bookingData.passengers.children} {t("Child")}
+                                {bookingData.passengers.children > 1 ? t("ren") : ""}
                             </>
                         )}
                         {bookingData.passengers.infants > 0 && (
                             <>
-                                , {bookingData.passengers.infants} {t("Infant")}{bookingData.passengers.infants > 1 ? "s" : ""}
+                                , {bookingData.passengers.infants} {t("Infant")}
+                                {bookingData.passengers.infants > 1 ? "s" : ""}
                             </>
                         )}
                     </span>
                     <span>|</span>
-                    <span>{bookingData.tripType === "roundtrip" ? t("Round Trip") : "One Way"}</span>
+                    <span>{bookingData.tripType === "roundtrip" ? t("Round Trip") : t("One Way")}</span>
                     <span>|</span>
-                    <span>{bookingData.tabType === "helicopter" ? t("Helicopter") : "Plane"}</span>
+                    <span>{bookingData.tabType === "helicopter" ? t("Helicopter") : t("Air Plane")}</span>
                 </div>
             </div>
             <div className="text-right">
@@ -468,8 +476,8 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
 };
 
 export default function Passenger() {
-       const { lang } = useParams<{ lang: string }>();
-  const currentLang = lang || "en"; // <-- ici on définit currentLang
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
     const navigate = useNavigate();
     const location = useLocation();
     const bookingData = location.state as PassengerData;
@@ -557,19 +565,19 @@ export default function Passenger() {
 
         // Helper pour vérifier les dates
         const validateAge = (dob: string, minAge?: number, maxAge?: number): string | undefined => {
-            if (!dob) return "Date of birth is required";
+            if (!dob) return t("Date of birth is required");
 
             const dobDate = new Date(dob);
             const today = new Date();
 
             if (minAge !== undefined) {
                 const minDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
-                if (dobDate > minDate) return `Must be at least ${minAge} years old`;
+                if (dobDate > minDate) return `${t("Must be at least")} ${minAge} ${t("years old")}`;
             }
 
             if (maxAge !== undefined) {
                 const maxDate = new Date(today.getFullYear() - maxAge, today.getMonth(), today.getDate());
-                if (dobDate < maxDate) return `Must be younger than ${maxAge} years`;
+                if (dobDate < maxDate) return `${t("Must be younger than")} ${maxAge} ${t("years")}`;
             }
 
             return undefined;
@@ -579,21 +587,21 @@ export default function Passenger() {
         passengersData.adults.forEach((adult, index) => {
             const errors: Partial<Record<keyof PassengerFormData, string>> = {};
 
-            if (!adult.firstName?.trim()) errors.firstName = "Required";
-            if (!adult.lastName?.trim()) errors.lastName = "Required";
+            if (!adult.firstName?.trim()) errors.firstName = t("Required");
+            if (!adult.lastName?.trim()) errors.lastName = t("Required");
 
             const adultAgeError = validateAge(adult.dob, 12);
             if (adultAgeError) errors.dob = adultAgeError;
 
-            if (!adult.gender) errors.gender = "Required";
-            if (!adult.title) errors.title = "Required";
-            if (!adult.address?.trim()) errors.address = "Required";
-            if (!adult.country) errors.country = "Required";
-            if (!adult.nationality?.trim()) errors.nationality = "Required";
-            if (!adult.phone?.trim()) errors.phone = "Required";
+            if (!adult.gender) errors.gender = t("Required");
+            if (!adult.title) errors.title = t("Required");
+            if (!adult.address?.trim()) errors.address = t("Required");
+            if (!adult.country) errors.country = t("Required");
+            if (!adult.nationality?.trim()) errors.nationality = t("Required");
+            if (!adult.phone?.trim()) errors.phone = t("Required");
 
             if (!adult.email?.trim()) {
-                errors.email = "Required";
+                errors.email = t("Required");
             } else if (!/^\S+@\S+\.\S+$/.test(adult.email)) {
                 errors.email = "Invalid email";
             }
@@ -608,14 +616,14 @@ export default function Passenger() {
         passengersData.children.forEach((child, index) => {
             const errors: Partial<Record<keyof PassengerFormData, string>> = {};
 
-            if (!child.firstName?.trim()) errors.firstName = "Required";
-            if (!child.lastName?.trim()) errors.lastName = "Required";
+            if (!child.firstName?.trim()) errors.firstName = t("Required");
+            if (!child.lastName?.trim()) errors.lastName = t("Required");
 
             const childAgeError = validateAge(child.dob, 2, 12);
             if (childAgeError) errors.dob = childAgeError;
 
-            if (!child.gender) errors.gender = "Required";
-            if (!child.nationality?.trim()) errors.nationality = "Required";
+            if (!child.gender) errors.gender = t("Required");
+            if (!child.nationality?.trim()) errors.nationality = t("Required");
 
             if (Object.keys(errors).length > 0) {
                 newErrors.children[index] = errors;
@@ -627,8 +635,8 @@ export default function Passenger() {
         passengersData.infants.forEach((infant, index) => {
             const errors: Partial<Record<keyof PassengerFormData, string>> = {};
 
-            if (!infant.firstName?.trim()) errors.firstName = "Required";
-            if (!infant.lastName?.trim()) errors.lastName = "Required";
+            if (!infant.firstName?.trim()) errors.firstName = t("Required");
+            if (!infant.lastName?.trim()) errors.lastName = t("Required");
 
             const infantAgeError = validateAge(infant.dob, undefined, 2);
             if (infantAgeError) errors.dob = infantAgeError;
@@ -654,19 +662,16 @@ export default function Passenger() {
 
     return (
         <>
+            <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-             
-                                <HeroSection />
-                <div className="px-4">
-                    {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1> */}
-                
-                </div>
+
+                <div className="px-4">{/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1> */}</div>
             </div>
-            <div className="min-h-screen font-sans mx-auto max-w-7xl px-4 py-12">
+            <div className="mx-auto min-h-screen max-w-7xl px-4 py-12 font-sans">
                 <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
                     <Stepper currentStep={currentStep} />
                     <FlightSummaryCard bookingData={bookingData} />
@@ -722,7 +727,7 @@ export default function Passenger() {
                             className="mt-6 flex w-48 items-center gap-8 rounded-full bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-600"
                         >
                             <ChevronLeft className="h-5 w-5" />
-                            Back
+                            {t("Back")}
                         </button>
                         <button
                             onClick={() => {
@@ -759,7 +764,7 @@ export default function Passenger() {
                             }}
                             className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
                         >
-                            Continue to Payment
+                            {t("Continue to Payment")}
                         </button>
                     </div>
                 </div>

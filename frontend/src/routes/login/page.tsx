@@ -12,10 +12,7 @@ export default function Login() {
     const navigate = useNavigate();
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang
-     useAuth();
-
-
-    
+    useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

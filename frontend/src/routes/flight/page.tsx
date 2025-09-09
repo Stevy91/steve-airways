@@ -109,7 +109,13 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
 };
 
 const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | null; to: string | null; locations: Location[]; prefix?: string }) => {
+    // const getLocation = (code: string | null) => {
+    //     const location = locations.find((loc) => loc.code === code);
+    //     return location ? `${location.city} (${location.code})` : "Inconnu";
+    // };
+
     const getLocation = (code: string | null) => {
+        if (!Array.isArray(locations)) return "Inconnu";
         const location = locations.find((loc) => loc.code === code);
         return location ? `${location.city} (${location.code})` : "Inconnu";
     };
@@ -122,8 +128,11 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 };
 
 const mapFlight = (flight: any, locations: Location[]): Flight => {
-    const depLoc = locations.find((l) => l.id === flight.departure_location_id);
-    const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+    // const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+    // const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+
+    const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
+    const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
 
     const date = new Date(flight.departure_time);
     const isoDate = date.toISOString().split("T")[0];
@@ -154,49 +163,6 @@ const mapFlight = (flight: any, locations: Location[]): Flight => {
     };
 };
 
-const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) => {
-    try {
-        const [locationsRes, flightAllRes, filteredFlightsRes] = await Promise.all([
-            fetch(`https://steve-airways-production.up.railway.app/api/locations`, { signal }),
-            fetch(`https://steve-airways-production.up.railway.app/api/flightall`, { signal }),
-            fetch(`https://steve-airways-production.up.railway.app/api/flights?${params.toString()}`, { signal }),
-        ]);
-
-        if (!locationsRes.ok || !flightAllRes.ok || !filteredFlightsRes.ok) {
-            throw new Error("Error while loading the data");
-        }
-
-        const [locations, allFlights, filteredFlightsData] = await Promise.all([locationsRes.json(), flightAllRes.json(), filteredFlightsRes.json()]);
-
-        let filteredFlights = [];
-        if (Array.isArray(filteredFlightsData)) {
-            filteredFlights = filteredFlightsData;
-        } else if (filteredFlightsData && filteredFlightsData.outbound) {
-            filteredFlights = filteredFlightsData.outbound;
-        }
-
-        let returnFlights = [];
-        if (params.get("trip_type") === "roundtrip" && params.get("return_date")) {
-            const returnParams = new URLSearchParams(params);
-            returnParams.set("from", params.get("to") || "");
-            returnParams.set("to", params.get("from") || "");
-            returnParams.set("date", params.get("return_date") || "");
-
-            const returnFlightsRes = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${returnParams.toString()}`, {
-                signal,
-            });
-            if (returnFlightsRes.ok) {
-                const returnData = await returnFlightsRes.json();
-                returnFlights = Array.isArray(returnData) ? returnData : returnData.outbound || [];
-            }
-        }
-
-        return [locations, allFlights, filteredFlights, returnFlights];
-    } catch (error) {
-        throw error;
-    }
-};
-
 export default function FlightSelection() {
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang
@@ -221,6 +187,52 @@ export default function FlightSelection() {
         loading: true,
         error: null,
     });
+    const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) => {
+        try {
+            const [locationsRes, flightAllRes, filteredFlightsRes] = await Promise.all([
+                fetch(`https://steve-airways-production.up.railway.app/api/locations`, { signal }),
+                fetch(`https://steve-airways-production.up.railway.app/api/flightall`, { signal }),
+                fetch(`https://steve-airways-production.up.railway.app/api/flights?${params.toString()}`, { signal }),
+            ]);
+
+            // if (!locationsRes.ok || !flightAllRes.ok || !filteredFlightsRes.ok) {
+            //     navigate(`/${currentLang}/`); // ← redirection vers la page d’accueil
+            // }
+
+            const [locations, allFlights, filteredFlightsData] = await Promise.all([
+                locationsRes.json(),
+                flightAllRes.json(),
+                filteredFlightsRes.json(),
+            ]);
+
+            let filteredFlights = [];
+            if (Array.isArray(filteredFlightsData)) {
+                filteredFlights = filteredFlightsData;
+            } else if (filteredFlightsData && filteredFlightsData.outbound) {
+                filteredFlights = filteredFlightsData.outbound;
+            }
+
+            let returnFlights = [];
+            if (params.get("trip_type") === "roundtrip" && params.get("return_date")) {
+                const returnParams = new URLSearchParams(params);
+                returnParams.set("from", params.get("to") || "");
+                returnParams.set("to", params.get("from") || "");
+                returnParams.set("date", params.get("return_date") || "");
+
+                const returnFlightsRes = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${returnParams.toString()}`, {
+                    signal,
+                });
+                if (returnFlightsRes.ok) {
+                    const returnData = await returnFlightsRes.json();
+                    returnFlights = Array.isArray(returnData) ? returnData : returnData.outbound || [];
+                }
+            }
+
+            return [locations, allFlights, filteredFlights, returnFlights];
+        } catch (error) {
+            throw error;
+        }
+    };
     const [booking, setBooking] = useState<BookingState>({
         showOutboundSelection: true,
         showReturnSelection: true,
@@ -560,37 +572,6 @@ export default function FlightSelection() {
         }
     };
 
-    // const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
-    //     const totalPassengers = passengers.adult + passengers.child + passengers.infant;
-    //     const availableSeats = Number(flight.seat); // Assure-toi que seat est un nombre
-
-    //     if (availableSeats < totalPassengers) {
-
-    //          toast.error(`Impossible de steve : seulement ${availableSeats} siège(s) disponible(s) pour ${passengers} passager(s).`);
-    //         return; // Stoppe la réservation
-    //     }
-
-    //     const flightWithTotalPrice = {
-    //         ...flight,
-    //         totalPrice: calculateTotalPrice(flight),
-    //     };
-
-    //     if (isReturnFlight) {
-    //         setBooking({
-    //             ...booking,
-    //             return: flightWithTotalPrice,
-    //             showReturnSelection: false,
-    //         });
-    //     } else {
-    //         setBooking({
-    //             outbound: flightWithTotalPrice,
-    //             showOutboundSelection: false,
-    //             return: undefined,
-    //             showReturnSelection: selectedTabTrip === "roundtrip",
-    //         });
-    //     }
-    // };
-
     const handleChangeFlight = (isReturn: boolean) => {
         if (isReturn) {
             setBooking({
@@ -697,15 +678,6 @@ export default function FlightSelection() {
         );
     };
 
-    if (state.loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-[#eeeeef]">
-                <Spinner size="lg" />
-                <p className="ml-4 text-lg text-blue-700">{t("Loading...")}</p>
-            </div>
-        );
-    }
-
     if (state.error) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#eeeeef]">
@@ -717,255 +689,266 @@ export default function FlightSelection() {
         );
     }
 
-    return (
-        <>
-            <div
-                className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
-                style={{ backgroundImage: "url(/plane-bg.jpg)" }}
-            >
-                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                                <HeroSection />
-                <div className="px-4 pt-24">
-                    {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
+    if (state.loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#eeeeef]">
+                <Spinner size="lg" />
+                <p className="ml-4 text-lg text-blue-700">{t("Loading...")}</p>
+            </div>
+        );
+    } else {
+        return (
+            <>
+                <HeroSection />
+                <div
+                    className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
+                    style={{ backgroundImage: "url(/plane-bg.jpg)" }}
+                >
+                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+
+                    <div className="px-4 pt-24">
+                        {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Let's Explore the World Together!")}</h1>
                     <p className="text-xl">{t("We fly to connect people.")}</p> */}
-                </div>
-            </div>
-
-            <div className="mx-auto h-full max-w-7xl px-4 py-12 font-sans">
-                <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
-                    <Stepper currentStep={currentStep} />
-                    <div className="flex text-center">
-                        <h2 className="mb-4 px-4 text-2xl font-bold">{t("Choose Flights")}</h2>
-                        <button className="mb-4 items-center justify-center rounded-lg border border-blue-700 pl-2 pr-2 text-center">
-                            <CalendarDays className="ml-7 h-5 w-5 text-blue-700" />
-                            <span className="font-bold text-blue-700">{t("Calendar")}</span>
-                        </button>
                     </div>
-
-                    {/* Outbound Flight Section */}
-                    <RouteHeader
-                        from={fromParam}
-                        to={toParam}
-                        locations={state.locations}
-                        prefix={t("Depart Flight")}
-                    />
-                    {booking.showOutboundSelection ? (
-                        <>
-                            <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
-                                <button
-                                    className="p-2 disabled:opacity-30"
-                                    onClick={handlePrevClick}
-                                    disabled={startIndex === 0}
-                                    aria-label="Dates précédentes"
-                                >
-                                    <ChevronLeft className="h-5 w-5 text-blue-700" />
-                                </button>
-
-                                <DateCarousel
-                                    allDates={allDates}
-                                    selectedDateIndex={selectedDateIndex}
-                                    setSelectedDateIndex={handleDateSelect}
-                                    startIndex={startIndex}
-                                    visibleCount={visibleCount}
-                                    from={from}
-                                    to={to}
-                                    date={date1}
-                                    passengers={passengers}
-                                    tripType={selectedTabTrip}
-                                    tabType={selectedTab}
-                                    label="Vol Aller"
-                                    isReturnDateCarousel={false}
-                                    returnDate={returnDateParam || undefined}
-                                />
-
-                                <button
-                                    className="p-2 disabled:opacity-30"
-                                    onClick={handleNextClick}
-                                    disabled={startIndex + visibleCount >= allDates.length}
-                                    aria-label="Dates suivantes"
-                                >
-                                    <ChevronRight className="h-5 w-5 text-blue-700" />
-                                </button>
-                            </div>
-
-                            {loadingOutbound ? (
-                                <div className="flex h-40 items-center justify-center">
-                                    <Spinner size="md" />
-                                    <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
-                                </div>
-                            ) : filteredFlights.length > 0 ? (
-                                <div className="mb-[80px] space-y-4">
-                                    {filteredFlights.map((flight) => (
-                                        <div key={`${flight.id}-${flight.date}`}>
-                                            <FlightCard
-                                                flight={flight}
-                                                isOpen={isOpen === flight.id}
-                                                onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
-                                            />
-                                            {isOpen === flight.id && (
-                                                <FlightDetail
-                                                    flight={flight}
-                                                    onBookNow={(f) => handleBookNow(f, false)}
-                                                    passengers={passengers}
-                                                />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <EmptyState
-                                    icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
-                                    title={t("No flights available")}
-                                    description={t("No flight matches your criteria for this date.")}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        booking.outbound && renderBookingConfirmation(booking.outbound, false)
-                    )}
-
-                    {/* Return Flight Section */}
-                    {selectedTabTrip === "roundtrip" && (
-                        <>
-                            <RouteHeader
-                                from={toParam}
-                                to={fromParam}
-                                locations={state.locations}
-                                prefix={t("Return Flight")}
-                            />
-
-                            {booking.showReturnSelection ? (
-                                <>
-                                    <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
-                                        <button
-                                            className="p-2 disabled:opacity-30"
-                                            onClick={handleReturnPrevClick}
-                                            disabled={startReturnIndex === 0}
-                                            aria-label="Dates précédentes retour"
-                                        >
-                                            <ChevronLeft className="h-5 w-5 text-blue-700" />
-                                        </button>
-
-                                        <DateCarousel
-                                            allDates={allReturnDates}
-                                            selectedDateIndex={selectedReturnDateIndex}
-                                            setSelectedDateIndex={handleReturnDateSelect}
-                                            startIndex={startReturnIndex}
-                                            visibleCount={visibleCount}
-                                            from={to}
-                                            to={from}
-                                            date={date1}
-                                            passengers={passengers}
-                                            tripType={selectedTabTrip}
-                                            tabType={selectedTab}
-                                            label="Vol Retour"
-                                            isReturnDateCarousel={true}
-                                            returnDate={returnDateParam || undefined}
-                                            flightType={selectedTab} // Ajoutez cette ligne
-                                        />
-
-                                        <button
-                                            className="p-2 disabled:opacity-30"
-                                            onClick={handleReturnNextClick}
-                                            disabled={startReturnIndex + visibleCount >= allReturnDates.length}
-                                            aria-label="Dates suivantes retour"
-                                        >
-                                            <ChevronRight className="h-5 w-5 text-blue-700" />
-                                        </button>
-                                    </div>
-
-                                    {loadingReturn ? (
-                                        <div className="flex h-40 items-center justify-center">
-                                            <Spinner size="md" />
-                                            <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
-                                        </div>
-                                    ) : filteredReturnFlights.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {filteredReturnFlights.map((flight) => (
-                                                <div key={`return-${flight.id}-${flight.date}`}>
-                                                    <FlightCard
-                                                        flight={flight}
-                                                        isOpen={isOpen === flight.id}
-                                                        onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
-                                                    />
-                                                    {isOpen === flight.id && (
-                                                        <FlightDetail
-                                                            flight={flight}
-                                                            onBookNow={(f) => handleBookNow(f, true)}
-                                                            isReturnFlight
-                                                            passengers={passengers}
-                                                        />
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState
-                                            icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
-                                            title={t("No flights available")}
-                                            description={t("No flight matches your criteria for this return date.")}
-                                        />
-                                    )}
-                                </>
-                            ) : (
-                                booking.return && renderBookingConfirmation(booking.return, true)
-                            )}
-                        </>
-                    )}
-
-                    {/* Continue Button */}
-                    {/* Continue Button */}
-                    {booking.outbound &&
-                        !booking.showOutboundSelection &&
-                        (selectedTabTrip === "oneway" || (selectedTabTrip === "roundtrip" && booking.return && !booking.showReturnSelection)) && (
-                            <div className="mt-6 flex justify-end">
-                                <button
-                                    onClick={() => {
-                                        const fromLocation = state.locations.find((loc) => loc.code === fromParam);
-                                        const toLocation = state.locations.find((loc) => loc.code === toParam);
-
-                                        // Préparation des données de réservation avec les IDs des vols
-                                        const bookingData = {
-                                            outbound: {
-                                                ...booking.outbound!,
-                                                flightId: booking.outbound!.id, // ID du vol aller
-                                            },
-                                            return: booking.return
-                                                ? {
-                                                      ...booking.return,
-                                                      flightId: booking.return.id, // ID du vol retour
-                                                  }
-                                                : undefined,
-                                            passengers: {
-                                                adults: passengers.adult,
-                                                children: passengers.child,
-                                                infants: passengers.infant,
-                                            },
-                                            tripType: selectedTabTrip,
-                                            tabType: selectedTab,
-                                            from: fromParam,
-                                            to: toParam,
-                                            fromCity: fromLocation?.city || fromParam,
-                                            toCity: toLocation?.city || toParam,
-                                            departureDate: dateParam,
-                                            returnDate: returnDateParam,
-                                            totalPrice:
-                                                calculateTotalPrice(booking.outbound!) + (booking.return ? calculateTotalPrice(booking.return) : 0),
-                                        };
-
-                                        // Navigation vers la page des passagers avec les données de réservation
-                                        navigate(`/${currentLang}/passenger`, {
-                                            state: bookingData,
-                                        });
-                                    }}
-                                    className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
-                                >
-                                    {t("Continue to Passenger")}
-                                </button>
-                            </div>
-                        )}
                 </div>
-            </div>
-        </>
-    );
+
+                <div className="mx-auto h-full max-w-7xl px-4 py-12 font-sans">
+                    <div className="relative z-10 mt-[-100px] w-full rounded bg-white p-6 shadow-lg">
+                        <Stepper currentStep={currentStep} />
+                        <div className="flex text-center">
+                            <h2 className="mb-4 px-4 text-2xl font-bold">{t("Choose Flights")}</h2>
+                            <button className="mb-4 items-center justify-center rounded-lg border border-blue-700 pl-2 pr-2 text-center">
+                                <CalendarDays className="ml-7 h-5 w-5 text-blue-700" />
+                                <span className="font-bold text-blue-700">{t("Calendar")}</span>
+                            </button>
+                        </div>
+
+                        {/* Outbound Flight Section */}
+                        <RouteHeader
+                            from={fromParam}
+                            to={toParam}
+                            locations={state.locations}
+                            prefix={t("Depart Flight")}
+                        />
+                        {booking.showOutboundSelection ? (
+                            <>
+                                <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
+                                    <button
+                                        className="p-2 disabled:opacity-30"
+                                        onClick={handlePrevClick}
+                                        disabled={startIndex === 0}
+                                        aria-label="Dates précédentes"
+                                    >
+                                        <ChevronLeft className="h-5 w-5 text-blue-700" />
+                                    </button>
+
+                                    <DateCarousel
+                                        allDates={allDates}
+                                        selectedDateIndex={selectedDateIndex}
+                                        setSelectedDateIndex={handleDateSelect}
+                                        startIndex={startIndex}
+                                        visibleCount={visibleCount}
+                                        from={from}
+                                        to={to}
+                                        date={date1}
+                                        passengers={passengers}
+                                        tripType={selectedTabTrip}
+                                        tabType={selectedTab}
+                                        label="Vol Aller"
+                                        isReturnDateCarousel={false}
+                                        returnDate={returnDateParam || undefined}
+                                    />
+
+                                    <button
+                                        className="p-2 disabled:opacity-30"
+                                        onClick={handleNextClick}
+                                        disabled={startIndex + visibleCount >= allDates.length}
+                                        aria-label="Dates suivantes"
+                                    >
+                                        <ChevronRight className="h-5 w-5 text-blue-700" />
+                                    </button>
+                                </div>
+
+                                {loadingOutbound ? (
+                                    <div className="flex h-40 items-center justify-center">
+                                        <Spinner size="md" />
+                                        <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
+                                    </div>
+                                ) : filteredFlights.length > 0 ? (
+                                    <div className="mb-[80px] space-y-4">
+                                        {filteredFlights.map((flight) => (
+                                            <div key={`${flight.id}-${flight.date}`}>
+                                                <FlightCard
+                                                    flight={flight}
+                                                    isOpen={isOpen === flight.id}
+                                                    onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
+                                                />
+                                                {isOpen === flight.id && (
+                                                    <FlightDetail
+                                                        flight={flight}
+                                                        onBookNow={(f) => handleBookNow(f, false)}
+                                                        passengers={passengers}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState
+                                        icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
+                                        title={t("No flights available")}
+                                        description={t("No flight matches your criteria for this date.")}
+                                    />
+                                )}
+                            </>
+                        ) : (
+                            booking.outbound && renderBookingConfirmation(booking.outbound, false)
+                        )}
+
+                        {/* Return Flight Section */}
+                        {selectedTabTrip === "roundtrip" && (
+                            <>
+                                <RouteHeader
+                                    from={toParam}
+                                    to={fromParam}
+                                    locations={state.locations}
+                                    prefix={t("Return Flight")}
+                                />
+
+                                {booking.showReturnSelection ? (
+                                    <>
+                                        <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
+                                            <button
+                                                className="p-2 disabled:opacity-30"
+                                                onClick={handleReturnPrevClick}
+                                                disabled={startReturnIndex === 0}
+                                                aria-label="Dates précédentes retour"
+                                            >
+                                                <ChevronLeft className="h-5 w-5 text-blue-700" />
+                                            </button>
+
+                                            <DateCarousel
+                                                allDates={allReturnDates}
+                                                selectedDateIndex={selectedReturnDateIndex}
+                                                setSelectedDateIndex={handleReturnDateSelect}
+                                                startIndex={startReturnIndex}
+                                                visibleCount={visibleCount}
+                                                from={to}
+                                                to={from}
+                                                date={date1}
+                                                passengers={passengers}
+                                                tripType={selectedTabTrip}
+                                                tabType={selectedTab}
+                                                label="Vol Retour"
+                                                isReturnDateCarousel={true}
+                                                returnDate={returnDateParam || undefined}
+                                                flightType={selectedTab} // Ajoutez cette ligne
+                                            />
+
+                                            <button
+                                                className="p-2 disabled:opacity-30"
+                                                onClick={handleReturnNextClick}
+                                                disabled={startReturnIndex + visibleCount >= allReturnDates.length}
+                                                aria-label="Dates suivantes retour"
+                                            >
+                                                <ChevronRight className="h-5 w-5 text-blue-700" />
+                                            </button>
+                                        </div>
+
+                                        {loadingReturn ? (
+                                            <div className="flex h-40 items-center justify-center">
+                                                <Spinner size="md" />
+                                                <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
+                                            </div>
+                                        ) : filteredReturnFlights.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {filteredReturnFlights.map((flight) => (
+                                                    <div key={`return-${flight.id}-${flight.date}`}>
+                                                        <FlightCard
+                                                            flight={flight}
+                                                            isOpen={isOpen === flight.id}
+                                                            onToggle={() => setIsOpen(isOpen === flight.id ? null : flight.id)}
+                                                        />
+                                                        {isOpen === flight.id && (
+                                                            <FlightDetail
+                                                                flight={flight}
+                                                                onBookNow={(f) => handleBookNow(f, true)}
+                                                                isReturnFlight
+                                                                passengers={passengers}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <EmptyState
+                                                icon={<PlaneIcon className="h-12 w-12 text-gray-400" />}
+                                                title={t("No flights available")}
+                                                description={t("No flight matches your criteria for this return date.")}
+                                            />
+                                        )}
+                                    </>
+                                ) : (
+                                    booking.return && renderBookingConfirmation(booking.return, true)
+                                )}
+                            </>
+                        )}
+
+                        {/* Continue Button */}
+                        {/* Continue Button */}
+                        {booking.outbound &&
+                            !booking.showOutboundSelection &&
+                            (selectedTabTrip === "oneway" || (selectedTabTrip === "roundtrip" && booking.return && !booking.showReturnSelection)) && (
+                                <div className="mt-6 flex justify-end">
+                                    <button
+                                        onClick={() => {
+                                            const fromLocation = state.locations.find((loc) => loc.code === fromParam);
+                                            const toLocation = state.locations.find((loc) => loc.code === toParam);
+
+                                            // Préparation des données de réservation avec les IDs des vols
+                                            const bookingData = {
+                                                outbound: {
+                                                    ...booking.outbound!,
+                                                    flightId: booking.outbound!.id, // ID du vol aller
+                                                },
+                                                return: booking.return
+                                                    ? {
+                                                          ...booking.return,
+                                                          flightId: booking.return.id, // ID du vol retour
+                                                      }
+                                                    : undefined,
+                                                passengers: {
+                                                    adults: passengers.adult,
+                                                    children: passengers.child,
+                                                    infants: passengers.infant,
+                                                },
+                                                tripType: selectedTabTrip,
+                                                tabType: selectedTab,
+                                                from: fromParam,
+                                                to: toParam,
+                                                fromCity: fromLocation?.city || fromParam,
+                                                toCity: toLocation?.city || toParam,
+                                                departureDate: dateParam,
+                                                returnDate: returnDateParam,
+                                                totalPrice:
+                                                    calculateTotalPrice(booking.outbound!) +
+                                                    (booking.return ? calculateTotalPrice(booking.return) : 0),
+                                            };
+
+                                            // Navigation vers la page des passagers avec les données de réservation
+                                            navigate(`/${currentLang}/passenger`, {
+                                                state: bookingData,
+                                            });
+                                        }}
+                                        className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                                    >
+                                        {t("Continue to Passenger")}
+                                    </button>
+                                </div>
+                            )}
+                    </div>
+                </div>
+            </>
+        );
+    }
 }

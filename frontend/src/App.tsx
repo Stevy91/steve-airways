@@ -1,9 +1,5 @@
 import { ThemeProvider } from "./contexts/theme-context";
-import {
-  createBrowserRouter,
-  Navigate,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import Layout from "./routes/dashboard/layout";
 import DashboardPage from "./routes/dashboard/dashboard/page";
 import LayoutHome from "./routes/layout";
@@ -109,97 +105,105 @@ import Register from "./routes/register/page";
 // }
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <LayoutHome />,
-    children: [
-      {
-        index: true,
-        element: <Navigate to="/en" replace />,
-      },
-      {
-        path: ":lang",
-        element: <HomePage />,
-      },
-      {
-        path: ":lang/info",
-        element: <TravelInfoPage />,
-      },
-      {
-        path: ":lang/faqs",
-        element: <FaqPage />,
-      },
-      {
-        path: ":lang/charter",
-        element: <CharterPage />,
-      },
-      {
-        path: ":lang/terms",
-        element: <Terms />,
-      },
-      {
-        path: ":lang/login",
-        element: <Login />,
-      },
+    {
+        path: "/",
+        element: <LayoutHome />,
+        children: [
             {
-      path: ":lang/register",
-        element: <Register />,
-      },
-      {
-        path: ":lang/cookies",
-        element: <Cookies />,
-      },
-      {
-        path: ":lang/privacy",
-        element: <Privacy />,
-      },
-      {
-        path: ":lang/support",
-        element: <SupportPage />,
-      },
-      {
-        path: ":lang/flights",
-        element: <FlightSelection />,
-      },
-      {
-        path: ":lang/passenger",
-        element: <Passenger />,
-      },
-      {
-        path: ":lang/pay",
-        element: <PaymentPage />,
-      },
-      {
-        path: ":lang/confirmation",
-        element: <ConfirmationPage />,
-      },
-    ],
-  },
-  {
-    path: ":lang/dashboard",
-    element: <Layout />,
-    children: [
-      { index: true, element: <DashboardPage /> },
-      { path: "analytics", element: <h1 className="title">Analytics</h1> },
-      { path: "reports", element: <h1 className="title">Reports</h1> },
-      { path: "flights", element: <FlightTable /> },
-      { path: "flights-helico", element: <FlightTableHelico /> },
-      { path: "bookings-plane", element: <ViewBookingPlane /> },
-      { path: "bookings-helico", element: <ViewBookingHelico /> },
-      
-      { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
-      { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
-      { path: "user", element: <h1 className="title">All Users</h1> },
-      { path: "roleUser", element: <h1 className="title">Role</h1> },
-      { path: "settings", element: <h1 className="title">Settings</h1> },
-    ],
-  },
+                index: true,
+                element: (
+                    <Navigate
+                        to="/en"
+                        replace
+                    />
+                ),
+            },
+            {
+                path: ":lang",
+                element: <HomePage />,
+            },
+            {
+                path: ":lang/info",
+                element: <TravelInfoPage />,
+            },
+            {
+                path: ":lang/faqs",
+                element: <FaqPage />,
+            },
+            {
+                path: ":lang/charter",
+                element: <CharterPage />,
+            },
+            {
+                path: ":lang/terms",
+                element: <Terms />,
+            },
+            {
+                path: ":lang/login",
+                element: <Login />,
+            },
+            {
+                path: ":lang/register",
+                element: <Register />,
+            },
+            {
+                path: ":lang/cookies",
+                element: <Cookies />,
+            },
+            {
+                path: ":lang/privacy",
+                element: <Privacy />,
+            },
+            {
+                path: ":lang/support",
+                element: <SupportPage />,
+            },
+            {
+                path: ":lang/flights",
+                element: <FlightSelection />,
+            },
+            {
+                path: ":lang/passenger",
+                element: <Passenger />,
+            },
+            {
+                path: ":lang/pay",
+                element: <PaymentPage />,
+            },
+            {
+                path: ":lang/confirmation",
+                element: <ConfirmationPage />,
+            },
+        ],
+    },
+    {
+        path: ":lang/dashboard",
+        element: <Layout />,
+        children: [
+            { index: true, element: <DashboardPage /> },
+            { path: "analytics", element: <h1 className="title">Analytics</h1> },
+            { path: "reports", element: <h1 className="title">Reports</h1> },
+            { path: "flights", element: <FlightTable /> },
+            { path: "flights-helico", element: <FlightTableHelico /> },
+            { path: "bookings-plane", element: <ViewBookingPlane /> },
+            { path: "bookings-helico", element: <ViewBookingHelico /> },
+
+            { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
+            { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
+            { path: "user", element: <h1 className="title">All Users</h1> },
+            { path: "roleUser", element: <h1 className="title">Role</h1> },
+            { path: "settings", element: <h1 className="title">Settings</h1> },
+        ],
+    },
 ]);
 
 export default function App() {
-return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <RouterProvider router={router} />
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider
+            defaultTheme="light"
+            storageKey="vite-ui-theme"
+        >
+            <RouterProvider router={router} />
+        </ThemeProvider>
+    );
 }
