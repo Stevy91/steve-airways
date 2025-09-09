@@ -270,18 +270,19 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                     className="relative"
                 >
                     <div className="flex gap-4">
+                        
                         <span className="pt-2 font-bold">{user ? user.name : "..."}</span>
-                    <button
-                        onClick={toggleProfile}
-                        className="size-10 overflow-hidden rounded-full ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
-                        aria-label="Toggle profile menu"
-                    >
-                        <img
-                            src={profileImg}
-                            alt="profile"
-                            className="size-full object-cover"
-                        />
-                    </button>
+                        <button
+                            onClick={toggleProfile}
+                            className="size-10 overflow-hidden rounded-full ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
+                            aria-label="Toggle profile menu"
+                        >
+                            <img
+                                src={profileImg}
+                                alt="profile"
+                                className="size-full object-cover"
+                            />
+                        </button>
                     </div>
 
                     {isProfileOpen && (
@@ -299,6 +300,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                                 >
                                     Change your password
                                 </a>
+                                
                                 <button
                                     onClick={handleLogout}
                                     className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-red-400"

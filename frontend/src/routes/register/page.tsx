@@ -31,8 +31,9 @@ export default function Register() {
                 });
                 const user = await res.json();
                 if (user.role !== "admin") {
-                    navigate(`/${currentLang}/register`); // redirige si pas admin
-                }
+  navigate(`/${currentLang}/dashboard`); // ou login
+}
+                
             } catch {
                 navigate(`/${currentLang}/login`);
             }
