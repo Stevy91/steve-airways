@@ -14,33 +14,6 @@ export default function Login() {
     const currentLang = lang || "en"; // <-- ici on définit currentLang
      useAuth();
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            navigate(`/${currentLang}/login`);
-            return;
-        }
-
-        const checkAdmin = async () => {
-            try {
-                const res = await fetch("https://steve-airways-production.up.railway.app/api/profile", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const user = await res.json();
-                
-                if (user.role !== "admin") {
-                    navigate(`/${currentLang}/register`); // redirige si pas admin
-                    console.log("steve", user.role)
-                }
-              
-            } catch {
-                navigate(`/${currentLang}/login`);
-            }
-        };
-
-        checkAdmin();
-    }, [navigate, currentLang]);
-
 
     
 

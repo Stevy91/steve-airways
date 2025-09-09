@@ -5,6 +5,7 @@ import "react-date-range/dist/theme/default.css";
 import { useTranslation } from "react-i18next";
 import { useFaqData } from "../../hooks/useFaqData";
 import { Footer } from "../../layouts/footer";
+import { HeroSection } from "../../layouts/HeroSection";
 
 
 export default function FaqPage() {
@@ -18,6 +19,7 @@ export default function FaqPage() {
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                <HeroSection />
                 <div className="px-4 pt-24">
                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Frequently Asked Questions")}</h1>
                     <p className="text-xl">{t("Find answers to common questions about flights and helicopter charters.")}</p>

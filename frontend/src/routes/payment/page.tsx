@@ -6,6 +6,7 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { ChevronLeft, MapPin } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { HeroSection } from "../../layouts/HeroSection";
 
 // Types
 interface PaymentData {
@@ -785,6 +786,7 @@ export default function Pay() {
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                <HeroSection />
                 <div className="px-4">
                      {/* <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Payment reservation")}</h1> */}
                    

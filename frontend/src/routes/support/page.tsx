@@ -7,6 +7,7 @@ import emailjs from "@emailjs/browser";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Footer } from "../../layouts/footer";
+import { HeroSection } from "../../layouts/HeroSection";
 
 export default function SupportPage() {
         const { lang } = useParams<{ lang: string }>();
@@ -64,6 +65,7 @@ export default function SupportPage() {
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
             >
                 <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                <HeroSection />
                 <div className="px-4 pt-24">
                     <h1 className="mb-6 text-4xl font-bold md:text-5xl">{t("Need Help?")}</h1>
                     <p className="text-xl">{t("Our support team is here for you 24/7")}</p>
