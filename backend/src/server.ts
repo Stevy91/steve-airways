@@ -491,15 +491,15 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
         ]);
 
 
-if (flights.length !== flightIds.length) {
-    throw new Error("Un ou plusieurs vols introuvables");
-}
+            if (flights.length !== flightIds.length) {
+                throw new Error("Un ou plusieurs vols introuvables");
+            }
 
-for (const flight of flights) {
-    if (flight.seats_available < passengers.length) {
-        throw new Error(`Pas assez de sièges disponibles pour le vol ${flight.id}`);
-    }
-}
+            for (const flight of flights) {
+                if (flight.seats_available < passengers.length) {
+                    throw new Error(`Pas assez de sièges disponibles pour le vol ${flight.id}`);
+                }
+            }
 
 
         if (flights.length !== flightIds.length) {
@@ -643,6 +643,32 @@ for (const flight of flights) {
     }
 });
 
+// POST /api/verify-flight
+app.post("/api/verify-flight", async (req: Request, res: Response) => {
+        const connection = await pool.getConnection();
+    try {
+        const { flightId, returnFlightId } = req.body as { flightId: number; returnFlightId?: number };
+
+        if (!flightId) return res.status(400).json({ error: "flightId manquant" });
+
+        // Vérifie le vol aller
+        const [outboundFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [flightId]);
+        if (!outboundFlights.length) return res.status(404).json({ error: "Vol aller introuvable" });
+        if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "Pas de siège disponible sur le vol aller" });
+
+        // Vérifie le vol retour si nécessaire
+        if (returnFlightId) {
+            const [returnFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [returnFlightId]);
+            if (!returnFlights.length) return res.status(404).json({ error: "Vol retour introuvable" });
+            if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "Pas de siège disponible sur le vol retour" });
+        }
+
+        res.json({ valid: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
 
 
 
