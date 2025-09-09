@@ -6,6 +6,7 @@ interface UserProfile {
   email: string;
   phone?: string | null;
   created_at: string;
+  role: string;
 }
 
 export const useProfile = () => {

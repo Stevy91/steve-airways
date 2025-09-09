@@ -1054,7 +1054,7 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 
 
 app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
-  const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, created_at FROM users WHERE id = ?", [req.user.id]);
+  const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, role, created_at FROM users WHERE id = ?", [req.user.id]);
   res.json(rows[0]);
 });
 
