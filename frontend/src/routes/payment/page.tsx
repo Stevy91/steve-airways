@@ -387,24 +387,28 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
     const [processing, setProcessing] = useState(false);
 
     const verifyFlightAvailability = async () => {
-    const response = await fetch("https://steve-airways-production.up.railway.app/api/verify-flight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            flightId: paymentData.outbound.flightId,
-            returnFlightId: paymentData.return?.flightId,
-            passengerCount: paymentData.passengersData.adults.length +
-                            paymentData.passengersData.children.length +
-                            paymentData.passengersData.infants.length,
-        }),
-    });
+        const response = await fetch("https://steve-airways-production.up.railway.app/api/verify-flight", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                flightId: paymentData.outbound.flightId,
+                returnFlightId: paymentData.return?.flightId,
+                passengerCount:
+                    (paymentData.passengersData.adults.length || 0) +
+                    (paymentData.passengersData.children.length || 0) +
+                    (paymentData.passengersData.infants.length || 0),
+            }),
+        });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Vol non disponible");
-    }
-};
+        const data = await response.json();
 
+        if (!response.ok) {
+            // Ici on lance l'erreur avec le message exact du serveur
+            throw new Error(data.error || "Vol non disponible");
+        }
+
+        return data;
+    };
 
     const createPaymentIntent = async () => {
         try {
@@ -446,7 +450,6 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
         try {
             if (!stripe || !elements) throw new Error("Stripe n'est pas initialisé");
             await verifyFlightAvailability();
-
 
             const { clientSecret } = await createPaymentIntent();
 
@@ -503,7 +506,16 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 reference: responseData.bookingReference,
             });
         } catch (err: unknown) {
-            setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
+            if (err instanceof Error) {
+                // Si l'erreur vient de fetch et contient un message du serveur
+                if (err.message === "Failed to fetch") {
+                    setError("Impossible de contacter le serveur. Réessayez plus tard.");
+                } else {
+                    setError(err.message); // Affiche exactement le message renvoyé par le serveur
+                }
+            } else {
+                setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
+            }
         } finally {
             setProcessing(false);
         }
@@ -639,6 +651,30 @@ const PayLaterPayment = ({
     const [error, setError] = useState<string | null>(null);
     const { t, i18n } = useTranslation();
 
+    const verifyFlightAvailability = async () => {
+        const response = await fetch("https://steve-airways-production.up.railway.app/api/verify-flight", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                flightId: paymentData.outbound.flightId,
+                returnFlightId: paymentData.return?.flightId,
+                passengerCount:
+                    (paymentData.passengersData.adults.length || 0) +
+                    (paymentData.passengersData.children.length || 0) +
+                    (paymentData.passengersData.infants.length || 0),
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Ici on lance l'erreur avec le message exact du serveur
+            throw new Error(data.error || "Vol non disponible");
+        }
+
+        return data;
+    };
+
     const handlePayLater = async (event: React.FormEvent) => {
         event.preventDefault();
         setProcessing(true);
@@ -680,7 +716,16 @@ const PayLaterPayment = ({
                 reference: responseData.bookingReference,
             });
         } catch (err: unknown) {
-            setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
+            if (err instanceof Error) {
+                // Si l'erreur vient de fetch et contient un message du serveur
+                if (err.message === "Failed to fetch") {
+                    setError("Impossible de contacter le serveur. Réessayez plus tard.");
+                } else {
+                    setError(err.message); // Affiche exactement le message renvoyé par le serveur
+                }
+            } else {
+                setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
+            }
         } finally {
             setProcessing(false);
         }
