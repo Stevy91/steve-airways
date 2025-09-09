@@ -710,10 +710,24 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         });
 
         // 4. Vérification des vols
-        const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+    
+
+          const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
         const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
             flightIds,
         ]);
+
+
+            if (flights.length !== flightIds.length) {
+                throw new Error("Un ou plusieurs vols introuvables");
+            }
+
+            for (const flight of flights) {
+                if (flight.seats_available < passengers.length) {
+                    throw new Error(`Pas assez de sièges disponibles pour le vol ${flight.id}`);
+                }
+            }
+
 
         if (flights.length !== flightIds.length) {
             throw new Error("Un ou plusieurs vols introuvables");
