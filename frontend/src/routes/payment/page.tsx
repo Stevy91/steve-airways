@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { ChevronLeft, MapPin } from "lucide-react";
+import { AlertCircle, ChevronLeft, MapPin } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { HeroSection } from "../../layouts/HeroSection";
@@ -410,6 +410,17 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
         return data;
     };
 
+    // Efface automatiquement après 5s
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => {
+                setError(null);
+            }, 5000); // ⏱️ 5 secondes
+
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
+
     const createPaymentIntent = async () => {
         try {
             const passengerCount =
@@ -545,7 +556,12 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 />
             </div>
 
-            {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
+            {error && (
+                <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm font-medium text-red-800 shadow-md">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <span>{error}</span>
+                </div>
+            )}
 
             <button
                 type="submit"
@@ -674,6 +690,16 @@ const PayLaterPayment = ({
 
         return data;
     };
+    // Efface automatiquement après 5s
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => {
+                setError(null);
+            }, 5000); // ⏱️ 5 secondes
+
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const handlePayLater = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -683,6 +709,7 @@ const PayLaterPayment = ({
         let bookingRequest;
 
         try {
+            await verifyFlightAvailability();
             const transformedPassengers = transformPassengers(paymentData.passengersData, paymentData.outbound.type, paymentData.outbound.typev);
             if (!transformedPassengers?.length) throw new Error("Données passagers invalides");
 
@@ -733,7 +760,12 @@ const PayLaterPayment = ({
 
     return (
         <div>
-            {error && <p className="mb-2 text-sm text-red-500">{error}</p>}
+            {error && (
+                <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm font-medium text-red-800 shadow-md">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <span>{error}</span>
+                </div>
+            )}
             <button
                 onClick={handlePayLater}
                 disabled={processing}

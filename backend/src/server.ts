@@ -377,21 +377,21 @@ app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
         // 3. Récupération des vols
         const outboundFlight = flights.find((f) => f.id === flightId);
         if (!outboundFlight) {
-            return res.status(404).json({ error: "Vol aller non trouvé", flightId });
+            return res.status(404).json({ error: "Outbound flight not found", flightId });
         }
 
         let returnFlight = null;
         if (returnFlightId) {
             returnFlight = flights.find((f) => f.id === returnFlightId);
             if (!returnFlight) {
-                return res.status(404).json({ error: "Vol retour non trouvé", returnFlightId });
+                return res.status(404).json({ error: "Return flight not found", returnFlightId });
             }
         }
 
         // 4. Vérification de la capacité
         if (outboundFlight.seats_available < passengerCount) {
             return res.status(400).json({
-                error: "Capacité insuffisante pour le vol aller",
+                error: "Insufficient capacity for the outbound flight",
                 available: outboundFlight.seats_available,
                 requested: passengerCount,
             });
@@ -399,7 +399,7 @@ app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
 
         if (returnFlight && returnFlight.seats_available < passengerCount) {
             return res.status(400).json({
-                error: "Capacité insuffisante pour le vol retour",
+                error: "Insufficient capacity for return flight",
                 available: returnFlight.seats_available,
                 requested: passengerCount,
             });
@@ -433,7 +433,7 @@ app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
 
         const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
         res.status(500).json({
-            error: "Échec de la création du paiement",
+            error: "Payment creation failed",
             details: errorMessage,
         });
     } 
@@ -452,7 +452,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
 
         for (const field of requiredFields) {
             if (!req.body[field]) {
-                throw new Error(`Champ requis manquant: ${field}`);
+                throw new Error(`Missing required field: ${field}`);
             }
         }
 
@@ -467,17 +467,17 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
 
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
         if (paymentIntent.status !== "succeeded") {
-            throw new Error("Paiement non confirmé");
+            throw new Error("Payment not confirmed");
         }
 
         // 3. Validation des passagers
         if (!Array.isArray(passengers) || passengers.length === 0) {
-            throw new Error("Liste de passagers invalide");
+            throw new Error("Invalid passenger list");
         }
 
         passengers.forEach((passenger, index) => {
             if (!passenger.firstName || !passenger.lastName) {
-                throw new Error(`Passager ${index + 1}: Nom complet requis`);
+                throw new Error(`Passager ${index + 1}: Full name required`);
             }
             if (!passenger.type) {
                 throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
@@ -492,18 +492,18 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
 
 
             if (flights.length !== flightIds.length) {
-                throw new Error("Un ou plusieurs vols introuvables");
+                throw new Error("One or more flights missing");
             }
 
             for (const flight of flights) {
                 if (flight.seats_available < passengers.length) {
-                    throw new Error(`Pas assez de sièges disponibles pour le vol ${flight.id}`);
+                    throw new Error(`Not enough seats available for the flight ${flight.id}`);
                 }
             }
 
 
         if (flights.length !== flightIds.length) {
-            throw new Error("Un ou plusieurs vols introuvables");
+            throw new Error("One or more flights missing");
         }
 
         
@@ -630,7 +630,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
         });
 
         res.status(500).json({
-            error: "Échec de la réservation",
+            error: "Reservation failed",
             details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
             reference: Date.now().toString(36),
         });
@@ -653,14 +653,14 @@ app.post("/api/verify-flight", async (req: Request, res: Response) => {
 
         // Vérifie le vol aller
         const [outboundFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [flightId]);
-        if (!outboundFlights.length) return res.status(404).json({ error: "Vol aller introuvable" });
-        if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "Pas de siège disponible sur le vol aller" });
+        if (!outboundFlights.length) return res.status(404).json({ error: "Outbound flight not found" });
+        if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the outbound flight" });
 
         // Vérifie le vol retour si nécessaire
         if (returnFlightId) {
             const [returnFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [returnFlightId]);
-            if (!returnFlights.length) return res.status(404).json({ error: "Vol retour introuvable" });
-            if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "Pas de siège disponible sur le vol retour" });
+            if (!returnFlights.length) return res.status(404).json({ error: "Return flight not found" });
+            if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the return flight" });
         }
 
         res.json({ valid: true });
@@ -691,18 +691,18 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
 
         for (const field of requiredFields) {
             if (!req.body[field]) {
-                throw new Error(`Champ requis manquant: ${field}`);
+                throw new Error(`Missing required field: ${field}`);
             }
         }
 
         // 3. Validation des passagers
         if (!Array.isArray(passengers) || passengers.length === 0) {
-            throw new Error("Liste de passagers invalide");
+            throw new Error("Invalid passenger list");
         }
 
         passengers.forEach((passenger, index) => {
             if (!passenger.firstName || !passenger.lastName) {
-                throw new Error(`Passager ${index + 1}: Nom complet requis`);
+                throw new Error(`Passager ${index + 1}: Full name required`);
             }
             if (!passenger.type) {
                 throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
@@ -719,18 +719,18 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
 
 
             if (flights.length !== flightIds.length) {
-                throw new Error("Un ou plusieurs vols introuvables");
+                throw new Error("One or more flights missing");
             }
 
             for (const flight of flights) {
                 if (flight.seats_available < passengers.length) {
-                    throw new Error(`Pas assez de sièges disponibles pour le vol ${flight.id}`);
+                    throw new Error(`Not enough seats available for the flight ${flight.id}`);
                 }
             }
 
 
         if (flights.length !== flightIds.length) {
-            throw new Error("Un ou plusieurs vols introuvables");
+            throw new Error("One or more flights missing");
         }
 
         // 5. Création de la réservation
@@ -804,7 +804,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
                 );
             } catch (passengerError) {
                 console.error("Erreur insertion passager:", passengerError);
-                throw new Error(`Échec création passager: ${passenger.firstName} ${passenger.lastName}`);
+                throw new Error(`Failed temporary creation: ${passenger.firstName} ${passenger.lastName}`);
             }
         }
 
@@ -853,7 +853,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         });
 
         res.status(500).json({
-            error: "Échec de la réservation",
+            error: "Reservation failed",
             details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
             reference: Date.now().toString(36),
         });
