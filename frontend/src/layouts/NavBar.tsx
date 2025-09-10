@@ -30,13 +30,16 @@ export const Navbar = () => {
     const { lang } = useParams<{ lang: string }>();
     const { t, i18n } = useTranslation();
     const [currentLang, setCurrentLang] = useState(lang || "en");
+    const [languageOpenDesktop, setLanguageOpenDesktop] = useState(false);
+    const [languageOpenMobile, setLanguageOpenMobile] = useState(false);
 
     // Référence pour le menu de langue
     const languageMenuRef = useRef<HTMLDivElement>(null);
 
     // Fermer le menu de langue en cliquant à l'extérieur
+
     useClickOutside(languageMenuRef, () => {
-        setLanguageOpen(false);
+        setLanguageOpenDesktop(false);
     });
 
     useEffect(() => {
@@ -50,7 +53,7 @@ export const Navbar = () => {
     }, []);
 
     const handleLanguageChange = (selected: string) => {
-        setLanguageOpen(false);
+        setLanguageOpenDesktop(false);
 
         let newLang = "en";
         switch (selected) {
@@ -143,7 +146,7 @@ export const Navbar = () => {
                             ref={languageMenuRef}
                         >
                             <button
-                                onClick={() => setLanguageOpen(!languageOpen)}
+                                onClick={() => setLanguageOpenDesktop(!languageOpenDesktop)}
                                 className="flex items-center rounded-md px-2 py-1 text-white"
                             >
                                 <img
@@ -155,7 +158,7 @@ export const Navbar = () => {
                                 <ChevronDown className="ml-1 h-4 w-4" />
                             </button>
 
-                            {languageOpen && (
+                            {languageOpenDesktop && (
                                 <ul className="absolute right-0 z-[9999] mt-2 w-32 rounded-md bg-white text-black shadow-md">
                                     <li
                                         onClick={() => handleLanguageChange("English")}
@@ -231,24 +234,28 @@ export const Navbar = () => {
                             <div className="md:hidden">
                                 <div className="flex">
                                     {/* language */}
+
                                     <div className="relative">
                                         <button
-                                            onClick={() => setLanguageOpen(!languageOpen)}
-                                            className={`flex items-center rounded-md px-2 py-1 text-white ${isScrolled ? "text-blue-900" : "text-white"}`}
+                                            onClick={() => setLanguageOpenMobile(!languageOpenMobile)}
+                                            className={`flex items-center rounded-md px-2 py-1 ${isScrolled ? "text-blue-900" : "text-white"}`}
                                         >
                                             <img
                                                 src={currentLang === "en" ? "/assets/flag/us.png" : "/assets/flag/fr.png"}
                                                 alt={currentLang}
                                                 className="mr-2 h-5 w-5"
                                             />
-                                            <span className={`${isScrolled ? "text-blue-900" : "text-white"}`}>{currentLang.toUpperCase()}</span>
-                                            <ChevronDown className={`ml-1 h-4 w-4 ${isScrolled ? "text-blue-900" : "text-white"}`} />
+                                            <span>{currentLang.toUpperCase()}</span>
+                                            <ChevronDown className="ml-1 h-4 w-4" />
                                         </button>
 
-                                        {languageOpen && (
+                                        {languageOpenMobile && (
                                             <ul className="absolute right-0 z-[9999] mt-2 w-32 rounded-md bg-white text-black shadow-md">
                                                 <li
-                                                    onClick={() => handleLanguageChange("English")}
+                                                    onClick={() => {
+                                                        handleLanguageChange("English");
+                                                        setLanguageOpenMobile(false);
+                                                    }}
                                                     className="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-200"
                                                 >
                                                     <img
@@ -259,7 +266,10 @@ export const Navbar = () => {
                                                     English
                                                 </li>
                                                 <li
-                                                    onClick={() => handleLanguageChange("Français")}
+                                                    onClick={() => {
+                                                        handleLanguageChange("Français");
+                                                        setLanguageOpenMobile(false);
+                                                    }}
                                                     className="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-200"
                                                 >
                                                     <img
@@ -272,6 +282,7 @@ export const Navbar = () => {
                                             </ul>
                                         )}
                                     </div>
+
                                     <button
                                         onClick={() => setMenuOpen((prev) => !prev)}
                                         className="text-gray-300 focus:outline-none"

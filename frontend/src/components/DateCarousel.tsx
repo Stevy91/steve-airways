@@ -93,12 +93,14 @@ export default function DateCarousel({
         if (isReturnDateCarousel) {
             const outboundDate = new Date(date); // la date aller
             const returnDateSelected = new Date(formattedDate);
+           
 
             if (returnDateSelected < outboundDate) {
                 toast.error(`${t("The return date cannot be earlier than the departure date.")}`, {
                     style: {
-                        background: "#dc2626",
-                        color: "#fff",
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border:"1px solid #f87171"
                     },
                     iconTheme: {
                         primary: "#fff",
@@ -115,9 +117,10 @@ export default function DateCarousel({
 
             if (selectedDate < outboundDate) {
                 toast.error(`${t("The return date cannot be earlier than the departure date.")}`, {
-                    style: {
-                        background: "#dc2626",
-                        color: "#fff",
+                     style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border:"1px solid #f87171"
                     },
                     iconTheme: {
                         primary: "#fff",
@@ -132,8 +135,9 @@ export default function DateCarousel({
             if (currentReturnDate && selectedDate > currentReturnDate) {
                 toast.error(`${t("The departure date cannot be later than the return date.")}`, {
                     style: {
-                        background: "#dc2626",
-                        color: "#fff",
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border:"1px solid #f87171"
                     },
                     iconTheme: {
                         primary: "#fff",

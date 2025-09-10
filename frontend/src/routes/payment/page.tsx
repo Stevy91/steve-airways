@@ -1025,7 +1025,7 @@ export default function Pay() {
                             <div className="flex justify-between px-6 py-4">
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="inline-flex items-center rounded-md border border-gray-300 bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className="inline-flex items-center rounded-md border border-gray-300 bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                 >
                                     <ChevronLeft className="-ml-1 mr-2 h-5 w-5 text-white" />
                                     {t("Back")}

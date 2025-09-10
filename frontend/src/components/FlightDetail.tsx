@@ -43,13 +43,14 @@ export default function FlightDetail({ flight, onBookNow, passengers, isReturnFl
         if (availableSeats < totalPassengers) {
             toast.error(`${t("Cannot book: only")} ${availableSeats} ${t("seat(s) available for")} ${totalPassengers} ${t("passenger(s)")}.`, {
                 style: {
-                    background: "#dc2626",
-                    color: "#fff",
-                },
-                iconTheme: {
-                    primary: "#fff",
-                    secondary: "#dc2626",
-                },
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border:"1px solid #f87171"
+                    },
+                    iconTheme: {
+                        primary: "#fff",
+                        secondary: "#dc2626",
+                    },
             });
 
             return;
