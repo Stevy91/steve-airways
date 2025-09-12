@@ -21,9 +21,10 @@ type Location = {
 };
 interface BookingFormProps {
     onSearch: (flights: any[]) => void;
+    onClose: () => void;
 }
 
-export default function BookingForm({ onSearch }: BookingFormProps) {
+export default function BookingFormSearch({ onSearch, onClose,}: BookingFormProps) {
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang
 
@@ -182,6 +183,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                     },
                 },
             });
+            onClose();
         } catch (error) {
             alert(`Erreur: 's'`);
         }
@@ -255,9 +257,9 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
     }, []);
 
     return (
-        <div className="relative -mt-32 mb-10 px-4 md:px-10">
-            <div className="relative mx-auto max-w-6xl rounded-bl-3xl rounded-br-3xl rounded-tr-3xl bg-blue-900 bg-opacity-40 p-4 shadow-xl">
-                <div className="absolute left-0 top-[-40px] z-[40] flex w-fit space-x-2 bg-blue-900 bg-opacity-40 shadow-md">
+        <div className="relative  px-4 md:px-10">
+            <div className="relative mx-auto max-w-6xl rounded-bl-3xl rounded-br-3xl rounded-tr-3xl p-4 ">
+                <div className="absolute  top-[-24px] z-[40] flex w-fit space-x-2 bg-blue-900 bg-opacity-40 shadow-md">
                     <button
                         onClick={() => setSelectedTab("plane")}
                         className={`flex cursor-pointer items-center px-4 py-2 font-medium text-white hover:cursor-pointer focus:outline-none ${
@@ -282,7 +284,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                     </button>
                 </div>
 
-                <div className="rounded-2xl bg-white p-6 shadow-xl md:p-10">
+                <div className=" bg-white p-6 shadow-xl md:p-10">
                     {selectedTab === "plane" ? (
                         <>
                             <form
@@ -293,7 +295,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                     <div className="mt-[-250px] flex w-fit space-x-2 rounded-full bg-gray-200 p-1 md:mt-[-130px]">
                                         <button
                                             onClick={() => setSelectedTabTrip("onway")}
-                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium ${
+                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium text-black ${
                                                 selectedTabTrip === "onway" ? "bg-white font-extrabold text-blue-900" : ""
                                             }`}
                                             type="button"
@@ -302,7 +304,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                         </button>
                                         <button
                                             onClick={() => setSelectedTabTrip("roundtrip")}
-                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium ${
+                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium text-black ${
                                                 selectedTabTrip === "roundtrip" ? "bg-white font-extrabold text-blue-900" : ""
                                             }`}
                                             type="button"
@@ -386,7 +388,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                     <div className="mb-6 mt-40 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-20 md:grid-cols-3">
                                         <div>
                                             <label className="mb-1 block font-medium text-gray-600">{t("From")}</label>
-                                            <div className="flex items-center rounded-full border p-2">
+                                            <div className="flex items-center rounded-full border p-2 ">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-900" />
                                                 <select
                                                     value={selectedDeparture}
@@ -395,7 +397,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setErrors({ ...errors, departure: "" });
                                                     }}
                                                     id="from"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
@@ -453,7 +455,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setErrors({ ...errors, destination: "" });
                                                     }}
                                                     id="to"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
@@ -513,7 +515,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     placeholderText={format(new Date(), "MMMM do, yyyy")}
                                                     id="date"
                                                     autoComplete="off"
@@ -536,7 +538,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setSelectedDeparture2(e.target.value);
                                                         setErrors({ ...errors, departure2: "" });
                                                     }}
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
@@ -594,7 +596,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setSelectedDestination2(e.target.value);
                                                         setErrors({ ...errors, destination2: "" });
                                                     }}
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     disabled={loadingLocations} // Désactive pendant chargement
                                                     defaultValue=""
                                                 >
@@ -654,7 +656,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     placeholderText={format(new Date(), "MMMM do, yyyy")}
                                                     id="departure-date"
                                                     autoComplete="off"
@@ -675,7 +677,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     placeholderText={format(new Date(), "MMMM do, yyyy")}
                                                     id="return-date"
                                                     autoComplete="off"
@@ -705,16 +707,17 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                     <div className="mt-[-250px] flex w-fit space-x-2 rounded-full bg-gray-200 p-1 md:mt-[-130px]">
                                         <button
                                             onClick={() => setSelectedTabTrip("onway")}
-                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium ${
+                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium text-black ${
                                                 selectedTabTrip === "onway" ? "bg-white font-extrabold text-blue-900" : ""
                                             }`}
+                                           
                                             type="button"
                                         >
                                             {t("One Way")}
                                         </button>
                                         <button
                                             onClick={() => setSelectedTabTrip("roundtrip")}
-                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium ${
+                                            className={`flex cursor-pointer items-center rounded-full px-4 py-2 font-medium text-black ${
                                                 selectedTabTrip === "roundtrip" ? "bg-white font-extrabold text-blue-900" : ""
                                             }`}
                                             type="button"
@@ -807,7 +810,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setErrors({ ...errors, departure: "" });
                                                     }}
                                                     id="from"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -839,7 +842,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setErrors({ ...errors, destination: "" });
                                                     }}
                                                     id="to"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -873,7 +876,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     placeholderText={format(new Date(), "MMMM do, yyyy")}
                                                     id="date"
                                                     autoComplete="off"
@@ -895,7 +898,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setSelectedDeparture2(e.target.value);
                                                         setErrors({ ...errors, departure2: "" });
                                                     }}
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -927,7 +930,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                         setSelectedDestination2(e.target.value);
                                                         setErrors({ ...errors, destination2: "" });
                                                     }}
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     defaultValue=""
                                                 >
                                                     <option
@@ -961,7 +964,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     placeholderText={format(new Date(), "MMMM do, yyyy")}
                                                     id="departure-date"
                                                     autoComplete="off"
@@ -982,7 +985,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
-                                                    className="w-full bg-transparent outline-none"
+                                                    className="w-full bg-transparent outline-none font-medium text-gray-600"
                                                     placeholderText={format(new Date(), "MMMM do, yyyy")}
                                                     id="return-date"
                                                     autoComplete="off"

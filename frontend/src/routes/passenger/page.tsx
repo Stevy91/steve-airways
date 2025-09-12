@@ -5,6 +5,8 @@ import { COUNTRIES } from "../../constants/country";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { HeroSection } from "../../layouts/HeroSection";
+import { HeroSectionSearch } from "../../layouts/HeroSectionSearch";
+import SessionTimeout from "../../components/SessionTimeout";
 
 interface Flight {
     id: number;
@@ -62,7 +64,9 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
-            <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
+            {/* <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-900" /> */}
+            <div className="absolute left-[14%] right-[14%] top-2 z-10 hidden h-0.5 bg-blue-900 md:block" />
+
             <div className="relative z-10 flex items-center justify-between">
                 {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
@@ -76,10 +80,10 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             <div
                                 className={`relative z-10 mb-2 h-4 w-4 rounded-full border-2 ${
                                     isActive
-                                        ? "border-blue-500 bg-red-500"
+                                        ? "border-blue-900 bg-red-900"
                                         : isCompleted
-                                          ? "border-blue-500 bg-blue-500"
-                                          : "border-blue-500 bg-slate-50"
+                                          ? "border-blue-900 bg-blue-900"
+                                          : "border-blue-900 bg-slate-50"
                                 }`}
                             >
                                 {isCompleted && (
@@ -100,7 +104,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             </div>
                             <span
                                 className={`whitespace-nowrap ${
-                                    isActive ? "font-bold text-blue-500" : isCompleted ? "text-blue-500" : "text-blue-500"
+                                    isActive ? "font-bold text-blue-900" : isCompleted ? "text-blue-900" : "text-blue-900"
                                 }`}
                             >
                                 {step}
@@ -134,7 +138,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label className="mb-1 block font-medium text-gray-600">{t("First Name")} *</label>
-                    <div className={`flex items-center rounded-full border p-2 ${errors.firstName ? "border-red-500" : ""}`}>
+                    <div className={`flex items-center rounded-full border p-2 ${errors.firstName ? "border-red-900" : ""}`}>
                         <input
                             type="text"
                             value={passenger.firstName}
@@ -144,7 +148,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                             required
                         />
                     </div>
-                    {errors.firstName && <p className="mt-1 text-sm text-red-500">{errors.firstName}</p>}
+                    {errors.firstName && <p className="mt-1 text-sm text-red-900">{errors.firstName}</p>}
                 </div>
                 <div>
                     <label className="mb-1 block font-medium text-gray-600">{t("Middle Name")}</label>
@@ -161,7 +165,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
 
                 <div>
                     <label className="mb-1 block font-medium text-gray-600">{t("Last Name")} *</label>
-                    <div className={`flex items-center rounded-full border p-2 ${errors.lastName ? "border-red-500" : ""}`}>
+                    <div className={`flex items-center rounded-full border p-2 ${errors.lastName ? "border-red-900" : ""}`}>
                         <input
                             type="text"
                             value={passenger.lastName}
@@ -171,12 +175,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                             required
                         />
                     </div>
-                    {errors.lastName && <p className="mt-1 text-sm text-red-500">{errors.lastName}</p>}
+                    {errors.lastName && <p className="mt-1 text-sm text-red-900">{errors.lastName}</p>}
                 </div>
 
                 <div>
                     <label className="mb-1 block font-medium text-gray-600">{t("Date of Birth")} *</label>
-                    <div className={`flex items-center rounded-full border p-2 ${errors.dob ? "border-red-500" : ""}`}>
+                    <div className={`flex items-center rounded-full border p-2 ${errors.dob ? "border-red-900" : ""}`}>
                         <input
                             type="date"
                             value={passenger.dob}
@@ -185,13 +189,13 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                             required
                         />
                     </div>
-                    {errors.dob && <p className="mt-1 text-sm text-red-500">{errors.dob}</p>}
+                    {errors.dob && <p className="mt-1 text-sm text-red-900">{errors.dob}</p>}
                 </div>
 
                 {!isInfant && (
                     <div>
                         <label className="mb-1 block font-medium text-gray-600">{t("Gender")} *</label>
-                        <div className={`flex items-center rounded-full border p-2 ${errors.gender ? "border-red-500" : ""}`}>
+                        <div className={`flex items-center rounded-full border p-2 ${errors.gender ? "border-red-900" : ""}`}>
                             <select
                                 value={passenger.gender}
                                 onChange={(e) => onChange(type, index, "gender", e.target.value)}
@@ -204,7 +208,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                 <option value="other">{t("Other")}</option>
                             </select>
                         </div>
-                        {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender}</p>}
+                        {errors.gender && <p className="mt-1 text-sm text-red-900">{errors.gender}</p>}
                     </div>
                 )}
 
@@ -212,7 +216,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                 {isChild && !isInfant && (
                     <div>
                         <label className="mb-1 block font-medium text-gray-600">{t("Nationality")} *</label>
-                        <div className={`flex items-center rounded-full border p-2 ${errors.nationality ? "border-red-500" : ""}`}>
+                        <div className={`flex items-center rounded-full border p-2 ${errors.nationality ? "border-red-900" : ""}`}>
                             <input
                                 type="text"
                                 value={passenger.nationality}
@@ -222,7 +226,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                 required
                             />
                         </div>
-                        {errors.nationality && <p className="mt-1 text-sm text-red-500">{errors.nationality}</p>}
+                        {errors.nationality && <p className="mt-1 text-sm text-red-900">{errors.nationality}</p>}
                     </div>
                 )}
 
@@ -230,7 +234,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                     <>
                         <div>
                             <label className="mb-1 block font-medium text-gray-600">{t("Title")} *</label>
-                            <div className={`flex items-center rounded-full border p-2 ${errors.title ? "border-red-500" : ""}`}>
+                            <div className={`flex items-center rounded-full border p-2 ${errors.title ? "border-red-900" : ""}`}>
                                 <select
                                     value={passenger.title}
                                     onChange={(e) => onChange(type, index, "title", e.target.value)}
@@ -244,11 +248,11 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                     <option value="dr">Dr</option>
                                 </select>
                             </div>
-                            {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
+                            {errors.title && <p className="mt-1 text-sm text-red-900">{errors.title}</p>}
                         </div>
                         <div>
                             <label className="mb-1 block font-medium text-gray-600">{t("Address")} *</label>
-                            <div className={`flex items-center rounded-full border p-2 ${errors.address ? "border-red-500" : ""}`}>
+                            <div className={`flex items-center rounded-full border p-2 ${errors.address ? "border-red-900" : ""}`}>
                                 <input
                                     type="text"
                                     placeholder={t("Address")}
@@ -258,12 +262,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                     required
                                 />
                             </div>
-                            {errors.address && <p className="mt-1 text-sm text-red-500">{errors.address}</p>}
+                            {errors.address && <p className="mt-1 text-sm text-red-900">{errors.address}</p>}
                         </div>
 
                         <div>
                             <label className="mb-1 block font-medium text-gray-600">{t("Country / Region of Residence")} *</label>
-                            <div className={`flex items-center rounded-full border p-2 ${errors.country ? "border-red-500" : ""}`}>
+                            <div className={`flex items-center rounded-full border p-2 ${errors.country ? "border-red-900" : ""}`}>
                                 <select
                                     value={passenger.country}
                                     onChange={(e) => onChange(type, index, "country", e.target.value)}
@@ -281,12 +285,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                     ))}
                                 </select>
                             </div>
-                            {errors.country && <p className="mt-1 text-sm text-red-500">{errors.country}</p>}
+                            {errors.country && <p className="mt-1 text-sm text-red-900">{errors.country}</p>}
                         </div>
 
                         <div>
                             <label className="mb-1 block font-medium text-gray-600">{t("Nationality")} *</label>
-                            <div className={`flex items-center rounded-full border p-2 ${errors.nationality ? "border-red-500" : ""}`}>
+                            <div className={`flex items-center rounded-full border p-2 ${errors.nationality ? "border-red-900" : ""}`}>
                                 <input
                                     type="text"
                                     value={passenger.nationality}
@@ -296,12 +300,12 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                     required
                                 />
                             </div>
-                            {errors.nationality && <p className="mt-1 text-sm text-red-500">{errors.nationality}</p>}
+                            {errors.nationality && <p className="mt-1 text-sm text-red-900">{errors.nationality}</p>}
                         </div>
 
                         <div>
                             <label className="mb-1 block font-medium text-gray-600">{t("Phone Number")} *</label>
-                            <div className={`flex items-center rounded-full border p-2 ${errors.phone ? "border-red-500" : ""}`}>
+                            <div className={`flex items-center rounded-full border p-2 ${errors.phone ? "border-red-900" : ""}`}>
                                 <input
                                     type="tel"
                                     placeholder={t("Phone Number")}
@@ -311,11 +315,11 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                     required
                                 />
                             </div>
-                            {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
+                            {errors.phone && <p className="mt-1 text-sm text-red-900">{errors.phone}</p>}
                         </div>
                         <div>
                             <label className="mb-1 block font-medium text-gray-600">{t("Email Address")} *</label>
-                            <div className={`flex items-center rounded-full border p-2 ${errors.email ? "border-red-500" : ""}`}>
+                            <div className={`flex items-center rounded-full border p-2 ${errors.email ? "border-red-900" : ""}`}>
                                 <input
                                     type="email"
                                     placeholder={t("Email Address")}
@@ -325,7 +329,7 @@ const PassengerForm = memo(({ type, index, passenger, isChild = false, isInfant 
                                     required
                                 />
                             </div>
-                            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                            {errors.email && <p className="mt-1 text-sm text-red-900">{errors.email}</p>}
                         </div>
                     </>
                 )}
@@ -339,8 +343,8 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
     const { t, i18n } = useTranslation();
 
     return (
-        <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
-            <div className="mx-auto w-fit rounded-full border border-blue-500 bg-white px-4 py-1 text-sm font-bold text-red-600">
+        <div className="rounded-xl border border-blue-900 bg-white p-4 shadow-lg">
+            <div className="mx-auto w-fit rounded-full border border-blue-900 bg-white px-4 py-1 text-sm font-bold text-red-900">
                 {bookingData.tripType === "roundtrip" ? t("Round Trip") : t("One Way")}
             </div>
 
@@ -348,20 +352,20 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                 {/* <div className="absolute bottom-3 left-0 top-3 z-0 h-[85px] w-0.5 bg-red-600"></div> */}
                 <div className="z-10 mb-6 flex items-start gap-3">
                     <div className="relative -left-8 z-10 mt-0.5">
-                        <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
+                        <div className="h-4 w-4 rounded-full border-2 border-blue-900 bg-red-900"></div>
                     </div>
                     <div className="-ml-7">
                         <p className="font-bold text-black">
                             {bookingData.outbound.departure_time} - {bookingData.fromCity} ({bookingData.from})
                         </p>
                         <p className="mt-1 text-[11px] text-black">
-                            {t("Flight")} <span className="font-bold text-red-600"># {bookingData.outbound.noflight}</span>
+                            {t("Flight")} <span className="font-bold text-red-900"># {bookingData.outbound.noflight}</span>
                         </p>
                     </div>
                 </div>
 
                 <div className="z-10 flex items-start gap-3">
-                    <div className="-ml-9 text-lg leading-none text-red-600">
+                    <div className="-ml-9 text-lg leading-none text-red-900">
                         <MapPin />
                     </div>
                     <p className="font-bold text-black">
@@ -375,20 +379,20 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                     {/* <div className="absolute bottom-3 left-0 top-3 z-0 h-[79px] w-0.5 bg-red-600"></div> */}
                     <div className="z-10 mb-6 flex items-start gap-3">
                         <div className="relative -left-8 z-10 mt-0.5">
-                            <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
+                            <div className="h-4 w-4 rounded-full border-2 border-blue-900 bg-red-900"></div>
                         </div>
                         <div className="-ml-7">
                             <p className="font-bold text-black">
                                 {bookingData.return.departure_time} - {bookingData.toCity} ({bookingData.to})
                             </p>
                             <p className="mt-1 text-[11px] text-black">
-                                {t("Flight")} <span className="font-bold text-red-600"># {bookingData.return.noflight}</span>
+                                {t("Flight")} <span className="font-bold text-red-900"># {bookingData.return.noflight}</span>
                             </p>
                         </div>
                     </div>
 
                     <div className="z-10 flex items-start gap-3">
-                        <div className="-ml-9 text-lg leading-none text-red-600">
+                        <div className="-ml-9 text-lg leading-none text-red-900">
                             <MapPin />
                         </div>
                         <p className="font-bold text-black">
@@ -399,7 +403,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
             )}
 
             <div className="mt-4">
-                <p className="mb-2 text-base font-bold text-red-600">{t("Booking Details")}</p>
+                <p className="mb-2 text-base font-bold text-red-900">{t("Booking Details")}</p>
                 <div className="grid grid-cols-2 gap-y-1 text-[13px] font-semibold text-black">
                     <p>{t("Departure")}</p>
                     <p className="text-right">{formatDate(bookingData.departureDate)}</p>
@@ -428,7 +432,7 @@ const FlightSummaryCard = ({ bookingData }: { bookingData: PassengerData }) => {
     const { t, i18n } = useTranslation();
 
     return (
-        <div className="mx-10 mb-10 flex items-center justify-between rounded-md bg-yellow-400 p-4 text-black shadow-sm">
+        <div className="mb-10 flex items-center justify-between rounded-md bg-blue-400 p-4 text-black shadow-sm">
             <div className="space-y-1">
                 <p className="font-semibold">
                     {bookingData.fromCity} ({bookingData.from}) → {bookingData.toCity} ({bookingData.to})
@@ -662,7 +666,9 @@ export default function Passenger() {
 
     return (
         <>
-            <HeroSection />
+        {/* SessionTimeout */}
+              <SessionTimeout />
+            <HeroSectionSearch />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                 style={{ backgroundImage: "url(/plane-bg.jpg)" }}
@@ -724,11 +730,12 @@ export default function Passenger() {
                     <div className="mt-8 flex justify-between">
                         <button
                             onClick={() => navigate(-1)}
-                            className="mt-6 flex w-48 items-center gap-8 rounded-full bg-red-500 px-6 py-3 font-semibold text-white hover:bg-red-600"
+                            className="mt-6 inline-flex  items-center  rounded-md bg-red-900  py-3 px-2 font-semibold text-white hover:bg-red-700"
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft className="-ml-1 mr-2 h-5 w-5" />
                             {t("Back")}
                         </button>
+                        
                         <button
                             onClick={() => {
                                 if (validateAllPassengers()) {
@@ -757,14 +764,14 @@ export default function Passenger() {
                                 } else {
                                     // Scroll vers la première erreur après un léger délai
                                     setTimeout(() => {
-                                        const firstError = document.querySelector(".border-red-500");
+                                        const firstError = document.querySelector(".border-red-900");
                                         firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
                                     }, 100);
                                 }
                             }}
-                            className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                            className="mt-6 w-48 rounded-md bg-red-900 py-3 font-semibold text-white hover:bg-red-700"
                         >
-                            {t("Continue to Payment")}
+                            {t("Payment")}
                         </button>
                     </div>
                 </div>

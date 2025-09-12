@@ -7,6 +7,8 @@ import { AlertCircle, ChevronLeft, MapPin } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { HeroSection } from "../../layouts/HeroSection";
+import { HeroSectionSearch } from "../../layouts/HeroSectionSearch";
+import SessionTimeout from "../../components/SessionTimeout";
 
 // Types
 interface PaymentData {
@@ -166,7 +168,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
-            <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
+            <div className="absolute left-[14%] right-[14%] top-2 z-10 hidden h-0.5 bg-blue-900 md:block" />
             <div className="relative z-10 flex items-center justify-between">
                 {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
@@ -180,10 +182,10 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             <div
                                 className={`relative z-10 mb-2 h-4 w-4 rounded-full border-2 ${
                                     isActive
-                                        ? "border-blue-500 bg-red-500"
+                                        ? "border-blue-900 bg-red-900"
                                         : isCompleted
-                                          ? "border-blue-500 bg-blue-500"
-                                          : "border-blue-500 bg-slate-50"
+                                          ? "border-blue-900 bg-blue-900"
+                                          : "border-blue-900 bg-slate-50"
                                 }`}
                             >
                                 {isCompleted && (
@@ -204,7 +206,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             </div>
                             <span
                                 className={`whitespace-nowrap ${
-                                    isActive ? "font-bold text-blue-500" : isCompleted ? "text-blue-500" : "text-blue-500"
+                                    isActive ? "font-bold text-blue-900" : isCompleted ? "text-blue-900" : "text-blue-900"
                                 }`}
                             >
                                 {step}
@@ -220,16 +222,16 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
     const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
     const { t, i18n } = useTranslation();
     return (
-        <div className="rounded-xl border border-blue-500 bg-white p-4 shadow-lg">
-            <div className="mx-auto w-fit rounded-full border border-blue-500 bg-white px-4 py-1 text-sm font-bold text-red-600">
+        <div className="rounded-xl border border-blue-900 bg-white p-4 shadow-lg">
+            <div className="mx-auto w-fit rounded-full border border-blue-900 bg-white px-4 py-1 text-sm font-bold text-red-900">
                 {bookingData.tripType === "roundtrip" ? t("Round Trip") : t("One Way")}
             </div>
 
             <div className="relative mt-4 flex flex-col items-start pl-6">
-                <div className="absolute bottom-3 left-0 top-3 z-0 h-[60px] w-0.5 bg-red-600"></div>
+                <div className="absolute bottom-3 left-0 top-3 z-0 h-[60px] w-0.5 bg-red-900"></div>
                 <div className="z-10 mb-6 flex items-start gap-3">
                     <div className="relative -left-8 z-10 mt-0.5">
-                        <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
+                        <div className="h-4 w-4 rounded-full border-2 border-blue-900 bg-red-900"></div>
                     </div>
                     <div className="-ml-7">
                         <p className="font-bold text-black">
@@ -242,7 +244,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                 </div>
 
                 <div className="z-10 flex items-start gap-3">
-                    <div className="-ml-9 text-lg leading-none text-red-600">
+                    <div className="-ml-9 text-lg leading-none text-red-900">
                         <MapPin />
                     </div>
                     <p className="font-bold text-black">
@@ -253,10 +255,10 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
 
             {bookingData.return && (
                 <div className="relative mt-6 flex flex-col items-start pl-6">
-                    <div className="absolute bottom-3 left-0 top-3 z-0 h-[60px] w-0.5 bg-red-600"></div>
+                    <div className="absolute bottom-3 left-0 top-3 z-0 h-[60px] w-0.5 bg-red-900"></div>
                     <div className="z-10 mb-6 flex items-start gap-3">
                         <div className="relative -left-8 z-10 mt-0.5">
-                            <div className="h-4 w-4 rounded-full border-2 border-blue-500 bg-red-600"></div>
+                            <div className="h-4 w-4 rounded-full border-2 border-blue-900 bg-red-900"></div>
                         </div>
                         <div className="-ml-7">
                             <p className="font-bold text-black">
@@ -269,7 +271,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
                     </div>
 
                     <div className="z-10 flex items-start gap-3">
-                        <div className="-ml-9 text-lg leading-none text-red-600">
+                        <div className="-ml-9 text-lg leading-none text-red-900">
                             <MapPin />
                         </div>
                         <p className="font-bold text-black">
@@ -280,7 +282,7 @@ const BookingSummary = ({ bookingData }: { bookingData: PassengerData }) => {
             )}
 
             <div className="mt-4">
-                <p className="mb-2 text-base font-bold text-red-600">{t("Booking Details")}</p>
+                <p className="mb-2 text-base font-bold text-red-900">{t("Booking Details")}</p>
                 <div className="grid grid-cols-2 gap-y-1 text-[13px] font-semibold text-black">
                     <p>{t("Departure")}</p>
                     <p className="text-right">{formatDate(bookingData.departureDate)}</p>
@@ -567,7 +569,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 type="submit"
                 disabled={!stripe || processing}
                 className={`w-full rounded-md px-4 py-3 font-medium ${
-                    processing ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                    processing ? "bg-gray-400" : "bg-blue-900 hover:bg-blue-700"
                 } text-white transition-colors`}
             >
                 {processing ? "Traitement en cours..." : `Payer ${totalPrice.toFixed(2)}$`}
@@ -651,7 +653,7 @@ const PayPalPayment = ({ totalPrice, onSuccess }: { totalPrice: number; onSucces
                     setError("An error occurred with PayPal. Please try another payment method.");
                 }}
             />
-            {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
+            {error && <div className="mt-2 text-sm text-red-900">{error}</div>}
         </div>
     );
 };
@@ -837,11 +839,11 @@ export default function Pay() {
     if (!paymentData) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <div className="text-center text-red-500">
+                <div className="text-center text-red-900">
                     <p>No booking data found. Please start your booking again.</p>
                     <button
-                        onClick={() => navigate(`/${currentLang}//flights`)}
-                        className="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                        onClick={() => navigate(`/${currentLang}/flights`)}
+                        className="mt-4 rounded bg-blue-900 px-4 py-2 text-white hover:bg-blue-700"
                     >
                         Return to Flights
                     </button>
@@ -873,7 +875,7 @@ export default function Pay() {
                     <p className="mb-6 text-gray-600">Your booking has been confirmed. Redirecting to booking details...</p>
                     <div className="h-2.5 w-full rounded-full bg-gray-200">
                         <div
-                            className="h-2.5 animate-pulse rounded-full bg-blue-600"
+                            className="h-2.5 animate-pulse rounded-full bg-blue-900"
                             style={{ width: "100%" }}
                         ></div>
                     </div>
@@ -883,7 +885,9 @@ export default function Pay() {
     } else {
         return (
             <>
-                <HeroSection />
+            {/* SessionTimeout */}
+      <SessionTimeout />
+                <HeroSectionSearch />
                 <div
                     className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                     style={{ backgroundImage: "url(/plane-bg.jpg)" }}
@@ -900,7 +904,7 @@ export default function Pay() {
                             <div className="border-b border-gray-200 bg-yellow-400 px-6 py-5">
                                 <h2 className="text-2xl font-bold text-gray-800">{t("Complete Your Payment")}</h2>
                                 <p className="mt-1 text-gray-600">
-                                    {t("Total Amount")}: <span className="font-bold text-red-600">${paymentData.totalPrice.toFixed(2)}</span>
+                                    {t("Total Amount")}: <span className="font-bold text-red-900">${paymentData.totalPrice.toFixed(2)}</span>
                                 </p>
                             </div>
 
@@ -910,13 +914,13 @@ export default function Pay() {
                                         <h3 className="mb-4 text-lg font-medium text-gray-900">{t("Payment Method")}</h3>
 
                                         <div className="mb-6 flex space-x-4">
-                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
                                                     checked={paymentMethod === "stripe"}
                                                     onChange={() => setPaymentMethod("stripe")}
-                                                    className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    className="h-5 w-5 border-gray-300 text-blue-900 focus:ring-blue-900"
                                                 />
                                                 <div className="ml-3 flex items-center">
                                                     <img
@@ -928,13 +932,13 @@ export default function Pay() {
                                             </label>
 
                                             {/* Option PayPal */}
-                                            {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                            {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                         <input
                                             type="radio"
                                             name="paymentMethod"
                                             checked={paymentMethod === "paypal"}
                                             onChange={() => setPaymentMethod("paypal")}
-                                            className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-900"
                                         />
                                         <div className="ml-3 flex items-center">
                                             <img
@@ -945,13 +949,13 @@ export default function Pay() {
                                         </div>
                                     </label> */}
 
-                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-500">
+                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
                                                     checked={paymentMethod === "paylater"}
                                                     onChange={() => setPaymentMethod("paylater")}
-                                                    className="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    className="h-5 w-5 border-gray-300 text-blue-900 focus:ring-blue-900"
                                                 />
                                                 <div className="ml-3 flex items-center">
                                                     <h1>{t("Pay Later")}</h1>
@@ -1025,7 +1029,7 @@ export default function Pay() {
                             <div className="flex justify-between px-6 py-4">
                                 <button
                                     onClick={() => navigate(-1)}
-                                    className="inline-flex items-center rounded-md border border-gray-300 bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className="inline-flex items-center rounded-md border border-gray-300 bg-red-900 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
                                 >
                                     <ChevronLeft className="-ml-1 mr-2 h-5 w-5 text-white" />
                                     {t("Back")}

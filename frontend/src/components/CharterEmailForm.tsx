@@ -220,7 +220,7 @@ export const CharterEmailForm: React.FC = () => {
           </button>
         )}
         {currentStep < 3 ? (
-          <button type="button" onClick={handleNext} className="ml-auto px-4 py-2 bg-blue-900 text-white rounded hover:bg-blue-600">
+          <button type="button" onClick={handleNext} className="ml-auto px-4 py-2 bg-red-900 text-white rounded-md hover:bg-red-700">
             {t('next')}
           </button>
         ) : (

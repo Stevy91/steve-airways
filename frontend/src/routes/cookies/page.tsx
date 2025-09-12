@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useFaqData } from "../../hooks/useFaqData";
 import { Footer } from "../../layouts/footer";
 import { HeroSection } from "../../layouts/HeroSection";
+import SessionTimeout from "../../components/SessionTimeout";
 
 export default function Cookies() {
     const { t, i18n } = useTranslation();
@@ -13,6 +14,7 @@ export default function Cookies() {
 
     return (
         <>
+   
         <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"

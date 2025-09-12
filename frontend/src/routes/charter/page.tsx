@@ -9,6 +9,7 @@ export const CharterPage: React.FC = () => {
     const { t } = useTranslation();
     return (
         <>
+        
         <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"

@@ -31,7 +31,7 @@ export default function FlightConfirmationCard({ card }: FlightCardProps) {
     return (
         <div className="relative flex items-center justify-between rounded-lg border p-4 shadow-sm">
             {/* Left bar */}
-            <div className="absolute bottom-0 left-0 top-0 w-2 rounded-l-lg bg-blue-600"></div>
+            <div className="absolute bottom-0 left-0 top-0 w-2 rounded-l-lg bg-blue-900"></div>
 
             {/* Left section */}
             <div className="pl-4 text-left">
@@ -42,17 +42,17 @@ export default function FlightConfirmationCard({ card }: FlightCardProps) {
 
             {/* Center line */}
             <div className="relative mx-6 flex-1">
-                <div className="absolute top-1/2 z-0 h-px w-full bg-blue-400"></div>
+                <div className="absolute top-1/2 z-0 h-px w-full bg-blue-900"></div>
                 <div className="relative z-10 flex items-center justify-between">
-                    <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+                    <div className="h-3 w-3 rounded-full bg-blue-900"></div>
                     <div className="text-center text-xs text-gray-700">
                         <div className="mb-1 text-xs font-medium">Duration: 1hours</div>
                         {card.type === "plane" ? (
-                            <Plane className="h-5 w-5 text-blue-600" />
+                            <Plane className="h-5 w-5 text-blue-900" />
                         ) : (
                             <Icon
                                 icon="mdi:helicopter"
-                                className="h-5 w-5 text-blue-600"
+                                className="h-5 w-5 text-blue-900"
                             />
                         )}
                         <div className="mt-1 text-xs font-semibold text-black">
@@ -60,19 +60,19 @@ export default function FlightConfirmationCard({ card }: FlightCardProps) {
                             {tripTypeParam}
                         </div>
                     </div>
-                    <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+                    <div className="h-3 w-3 rounded-full bg-blue-900"></div>
                 </div>
             </div>
 
             {/* Right section */}
             <div className="pr-4 text-right">
                 <div className="text-sm font-semibold text-gray-400">
-                    Total price <span className="text-lg font-bold text-red-600">${card.price}</span>
+                    Total price <span className="text-lg font-bold text-red-900">${card.price}</span>
                 </div>
                 <div className="text-lg font-bold">{card.to}</div>
                 <div className="text-sm text-gray-500">{format(parseISO(card.date), "EEE MMM d")}</div>
                 <div className="text-sm font-semibold">{card.arrival_time}</div>
-                <button className="mt-1 flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline">
+                <button className="mt-1 flex items-center gap-1 text-sm font-semibold text-blue-900 hover:underline">
                     Change
                     <svg
                         className="h-3 w-3"

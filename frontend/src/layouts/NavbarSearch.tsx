@@ -1,9 +1,27 @@
 "use client";
 import { useState, useEffect, RefObject, useRef } from "react";
 import { useLocation, Link, useParams } from "react-router-dom";
-import { FacebookIcon, InstagramIcon, GlobeIcon, Phone, ChevronDown, MenuIcon, XIcon, House, Info, Contact, Twitter } from "lucide-react";
+import {
+    FacebookIcon,
+    InstagramIcon,
+    GlobeIcon,
+    Phone,
+    ChevronDown,
+    MenuIcon,
+    XIcon,
+    House,
+    Info,
+    Contact,
+    Twitter,
+    MapPinIcon,
+    Search,
+    X,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@iconify/react";
+import BookingDetailsModal from "../components/BookingDetailsModal";
+import BookingForm from "../components/BookingForm";
+import BookingFormSearch from "../components/BookingFormSearch";
 // Hook personnalisé pour détecter les clics à l'extérieur
 const useClickOutside = (ref: RefObject<HTMLElement | null>, callback: () => void) => {
     useEffect(() => {
@@ -20,10 +38,12 @@ const useClickOutside = (ref: RefObject<HTMLElement | null>, callback: () => voi
     }, [ref, callback]);
 };
 
-export const Navbar = () => {
+export const NavbarSearch = () => {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [menuOpenSearch, setMenuOpenSearch] = useState(false);
     const [bookMenuOpen, setBookMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
+    const searchMenuRef = useRef<HTMLDivElement>(null);
 
     const [scrolled, setScrolled] = useState(false);
     const [languageOpen, setLanguageOpen] = useState(false);
@@ -32,6 +52,7 @@ export const Navbar = () => {
     const [currentLang, setCurrentLang] = useState(lang || "en");
     const [languageOpenDesktop, setLanguageOpenDesktop] = useState(false);
     const [languageOpenMobile, setLanguageOpenMobile] = useState(false);
+    const [, setFlights] = useState<any[]>([]);
 
     // Référence pour le menu de langue
     const languageMenuRef = useRef<HTMLDivElement>(null);
@@ -40,6 +61,9 @@ export const Navbar = () => {
 
     useClickOutside(languageMenuRef, () => {
         setLanguageOpenDesktop(false);
+    });
+    useClickOutside(searchMenuRef, () => {
+        setMenuOpenSearch(false);
     });
 
     useEffect(() => {
@@ -90,6 +114,11 @@ export const Navbar = () => {
         { label: t("Charter"), path: "charter", icon: Icon, iconProps: { icon: "mdi:helicopter", className: "mr-2 h-4 w-4" } },
         { label: t("Support"), path: "support", icon: Contact },
     ];
+
+    // Cette fonction sera appelée par BookingForm avec les résultats
+    const handleSearch = (foundFlights: any[]) => {
+        setFlights(foundFlights);
+    };
 
     return (
         <>
@@ -190,7 +219,7 @@ export const Navbar = () => {
             </div>
 
             <div>
-                {/* NAVBAR */}
+                {/* NavbarSearch */}
                 <nav
                     className={`fixed left-0 right-0 top-0 z-30 h-16 border-b backdrop-blur-lg md:top-10 ${
                         isScrolled ? "border-gray-300 bg-white/80 text-blue-700" : "border-white/10 bg-transparent text-white"
@@ -212,22 +241,21 @@ export const Navbar = () => {
                                 <span className={`${isScrolled ? "text-blue-900" : "text-white"}`}>TROGON AIRWAYS</span>
                             </Link>
                             <div className={`hidden items-center space-x-4 md:flex`}>
-                                {headerHomeLinks.map((link) => {
-                                    const isActive = window.location.pathname === `/${currentLang}/${link.path}`;
-                                    return (
-                                        <Link
-                                            to={`/${currentLang}/${link.path}`}
-                                            className={`flex items-center space-x-1 rounded-full px-4 py-2 transition-colors ${
-                                                isActive
-                                                    ? "bg-red-900 text-white"
-                                                    : `${isScrolled ? "text-blue-900" : "text-white"} hover:bg-red-400 hover:bg-opacity-20`
-                                            }`}
-                                        >
-                                            {link.iconProps ? <link.icon {...link.iconProps} /> : <link.icon className="h-4 w-4" />}
-                                            <span>{link.label}</span>
-                                        </Link>
-                                    );
-                                })}
+                                <button
+                                    onClick={() => setMenuOpenSearch((prev) => !prev)}
+                                    className="flex cursor-pointer items-center rounded-full border p-2 transition hover:border-red-900 hover:bg-red-900"
+                                >
+                                    {menuOpenSearch ? (
+                                        <X className={`${isScrolled ? "text-blue-900 hover:text-white" : "text-white"}`} />
+                                    ) : (
+                                        <>
+                                            <Search className={`mr-2 h-6 w-6 ${isScrolled ? "text-blue-500 hover:text-white" : "text-white"}`} />
+                                            <span className={`font-medium ${isScrolled ? "text-blue-900 hover:text-white" : "text-white"}`}>
+                                                {t("Search another flight")}
+                                            </span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
 
                             {/* Mobile Menu Button */}
@@ -284,61 +312,37 @@ export const Navbar = () => {
                                     </div>
 
                                     <button
-                                        onClick={() => setMenuOpen((prev) => !prev)}
-                                        className="text-gray-300 focus:outline-none"
-                                        aria-label="Toggle Menu"
+                                        onClick={() => setMenuOpenSearch((prev) => !prev)}
+                                        className={`flex cursor-pointer items-center rounded-full border p-2 transition ${isScrolled ? "hover:border-red-900 hover:bg-red-900 hover:text-white" : "text-white"}`}
                                     >
-                                        <svg
-                                            className={`h-6 w-6 ${isScrolled ? "text-blue-900" : "text-white"}`}
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            {menuOpen ? (
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M6 18L18 6M6 6l12 12"
-                                                />
-                                            ) : (
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M4 6h16M4 12h16M4 18h16"
-                                                />
-                                            )}
-                                        </svg>
+                                        {menuOpenSearch ? (
+                                            <X className={`${isScrolled ? "text-blue-900 hover:text-white" : "text-white"}`} />
+                                        ) : (
+                                            <>
+                                                <Search className={`mr-2 h-6 w-6 ${isScrolled ? "text-blue-500 hover:text-white" : "text-white"}`} />
+                                                <span className={`font-medium ${isScrolled ? "text-blue-900 hover:text-white" : "text-white"}`}>
+                                                    {t("Search")}
+                                                </span>
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
                         </div>
-
-                        {/*Mobile Menu */}
-                        {menuOpen && (
-                            <div className="bg-[rgb(252,250,250)] md:hidden">
-                                <div className="space-y-1 px-2 pb-3 pt-2">
-                                    {headerHomeLinks.map((link) => {
-                                        const isActive = window.location.pathname === `/${currentLang}/${link.path}`;
-                                        return (
-                                            <li key={`/${currentLang}/${link.path}`}>
-                                                <Link
-                                                    to={`/${currentLang}/${link.path}`}
-                                                    onClick={() => setMenuOpen(false)}
-                                                    className={`flex items-center space-x-2 rounded-md px-3 py-2 ${isActive ? "bg-red-500 text-white" : "text-gray-800 hover:bg-red-100"}`}
-                                                >
-                                                    {link.iconProps ? <link.icon {...link.iconProps} /> : <link.icon className="h-4 w-4" />}
-                                                    <span>{link.label}</span>
-                                                </Link>
-                                            </li>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
                     </div>
+                    {menuOpenSearch && (
+                        <div
+                            // ref={searchMenuRef}
+                            className="h-svh bg-blue-900 bg-opacity-40 pt-12 shadow-md"
+                        >
+                            <div className="pt-50 space-y-1 px-2 pb-3">
+                                <BookingFormSearch
+                                    onSearch={handleSearch}
+                                    onClose={() => setMenuOpenSearch(false)}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </nav>
             </div>
         </>

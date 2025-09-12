@@ -5,6 +5,7 @@ const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
 import { format, parseISO, isValid } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { HeroSection } from "../../layouts/HeroSection";
+import SessionTimeout from "../../components/SessionTimeout";
 
 interface Passenger {
     firstName: string;
@@ -53,7 +54,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
-            <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
+            <div className="absolute left-[14%] right-[14%] top-2 z-10 hidden h-0.5 bg-blue-900 md:block" />
             <div className="relative z-10 flex items-center justify-between">
                 {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
@@ -67,10 +68,10 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             <div
                                 className={`relative z-10 mb-2 h-4 w-4 rounded-full border-2 ${
                                     isActive
-                                        ? "border-blue-500 bg-red-500"
+                                        ? "border-blue-900 bg-red-900"
                                         : isCompleted
-                                          ? "border-blue-500 bg-blue-500"
-                                          : "border-blue-500 bg-slate-50"
+                                          ? "border-blue-900 bg-blue-900"
+                                          : "border-blue-900 bg-slate-50"
                                 }`}
                             >
                                 {isCompleted && (
@@ -91,7 +92,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             </div>
                             <span
                                 className={`whitespace-nowrap ${
-                                    isActive ? "font-bold text-blue-500" : isCompleted ? "text-blue-500" : "text-blue-500"
+                                    isActive ? "font-bold text-blue-900" : isCompleted ? "text-blue-900" : "text-blue-900"
                                 }`}
                             >
                                 {step}
@@ -192,7 +193,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       </div>
 
       <div style="padding: 20px;">
-        <p></p>DEAR, ${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`)}</p>
+        <p></p>Dear, ${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`)}</p>
        
         <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
       </div>
@@ -346,7 +347,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     fontSize: "25px",
                     fontWeight: 700,
                 }}
-                className="text-blue-500"
+                className="text-blue-900"
             >
                 Trogon Airways - {t("Booking Confirmation")}
             </h1>
@@ -394,7 +395,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     {t("Booking Reference")}: {bookingData.bookingReference}
                 </h2>
                 <p
-                    className="text-blue-500"
+                    className="text-blue-900"
                     style={{
                         color: "#4b5563",
                         fontSize: "15px",
@@ -416,7 +417,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                 <div
                     style={{
                         borderRadius: "5px",
-                        border: "2px solid #437bec",
+                        border: "2px solid #1e3a8a",
                         padding: "10px",
                         pageBreakInside: "avoid",
                     }}
@@ -459,7 +460,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                     style={{
                                         height: "16px",
                                         width: "16px",
-                                        color: "#2563eb",
+                                        color: "#1e3a8a",
                                     }}
                                     fill="none"
                                     stroke="currentColor"
@@ -492,7 +493,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                             </h3>
                             <p
                                 style={{
-                                    color: "#457ff1",
+                                    color: "#1e3a8a",
                                     marginBottom: "4px",
                                     fontSize: "12px",
                                     fontWeight: "bold",
@@ -566,7 +567,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     <div
                         style={{
                             borderRadius: "5px",
-                            border: "2px solid #437bec",
+                            border: "2px solid #1e3a8a",
                             padding: "10px",
                             pageBreakInside: "avoid",
                         }}
@@ -609,7 +610,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         style={{
                                             height: "16px",
                                             width: "16px",
-                                            color: "#2563eb",
+                                            color: "#1e3a8a",
                                         }}
                                         fill="none"
                                         stroke="currentColor"
@@ -642,7 +643,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                 </h3>
                                 <p
                                     style={{
-                                        color: "#457ff1",
+                                        color: "#1e3a8a",
                                         marginBottom: "4px",
                                         fontSize: "12px",
                                         fontWeight: "bold",
@@ -758,7 +759,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#457ff1",
+                                        color: "#1e3a8a",
                                         fontSize: "14px",
                                     }}
                                 >
@@ -769,7 +770,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#457ff1",
+                                        color: "#1e3a8a",
                                         fontSize: "14px",
                                     }}
                                 >
@@ -780,7 +781,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#457ff1",
+                                        color: "#1e3a8a",
                                         fontSize: "14px",
                                     }}
                                 >
@@ -791,7 +792,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                                         padding: "4px 8px",
                                         textAlign: "left",
                                         fontWeight: 500,
-                                        color: "#457ff1",
+                                        color: "#1e3a8a",
                                         fontSize: "14px",
                                     }}
                                 >
@@ -1061,7 +1062,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                     marginTop: "10px",
                     textAlign: "center",
                     fontSize: "14px",
-                    color: "#457ff1",
+                    color: "#1e3a8a",
                     pageBreakInside: "avoid",
                 }}
             >
@@ -1132,10 +1133,10 @@ export default function BookingConfirmation() {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
-                    <p className="text-red-500">{t("No booking data found")}</p>
+                    <p className="text-red-900">{t("No booking data found")}</p>
                     <button
                         onClick={() => navigate(`/${currentLang}/flights`)}
-                        className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
+                        className="mt-4 rounded bg-blue-900 px-4 py-2 text-white"
                     >
                         {t("Return to Flights")}
                     </button>
@@ -1146,6 +1147,8 @@ export default function BookingConfirmation() {
 
     return (
         <>
+        {/* SessionTimeout */}
+              <SessionTimeout />
             <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
@@ -1172,13 +1175,13 @@ export default function BookingConfirmation() {
                             <div className="flex justify-between">
                                 <button
                                     onClick={() => navigate(`/${currentLang}/`)}
-                                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    className="rounded-md border border-gray-300 bg-red-900 px-4 py-3 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 hover:bg-red-700"
                                 >
                                     {t("Book Another Flight")}
                                 </button>
                                 {/* <button
                                 onClick={() => handlePrint(bookingData)}
-                                className="ml-3 inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="ml-3 inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
                             >
                                 Print Confirmation
                             </button> */}

@@ -14,7 +14,7 @@ export default function Spinner({ size = "md", className = "" }: SpinnerProps) {
 
     return (
         <Loader2
-            className={`animate-spin text-blue-600 ${sizes[size]} ${className}`}
+            className={`animate-spin text-red-900 ${sizes[size]} ${className}`}
             aria-label="Chargement en cours"
         />
     );

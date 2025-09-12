@@ -197,9 +197,9 @@ export default function DateCarousel({
                                 itemRefs.current[globalIndex] = el ?? null;
                             }}
                             onClick={() => d.hasFlight && handleDateClick(globalIndex, formattedDate)}
-                            className={`flex min-w-[80px] flex-col items-center whitespace-nowrap rounded px-3 py-2 text-sm transition-all ${
+                            className={`flex min-w-[80px] flex-col items-center whitespace-nowrap rounded px-3  text-sm transition-all ${
                                 isSelected
-                                    ? "border border-blue-600 bg-white font-semibold"
+                                    ? "border border-blue-900 bg-white font-semibold"
                                     : d.hasFlight
                                       ? "cursor-pointer font-bold text-black hover:bg-gray-100"
                                       : "cursor-not-allowed font-bold text-gray-400 opacity-50"
@@ -209,17 +209,21 @@ export default function DateCarousel({
                             <span>{format(d.date, "EEE MMM d")}</span>
                             <span className={d.hasFlight ? "" : "p-0 text-gray-400"}>
                                 {d.hasFlight ? (
-                                    `$${d.price}`
+                                   
+                                    <div className="pt-4">${d.price}</div>
                                 ) : tab === "plane" ? (
-                                    <NoFlightIcon
-                                        size={20}
-                                        color="#9ca3af"
-                                    />
+                                    
+                                    <img
+                                    className="w-[55px]"
+                                    src="/assets/no-flight-icon1.svg"
+                                    alt="Trogon Bird"
+                                />
                                 ) : (
-                                    <NoHelicopterIcon
-                                        size={20}
-                                        color="#9ca3af"
-                                    />
+                                    <img
+                                    className="w-[40px]"
+                                    src="/assets/no-helico-icon6.svg"
+                                    alt="Trogon Bird"
+                                />
                                 )}
                             </span>
                         </div>

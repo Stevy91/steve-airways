@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Footer } from "../../layouts/footer";
 import { HeroSection } from "../../layouts/HeroSection";
+import SessionTimeout from "../../components/SessionTimeout";
 
 export default function SupportPage() {
         const { lang } = useParams<{ lang: string }>();
@@ -60,6 +61,7 @@ export default function SupportPage() {
     };
     return (
         <>
+   
         <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
@@ -149,7 +151,7 @@ export default function SupportPage() {
                                 placeholder={t("contact_form_name")}
                                 value={formData.name}
                                 onChange={handleChange}
-                                className="w-full rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                                 required
                             />
                             <input
@@ -158,7 +160,7 @@ export default function SupportPage() {
                                 placeholder={t("contact_form_email")}
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                                 required
                             />
                         </div>
@@ -168,7 +170,7 @@ export default function SupportPage() {
                             placeholder={t("contact_form_subject")}
                             value={formData.subject}
                             onChange={handleChange}
-                            className="w-full rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                         />
                         <textarea
                             name="message"
@@ -176,13 +178,13 @@ export default function SupportPage() {
                             placeholder={t("contact_form_message")}
                             value={formData.message}
                             onChange={handleChange}
-                            className="w-full resize-none rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full resize-none rounded border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                             required
                         />
                         <div className="text-center">
                             <button
                                 type="submit"
-                                className="rounded bg-blue-900 px-6 py-2 text-sm font-medium text-white transition hover:bg-blue-800"
+                                className="rounded bg-red-900 px-6 py-2 text-sm font-medium text-white transition hover:bg-red-700"
                             >
                                 {t("contact_form_submit")}
                             </button>

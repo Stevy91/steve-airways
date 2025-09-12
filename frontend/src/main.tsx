@@ -8,9 +8,22 @@ import "./i18n";
 import { Toaster } from "react-hot-toast";
 
 
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Toaster position="bottom-right" reverseOrder={false} />
+ 
     <App />
   </StrictMode>
 );
+
+// createRoot(document.getElementById("root")!).render(
+//   <StrictMode>
+//     <Toaster position="bottom-right" reverseOrder={false} />
+//     <BrowserRouter>
+//       <SessionTimeout />
+//       <App />
+//     </BrowserRouter>
+//   </StrictMode>
+// );
+

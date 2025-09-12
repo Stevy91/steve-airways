@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, PlaneIcon, PlaneTakeoff, PlaneLanding } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, PlaneIcon, PlaneTakeoff, PlaneLanding, AlertCircle } from "lucide-react";
 import { Icon } from "@iconify/react";
-import { addDays, isSameDay, parseISO, format } from "date-fns";
+import { addDays, isSameDay, parseISO, format, isBefore } from "date-fns";
 import DateCarousel from "../../components/DateCarousel";
 import FlightCard from "../../components/FlightCard";
 import FlightDetail from "../../components/FlightDetail";
@@ -12,6 +12,9 @@ import EmptyState from "../../components/EmptyState";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { HeroSection } from "../../layouts/HeroSection";
+import CalendarModal from "../../components/Calendarmodal";
+import { HeroSectionSearch } from "../../layouts/HeroSectionSearch";
+import SessionTimeout from "../../components/SessionTimeout";
 
 type FlightType = "plane" | "helicopter";
 
@@ -57,7 +60,8 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
-            <div className="absolute left-[14%] right-[14%] top-2 z-0 h-0.5 bg-blue-500" />
+        
+            <div className="absolute left-[14%] right-[14%] top-2 z-10 hidden h-0.5 bg-blue-900 md:block" />
             <div className="relative z-10 flex items-center justify-between">
                 {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
                     const isCompleted = idx < currentStep;
@@ -71,10 +75,10 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             <div
                                 className={`relative z-10 mb-2 h-4 w-4 rounded-full border-2 ${
                                     isActive
-                                        ? "border-blue-500 bg-red-500"
+                                        ? "border-blue-900 bg-red-900"
                                         : isCompleted
-                                          ? "border-blue-500 bg-blue-500"
-                                          : "border-blue-500 bg-slate-50"
+                                          ? "border-blue-900 bg-blue-900"
+                                          : "border-blue-900 bg-slate-50"
                                 }`}
                             >
                                 {isCompleted && (
@@ -95,7 +99,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
                             </div>
                             <span
                                 className={`whitespace-nowrap ${
-                                    isActive ? "font-bold text-blue-500" : isCompleted ? "text-blue-500" : "text-blue-500"
+                                    isActive ? "font-bold text-blue-900" : isCompleted ? "text-blue-900" : "text-blue-900"
                                 }`}
                             >
                                 {step}
@@ -122,7 +126,7 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 
     return (
         <div className="mb-2 flex px-4 text-sm font-semibold text-gray-700">
-            <h3 className="font-bold text-blue-700">{prefix}</h3> : {getLocation(from)} → {getLocation(to)}
+            <h3 className="font-bold text-blue-900">{prefix}</h3> : {getLocation(from)} → {getLocation(to)}
         </div>
     );
 };
@@ -163,6 +167,223 @@ const mapFlight = (flight: any, locations: Location[]): Flight => {
     };
 };
 
+// Composant pour afficher les calendriers
+// const CalendarModal = ({
+//     allDates,
+//     allReturnDates,
+//     selectedDateIndex,
+//     selectedReturnDateIndex,
+//     handleDateSelect,
+//     handleReturnDateSelect,
+//     fromParam,
+//     toParam,
+//     selectedTabTrip,
+//     onClose,
+//     searchParams,
+//     navigate,
+//     currentLang,
+// }: {
+//     allDates: any[];
+//     allReturnDates: any[];
+//     selectedDateIndex: number;
+//     selectedReturnDateIndex: number;
+//     handleDateSelect: (index: number) => void;
+//     handleReturnDateSelect: (index: number) => void;
+//     fromParam: string | null;
+//     toParam: string | null;
+//     selectedTabTrip: string;
+//     onClose: () => void;
+//     searchParams: URLSearchParams;
+//     navigate: any;
+//     currentLang: string;
+// }) => {
+//     const { t } = useTranslation();
+//     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+//     const [tempSelectedDateIndex, setTempSelectedDateIndex] = useState(selectedDateIndex);
+//     const [tempSelectedReturnDateIndex, setTempSelectedReturnDateIndex] = useState(selectedReturnDateIndex);
+
+//     const handleDepartureDateSelect = (index: number) => {
+//         const selectedDate = allDates[index]?.date;
+//         const currentReturnDate = allReturnDates[tempSelectedReturnDateIndex]?.date;
+
+//         if (selectedTabTrip === "roundtrip" && currentReturnDate && isBefore(currentReturnDate, selectedDate)) {
+//             setErrorMessage(t("Return date cannot be before departure date"));
+
+//             // Trouver la première date de retour valide après la date d'aller sélectionnée
+//             const firstValidReturnIndex = allReturnDates.findIndex(
+//                 (d) => d.hasFlight && !isBefore(d.date, selectedDate) && !isSameDay(d.date, selectedDate),
+//             );
+
+//             if (firstValidReturnIndex !== -1) {
+//                 setTempSelectedReturnDateIndex(firstValidReturnIndex);
+//             }
+
+//             setTempSelectedDateIndex(index);
+//             return;
+//         }
+
+//         setErrorMessage(null);
+//         setTempSelectedDateIndex(index);
+//     };
+
+//     const handleReturnDateSelectWithValidation = (index: number) => {
+//         const selectedDate = allReturnDates[index]?.date;
+//         const currentDepartureDate = allDates[tempSelectedDateIndex]?.date;
+
+//         if (selectedDate && currentDepartureDate && isBefore(selectedDate, currentDepartureDate)) {
+//             setErrorMessage(t("Return date cannot be before departure date"));
+//             return;
+//         }
+
+//         setErrorMessage(null);
+//         setTempSelectedReturnDateIndex(index);
+//     };
+
+//     const applyDateSelection = () => {
+//         handleDateSelect(tempSelectedDateIndex);
+
+//         if (selectedTabTrip === "roundtrip") {
+//             handleReturnDateSelect(tempSelectedReturnDateIndex);
+//         }
+
+//         onClose();
+//     };
+
+//     return (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+//             <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
+//                 <div className="mb-4 flex items-center justify-between">
+//                     <h3 className="text-xl font-bold">{t("Select Dates")}</h3>
+//                     <button
+//                         onClick={onClose}
+//                         className="text-2xl text-gray-900 hover:text-gray-700"
+//                     >
+//                         &times;
+//                     </button>
+//                 </div>
+
+//                 {errorMessage && (
+//                     <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm font-medium text-red-800 shadow-md">
+//                         <AlertCircle className="h-5 w-5 text-red-600" />
+//                         <span>{errorMessage}</span>
+//                     </div>
+//                 )}
+
+//                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+//                     {/* Calendrier Aller */}
+//                     <div>
+//                         <h4 className="mb-3 font-semibold text-blue-700">
+//                             {t("Departure")}: {fromParam} → {toParam}
+//                         </h4>
+//                         <div className="mb-2 grid grid-cols-7 gap-2">
+//                             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+//                                 <div
+//                                     key={day}
+//                                     className="text-center text-xs font-semibold text-gray-600"
+//                                 >
+//                                     {t(day.substring(0, 3))}
+//                                 </div>
+//                             ))}
+//                         </div>
+//                         <div className="grid grid-cols-7 gap-2">
+//                             {allDates.map((dateObj, index) => {
+//                                 const date = dateObj.date;
+//                                 const day = format(date, "d");
+//                                 const isSelected = index === tempSelectedDateIndex;
+//                                 const hasFlight = dateObj.hasFlight;
+
+//                                 return (
+//                                     <button
+//                                         key={index}
+//                                         onClick={() => handleDepartureDateSelect(index)}
+//                                         disabled={!hasFlight}
+//                                         className={`rounded p-2 text-center text-sm ${
+//                                             isSelected
+//                                                 ? "bg-blue-600 text-white"
+//                                                 : hasFlight
+//                                                   ? "bg-gray-100 hover:bg-gray-200"
+//                                                   : "cursor-not-allowed bg-gray-50 text-gray-400"
+//                                         }`}
+//                                     >
+//                                         <div>{day}</div>
+//                                         {hasFlight && dateObj.price && <div className="mt-1 text-xs font-semibold">${dateObj.price}</div>}
+//                                     </button>
+//                                 );
+//                             })}
+//                         </div>
+//                     </div>
+
+//                     {/* Calendrier Retour (seulement si roundtrip) */}
+//                     {selectedTabTrip === "roundtrip" && (
+//                         <div>
+//                             <h4 className="mb-3 font-semibold text-blue-700">
+//                                 {t("Return")}: {toParam} → {fromParam}
+//                             </h4>
+//                             <div className="mb-2 grid grid-cols-7 gap-2">
+//                                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+//                                     <div
+//                                         key={day}
+//                                         className="text-center text-xs font-semibold text-gray-600"
+//                                     >
+//                                         {t(day.substring(0, 3))}
+//                                     </div>
+//                                 ))}
+//                             </div>
+//                             <div className="grid grid-cols-7 gap-2">
+//                                 {allReturnDates.map((dateObj, index) => {
+//                                     const date = dateObj.date;
+//                                     const day = format(date, "d");
+//                                     const isSelected = index === tempSelectedReturnDateIndex;
+//                                     const hasFlight = dateObj.hasFlight;
+//                                     const currentDepartureDate = allDates[tempSelectedDateIndex]?.date;
+//                                     const isBeforeDeparture = currentDepartureDate && isBefore(date, currentDepartureDate);
+
+//                                     return (
+//                                         <button
+//                                             key={index}
+//                                             onClick={() => handleReturnDateSelectWithValidation(index)}
+//                                             disabled={!hasFlight || isBeforeDeparture}
+//                                             className={`rounded p-2 text-center text-sm ${
+//                                                 isSelected
+//                                                     ? "bg-blue-600 text-white"
+//                                                     : hasFlight && !isBeforeDeparture
+//                                                       ? "bg-gray-100 hover:bg-gray-200"
+//                                                       : "cursor-not-allowed bg-gray-50 text-gray-400"
+//                                             }`}
+//                                             title={isBeforeDeparture ? t("Return date cannot be before departure date") : ""}
+//                                         >
+//                                             <div>{day}</div>
+//                                             {hasFlight && dateObj.price && !isBeforeDeparture && (
+//                                                 <div className="mt-1 text-xs font-semibold">${dateObj.price}</div>
+//                                             )}
+//                                             {isBeforeDeparture && <div className="mt-1 text-xs text-red-900">X</div>}
+//                                         </button>
+//                                     );
+//                                 })}
+//                             </div>
+//                         </div>
+//                     )}
+//                 </div>
+
+//                 <div className="mt-6 flex justify-end space-x-4">
+//                     <button
+//                         onClick={onClose}
+//                         className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100"
+//                     >
+//                         {t("Cancel")}
+//                     </button>
+//                     <button
+//                         onClick={applyDateSelection}
+//                         className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+//                     >
+//                         {t("Apply Dates")}
+//                     </button>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
 export default function FlightSelection() {
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang
@@ -178,6 +399,7 @@ export default function FlightSelection() {
     const { t, i18n } = useTranslation();
     const [loadingOutbound, setLoadingOutbound] = useState(false);
     const [loadingReturn, setLoadingReturn] = useState(false);
+    const [showCalendars, setShowCalendars] = useState(false);
 
     const [state, setState] = useState<FlightSelectionState>({
         allFlights: [],
@@ -604,13 +826,13 @@ export default function FlightSelection() {
 
         return (
             <div className="relative flex items-center justify-between rounded-lg border p-4 shadow-sm">
-                <div className="absolute bottom-0 left-0 top-0 w-2 rounded-l-lg bg-blue-600"></div>
+                <div className="absolute bottom-0 left-0 top-0 w-2 rounded-l-lg bg-blue-900"></div>
 
                 <div className="mr-8 pl-4 text-left">
                     <div className="text-lg font-bold">
                         {fromCity} ({from})
                     </div>
-                    <div className="text-sm text-gray-500">{format(parseISO(flight.date), "EEE MMM d")}</div>
+                    <div className="text-sm text-gray-900">{format(parseISO(flight.date), "EEE MMM d")}</div>
                     <div className="text-sm font-semibold">{flight.departure_time}</div>
                 </div>
 
@@ -618,26 +840,26 @@ export default function FlightSelection() {
                     <div className="flex items-center justify-between">
                         <div className="flex-shrink-0">
                             {flight.type === "plane" ? (
-                                <PlaneTakeoff className="h-5 w-5 text-blue-600" />
+                                <PlaneTakeoff className="h-5 w-5 text-blue-900" />
                             ) : (
                                 <Icon
                                     icon="mdi:helicopter"
-                                    className="h-5 w-5 text-blue-600"
+                                    className="h-5 w-5 text-blue-900"
                                 />
                             )}
                         </div>
 
                         <div className="relative mx-2 flex-1">
-                            <div className="absolute left-3 right-3 top-1/2 z-0 border-t-2 border-blue-600"></div>
+                            <div className="absolute left-3 right-3 top-1/2 z-0 border-t-2 border-blue-900"></div>
                         </div>
 
                         <div className="flex-shrink-0">
                             {flight.type === "plane" ? (
-                                <PlaneLanding className="h-5 w-5 text-blue-600" />
+                                <PlaneLanding className="h-5 w-5 text-blue-900" />
                             ) : (
                                 <Icon
                                     icon="mdi:helicopter"
-                                    className="h-5 w-5 text-blue-600"
+                                    className="h-5 w-5 text-blue-900"
                                 />
                             )}
                         </div>
@@ -658,11 +880,11 @@ export default function FlightSelection() {
                     <div className="text-lg font-bold">
                         {toCity} ({to})
                     </div>
-                    <div className="text-sm text-gray-500">{format(parseISO(flight.date), "EEE MMM d")}</div>
+                    <div className="text-sm text-gray-900">{format(parseISO(flight.date), "EEE MMM d")}</div>
                     <div className="text-sm font-semibold">{flight.arrival_time}</div>
                     <button
                         onClick={() => handleChangeFlight(!!isReturn)}
-                        className="mt-1 flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline"
+                        className="mt-1 flex items-center gap-1 text-sm font-semibold text-blue-900 hover:underline"
                     >
                         Change
                         <svg
@@ -693,13 +915,15 @@ export default function FlightSelection() {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#eeeeef]">
                 <Spinner size="lg" />
-                <p className="ml-4 text-lg text-blue-700">{t("Loading...")}</p>
+                <p className="ml-4 text-lg text-blue-900">{t("Loading...")}</p>
             </div>
         );
     } else {
         return (
             <>
-                <HeroSection />
+           {/* SessionTimeout */}
+                 <SessionTimeout />
+                <HeroSectionSearch />
                 <div
                     className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
                     style={{ backgroundImage: "url(/plane-bg.jpg)" }}
@@ -717,11 +941,33 @@ export default function FlightSelection() {
                         <Stepper currentStep={currentStep} />
                         <div className="flex text-center">
                             <h2 className="mb-4 px-4 text-2xl font-bold">{t("Choose Flights")}</h2>
-                            <button className="mb-4 items-center justify-center rounded-lg border border-blue-700 pl-2 pr-2 text-center">
-                                <CalendarDays className="ml-7 h-5 w-5 text-blue-700" />
-                                <span className="font-bold text-blue-700">{t("Calendar")}</span>
+                            <button
+                                className="mb-4 items-center justify-center rounded-lg border border-blue-900 pl-2 pr-2 text-center"
+                                onClick={() => setShowCalendars(true)}
+                            >
+                                <CalendarDays className="ml-7 h-5 w-5 text-blue-900" />
+                                <span className="font-bold text-blue-900">{t("Calendar")}</span>
                             </button>
                         </div>
+
+                        {/* Modal des calendriers */}
+                        {showCalendars && (
+                            <CalendarModal
+                                allDates={allDates}
+                                allReturnDates={allReturnDates}
+                                selectedDateIndex={selectedDateIndex}
+                                selectedReturnDateIndex={selectedReturnDateIndex}
+                                handleDateSelect={handleDateSelect}
+                                handleReturnDateSelect={handleReturnDateSelect}
+                                fromParam={fromParam}
+                                toParam={toParam}
+                                selectedTabTrip={selectedTabTrip}
+                                onClose={() => setShowCalendars(false)}
+                                searchParams={searchParams}
+                                navigate={navigate}
+                                currentLang={currentLang}
+                            />
+                        )}
 
                         {/* Outbound Flight Section */}
                         <RouteHeader
@@ -739,7 +985,7 @@ export default function FlightSelection() {
                                         disabled={startIndex === 0}
                                         aria-label="Dates précédentes"
                                     >
-                                        <ChevronLeft className="h-5 w-5 text-blue-700" />
+                                        <ChevronLeft className="h-5 w-5 text-blue-900" />
                                     </button>
 
                                     <DateCarousel
@@ -765,14 +1011,14 @@ export default function FlightSelection() {
                                         disabled={startIndex + visibleCount >= allDates.length}
                                         aria-label="Dates suivantes"
                                     >
-                                        <ChevronRight className="h-5 w-5 text-blue-700" />
+                                        <ChevronRight className="h-5 w-5 text-blue-900" />
                                     </button>
                                 </div>
 
                                 {loadingOutbound ? (
                                     <div className="flex h-40 items-center justify-center">
                                         <Spinner size="md" />
-                                        <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
+                                        <p className="ml-3 text-blue-900">{t("Loading flights...")}</p>
                                     </div>
                                 ) : filteredFlights.length > 0 ? (
                                     <div className="mb-[80px] space-y-4">
@@ -824,7 +1070,7 @@ export default function FlightSelection() {
                                                 disabled={startReturnIndex === 0}
                                                 aria-label="Dates précédentes retour"
                                             >
-                                                <ChevronLeft className="h-5 w-5 text-blue-700" />
+                                                <ChevronLeft className="h-5 w-5 text-blue-900" />
                                             </button>
 
                                             <DateCarousel
@@ -851,14 +1097,14 @@ export default function FlightSelection() {
                                                 disabled={startReturnIndex + visibleCount >= allReturnDates.length}
                                                 aria-label="Dates suivantes retour"
                                             >
-                                                <ChevronRight className="h-5 w-5 text-blue-700" />
+                                                <ChevronRight className="h-5 w-5 text-blue-900" />
                                             </button>
                                         </div>
 
                                         {loadingReturn ? (
                                             <div className="flex h-40 items-center justify-center">
                                                 <Spinner size="md" />
-                                                <p className="ml-3 text-blue-700">{t("Loading flights...")}</p>
+                                                <p className="ml-3 text-blue-900">{t("Loading flights...")}</p>
                                             </div>
                                         ) : filteredReturnFlights.length > 0 ? (
                                             <div className="space-y-4">
@@ -940,7 +1186,7 @@ export default function FlightSelection() {
                                                 state: bookingData,
                                             });
                                         }}
-                                        className="mt-6 w-48 rounded-full bg-red-500 py-3 font-semibold text-white hover:bg-red-600"
+                                        className="mt-6 w-48 rounded-md bg-red-900 py-3 font-semibold text-white hover:bg-red-700"
                                     >
                                         {t("Continue to Passenger")}
                                     </button>

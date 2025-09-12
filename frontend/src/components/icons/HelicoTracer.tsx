@@ -39,7 +39,8 @@ const NoHelicopterIcon: FC<NoHelicopterIconProps> = ({ size = 48, color = "#000"
         style={{ position: "absolute", top: 0, left: 0 }}
         fill="none"
       >
-        <line x1="0" y1="0" x2="64" y2="64" stroke="#dc2626" strokeWidth="4" />
+        
+        <line x1="0" y1="0" x2="64" y2="64" stroke="#fca5a5" strokeWidth="6" />
       </svg>
     </div>
   );

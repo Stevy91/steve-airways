@@ -74,6 +74,12 @@
   "No flight matches your criteria for this return date.": "Aucun vol ne correspond à vos critères pour cette date de retour",
   "Booking Details": "Détails de la réservation",
   "Departure": "Départ",
+    "Select Dates":"Sélectionnez les dates",
+      "Return date cannot be before departure date":"La date de retour ne peut pas être antérieure à la date de départ",
+  "No valid return date available after selected departure date":"Aucune date de retour valide disponible après la date de départ sélectionnée",
+  "Please select a valid departure date with available flights":"Veuillez sélectionner une date de départ valide avec des vols disponibles",
+  "Please select valid departure and return dates with available flights. Return date must be on or after departure date.":"Veuillez sélectionner des dates de départ et de retour valides, avec des vols disponibles. La date de retour doit être postérieure ou égale à la date de départ.",
+ 
   "Return": "Retour",
   "Adults": "Adultes",
   "Adult": "Adulte",
@@ -399,5 +405,7 @@
   "seat(s) available for": "siège(s) disponible(s) pour",
   "passenger(s)": "passager(s)",
    "The return date cannot be earlier than the departure date.":"La date de retour ne peut pas être antérieure à la date de départ.",
-   "The departure date cannot be later than the return date.":"La date de départ ne peut pas être postérieure à la date de retour."
+   "The departure date cannot be later than the return date.":"La date de départ ne peut pas être postérieure à la date de retour.",
+    "Search another flight": "Chercher un autre vol",
+  "Search": "Recherche"
 }

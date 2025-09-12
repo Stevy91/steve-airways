@@ -16,11 +16,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Footer } from "../../layouts/footer";
 import { HeroSection } from "../../layouts/HeroSection";
+import SessionTimeout from "../../components/SessionTimeout";
 
 export default function TravelInfoPage() {
     const { t, i18n } = useTranslation();
     return (
         <>
+     
         <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
