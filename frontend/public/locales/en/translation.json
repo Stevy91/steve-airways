@@ -409,5 +409,9 @@
   "The return date cannot be earlier than the departure date.": "The return date cannot be earlier than the departure date.",
   "The departure date cannot be later than the return date.": "The departure date cannot be later than the return date.",
   "Search another flight": "Search another flight",
-  "Search": "Search"
+  "Search": "Search",
+    "Your session has expired due to prolonged inactivity.":"Your session has expired due to prolonged inactivity.",
+  "Redirection in":"Redirection dans",
+  "second":"second",
+  "Session Expired":"Session Expired"
 }

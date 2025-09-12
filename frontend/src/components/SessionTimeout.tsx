@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function SessionTimeout() {
     const [showPopup, setShowPopup] = useState(false);
     const [countdown, setCountdown] = useState(10);
-    const INACTIVITY_LIMIT = 10 * 1000;
+    const INACTIVITY_LIMIT = 20 * 60 * 1000;
 
+        const { t, i18n } = useTranslation();
     const { lang } = useParams<{ lang: string }>();
     const navigate = useNavigate();
     const currentLang = lang || "fr";
@@ -91,8 +93,8 @@ export default function SessionTimeout() {
                                 />
                             </svg>
                         </div>
-                        <h2 className="text-xl font-bold text-red-900">Session Expirée</h2>
-                        <p className="mt-3 text-gray-700">Votre session a expiré en raison d'une inactivité prolongée.</p>
+                        <h2 className="text-xl font-bold text-red-900">{t("Session Expired")}</h2>
+                        <p className="mt-3 text-gray-700">{t("Your session has expired due to prolonged inactivity.")}</p>
                         <div className="my-4">
                             <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                                 <div
@@ -101,7 +103,7 @@ export default function SessionTimeout() {
                                 ></div>
                             </div>
                             <p className="mt-2 text-gray-500">
-                                Redirection dans {countdown} seconde{countdown !== 1 ? "s" : ""}
+                                {t("Redirection in")} {countdown} {t("second")}{countdown !== 1 ? "s" : ""}
                             </p>
                         </div>
                         <button

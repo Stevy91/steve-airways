@@ -407,5 +407,10 @@
    "The return date cannot be earlier than the departure date.":"La date de retour ne peut pas être antérieure à la date de départ.",
    "The departure date cannot be later than the return date.":"La date de départ ne peut pas être postérieure à la date de retour.",
     "Search another flight": "Chercher un autre vol",
-  "Search": "Recherche"
+  "Search": "Recherche",
+  "Your session has expired due to prolonged inactivity.":"Votre session a expiré en raison d'une inactivité prolongée.",
+  "Redirection in":"Redirection dans",
+  "second":"seconde",
+  "Session Expired":"Session expirée"
+
 }
