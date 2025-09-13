@@ -261,7 +261,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                     <button
                         onClick={() => setSelectedTab("plane")}
                         className={`flex cursor-pointer items-center px-4 py-2 font-medium text-white hover:cursor-pointer focus:outline-none ${
-                            selectedTab === "plane" ? "bg-red-600 bg-opacity-70" : ""
+                            selectedTab === "plane" ? "bg-red-900 " : ""
                         }`}
                         type="button"
                     >
@@ -270,7 +270,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                     <button
                         onClick={() => setSelectedTab("helicopter")}
                         className={`flex cursor-pointer items-center px-4 py-2 font-medium text-white hover:cursor-pointer focus:outline-none ${
-                            selectedTab === "helicopter" ? "bg-red-600 bg-opacity-70" : ""
+                            selectedTab === "helicopter" ? "bg-red-900 " : ""
                         }`}
                         type="button"
                     >

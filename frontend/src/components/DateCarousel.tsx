@@ -185,7 +185,7 @@ export default function DateCarousel({
             {allDates.slice(startIndex, startIndex + visibleCount).map((d, i) => {
                 const globalIndex = startIndex + i;
                 const isSelected = globalIndex === selectedDateIndex;
-                const formattedDate = format(d.date, "yyyy-MM-dd");
+                const formattedDate = format(d.date, "EEE MMM d");
 
                 return (
                     <div

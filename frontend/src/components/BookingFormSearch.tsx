@@ -257,13 +257,13 @@ export default function BookingFormSearch({ onSearch, onClose,}: BookingFormProp
     }, []);
 
     return (
-        <div className="relative  px-4 md:px-10">
+        <div className="relative  px-4 md:px-10 mt-20">
             <div className="relative mx-auto max-w-6xl rounded-bl-3xl rounded-br-3xl rounded-tr-3xl p-4 ">
                 <div className="absolute  top-[-24px] z-[40] flex w-fit space-x-2 bg-blue-900 bg-opacity-40 shadow-md">
                     <button
                         onClick={() => setSelectedTab("plane")}
                         className={`flex cursor-pointer items-center px-4 py-2 font-medium text-white hover:cursor-pointer focus:outline-none ${
-                            selectedTab === "plane" ? "bg-red-600 bg-opacity-70" : ""
+                            selectedTab === "plane" ? "bg-red-900" : ""
                         }`}
                         type="button"
                     >
@@ -272,7 +272,7 @@ export default function BookingFormSearch({ onSearch, onClose,}: BookingFormProp
                     <button
                         onClick={() => setSelectedTab("helicopter")}
                         className={`flex cursor-pointer items-center px-4 py-2 font-medium text-white hover:cursor-pointer focus:outline-none ${
-                            selectedTab === "helicopter" ? "bg-red-600 bg-opacity-70" : ""
+                            selectedTab === "helicopter" ? "bg-red-900" : ""
                         }`}
                         type="button"
                     >
