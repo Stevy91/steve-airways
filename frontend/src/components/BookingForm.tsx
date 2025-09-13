@@ -156,7 +156,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                 params.append("return_date", selectedDateReturn);
             }
 
-            const response = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${params.toString()}`);
+            const response = await fetch(`https://steve-airways.onrender.com/api/flights?${params.toString()}`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
@@ -192,7 +192,7 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         const fetchLocations = async () => {
             try {
                 setLoadingLocations(true);
-                const res = await fetch(`https://steve-airways-production.up.railway.app/api/locations`);
+                const res = await fetch(`https://steve-airways.onrender.com/api/locations`);
                 const data = await res.json();
                 setLocations(data);
             } catch (err) {

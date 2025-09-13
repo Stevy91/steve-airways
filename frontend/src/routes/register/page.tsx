@@ -25,7 +25,7 @@ export default function Register() {
         setLoading(true);
 
         try {
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/register", {
+            const res = await fetch("https://steve-airways.onrender.com/api/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

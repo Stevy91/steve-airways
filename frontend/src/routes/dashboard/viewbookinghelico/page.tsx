@@ -64,7 +64,7 @@ const ViewBookingHelico = () => {
 
     const handleViewDetails = async (id: number) => {
         try {
-            const res = await fetch(`https://steve-airways-production.up.railway.app/api/booking-plane-pop/${id}`);
+            const res = await fetch(`https://steve-airways.onrender.com/api/booking-plane-pop/${id}`);
 
             if (!res.ok) {
                 const text = await res.text();
@@ -88,7 +88,7 @@ const ViewBookingHelico = () => {
             try {
                 setLoading(true);
 
-                const response = await fetch("https://steve-airways-production.up.railway.app/api/booking-helico");
+                const response = await fetch("https://steve-airways.onrender.com/api/booking-helico");
 
                 if (!response.ok) {
                     throw new Error(`Erreur HTTP: ${response.status}`);

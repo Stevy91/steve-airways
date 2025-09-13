@@ -412,9 +412,9 @@ export default function FlightSelection() {
     const fetchFlightData = async (params: URLSearchParams, signal?: AbortSignal) => {
         try {
             const [locationsRes, flightAllRes, filteredFlightsRes] = await Promise.all([
-                fetch(`https://steve-airways-production.up.railway.app/api/locations`, { signal }),
-                fetch(`https://steve-airways-production.up.railway.app/api/flightall`, { signal }),
-                fetch(`https://steve-airways-production.up.railway.app/api/flights?${params.toString()}`, { signal }),
+                fetch(`https://steve-airways.onrender.com/api/locations`, { signal }),
+                fetch(`https://steve-airways.onrender.com/api/flightall`, { signal }),
+                fetch(`https://steve-airways.onrender.com/api/flights?${params.toString()}`, { signal }),
             ]);
 
             // if (!locationsRes.ok || !flightAllRes.ok || !filteredFlightsRes.ok) {
@@ -441,7 +441,7 @@ export default function FlightSelection() {
                 returnParams.set("to", params.get("from") || "");
                 returnParams.set("date", params.get("return_date") || "");
 
-                const returnFlightsRes = await fetch(`https://steve-airways-production.up.railway.app/api/flights?${returnParams.toString()}`, {
+                const returnFlightsRes = await fetch(`https://steve-airways.onrender.com/api/flights?${returnParams.toString()}`, {
                     signal,
                 });
                 if (returnFlightsRes.ok) {

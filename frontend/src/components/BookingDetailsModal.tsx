@@ -64,7 +64,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
     try {
       const res = await fetch(
-        `https://steve-airways-production.up.railway.app/api/booking-plane/${booking.reference}/payment-status`,
+        `https://steve-airways.onrender.com/api/booking-plane/${booking.reference}/payment-status`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

@@ -389,7 +389,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
     const [processing, setProcessing] = useState(false);
 
     const verifyFlightAvailability = async () => {
-        const response = await fetch("https://steve-airways-production.up.railway.app/api/verify-flight", {
+        const response = await fetch("https://steve-airways.onrender.com/api/verify-flight", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -430,7 +430,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 (paymentData.passengersData.children?.length || 0) +
                 (paymentData.passengersData.infants?.length || 0);
 
-            const response = await fetch("https://steve-airways-production.up.railway.app/api/create-payment-intent", {
+            const response = await fetch("https://steve-airways.onrender.com/api/create-payment-intent", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -504,7 +504,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ totalPrice, onSuc
                 returnDate: paymentData.return?.date,
             };
 
-            const response = await fetch("https://steve-airways-production.up.railway.app/api/confirm-booking", {
+            const response = await fetch("https://steve-airways.onrender.com/api/confirm-booking", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bookingRequest),
@@ -670,7 +670,7 @@ const PayLaterPayment = ({
     const { t, i18n } = useTranslation();
 
     const verifyFlightAvailability = async () => {
-        const response = await fetch("https://steve-airways-production.up.railway.app/api/verify-flight", {
+        const response = await fetch("https://steve-airways.onrender.com/api/verify-flight", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -730,7 +730,7 @@ const PayLaterPayment = ({
                 returnDate: paymentData.return?.date,
             };
 
-            const response = await fetch("https://steve-airways-production.up.railway.app/api/confirm-booking-paylater", {
+            const response = await fetch("https://steve-airways.onrender.com/api/confirm-booking-paylater", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bookingRequest),

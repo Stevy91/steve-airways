@@ -64,7 +64,7 @@ const FlightTable = () => {
     const fetchFlights = async () => {
         try {
             setLoading(true);
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/flighttableplane");
+            const res = await fetch("https://steve-airways.onrender.com/api/flighttableplane");
             const data = await res.json();
             setFlights(data);
         } catch {
@@ -83,7 +83,7 @@ const FlightTable = () => {
         const fetchLocations = async () => {
             try {
                 setLoadingLocations(true);
-                const res = await fetch("https://steve-airways-production.up.railway.app/api/locations");
+                const res = await fetch("https://steve-airways.onrender.com/api/locations");
                 const data = await res.json();
                 setLocations(data);
             } catch (err) {
@@ -158,7 +158,7 @@ const FlightTable = () => {
     const handleAddFlight = async (flightData: any) => {
         try {
             setSubmitting(true);
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/addflighttable", {
+            const res = await fetch("https://steve-airways.onrender.com/api/addflighttable", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(flightData),
@@ -184,7 +184,7 @@ const FlightTable = () => {
     const handleUpdateFlight = async (flightId: number, updatedData: any) => {
         try {
             setSubmitting(true);
-            const res = await fetch(`https://steve-airways-production.up.railway.app/api/updateflight/${flightId}`, {
+            const res = await fetch(`https://steve-airways.onrender.com/api/updateflight/${flightId}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -215,7 +215,7 @@ const FlightTable = () => {
 
     const deleteFlight = async (flightId: number) => {
         try {
-            const res = await fetch(`https://steve-airways-production.up.railway.app/api/deleteflights/${flightId}`, { method: "DELETE" });
+            const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, { method: "DELETE" });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Erreur suppression");
             setFlights((prev) => prev.filter((f) => f.id !== flightId));

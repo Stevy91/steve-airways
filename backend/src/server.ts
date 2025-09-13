@@ -1730,27 +1730,28 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
 // Route pour supprimer un vol
 app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
     const flightId = Number(req.params.id);
-   
 
     if (isNaN(flightId)) {
         return res.status(400).json({ error: "ID de vol invalide" });
     }
 
     try {
-        // 1. Vérification de l'existence du vol
-        const [checkResult] = await pool.query<mysql.RowDataPacket[]>("SELECT id FROM flights WHERE id = ?", [flightId]);
+        // Vérification de l'existence du vol
+        const [checkResult] = await pool.query<mysql.RowDataPacket[]>(
+            "SELECT id FROM flights WHERE id = ?",
+            [flightId]
+        );
 
-        // Type guard explicite
-        if (Array.isArray(checkResult)) {
-            if (checkResult.length === 0) {
-                return res.status(404).json({ error: "Vol non trouvé" });
-            }
+        if (Array.isArray(checkResult) && checkResult.length === 0) {
+            return res.status(404).json({ error: "Vol non trouvé" });
         }
 
-        // 2. Suppression du vol
-        const [deleteResult] = await pool.execute<mysql.OkPacket>("DELETE FROM flights WHERE id = ?", [flightId]);
+        // Suppression du vol
+        const [deleteResult] = await pool.execute<mysql.OkPacket>(
+            "DELETE FROM flights WHERE id = ?",
+            [flightId]
+        );
 
-        // Vérification du nombre de lignes affectées
         if ("affectedRows" in deleteResult && deleteResult.affectedRows === 0) {
             return res.status(404).json({ error: "Aucun vol supprimé" });
         }
@@ -1766,10 +1767,10 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
             error: "Erreur lors de la suppression",
             details: error instanceof Error ? error.message : "Erreur inconnue",
         });
-    } finally {
-        await pool.end();
     }
+    // ❌ Ne fais PAS pool.end() ici
 });
+
 
 
 
