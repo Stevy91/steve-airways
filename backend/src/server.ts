@@ -37,11 +37,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const pool = mysql.createPool({
-  host: 'nozomi.proxy.rlwy.net',
-  user: 'root',
-  password: 'ZJSOiwrLEsrtuQVoKfhuiwSdiiPGiZet',
-  database: 'railway',
-  port: 20921,          // Important : port spécifique fourni par Railway
+  host: 'srv1387.hstgr.io',
+  user: 'u566035799_trogonAirWays',
+  password: '2024Mapbon@',
+  database: 'u566035799_trogon',
+  port: 3306,          // Important : port spécifique fourni par Railway
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -1773,7 +1773,7 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 
 
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3009;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
