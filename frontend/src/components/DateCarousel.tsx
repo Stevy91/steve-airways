@@ -1,9 +1,7 @@
 "use client";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { format } from "date-fns";
-import { NoFlightIcon } from "./icons/AvionTracer";
 import { useEffect, useRef } from "react";
-import NoHelicopterIcon from "./icons/HelicoTracer";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 
@@ -20,7 +18,7 @@ type DateCarouselProps = {
     visibleCount: number;
     from: string;
     to: string;
-    date: string;
+    date: string; // ✅ déjà en yyyy-MM-dd
     passengers: {
         adult: number;
         child: number;
@@ -55,12 +53,11 @@ export default function DateCarousel({
     const navigate = useNavigate();
     const containerRef = useRef<HTMLDivElement>(null);
     const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
-    // 🔹 Récupération de la query string au top level
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
-    const tab = searchParams.get("tab") || "plane"; // ✅ récupère le tab correctement
+    const tab = searchParams.get("tab") || "plane";
 
     useEffect(() => {
         itemRefs.current = itemRefs.current.slice(0, allDates.length);
@@ -87,64 +84,20 @@ export default function DateCarousel({
 
     const handleDateClick = (globalIndex: number, formattedDate: string) => {
         if (!allDates[globalIndex].hasFlight) return;
-        const selectedDate = new Date(formattedDate);
 
-        // 🔹 Vérifier si c'est un choix de retour
+        // ✅ garder la date comme string yyyy-MM-dd
+        const selectedDate = formattedDate;
+
+        // Vérif retour
         if (isReturnDateCarousel) {
-            const outboundDate = new Date(date); // la date aller
-            const returnDateSelected = new Date(formattedDate);
-           
-
-            if (returnDateSelected < outboundDate) {
-                toast.error(`${t("The return date cannot be earlier than the departure date.")}`, {
-                    style: {
-                        background: "#fee2e2",
-                        color: "#991b1b",
-                        border:"1px solid #f87171"
-                    },
-                    iconTheme: {
-                        primary: "#fff",
-                        secondary: "#dc2626",
-                    },
-                });
-                return; // bloquer la sélection
-            }
-        }
-
-        // Vérification si c'est un retour
-        if (isReturnDateCarousel) {
-            const outboundDate = new Date(date); // date aller
-
-            if (selectedDate < outboundDate) {
-                toast.error(`${t("The return date cannot be earlier than the departure date.")}`, {
-                     style: {
-                        background: "#fee2e2",
-                        color: "#991b1b",
-                        border:"1px solid #f87171"
-                    },
-                    iconTheme: {
-                        primary: "#fff",
-                        secondary: "#dc2626",
-                    },
-                });
-                return; // bloquer la sélection
+            if (selectedDate < date) {
+                toast.error(`${t("The return date cannot be earlier than the departure date.")}`);
+                return;
             }
         } else {
-            // Vérification si c'est un aller
-            const currentReturnDate = returnDate ? new Date(returnDate) : null;
-            if (currentReturnDate && selectedDate > currentReturnDate) {
-                toast.error(`${t("The departure date cannot be later than the return date.")}`, {
-                    style: {
-                        background: "#fee2e2",
-                        color: "#991b1b",
-                        border:"1px solid #f87171"
-                    },
-                    iconTheme: {
-                        primary: "#fff",
-                        secondary: "#dc2626",
-                    },
-                });
-                return; // bloquer la sélection
+            if (returnDate && selectedDate > returnDate) {
+                toast.error(`${t("The departure date cannot be later than the return date.")}`);
+                return;
             }
         }
 
@@ -159,9 +112,9 @@ export default function DateCarousel({
 
         if (isReturnDateCarousel) {
             params.append("date", currentSearchParams.get("date") || date);
-            params.append("return_date", formattedDate);
+            params.append("return_date", selectedDate);
         } else {
-            params.append("date", formattedDate);
+            params.append("date", selectedDate);
             const currentReturnDate = currentSearchParams.get("return_date");
             if (currentReturnDate || returnDate) {
                 params.append("return_date", currentReturnDate || returnDate);
@@ -185,45 +138,33 @@ export default function DateCarousel({
             {allDates.slice(startIndex, startIndex + visibleCount).map((d, i) => {
                 const globalIndex = startIndex + i;
                 const isSelected = globalIndex === selectedDateIndex;
-                const formattedDate = format(d.date, "EEE MMM d");
+                const formattedDate = format(d.date, "yyyy-MM-dd");
+                
 
                 return (
-                    <div
-                        className="flex-1"
-                        key={`${label}-${formattedDate}`}
-                    >
+                    <div className="flex-1" key={`${label}-${formattedDate}`}>
                         <div
                             ref={(el) => {
                                 itemRefs.current[globalIndex] = el ?? null;
                             }}
                             onClick={() => d.hasFlight && handleDateClick(globalIndex, formattedDate)}
-                            className={`flex min-w-[80px] flex-col items-center whitespace-nowrap rounded px-3  text-sm transition-all ${
+                            className={`flex min-w-[80px] flex-col items-center whitespace-nowrap rounded px-3 text-sm transition-all ${
                                 isSelected
                                     ? "border border-blue-900 bg-white font-semibold"
                                     : d.hasFlight
-                                      ? "cursor-pointer font-bold text-black hover:bg-gray-100"
-                                      : "cursor-not-allowed font-bold text-gray-400 opacity-50"
+                                    ? "cursor-pointer font-bold text-black hover:bg-gray-100"
+                                    : "cursor-not-allowed font-bold text-gray-400 opacity-50"
                             }`}
                             style={{ scrollSnapAlign: "center" }}
                         >
-                            <span>{format(d.date, "EEE MMM d")}</span>
+                            <span>{format(d.date, "EEE MMM dd")}</span>
                             <span className={d.hasFlight ? "" : "p-0 text-gray-400"}>
                                 {d.hasFlight ? (
-                                   
                                     <div className="pt-4">${d.price}</div>
                                 ) : tab === "plane" ? (
-                                    
-                                    <img
-                                    className="w-[55px]"
-                                    src="/assets/no-flight-icon1.svg"
-                                    alt="Trogon Bird"
-                                />
+                                    <img className="w-[55px]" src="/assets/no-flight-icon1.svg" alt="No flight" />
                                 ) : (
-                                    <img
-                                    className="w-[40px]"
-                                    src="/assets/no-helico-icon6.svg"
-                                    alt="Trogon Bird"
-                                />
+                                    <img className="w-[40px]" src="/assets/no-helico-icon6.svg" alt="No helicopter" />
                                 )}
                             </span>
                         </div>

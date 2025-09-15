@@ -30,6 +30,7 @@ interface Flight {
     type: FlightType | string;
     seat: string | number;
     noflight: string;
+    
 }
 
 interface Location {
@@ -131,259 +132,75 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
     );
 };
 
-const mapFlight = (flight: any, locations: Location[]): Flight => {
-    // const depLoc = locations.find((l) => l.id === flight.departure_location_id);
-    // const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+// const mapFlight = (flight: any, locations: Location[]): Flight => {
+//     // const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+//     // const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
 
-    const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
-    const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
+//     const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
+//     const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
 
-    const date = new Date(flight.departure_time);
-    const isoDate = date.toISOString().split("T")[0];
+//     const date = new Date(flight.departure_time);
+//     const isoDate = date.toISOString().split("T")[0];
 
-    const extractTime = (isoString?: string) => {
-        if (!isoString) return "—";
-        const timePart = isoString.split("T")[1]; // "15:14:00.000Z"
-        if (!timePart) return "—";
-        return timePart.slice(0, 5); // "15:14"
-    };
-
-    // utilisation
-    const departureTime = extractTime(flight.departure_time);
-    const arrivalTime = extractTime(flight.arrival_time);
-
-    return {
-        id: flight.id,
-        from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
-        to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
-        date: isoDate,
-        departure_time: departureTime,
-        arrival_time: arrivalTime,
-        time: `${departureTime} - ${arrivalTime}`,
-        type: flight.type,
-        price: Number(flight.price),
-        seat: flight.seats_available.toString(),
-        noflight: flight.flight_number,
-    };
-};
-
-// Composant pour afficher les calendriers
-// const CalendarModal = ({
-//     allDates,
-//     allReturnDates,
-//     selectedDateIndex,
-//     selectedReturnDateIndex,
-//     handleDateSelect,
-//     handleReturnDateSelect,
-//     fromParam,
-//     toParam,
-//     selectedTabTrip,
-//     onClose,
-//     searchParams,
-//     navigate,
-//     currentLang,
-// }: {
-//     allDates: any[];
-//     allReturnDates: any[];
-//     selectedDateIndex: number;
-//     selectedReturnDateIndex: number;
-//     handleDateSelect: (index: number) => void;
-//     handleReturnDateSelect: (index: number) => void;
-//     fromParam: string | null;
-//     toParam: string | null;
-//     selectedTabTrip: string;
-//     onClose: () => void;
-//     searchParams: URLSearchParams;
-//     navigate: any;
-//     currentLang: string;
-// }) => {
-//     const { t } = useTranslation();
-//     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-//     const [tempSelectedDateIndex, setTempSelectedDateIndex] = useState(selectedDateIndex);
-//     const [tempSelectedReturnDateIndex, setTempSelectedReturnDateIndex] = useState(selectedReturnDateIndex);
-
-//     const handleDepartureDateSelect = (index: number) => {
-//         const selectedDate = allDates[index]?.date;
-//         const currentReturnDate = allReturnDates[tempSelectedReturnDateIndex]?.date;
-
-//         if (selectedTabTrip === "roundtrip" && currentReturnDate && isBefore(currentReturnDate, selectedDate)) {
-//             setErrorMessage(t("Return date cannot be before departure date"));
-
-//             // Trouver la première date de retour valide après la date d'aller sélectionnée
-//             const firstValidReturnIndex = allReturnDates.findIndex(
-//                 (d) => d.hasFlight && !isBefore(d.date, selectedDate) && !isSameDay(d.date, selectedDate),
-//             );
-
-//             if (firstValidReturnIndex !== -1) {
-//                 setTempSelectedReturnDateIndex(firstValidReturnIndex);
-//             }
-
-//             setTempSelectedDateIndex(index);
-//             return;
-//         }
-
-//         setErrorMessage(null);
-//         setTempSelectedDateIndex(index);
+//     const extractTime = (isoString?: string) => {
+//         if (!isoString) return "—";
+//         const timePart = isoString.split("T")[1]; // "15:14:00.000Z"
+//         if (!timePart) return "—";
+//         return timePart.slice(0, 5); // "15:14"
 //     };
 
-//     const handleReturnDateSelectWithValidation = (index: number) => {
-//         const selectedDate = allReturnDates[index]?.date;
-//         const currentDepartureDate = allDates[tempSelectedDateIndex]?.date;
+//     // utilisation
+//     const departureTime = extractTime(flight.departure_time);
+//     const arrivalTime = extractTime(flight.arrival_time);
 
-//         if (selectedDate && currentDepartureDate && isBefore(selectedDate, currentDepartureDate)) {
-//             setErrorMessage(t("Return date cannot be before departure date"));
-//             return;
-//         }
-
-//         setErrorMessage(null);
-//         setTempSelectedReturnDateIndex(index);
+//     return {
+//         id: flight.id,
+//         from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
+//         to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
+//         date: isoDate,
+//         departure_time: departureTime,
+//         arrival_time: arrivalTime,
+//         time: `${departureTime} - ${arrivalTime}`,
+//         type: flight.type,
+//         price: Number(flight.price),
+//         seat: flight.seats_available.toString(),
+//         noflight: flight.flight_number,
 //     };
-
-//     const applyDateSelection = () => {
-//         handleDateSelect(tempSelectedDateIndex);
-
-//         if (selectedTabTrip === "roundtrip") {
-//             handleReturnDateSelect(tempSelectedReturnDateIndex);
-//         }
-
-//         onClose();
-//     };
-
-//     return (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-//             <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
-//                 <div className="mb-4 flex items-center justify-between">
-//                     <h3 className="text-xl font-bold">{t("Select Dates")}</h3>
-//                     <button
-//                         onClick={onClose}
-//                         className="text-2xl text-gray-900 hover:text-gray-700"
-//                     >
-//                         &times;
-//                     </button>
-//                 </div>
-
-//                 {errorMessage && (
-//                     <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm font-medium text-red-800 shadow-md">
-//                         <AlertCircle className="h-5 w-5 text-red-600" />
-//                         <span>{errorMessage}</span>
-//                     </div>
-//                 )}
-
-//                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-//                     {/* Calendrier Aller */}
-//                     <div>
-//                         <h4 className="mb-3 font-semibold text-blue-700">
-//                             {t("Departure")}: {fromParam} → {toParam}
-//                         </h4>
-//                         <div className="mb-2 grid grid-cols-7 gap-2">
-//                             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-//                                 <div
-//                                     key={day}
-//                                     className="text-center text-xs font-semibold text-gray-600"
-//                                 >
-//                                     {t(day.substring(0, 3))}
-//                                 </div>
-//                             ))}
-//                         </div>
-//                         <div className="grid grid-cols-7 gap-2">
-//                             {allDates.map((dateObj, index) => {
-//                                 const date = dateObj.date;
-//                                 const day = format(date, "d");
-//                                 const isSelected = index === tempSelectedDateIndex;
-//                                 const hasFlight = dateObj.hasFlight;
-
-//                                 return (
-//                                     <button
-//                                         key={index}
-//                                         onClick={() => handleDepartureDateSelect(index)}
-//                                         disabled={!hasFlight}
-//                                         className={`rounded p-2 text-center text-sm ${
-//                                             isSelected
-//                                                 ? "bg-blue-600 text-white"
-//                                                 : hasFlight
-//                                                   ? "bg-gray-100 hover:bg-gray-200"
-//                                                   : "cursor-not-allowed bg-gray-50 text-gray-400"
-//                                         }`}
-//                                     >
-//                                         <div>{day}</div>
-//                                         {hasFlight && dateObj.price && <div className="mt-1 text-xs font-semibold">${dateObj.price}</div>}
-//                                     </button>
-//                                 );
-//                             })}
-//                         </div>
-//                     </div>
-
-//                     {/* Calendrier Retour (seulement si roundtrip) */}
-//                     {selectedTabTrip === "roundtrip" && (
-//                         <div>
-//                             <h4 className="mb-3 font-semibold text-blue-700">
-//                                 {t("Return")}: {toParam} → {fromParam}
-//                             </h4>
-//                             <div className="mb-2 grid grid-cols-7 gap-2">
-//                                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-//                                     <div
-//                                         key={day}
-//                                         className="text-center text-xs font-semibold text-gray-600"
-//                                     >
-//                                         {t(day.substring(0, 3))}
-//                                     </div>
-//                                 ))}
-//                             </div>
-//                             <div className="grid grid-cols-7 gap-2">
-//                                 {allReturnDates.map((dateObj, index) => {
-//                                     const date = dateObj.date;
-//                                     const day = format(date, "d");
-//                                     const isSelected = index === tempSelectedReturnDateIndex;
-//                                     const hasFlight = dateObj.hasFlight;
-//                                     const currentDepartureDate = allDates[tempSelectedDateIndex]?.date;
-//                                     const isBeforeDeparture = currentDepartureDate && isBefore(date, currentDepartureDate);
-
-//                                     return (
-//                                         <button
-//                                             key={index}
-//                                             onClick={() => handleReturnDateSelectWithValidation(index)}
-//                                             disabled={!hasFlight || isBeforeDeparture}
-//                                             className={`rounded p-2 text-center text-sm ${
-//                                                 isSelected
-//                                                     ? "bg-blue-600 text-white"
-//                                                     : hasFlight && !isBeforeDeparture
-//                                                       ? "bg-gray-100 hover:bg-gray-200"
-//                                                       : "cursor-not-allowed bg-gray-50 text-gray-400"
-//                                             }`}
-//                                             title={isBeforeDeparture ? t("Return date cannot be before departure date") : ""}
-//                                         >
-//                                             <div>{day}</div>
-//                                             {hasFlight && dateObj.price && !isBeforeDeparture && (
-//                                                 <div className="mt-1 text-xs font-semibold">${dateObj.price}</div>
-//                                             )}
-//                                             {isBeforeDeparture && <div className="mt-1 text-xs text-red-900">X</div>}
-//                                         </button>
-//                                     );
-//                                 })}
-//                             </div>
-//                         </div>
-//                     )}
-//                 </div>
-
-//                 <div className="mt-6 flex justify-end space-x-4">
-//                     <button
-//                         onClick={onClose}
-//                         className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100"
-//                     >
-//                         {t("Cancel")}
-//                     </button>
-//                     <button
-//                         onClick={applyDateSelection}
-//                         className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-//                     >
-//                         {t("Apply Dates")}
-//                     </button>
-//                 </div>
-//             </div>
-//         </div>
-//     );
 // };
 
+
+
+const formatDate = (isoString: string) => {
+  return isoString.split("T")[0]; // yyyy-MM-dd
+};
+
+const formatTime = (isoString: string) => {
+  const timePart = isoString.split("T")[1]; // "18:41:00.000Z" ou "18:41:00"
+  if (!timePart) return "—";
+  return timePart.slice(0, 5); // "18:41"
+};
+
+
+const mapFlight = (flight: any, locations: Location[]): Flight => {
+    
+  const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
+  const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
+
+return {
+  id: flight.id,
+  from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
+  to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
+  date: formatDate(flight.departure_time),
+  departure_time: formatTime(flight.departure_time),
+  arrival_time: formatTime(flight.arrival_time),
+  time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`, // ✅ pas de décalage
+  type: flight.type,
+  price: Number(flight.price),
+  seat: flight.seats_available.toString(),
+  noflight: flight.flight_number,
+};
+
+}
 export default function FlightSelection() {
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang

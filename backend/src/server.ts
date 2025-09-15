@@ -207,6 +207,113 @@ app.get("/api/flightall", async (req: Request, res: Response) => {
     }
 });
 
+// app.get("/api/flights", async (req: Request, res: Response) => {
+//     try {
+//         const {
+//             from,
+//             to,
+//             date,
+//             tab: type,
+//         } = req.query as {
+//             from: string;
+//             to: string;
+//             date: string;
+//             tab: string;
+//         };
+
+//         // Validation des paramètres
+//         if (!from || !to || !date || !type) {
+//             return res.status(400).json({
+//                 error: "Paramètres manquants",
+//                 required: ["from", "to", "date", "tab"],
+//                 received: { from, to, date, type },
+//             });
+//         }
+
+//         const validTypes = ["plane", "helicopter"];
+//         if (!validTypes.includes(type)) {
+//             return res.status(400).json({
+//                 error: "Type invalide",
+//                 validTypes,
+//                 received: type,
+//             });
+//         }
+
+       
+
+//         // Vérification des aéroports
+//         const [departureAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [from]);
+
+//         const [arrivalAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [to]);
+
+//         if (departureAirport.length === 0 || arrivalAirport.length === 0) {
+           
+//             return res.status(404).json({ error: "Aéroport non trouvé" });
+//         }
+
+//         // Requête principale
+      
+
+//         const [flights] = await pool.query<Flight[]>(
+//             `SELECT f.*, 
+//                     dep.code as departure_code, 
+//                     arr.code as arrival_code
+//             FROM flights f
+//             JOIN locations dep ON f.departure_location_id = dep.id
+//             JOIN locations arr ON f.arrival_location_id = arr.id
+//             WHERE dep.code = ? 
+//             AND arr.code = ? 
+//             AND f.type = ?
+//             AND (
+//                 (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
+//                 OR DATE(f.departure_time) > ?
+//             )
+//             ORDER BY f.departure_time`,
+//             [from, to, type, date, date]
+//         );
+
+
+//         // Gestion des vols aller-retour
+//         if (req.query.return_date) {
+//             const returnDate = req.query.return_date as string;
+
+
+//             const [returnFlights] = await pool.query<Flight[]>(
+//                 `SELECT f.*, 
+//                         dep.code as departure_code, 
+//                         arr.code as arrival_code
+//                 FROM flights f
+//                 JOIN locations dep ON f.departure_location_id = dep.id
+//                 JOIN locations arr ON f.arrival_location_id = arr.id
+//                 WHERE dep.code = ? 
+//                 AND arr.code = ? 
+//                 AND f.type = ?
+//                 AND (
+//                     (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
+//                     OR DATE(f.departure_time) > ?
+//                 )
+//                 ORDER BY f.departure_time`,
+//                 [to, from, type, returnDate, returnDate]
+//             );
+
+          
+//             return res.json({
+//                 outbound: flights,
+//                 return: returnFlights,
+//             });
+//         }
+
+      
+//         res.json(flights);
+//     } catch (err) {
+//         console.error("Erreur:", err);
+//         res.status(500).json({
+//             error: "Erreur serveur",
+//             details: err instanceof Error ? err.message : String(err),
+//         });
+//     }
+// });
+
 app.get("/api/flights", async (req: Request, res: Response) => {
     try {
         const {
@@ -239,21 +346,16 @@ app.get("/api/flights", async (req: Request, res: Response) => {
             });
         }
 
-       
-
         // Vérification des aéroports
         const [departureAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [from]);
-
         const [arrivalAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [to]);
 
         if (departureAirport.length === 0 || arrivalAirport.length === 0) {
-           
             return res.status(404).json({ error: "Aéroport non trouvé" });
         }
 
-        // Requête principale
-      
-
+        // Requête principale - CORRIGÉE
+        // On utilise seulement la date sans comparer avec l'heure actuelle
         const [flights] = await pool.query<Flight[]>(
             `SELECT f.*, 
                     dep.code as departure_code, 
@@ -264,19 +366,14 @@ app.get("/api/flights", async (req: Request, res: Response) => {
             WHERE dep.code = ? 
             AND arr.code = ? 
             AND f.type = ?
-            AND (
-                (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
-                OR DATE(f.departure_time) > ?
-            )
+            AND DATE(f.departure_time) = ?
             ORDER BY f.departure_time`,
-            [from, to, type, date, date]
+            [from, to, type, date]
         );
-
 
         // Gestion des vols aller-retour
         if (req.query.return_date) {
             const returnDate = req.query.return_date as string;
-
 
             const [returnFlights] = await pool.query<Flight[]>(
                 `SELECT f.*, 
@@ -288,22 +385,17 @@ app.get("/api/flights", async (req: Request, res: Response) => {
                 WHERE dep.code = ? 
                 AND arr.code = ? 
                 AND f.type = ?
-                AND (
-                    (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
-                    OR DATE(f.departure_time) > ?
-                )
+                AND DATE(f.departure_time) = ?
                 ORDER BY f.departure_time`,
-                [to, from, type, returnDate, returnDate]
+                [to, from, type, returnDate]
             );
 
-          
             return res.json({
                 outbound: flights,
                 return: returnFlights,
             });
         }
 
-      
         res.json(flights);
     } catch (err) {
         console.error("Erreur:", err);
