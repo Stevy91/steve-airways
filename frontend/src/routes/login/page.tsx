@@ -38,7 +38,7 @@ export default function Login() {
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
 
-            // Rediriger vers le dashboard admin
+           
             navigate(`/${currentLang}/dashboard`);
         } catch (err) {
             console.error(err);
