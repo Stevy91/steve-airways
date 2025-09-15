@@ -18,7 +18,7 @@ export const useProfile = () => {
             if (!token) return;
 
             try {
-                const res = await fetch("https://steve-airways-production.up.railway.app/api/profile", {
+                const res = await fetch("https://steve-airways.onrender.com/api/profile", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     const handleLogout = async () => {
         try {
             // Appel API logout (optionnel si tu veux juste supprimer le token côté client)
-            await fetch("https://steve-airways-production.up.railway.app/api/logout", {
+            await fetch("https://steve-airways.onrender.com/api/logout", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     // Récupérer notifications et initialiser badge
     const fetchNotifications = async () => {
         try {
-            const res = await fetch("https://steve-airways-production.up.railway.app/api/notifications");
+            const res = await fetch("https://steve-airways.onrender.com/api/notifications");
             const data = await res.json();
             if (data.success) {
                 const filteredNotifs = getFilteredNotifications(data.notifications);
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     // Nettoyer anciennes notifications
     const cleanupOldNotifications = async () => {
         try {
-            await fetch("https://steve-airways-production.up.railway.app/api/notifications/cleanup", { method: "DELETE" });
+            await fetch("https://steve-airways.onrender.com/api/notifications/cleanup", { method: "DELETE" });
             fetchNotifications();
         } catch (error) {
             console.error("Erreur nettoyage notifications:", error);
@@ -100,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
     // Marquer une notification comme lue
     const markAsSeen = async (id: number) => {
         try {
-            await fetch(`https://steve-airways-production.up.railway.app/api/notifications/${id}/seen`, { method: "PATCH" });
+            await fetch(`https://steve-airways.onrender.com/api/notifications/${id}/seen`, { method: "PATCH" });
             setNotifications((prev) => {
                 const updated = prev.map((n) => (n.id === id ? { ...n, seen: true, read_at: new Date().toISOString() } : n));
                 const filtered = getFilteredNotifications(updated);
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
 
     // Initialisation WebSocket
     useEffect(() => {
-        const newSocket = io("https://steve-airways-production.up.railway.app");
+        const newSocket = io("https://steve-airways.onrender.com");
         setSocket(newSocket);
 
         newSocket.on("new-notification", (notif: Notification) => {
