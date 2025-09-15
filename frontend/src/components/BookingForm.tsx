@@ -65,8 +65,6 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
         return parse(day, "yyyy-MM-dd", new Date()); // crée Date en local
     };
 
-    
-
     const getFilteredDestinations = () => {
         const departureCode = selectedTabTrip === "onway" ? selectedDeparture : selectedDeparture2;
         return locations.filter((location) => location.code !== departureCode);
@@ -512,7 +510,6 @@ export default function BookingForm({ onSearch }: BookingFormProps) {
                                                     onChange={(date: Date | null) => {
                                                         // format en 'yyyy-MM-dd' en utilisant la date locale (PAS toISOString)
                                                         setSelectedDate(date ? format(date, "yyyy-MM-dd") : "");
-                                                        
                                                     }}
                                                     minDate={new Date()}
                                                     dateFormat="MMMM do, yyyy"
