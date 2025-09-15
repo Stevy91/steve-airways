@@ -28,9 +28,7 @@ export const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-app.use(cors({
-  origin: ["https://test2.trogonairways.com", "http://localhost:3000"]
-}));
+app.use(cors());
 app.use(express.json());
 
 // Configuration MySQL
