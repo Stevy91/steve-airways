@@ -28,16 +28,7 @@ export const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-// Configuration CORS plus permissive pour le développement
-app.use(cors({
-    origin: ['http://localhost:3000', 'https://test2.trogonairways.com/'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-// Gérer les pré-vols OPTIONS
-app.options('*', cors());
+app.use(cors());
 app.use(express.json());
 
 
@@ -1044,42 +1035,17 @@ interface User extends mysql.RowDataPacket {
 
 
 // Middleware général pour vérifier le token
-// function authMiddleware(req: any, res: Response, next: any) {
-//   const authHeader = req.headers["authorization"];
-//   const token = authHeader && authHeader.split(" ")[1];
-
-//   if (!token) return res.status(401).json({ error: "Token manquant" });
-
-//   jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
-//     if (err) return res.status(403).json({ error: "Token invalide" });
-//     req.user = user;
-//     next();
-//   });
-// }
-
-// Simplifier temporairement le middleware pour debug
 function authMiddleware(req: any, res: Response, next: any) {
-    // Autoriser certaines routes sans authentification
-    const publicRoutes = ['/api/hello', '/api/login', '/api/register', '/api/flights', '/api/locations'];
-    
-    if (publicRoutes.includes(req.path)) {
-        return next();
-    }
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token manquant" });
 
-    if (!token) {
-        return res.status(401).json({ error: "Token manquant" });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secretKey");
-        req.user = decoded;
-        next();
-    } catch (err) {
-        return res.status(403).json({ error: "Token invalide" });
-    }
+  jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: "Token invalide" });
+    req.user = user;
+    next();
+  });
 }
 
 // Middleware adminOnly pour protéger certaines routes
