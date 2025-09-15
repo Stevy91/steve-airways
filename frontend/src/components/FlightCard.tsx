@@ -39,7 +39,7 @@ const isFlightClosed = flightDateTime.getTime() < new Date().getTime();
         <div className="mb-4 flex flex-col rounded-lg border border-blue-900 px-6 py-4 transition-all hover:shadow-md md:flex-row md:items-center">
             <div
                 className="flex w-full cursor-pointer items-center justify-between mr-2"
-                onClick={onToggle}
+               
             >
                 <div className="text-left">
                     <h3 className="font-bold">{flight.from}</h3>

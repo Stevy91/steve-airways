@@ -1,4 +1,4 @@
-import { format, isBefore, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
+import { format, isBefore, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO } from "date-fns";
 import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -263,15 +263,25 @@ export default function CalendarModal({
 
         if (departureIndex !== -1) {
             handleDateSelect(departureIndex);
-        }
-
-        if (selectedTabTrip === "roundtrip" && tempSelectedReturnDateIndex !== -1) {
-            const selectedReturnDateObj = returnMonthDays[tempSelectedReturnDateIndex];
-            const returnIndex = allReturnDates.findIndex((d) => isSameDay(d.date, selectedReturnDateObj.date));
-
-            if (returnIndex !== -1) {
-                handleReturnDateSelect(returnIndex);
+            
+            // Mettre à jour l'URL immédiatement pour la date d'aller
+            const formattedDate = format(selectedDepartureDateObj.date, "yyyy-MM-dd");
+            const params = new URLSearchParams(searchParams);
+            params.set("date", formattedDate);
+            
+            // Si c'est un aller-retour et qu'une date de retour est sélectionnée, la mettre aussi à jour
+            if (selectedTabTrip === "roundtrip" && tempSelectedReturnDateIndex !== -1) {
+                const selectedReturnDateObj = returnMonthDays[tempSelectedReturnDateIndex];
+                const returnIndex = allReturnDates.findIndex((d) => isSameDay(d.date, selectedReturnDateObj.date));
+                
+                if (returnIndex !== -1) {
+                    handleReturnDateSelect(returnIndex);
+                    const formattedReturnDate = format(selectedReturnDateObj.date, "yyyy-MM-dd");
+                    params.set("return_date", formattedReturnDate);
+                }
             }
+            
+            navigate(`/${currentLang}/flights?${params.toString()}`);
         }
 
         onClose();
