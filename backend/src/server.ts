@@ -425,7 +425,7 @@ export function getErrorDetails(error: unknown): {
     message: string;
     details?: string;
     stack?: string;
-} {
+ } {
     if (error instanceof Error) {
         return {
             message: error.message,
@@ -531,6 +531,173 @@ app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
             details: errorMessage,
         });
     } 
+});
+function formatDateToSQL(date?: string | Date | null): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null; // invalide → null
+  return d.toISOString().split("T")[0]; // YYYY-MM-DD
+}
+app.post("/api/create-ticket", async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // 1. Validation des champs
+    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    const {
+      flightId,
+      passengers,
+      contactInfo,
+      totalPrice,
+      returnFlightId,
+      departureDate,
+      returnDate,
+      paymentMethod = "cash", // ex: cash, card, cheque
+    } = req.body;
+
+    const typeVol = passengers[0]?.typeVol || "plane";
+    const typeVolV = passengers[0]?.typeVolV || "onway";
+
+    // 2. Vérifier les vols
+    const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+    const [flights] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+      [flightIds],
+    );
+
+    if (flights.length !== flightIds.length) {
+      throw new Error("One or more flights not found");
+    }
+
+    for (const flight of flights) {
+      if (flight.seats_available < passengers.length) {
+        throw new Error(`Not enough seats available for flight ${flight.id}`);
+      }
+    }
+
+    // 3. Création réservation
+    const now = new Date();
+    const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+const depDate = formatDateToSQL(departureDate);
+const retDate = formatDateToSQL(returnDate);
+const [bookingResult] = await connection.query<mysql.OkPacket>(
+  `INSERT INTO bookings (
+    flight_id, payment_intent_id, total_price,
+    contact_email, contact_phone, status,
+    type_vol, type_v, guest_user, guest_email,
+    created_at, updated_at, departure_date,
+    return_date, passenger_count, booking_reference, return_flight_id,
+    payment_method
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    flightId,
+    null,
+    totalPrice,
+    contactInfo.email,
+    contactInfo.phone,
+    "confirmed",
+    typeVol,
+    typeVolV,
+    0,
+    contactInfo.email,
+    now,
+    now,
+    depDate,
+    retDate,
+    passengers.length,
+    bookingReference,
+    returnFlightId || null,
+    paymentMethod,
+  ],
+);
+
+    // 4. Enregistrer les passagers
+    for (const passenger of passengers) {
+      await connection.query(
+        `INSERT INTO passengers (
+          booking_id, first_name, middle_name, last_name,
+          date_of_birth, gender, title, address, type,
+          type_vol, type_v, country, nationality,
+          phone, email, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          bookingResult.insertId,
+          passenger.firstName,
+          passenger.middleName || null,
+          passenger.lastName,
+          passenger.dateOfBirth || null,
+          passenger.gender || "other",
+          passenger.title || "Mr",
+          passenger.address || null,
+          passenger.type,
+          passenger.typeVol || "plane",
+          passenger.typeVolV || "onway",
+          passenger.country,
+          passenger.nationality || null,
+          passenger.phone || contactInfo.phone,
+          passenger.email || contactInfo.email,
+          now,
+          now,
+        ],
+      );
+    }
+
+    // 5. Mise à jour des sièges
+    for (const flight of flights) {
+      await connection.execute(
+        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+        [passengers.length, flight.id],
+      );
+    }
+
+    // 6. Notification
+    await connection.query(
+      `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        "ticket",
+        `Création d’un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+        bookingResult.insertId,
+        false,
+        now,
+      ],
+    );
+
+    io.emit("new-notification", {
+      message: `Création d’un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+      bookingId: bookingResult.insertId,
+      createdAt: now,
+    });
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      bookingId: bookingResult.insertId,
+      bookingReference,
+      passengerCount: passengers.length,
+      paymentMethod,
+    });
+  } catch (error: any) {
+    await connection.rollback();
+    console.error("Erreur création ticket:", error);
+
+    res.status(500).json({
+      error: "Ticket creation failed",
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+    });
+  } finally {
+    connection.release();
+  }
 });
 
 
@@ -737,35 +904,6 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
     }
 });
 
-// POST /api/verify-flight
-app.post("/api/verify-flight", async (req: Request, res: Response) => {
-        const connection = await pool.getConnection();
-    try {
-        const { flightId, returnFlightId } = req.body as { flightId: number; returnFlightId?: number };
-
-        if (!flightId) return res.status(400).json({ error: "flightId manquant" });
-
-        // Vérifie le vol aller
-        const [outboundFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [flightId]);
-        if (!outboundFlights.length) return res.status(404).json({ error: "Outbound flight not found" });
-        if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the outbound flight" });
-
-        // Vérifie le vol retour si nécessaire
-        if (returnFlightId) {
-            const [returnFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [returnFlightId]);
-            if (!returnFlights.length) return res.status(404).json({ error: "Return flight not found" });
-            if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the return flight" });
-        }
-
-        res.json({ valid: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erreur serveur" });
-    }
-});
-
-
-
 app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
  
     const connection = await pool.getConnection();
@@ -959,6 +1097,33 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         }
     }
 });
+// POST /api/verify-flight
+app.post("/api/verify-flight", async (req: Request, res: Response) => {
+        const connection = await pool.getConnection();
+    try {
+        const { flightId, returnFlightId } = req.body as { flightId: number; returnFlightId?: number };
+
+        if (!flightId) return res.status(400).json({ error: "flightId manquant" });
+
+        // Vérifie le vol aller
+        const [outboundFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [flightId]);
+        if (!outboundFlights.length) return res.status(404).json({ error: "Outbound flight not found" });
+        if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the outbound flight" });
+
+        // Vérifie le vol retour si nécessaire
+        if (returnFlightId) {
+            const [returnFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [returnFlightId]);
+            if (!returnFlights.length) return res.status(404).json({ error: "Return flight not found" });
+            if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the return flight" });
+        }
+
+        res.json({ valid: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+
 
 app.get("/api/notifications", async (req: Request, res: Response) => {
     try {

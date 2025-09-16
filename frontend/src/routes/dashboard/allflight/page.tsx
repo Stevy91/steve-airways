@@ -53,7 +53,9 @@ const FlightTable = () => {
     const [loadingLocations, setLoadingLocations] = useState(true);
      const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
       const [open, setOpen] = useState(false);
-      const [stats, setStats] = useState<DashboardStats | null>(null);
+
+      const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+
      useAuth(); 
 
     // 🔹 Pagination
@@ -65,26 +67,7 @@ const FlightTable = () => {
     const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(flights.length / itemsPerPage);
 
-        const handleViewDetails = async (id: number) => {
-        try {
-            const res = await fetch(`https://steve-airways.onrender.com/api/booking-plane-pop/${id}`);
 
-            if (!res.ok) {
-                const text = await res.text();
-                console.error(`Erreur API (${res.status}):`, text);
-                alert("Réservation introuvable ou erreur serveur");
-                return;
-            }
-
-            const apiData = await res.json();
-            const mapped = mapApiBookingToBookingDetails(apiData);
-            setSelectedBooking(mapped);
-            setOpen(true);
-        } catch (err) {
-            console.error("Erreur fetch booking:", err);
-            alert("Impossible de récupérer les détails de la réservation");
-        }
-    };
 
     // Fetch flights
     const fetchFlights = async () => {
@@ -251,6 +234,8 @@ const FlightTable = () => {
         }
     };
 
+    
+
     return (
         <div className="p-6">
             {notification && (
@@ -333,7 +318,7 @@ const FlightTable = () => {
                                             <button
                                                 className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                 onClick={() => {
-                                                  
+                                                  setSelectedFlight(flight)
                                                     setOpen(true);
                                                 }}
                                             >
@@ -369,12 +354,12 @@ const FlightTable = () => {
                 </div>
             </div>
 
-             <BookingCreatedModal
-                            open={open}
-                          
-                            onClose={() => setOpen(false)}
-                          
-                        />
+     <BookingCreatedModal
+  open={open}
+  onClose={() => setOpen(false)}
+  flight={selectedFlight!} 
+/>
+
 
             {/* Modal Add/Edit */}
             {showModal && (
@@ -605,35 +590,5 @@ const FlightTable = () => {
         </div>
     );
 };
-const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
-    // Transforme le status
-    const formattedStatus = apiData.status;
 
-    // Log pour vérifier
-    console.log("Formatted paymentStatus:", formattedStatus);
-
-    return {
-        reference: apiData.booking_reference,
-        contactEmail: apiData.contact_email,
-        bookedOn: new Date(apiData.created_at).toLocaleDateString(),
-        paymentStatus: formattedStatus, // ici on utilise la variable loggée
-        totalPrice: `$${apiData.total_price}`,
-        typeVol: apiData.type_vol,
-        typeV: apiData.type_v,
-        adminNotes: apiData.admin_notes || "",
-
-        passengers: apiData.passengers.map((p: any) => ({
-            name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
-            email: p.email,
-            dob: p.date_of_birth,
-        })),
-
-        flights: apiData.flights.map((f: any) => ({
-            code: f.code,
-            from: f.departure_airport_name,
-            to: f.arrival_airport_name,
-            date: new Date(f.date).toLocaleString(),
-        })),
-    };
-};
 export default FlightTable;
