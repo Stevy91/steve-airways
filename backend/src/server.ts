@@ -543,14 +543,19 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
 
   try {
     await connection.beginTransaction();
+      console.log("Transaction started");
 
-    // 1. Validation des champs
-    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
+
+const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+for (const field of requiredFields) {
+  if (!req.body[field]) {
+    console.error(`Missing field: ${field}`);
+    throw new Error(`Missing required field: ${field}`);
+  }
+}
+
+
+
 
     const {
       flightId,
@@ -687,9 +692,13 @@ const [bookingResult] = await connection.query<mysql.OkPacket>(
       passengerCount: passengers.length,
       paymentMethod,
     });
-  } catch (error: any) {
+ } catch (error: any) {
     await connection.rollback();
-    console.error("Erreur création ticket:", error);
+    console.error("Erreur détaillée création ticket:", {
+      message: error.message,
+      stack: error.stack,
+      body: req.body
+    });
 
     res.status(500).json({
       error: "Ticket creation failed",

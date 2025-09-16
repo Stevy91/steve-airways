@@ -60,92 +60,97 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-  const handleSubmit = async () => {
-  // Validation côté front
-  if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-    alert("Veuillez remplir les champs obligatoires : Prénom, Nom, Email, Téléphone");
-    return;
-  }
+    const handleSubmit = async () => {
+        // Validation côté front
+        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+            alert("Veuillez remplir les champs obligatoires : Prénom, Nom, Email, Téléphone");
+            return;
+        }
 
-  // Fonction pour convertir DD/MM/YYYY HH:MM en YYYY-MM-DD HH:MM:SS
-  const convertToMySQLDateTime = (str: string | undefined) => {
-    if (!str) return null;
+        // Fonction pour convertir DD/MM/YYYY HH:MM en YYYY-MM-DD HH:MM:SS
+        const convertToMySQLDateTime = (str: string | undefined): string | null => {
+            if (!str) return null;
 
-    const [datePart, timePart] = str.split(" ");
-    if (!datePart) return null;
+            const [datePart, timePart] = str.split(" ");
+            if (!datePart) return null;
 
-    const [day, month, year] = datePart.split("/");
-    if (!day || !month || !year) return null;
+            const [day, month, year] = datePart.split("/");
+            if (!day || !month || !year) return null;
 
-    return `${year}-${month}-${day} ${timePart || "00:00:00"}`;
-  };
+            return `${year}-${month}-${day} ${timePart || "00:00:00"}`;
+        };
 
-  const departureDateFormatted = convertToMySQLDateTime(flight!.departure);
-  const returnDateFormatted = formData.returnDate ? convertToMySQLDateTime(formData.returnDate) : null;
+        // Utilisez la date de départ du vol au lieu d'une date fixe
+        const departureDateFormatted = convertToMySQLDateTime(flight.departure);
+        const returnDateFormatted = formData.returnDate ? convertToMySQLDateTime(formData.returnDate) : null;
 
-  // Vérifier que la date de retour est après la date de départ
-  if (returnDateFormatted && new Date(returnDateFormatted) < new Date(departureDateFormatted!)) {
-    alert("La date de retour doit être égale ou supérieure à la date de départ.");
-    return;
-  }
+        // Vérifier que les dates sont valides avant de les comparer
+        if (departureDateFormatted && returnDateFormatted) {
+            const depDate = new Date(departureDateFormatted);
+            const retDate = new Date(returnDateFormatted);
 
-  // Création des passagers
-  const passengers: Passenger[] = [];
-  for (let i = 0; i < Number(formData.passengerCount); i++) {
-    passengers.push({
-      firstName: formData.firstName,
-      middleName: formData.middleName,
-      lastName: formData.lastName,
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      title: formData.title,
-      address: formData.address,
-      type: "adult",
-      typeVol: flight?.type || "plane",
-      typeVolV: "onway",
-      country: formData.country,
-      nationality: formData.nationality,
-      phone: formData.phone,
-      email: formData.email,
-    });
-  }
+            if (retDate < depDate) {
+                alert("La date de retour doit être égale ou supérieure à la date de départ.");
+                return;
+            }
+        }
 
-  const body = {
-    flightId: flight!.id,
-    passengers,
-    contactInfo: {
-      email: formData.email,
-      phone: formData.phone,
-    },
-    totalPrice: flight!.price * Number(formData.passengerCount),
-    departureDate: departureDateFormatted,
-    returnDate: returnDateFormatted,
-    paymentMethod: formData.paymentMethod,
-  };
+        // Création des passagers
+        const passengers: Passenger[] = [];
+        for (let i = 0; i < Number(formData.passengerCount); i++) {
+            passengers.push({
+                firstName: formData.firstName,
+                middleName: formData.middleName,
+                lastName: formData.lastName,
+                dateOfBirth: formData.dateOfBirth,
+                gender: formData.gender,
+                title: formData.title,
+                address: formData.address,
+                type: "adult",
+                typeVol: flight?.type || "plane",
+                typeVolV: "onway",
+                country: formData.country,
+                nationality: formData.nationality,
+                phone: formData.phone,
+                email: formData.email,
+            });
+        }
 
-  console.log("Form data being sent:", body);
+        const body = {
+            flightId: flight!.id,
+            passengers,
+            contactInfo: {
+                email: formData.email,
+                phone: formData.phone,
+            },
+            totalPrice: flight!.price * Number(formData.passengerCount),
+            departureDate: departureDateFormatted, // Utilisez la variable corrigée
+            returnDate: returnDateFormatted, // Utilisez la variable corrigée
+            paymentMethod: formData.paymentMethod,
+        };
 
-  try {
-    const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+        console.log("Form data being sent:", body);
 
-    const data = await res.json();
+        try {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
 
-    if (res.ok && data.success) {
-      alert(`✅ Ticket créé avec succès ! Référence: ${data.bookingReference}`);
-      onClose();
-    } else {
-      alert("❌ Erreur: " + (data.details || data.error));
-    }
-  } catch (err) {
-    console.error(err);
-    alert("❌ Impossible de créer le ticket.");
-  }
-};
+            const data = await res.json();
 
+            if (res.ok && data.success) {
+                alert(`✅ Ticket créé avec succès ! Référence: ${data.bookingReference}`);
+                onClose();
+            } else {
+                alert("❌ Erreur: " + (data.details || data.error));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("❌ Impossible de créer le ticket.");
+        }
+    };
 
     return (
         <AnimatePresence>
