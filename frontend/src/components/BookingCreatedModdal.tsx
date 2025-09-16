@@ -60,97 +60,127 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async () => {
-        // Validation côté front
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-            alert("Veuillez remplir les champs obligatoires : Prénom, Nom, Email, Téléphone");
-            return;
-        }
+const handleSubmit = async () => {
+  // Validation côté front
+  if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+    alert("Veuillez remplir les champs obligatoires : Prénom, Nom, Email, Téléphone");
+    return;
+  }
 
-        // Fonction pour convertir DD/MM/YYYY HH:MM en YYYY-MM-DD HH:MM:SS
-        const convertToMySQLDateTime = (str: string | undefined): string | null => {
-            if (!str) return null;
+  // Fonction pour extraire et formater les dates
+  const extractDate = (dateString: any): string | null => {
+    if (!dateString) return null;
+    
+    console.log("Extracting date from:", dateString);
+    
+    // 1. Format DD/MM/YYYY (comme "15/09/2025 22:30")
+    if (typeof dateString === 'string') {
+      // Essaye d'abord le format DD/MM/YYYY
+      const ddMmYyyyMatch = dateString.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (ddMmYyyyMatch) {
+        const [_, day, month, year] = ddMmYyyyMatch;
+        return `${year}-${month}-${day}`;
+      }
+      
+      // Essaye le format YYYY-MM-DD
+      const yyyyMmDdMatch = dateString.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (yyyyMmDdMatch) {
+        return yyyyMmDdMatch[0];
+      }
+    }
+    
+    // 2. Fallback: parsing avec Date object
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      }
+    } catch (error) {
+      console.error("Error parsing date:", error);
+    }
+    
+    return null;
+  };
 
-            const [datePart, timePart] = str.split(" ");
-            if (!datePart) return null;
+  // Extraire les dates
+  const departureDateFormatted = extractDate(flight.departure);
+  const returnDateFormatted = extractDate(formData.returnDate);
 
-            const [day, month, year] = datePart.split("/");
-            if (!day || !month || !year) return null;
+  console.log("Formatted dates - departure:", departureDateFormatted, "return:", returnDateFormatted);
 
-            return `${year}-${month}-${day} ${timePart || "00:00:00"}`;
-        };
+  // Vérifier que la date de départ est valide
+  if (!departureDateFormatted) {
+    alert("Impossible de déterminer la date de départ. Veuillez contacter l'administrateur.");
+    return;
+  }
 
-        // Utilisez la date de départ du vol au lieu d'une date fixe
-        const departureDateFormatted = convertToMySQLDateTime(flight.departure);
-        const returnDateFormatted = formData.returnDate ? convertToMySQLDateTime(formData.returnDate) : null;
+  // Vérifier que la date de retour est après la date de départ
+  if (returnDateFormatted) {
+    const depDate = new Date(departureDateFormatted);
+    const retDate = new Date(returnDateFormatted);
+    
+    if (retDate < depDate) {
+      alert("La date de retour doit être égale ou supérieure à la date de départ.");
+      return;
+    }
+  }
 
-        // Vérifier que les dates sont valides avant de les comparer
-        if (departureDateFormatted && returnDateFormatted) {
-            const depDate = new Date(departureDateFormatted);
-            const retDate = new Date(returnDateFormatted);
+  // Création des passagers
+  const passengers: Passenger[] = [];
+  for (let i = 0; i < Number(formData.passengerCount); i++) {
+    passengers.push({
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      lastName: formData.lastName,
+      dateOfBirth: formData.dateOfBirth,
+      gender: formData.gender,
+      title: formData.title,
+      address: formData.address,
+      type: "adult",
+      typeVol: flight?.type || "plane",
+      typeVolV: "onway",
+      country: formData.country,
+      nationality: formData.nationality,
+      phone: formData.phone,
+      email: formData.email,
+    });
+  }
 
-            if (retDate < depDate) {
-                alert("La date de retour doit être égale ou supérieure à la date de départ.");
-                return;
-            }
-        }
+  const body = {
+    flightId: flight!.id,
+    passengers,
+    contactInfo: {
+      email: formData.email,
+      phone: formData.phone,
+    },
+    totalPrice: flight!.price * Number(formData.passengerCount),
+    departureDate: departureDateFormatted,
+    returnDate: returnDateFormatted,
+    paymentMethod: formData.paymentMethod,
+  };
 
-        // Création des passagers
-        const passengers: Passenger[] = [];
-        for (let i = 0; i < Number(formData.passengerCount); i++) {
-            passengers.push({
-                firstName: formData.firstName,
-                middleName: formData.middleName,
-                lastName: formData.lastName,
-                dateOfBirth: formData.dateOfBirth,
-                gender: formData.gender,
-                title: formData.title,
-                address: formData.address,
-                type: "adult",
-                typeVol: flight?.type || "plane",
-                typeVolV: "onway",
-                country: formData.country,
-                nationality: formData.nationality,
-                phone: formData.phone,
-                email: formData.email,
-            });
-        }
+  console.log("Form data being sent:", body);
 
-        const body = {
-            flightId: flight!.id,
-            passengers,
-            contactInfo: {
-                email: formData.email,
-                phone: formData.phone,
-            },
-            totalPrice: flight!.price * Number(formData.passengerCount),
-            departureDate: departureDateFormatted, // Utilisez la variable corrigée
-            returnDate: returnDateFormatted, // Utilisez la variable corrigée
-            paymentMethod: formData.paymentMethod,
-        };
+  try {
+    const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-        console.log("Form data being sent:", body);
+    const data = await res.json();
 
-        try {
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            });
-
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                alert(`✅ Ticket créé avec succès ! Référence: ${data.bookingReference}`);
-                onClose();
-            } else {
-                alert("❌ Erreur: " + (data.details || data.error));
-            }
-        } catch (err) {
-            console.error(err);
-            alert("❌ Impossible de créer le ticket.");
-        }
-    };
+    if (res.ok && data.success) {
+      alert(`✅ Ticket créé avec succès ! Référence: ${data.bookingReference}`);
+      onClose();
+    } else {
+      alert("❌ Erreur: " + (data.details || data.error));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Impossible de créer le ticket.");
+  }
+};
 
     return (
         <AnimatePresence>

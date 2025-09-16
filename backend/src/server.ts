@@ -612,7 +612,7 @@ const [bookingResult] = await connection.query<mysql.OkPacket>(
     "confirmed",
     typeVol,
     typeVolV,
-    0,
+    1,
     contactInfo.email,
     now,
     now,
@@ -622,6 +622,8 @@ const [bookingResult] = await connection.query<mysql.OkPacket>(
     bookingReference,
     returnFlightId || null,
     paymentMethod,
+
+    
   ],
 );
 
