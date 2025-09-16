@@ -182,9 +182,11 @@ const formatTime = (isoString: string) => {
 
 
 const mapFlight = (flight: any, locations: Location[]): Flight => {
+        const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+    const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
     
-  const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
-  const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
+//   const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
+//   const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
 
 return {
   id: flight.id,
@@ -739,7 +741,7 @@ export default function FlightSelection() {
         return (
             <>
            {/* SessionTimeout */}
-                 <SessionTimeout />
+                 {/* <SessionTimeout /> */}
                 <HeroSectionSearch />
                 <div
                     className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"

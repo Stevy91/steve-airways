@@ -1,7 +1,9 @@
-import { ChevronDown, MapPinIcon, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, MapPinIcon, Pencil, Ticket, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import Notifications from "../../../components/Notifications";
+
 import { useAuth } from "../../../hooks/useAuth";
+import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
+import BookingCreatedModal from "../../../components/BookingCreatedModdal";
 
 interface Flight {
     id: number;
@@ -49,6 +51,9 @@ const FlightTable = () => {
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
+     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
+      const [open, setOpen] = useState(false);
+      const [stats, setStats] = useState<DashboardStats | null>(null);
      useAuth(); 
 
     // 🔹 Pagination
@@ -59,6 +64,27 @@ const FlightTable = () => {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(flights.length / itemsPerPage);
+
+        const handleViewDetails = async (id: number) => {
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/booking-plane-pop/${id}`);
+
+            if (!res.ok) {
+                const text = await res.text();
+                console.error(`Erreur API (${res.status}):`, text);
+                alert("Réservation introuvable ou erreur serveur");
+                return;
+            }
+
+            const apiData = await res.json();
+            const mapped = mapApiBookingToBookingDetails(apiData);
+            setSelectedBooking(mapped);
+            setOpen(true);
+        } catch (err) {
+            console.error("Erreur fetch booking:", err);
+            alert("Impossible de récupérer les détails de la réservation");
+        }
+    };
 
     // Fetch flights
     const fetchFlights = async () => {
@@ -304,6 +330,15 @@ const FlightTable = () => {
                                             >
                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                             </button>
+                                            <button
+                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                onClick={() => {
+                                                  
+                                                    setOpen(true);
+                                                }}
+                                            >
+                                                <Ticket className="h-4 w-4 text-red-500" />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -333,6 +368,13 @@ const FlightTable = () => {
                     </button>
                 </div>
             </div>
+
+             <BookingCreatedModal
+                            open={open}
+                          
+                            onClose={() => setOpen(false)}
+                          
+                        />
 
             {/* Modal Add/Edit */}
             {showModal && (
@@ -563,5 +605,35 @@ const FlightTable = () => {
         </div>
     );
 };
+const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
+    // Transforme le status
+    const formattedStatus = apiData.status;
 
+    // Log pour vérifier
+    console.log("Formatted paymentStatus:", formattedStatus);
+
+    return {
+        reference: apiData.booking_reference,
+        contactEmail: apiData.contact_email,
+        bookedOn: new Date(apiData.created_at).toLocaleDateString(),
+        paymentStatus: formattedStatus, // ici on utilise la variable loggée
+        totalPrice: `$${apiData.total_price}`,
+        typeVol: apiData.type_vol,
+        typeV: apiData.type_v,
+        adminNotes: apiData.admin_notes || "",
+
+        passengers: apiData.passengers.map((p: any) => ({
+            name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
+            email: p.email,
+            dob: p.date_of_birth,
+        })),
+
+        flights: apiData.flights.map((f: any) => ({
+            code: f.code,
+            from: f.departure_airport_name,
+            to: f.arrival_airport_name,
+            date: new Date(f.date).toLocaleString(),
+        })),
+    };
+};
 export default FlightTable;

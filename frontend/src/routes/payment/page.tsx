@@ -886,7 +886,7 @@ export default function Pay() {
         return (
             <>
             {/* SessionTimeout */}
-      <SessionTimeout />
+      {/* <SessionTimeout /> */}
                 <HeroSectionSearch />
                 <div
                     className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
