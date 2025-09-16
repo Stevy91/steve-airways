@@ -541,9 +541,11 @@ function formatDateToSQL(date?: string | Date | null): string | null {
 app.post("/api/create-ticket", async (req: Request, res: Response) => {
   const connection = await pool.getConnection();
 
+   console.log("🔵 CREATE-TICKET REQUEST RECEIVED:", JSON.stringify(req.body, null, 2));
+
   try {
     await connection.beginTransaction();
-      console.log("Transaction started");
+    console.log("✅ Transaction started");
 
 
 const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
@@ -694,12 +696,14 @@ const [bookingResult] = await connection.query<mysql.OkPacket>(
       passengerCount: passengers.length,
       paymentMethod,
     });
- } catch (error: any) {
+} catch (error: any) {
     await connection.rollback();
-    console.error("Erreur détaillée création ticket:", {
+    console.error("❌ ERREUR DÉTAILLÉE:", {
       message: error.message,
       stack: error.stack,
-      body: req.body
+      sqlMessage: error.sqlMessage, // <-- Ceci est important !
+      code: error.code,
+      sql: error.sql
     });
 
     res.status(500).json({
