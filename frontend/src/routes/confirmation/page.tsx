@@ -206,7 +206,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? "Pay Later" : "Credit/Debit Card"
                 }
 </p>
-                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Plane"}</p>
+                <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Air Plane"}</p>
                
             </div>
         <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
@@ -1147,8 +1147,8 @@ export default function BookingConfirmation() {
 
     return (
         <>
-        {/* SessionTimeout */}
-              <SessionTimeout />
+            {/* SessionTimeout */}
+            <SessionTimeout />
             <HeroSection />
             <div
                 className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
@@ -1175,7 +1175,7 @@ export default function BookingConfirmation() {
                             <div className="flex justify-between">
                                 <button
                                     onClick={() => navigate(`/${currentLang}/`)}
-                                    className="rounded-md border border-gray-300 bg-red-900 px-4 py-3 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 hover:bg-red-700"
+                                    className="rounded-md border border-gray-300 bg-red-900 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
                                 >
                                     {t("Book Another Flight")}
                                 </button>

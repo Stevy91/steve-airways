@@ -47,6 +47,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  timezone: "-04:00", // Haïti
 });
 
 
@@ -548,14 +549,13 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
     console.log("✅ Transaction started");
 
 
-const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-for (const field of requiredFields) {
-  if (!req.body[field]) {
-    console.error(`Missing field: ${field}`);
-    throw new Error(`Missing required field: ${field}`);
-  }
-}
-
+    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+    for (const field of requiredFields) {
+    if (!req.body[field]) {
+        console.error(`Missing field: ${field}`);
+        throw new Error(`Missing required field: ${field}`);
+    }
+    }
 
 
 
@@ -594,40 +594,40 @@ for (const field of requiredFields) {
     const now = new Date();
     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
     
-const depDate = formatDateToSQL(departureDate);
-const retDate = formatDateToSQL(returnDate);
-const [bookingResult] = await connection.query<mysql.OkPacket>(
-  `INSERT INTO bookings (
-    flight_id, payment_intent_id, total_price,
-    contact_email, contact_phone, status,
-    type_vol, type_v, guest_user, guest_email,
-    created_at, updated_at, departure_date,
-    return_date, passenger_count, booking_reference, return_flight_id,
-    payment_method
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  [
-    flightId,
-    'ok',
-    totalPrice,
-    contactInfo.email,
-    contactInfo.phone,
-    "confirmed",
-    typeVol,
-    typeVolV,
-    1,
-    contactInfo.email,
-    now,
-    now,
-    depDate,
-    retDate,
-    passengers.length,
-    bookingReference,
-    returnFlightId || null,
-    paymentMethod,
+    const depDate = formatDateToSQL(departureDate);
+    const retDate = formatDateToSQL(returnDate);
+    const [bookingResult] = await connection.query<mysql.OkPacket>(
+    `INSERT INTO bookings (
+        flight_id, payment_intent_id, total_price,
+        contact_email, contact_phone, status,
+        type_vol, type_v, guest_user, guest_email,
+        created_at, updated_at, departure_date,
+        return_date, passenger_count, booking_reference, return_flight_id,
+        payment_method
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+        flightId,
+        '0',
+        totalPrice,
+        contactInfo.email,
+        contactInfo.phone,
+        "confirmed",
+        typeVol,
+        typeVolV,
+        1,
+        contactInfo.email,
+        now,
+        now,
+        depDate,
+        retDate ,
+        passengers.length,
+        bookingReference,
+        returnFlightId || null,
+        paymentMethod,
 
-    
-  ],
-);
+        
+    ],
+    );
 
     // 4. Enregistrer les passagers
     for (const passenger of passengers) {

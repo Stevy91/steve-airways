@@ -1,9 +1,10 @@
-import { ChevronDown, MapPinIcon, Pencil, Ticket, Trash2 } from "lucide-react";
+import { ChevronDown, MapPinIcon, MoreVertical, Pencil, Ticket, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { useAuth } from "../../../hooks/useAuth";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
 import BookingCreatedModal from "../../../components/BookingCreatedModdal";
+import toast from "react-hot-toast";
 
 interface Flight {
     id: number;
@@ -51,12 +52,12 @@ const FlightTable = () => {
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
-     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
-      const [open, setOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
+    const [open, setOpen] = useState(false);
 
-      const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+    const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
 
-     useAuth(); 
+    useAuth();
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -66,9 +67,7 @@ const FlightTable = () => {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(flights.length / itemsPerPage);
-
-
-
+    const [menuOpen, setMenuOpen] = useState(false);
     // Fetch flights
     const fetchFlights = async () => {
         try {
@@ -132,9 +131,6 @@ const FlightTable = () => {
         }
     };
 
-
-    
-
     const toggleDropdown = (index: number) => {
         setOpenDropdown(openDropdown === index ? null : index);
     };
@@ -182,7 +178,15 @@ const FlightTable = () => {
             await fetchFlights();
 
             setShowModal(false);
-            showNotification("Vol ajouté avec succès", "success");
+
+            toast.success(`Vol ajouté avec succès`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
         } catch (err: any) {
             showNotification(err.message || "Erreur inconnue", "error");
         } finally {
@@ -213,7 +217,15 @@ const FlightTable = () => {
 
             setEditingFlight(null);
             setShowModal(false);
-            showNotification("Vol modifié avec succès", "success");
+
+            toast.success(`Vol modifié avec succès`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
         } catch (err: any) {
             console.error("❌ Erreur complète:", err);
             showNotification(err.message || "Erreur inconnue lors de la modification", "error");
@@ -228,13 +240,18 @@ const FlightTable = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Erreur suppression");
             setFlights((prev) => prev.filter((f) => f.id !== flightId));
-            showNotification("Vol supprimé", "success");
+            toast.success(`Vol supprimé`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
         } catch (err: any) {
             showNotification(err.message || "Erreur inconnue", "error");
         }
     };
-
-    
 
     return (
         <div className="p-6">
@@ -250,7 +267,7 @@ const FlightTable = () => {
 
             <div className="mb-4 flex items-center justify-between">
                 <h1 className="text-2xl font-bold">All Flight Airplane</h1>
-             
+
                 <button
                     onClick={() => {
                         setEditingFlight(null);
@@ -302,28 +319,50 @@ const FlightTable = () => {
                                         <td className="table-cell text-center">{flight.arrival}</td>
                                         <td className="table-cell text-center">${flight.price}</td>
                                         <td className="table-cell text-center">{flight.seats_available}</td>
-                                        <td className="relative px-4 py-2 table-cell text-center">
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
-                                                onClick={() => handleEditClick(flight)}
-                                            >
-                                                <Pencil className="h-4 w-4 text-blue-500" />
-                                            </button>
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                                onClick={() => deleteFlight(flight.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                            </button>
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                                onClick={() => {
-                                                  setSelectedFlight(flight)
-                                                    setOpen(true);
-                                                }}
-                                            >
-                                                <Ticket className="h-4 w-4 text-red-500" />
-                                            </button>
+                                        <td className="relative table-cell px-4 py-2 text-center">
+                                            <div className="s relative text-left">
+                                                <button
+                                                    className="inline-flex w-full justify-center gap-2 rounded px-4 py-2 text-blue-500 hover:bg-gray-100"
+                                                    onClick={() => setOpenDropdown(openDropdown === flight.id ? null : flight.id)}
+                                                >
+                                                    <MoreVertical className="h-5 w-5 text-gray-700" />
+                                                </button>
+
+                                                {openDropdown === flight.id && (
+                                                    <div className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                        <div className="py-1">
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    handleEditClick(flight);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <Pencil className="h-4 w-4 text-blue-500" /> Edit
+                                                            </button>
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    deleteFlight(flight.id);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                                                            </button>
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    setSelectedFlight(flight);
+                                                                    setOpen(true);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -339,7 +378,7 @@ const FlightTable = () => {
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className="rounded bg-blue-700 px-3 py-1 text-sm hover:bg-orange-400 disabled:bg-gray-200 text-gray-50"
+                        className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
                     >
                         Previous
                     </button>
@@ -347,19 +386,18 @@ const FlightTable = () => {
                     <button
                         onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="rounded bg-blue-700 px-3 py-1 text-sm hover:bg-orange-400 disabled:bg-gray-200 text-gray-50"
+                        className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
                     >
                         Next
                     </button>
                 </div>
             </div>
 
-     <BookingCreatedModal
-  open={open}
-  onClose={() => setOpen(false)}
-  flight={selectedFlight!} 
-/>
-
+            <BookingCreatedModal
+                open={open}
+                onClose={() => setOpen(false)}
+                flight={selectedFlight!}
+            />
 
             {/* Modal Add/Edit */}
             {showModal && (
@@ -545,7 +583,6 @@ const FlightTable = () => {
                                 defaultValue={formatDateForInput(editingFlight?.departure || "")}
                                 className="w-full rounded-full border px-3 py-2"
                                 required
-                                
                             />
 
                             <input

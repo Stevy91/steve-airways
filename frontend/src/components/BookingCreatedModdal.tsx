@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import toast from "react-hot-toast";
+import { format, parseISO, isValid, parse } from "date-fns";
+
+const SENDER_EMAIL = "info@kashpaw.com"; // adresse "from"
 
 type Flight = {
     id: number;
@@ -36,6 +40,210 @@ type Passenger = {
     email?: string;
 };
 
+type BookingData = {
+    from: string;
+    to: string;
+    fromCity?: string;
+    toCity?: string;
+    outbound: any;
+    return?: any;
+    passengersData: {
+        adults: Passenger[];
+        children?: Passenger[];
+        infants?: Passenger[];
+    };
+    tabType?: string;
+    totalPrice: number;
+};
+
+const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
+    const outboundFlight = bookingData.outbound;
+    const returnFlight = bookingData.return;
+    const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
+
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return "N/A";
+        const parsedDate = parseISO(dateString);
+        if (!isValid(parsedDate)) return "Invalid date";
+        return format(parsedDate, "EEE, dd MMM");
+    };
+
+    const formatDateToday = () => format(new Date(), "EEE, dd MMM");
+
+    const [departureDate, departureTime] = outboundFlight.departure_time.split(" ");
+    // Convertir DD/MM/YYYY en Date object
+    const parsedDepartureDate = parse(departureDate, "dd/MM/yyyy", new Date());
+
+    const formattedDate = format(parsedDepartureDate, "EEE, dd MMM");
+    const [arrivalDate, arrivalTime] = outboundFlight.arrival_time.split(" ");
+
+    return `
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
+        .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+        .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .passenger-table th { background-color: #f2f2f2; }
+        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+    </style>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+        <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
+        <p style="margin: 5px 0 0; font-size: 1.2em;">Your Booking is Confirmed</p>
+      </div>
+
+      <div style="padding: 20px;">
+        <p>Dear, ${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`).join(", ")}</p>
+        <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
+      </div>
+
+      <!-- E-Ticket Section -->
+      <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
+        <div style="padding: 20px; text-align: center;">
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${
+              paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? "Pay Later" : "Credit/Debit Card"
+          }</p>
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
+              bookingData.tabType === "helicopter" ? "Helicopter" : "Air Plane"
+          }</p>
+        </div>
+
+        <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+          <table width="100%" style="border-collapse: collapse;">
+            <tr> 
+              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
+                <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Boarding Pass</span>
+              </td>
+              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+                <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="2" style="padding-top: 20px;">
+                <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
+                <table width="100%">
+                  <tr>
+                    <td>
+                      <div class="flight-card">
+                        <div class="flight-header">Outbound Flight</div>
+                        <div class="flight-details">
+                          <div>
+                            <strong>From:</strong> ${bookingData.from}<br>
+                            <strong>To:</strong> ${bookingData.to}<br>
+                            <strong>Date:</strong> ${formattedDate}
+                          </div>
+                          <div>
+                            <strong>Departure:</strong> ${departureTime}<br>
+                            <strong>Arrival:</strong> ${arrivalTime}<br>
+                            <strong>Flight Number:</strong> ${outboundFlight.noflight}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="text-align: right;">
+                      ${
+                          returnFlight
+                              ? `
+                          <div class="flight-card">
+                            <div class="flight-header">Return Flight</div>
+                            <div class="flight-details">
+                              <div>
+                                <strong>From:</strong> ${bookingData.toCity} (${bookingData.to})<br>
+                                <strong>To:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
+                                <strong>Date:</strong> ${formatDate(returnFlight.date)}
+                              </div>
+                              <div>
+                                <strong>Departure:</strong> ${returnFlight.departure_time}<br>
+                                <strong>Arrival:</strong> ${returnFlight.arrival_time}<br>
+                                <strong>Flight Number:</strong> ${returnFlight.noflight}
+                              </div>
+                            </div>
+                          </div>`
+                              : ""
+                      }
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passengers</h3>
+                <p style="margin: 0;">${bookingData.passengersData?.adults
+                    ?.map((p: Passenger) => `Adult: ${p.firstName} ${p.lastName}&nbsp;&nbsp;&nbsp;&nbsp;${p.email}`)
+                    .join("<br>")}</p>
+               
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <table width="100%">
+                  <tr>
+                    <td>
+                      <h3 style="color: #1A237E; margin: 0;">Booking Details</h3>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking ID:</strong> ${bookingReference}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Booking Date:</strong> ${formatDateToday()}</p>
+                    </td>
+                    <td style="text-align: right;">
+                      <h3 style="color: #1A237E; margin: 0;">Payment</h3>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>${
+                          paymentMethod === "paypal" ? "Paid" : paymentMethod === "paylater" ? "Unpaid" : "Paid"
+                      }</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <!-- End E-Ticket Section -->
+
+      <div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+        <p>We look forward to welcoming you on board.</p>
+        <p>Sincerely,<br>The Trogon Airways Team</p>
+      </div>
+    </div>
+  `;
+};
+
+const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string, paymentMethod: string) => {
+    const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4"; // ou process.env.SMTP2GO_API_KEY
+    const recipientEmail = bookingData.passengersData.adults[0].email;
+
+    const emailContent = generateEmailContent(bookingData, bookingReference, paymentMethod);
+
+    const payload = {
+        api_key: apiKey,
+        to: [recipientEmail],
+        sender: SENDER_EMAIL,
+        subject: `Your Trogon Airways E-Ticket - Booking ID: ${bookingReference}`,
+        html_body: emailContent,
+    };
+
+    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(`Failed to send email: ${data?.error || JSON.stringify(data)}`);
+    }
+    console.log("✅ Email sent", data);
+};
+
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight }) => {
     const [formData, setFormData] = useState({
         firstName: "",
@@ -60,133 +268,118 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-const handleSubmit = async () => {
-  // Validation côté front
-  if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-    alert("Veuillez remplir les champs obligatoires : Prénom, Nom, Email, Téléphone");
-    return;
-  }
+    const handleSubmit = async () => {
+        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
+            toast.error(`Veuillez remplir tous les champs obligatoires`, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+            });
+            return;
+        }
 
-  // Fonction pour extraire et formater les dates
-  const extractDate = (dateString: any): string | null => {
-    if (!dateString) return null;
-    
-    console.log("Extracting date from:", dateString);
-    
-    // 1. Format DD/MM/YYYY (comme "15/09/2025 22:30")
-    if (typeof dateString === 'string') {
-      // Essaye d'abord le format DD/MM/YYYY
-      const ddMmYyyyMatch = dateString.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-      if (ddMmYyyyMatch) {
-        const [_, day, month, year] = ddMmYyyyMatch;
-        return `${year}-${month}-${day}`;
-      }
-      
-      // Essaye le format YYYY-MM-DD
-      const yyyyMmDdMatch = dateString.match(/(\d{4})-(\d{2})-(\d{2})/);
-      if (yyyyMmDdMatch) {
-        return yyyyMmDdMatch[0];
-      }
-    }
-    
-    // 2. Fallback: parsing avec Date object
-    try {
-      const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0]; // YYYY-MM-DD
-      }
-    } catch (error) {
-      console.error("Error parsing date:", error);
-    }
-    
-    return null;
-  };
+        const passengers: Passenger[] = [];
+        for (let i = 0; i < Number(formData.passengerCount); i++) {
+            passengers.push({
+                firstName: formData.firstName,
+                middleName: formData.middleName,
+                lastName: formData.lastName,
+                dateOfBirth: formData.dateOfBirth,
+                gender: formData.gender,
+                title: formData.title,
+                address: formData.address,
+                type: "adult",
+                typeVol: flight?.type || "plane",
+                typeVolV: "onway",
+                country: formData.country,
+                nationality: formData.nationality,
+                phone: formData.phone,
+                email: formData.email,
+            });
+        }
 
-  // Extraire les dates
-  const departureDateFormatted = extractDate(flight.departure);
-  const returnDateFormatted = extractDate(formData.returnDate);
+        const body = {
+            flightId: flight.id,
+            passengers,
+            contactInfo: { email: formData.email, phone: formData.phone },
+            totalPrice: flight.price * Number(formData.passengerCount),
+            departureDate: flight.departure.split("T")[0],
+            returnDate: formData.returnDate,
+            paymentMethod: formData.paymentMethod,
+        };
 
-  console.log("Formatted dates - departure:", departureDateFormatted, "return:", returnDateFormatted);
+        try {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
 
-  // Vérifier que la date de départ est valide
-  if (!departureDateFormatted) {
-    alert("Impossible de déterminer la date de départ. Veuillez contacter l'administrateur.");
-    return;
-  }
+            const data = await res.json();
+            if (res.ok && data.success) {
+                toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+                    style: {
+                        background: "#28a745",
+                        color: "#fff",
+                        border: "1px solid #1e7e34",
+                    },
+                    iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+                });
 
-  // Vérifier que la date de retour est après la date de départ
-  if (returnDateFormatted) {
-    const depDate = new Date(departureDateFormatted);
-    const retDate = new Date(returnDateFormatted);
-    
-    if (retDate < depDate) {
-      alert("La date de retour doit être égale ou supérieure à la date de départ.");
-      return;
-    }
-  }
+                // Envoi du mail
+                await sendTicketByEmail(
+                    {
+                        from: flight.from || "",
+                        to: flight.to || "",
+                        outbound: {
+                            date: flight.departure,
+                            noflight: flight.flight_number,
+                            departure_time: flight.departure,
+                            arrival_time: flight.arrival,
+                        },
+                        passengersData: { adults: passengers },
+                        totalPrice: body.totalPrice,
+                    },
+                    data.bookingReference,
+                    formData.paymentMethod,
+                );
 
-  // Création des passagers
-  const passengers: Passenger[] = [];
-  for (let i = 0; i < Number(formData.passengerCount); i++) {
-    passengers.push({
-      firstName: formData.firstName,
-      middleName: formData.middleName,
-      lastName: formData.lastName,
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      title: formData.title,
-      address: formData.address,
-      type: "adult",
-      typeVol: flight?.type || "plane",
-      typeVolV: "onway",
-      country: formData.country,
-      nationality: formData.nationality,
-      phone: formData.phone,
-      email: formData.email,
-    });
-  }
-
-  const body = {
-    flightId: flight!.id,
-    passengers,
-    contactInfo: {
-      email: formData.email,
-      phone: formData.phone,
-    },
-    totalPrice: flight!.price * Number(formData.passengerCount),
-    departureDate: departureDateFormatted,
-    returnDate: returnDateFormatted,
-    paymentMethod: formData.paymentMethod,
-  };
-
-  console.log("Form data being sent:", body);
-
-  try {
-    const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-      alert(`✅ Ticket créé avec succès ! Référence: ${data.bookingReference}`);
-      onClose();
-    } else {
-      alert("❌ Erreur: " + (data.details || data.error));
-    }
-  } catch (err) {
-    console.error(err);
-    alert("❌ Impossible de créer le ticket.");
-  }
-};
+                onClose();
+            } else {
+                toast.error(`Impossible de créer le ticket pas de place`, {
+                    style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
+                    },
+                    iconTheme: {
+                        primary: "#fff",
+                        secondary: "#dc2626",
+                    },
+                });
+            }
+        } catch (err) {
+            toast.error(`Impossible de créer le ticket pas de place`, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: {
+                    primary: "#fff",
+                    secondary: "#dc2626",
+                },
+            });
+        }
+    };
 
     return (
         <AnimatePresence>
             {open && (
                 <div className="fixed inset-0 z-50">
-                    {/* Backdrop */}
                     <motion.div
                         className="absolute inset-0 bg-black/50"
                         initial={{ opacity: 0 }}
@@ -194,8 +387,6 @@ const handleSubmit = async () => {
                         exit={{ opacity: 0 }}
                         onClick={onClose}
                     />
-
-                    {/* Dialog */}
                     <motion.div
                         role="dialog"
                         aria-modal="true"
@@ -205,7 +396,6 @@ const handleSubmit = async () => {
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                     >
                         <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-                            {/* Close button */}
                             <button
                                 onClick={onClose}
                                 className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -214,7 +404,6 @@ const handleSubmit = async () => {
                                 <X className="h-5 w-5" />
                             </button>
 
-                            {/* Header */}
                             <div className="px-6 pt-6">
                                 <h2 className="text-xl font-semibold text-slate-800">Créer un Ticket pour le vol {flight.flight_number}</h2>
                                 <p className="text-sm text-slate-500">
@@ -224,107 +413,222 @@ const handleSubmit = async () => {
 
                             <div className="my-4 h-px w-full bg-slate-100" />
 
-                            {/* Body */}
-                            <div className="space-y-4 px-6 pb-6">
-                                {/** Input fields */}
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    placeholder="Prénom"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="text"
-                                    name="middleName"
-                                    placeholder="Deuxième prénom"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    placeholder="Nom"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="date"
-                                    name="dateOfBirth"
-                                    placeholder="Date de naissance"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="text"
-                                    name="address"
-                                    placeholder="Adresse"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="text"
-                                    name="country"
-                                    placeholder="Pays"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="text"
-                                    name="nationality"
-                                    placeholder="Nationalité"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Email"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="text"
-                                    name="phone"
-                                    placeholder="Téléphone"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="number"
-                                    name="passengerCount"
-                                    min="1"
-                                    defaultValue={1}
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
-                                <input
-                                    type="date"
-                                    name="returnDate"
-                                    placeholder="Date retour"
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                />
+                            <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-2">
+                                {/* Prénom */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="firstName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Prénom
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="firstName"
+                                        name="firstName"
+                                        placeholder="Prénom"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
 
-                                {/** Select */}
-                                <select
-                                    name="paymentMethod"
-                                    value={formData.paymentMethod}
-                                    onChange={handleChange}
-                                    className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                                >
-                                    <option value="cash">Cash</option>
-                                    <option value="card">Carte</option>
-                                    <option value="cheque">Chèque</option>
-                                </select>
+                                {/* Deuxième prénom */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="middleName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Deuxième prénom
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="middleName"
+                                        name="middleName"
+                                        placeholder="Deuxième prénom"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
 
-                                {/** Submit button */}
-                                <button
-                                    onClick={handleSubmit}
-                                    className="w-full rounded-md bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-                                >
-                                    Confirmer et Créer le Ticket
-                                </button>
+                                {/* Nom */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="lastName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Nom
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="lastName"
+                                        name="lastName"
+                                        placeholder="Nom"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                                {/* Date de naissance */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="dateOfBirth"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Date de naissance
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="dateOfBirth"
+                                        name="dateOfBirth"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                                {/* Adresse */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="address"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Adresse
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="address"
+                                        name="address"
+                                        placeholder="Adresse"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                                {/* Pays */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="country"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Pays
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="country"
+                                        name="country"
+                                        placeholder="Pays"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                                {/* Nationalité */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="nationality"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Nationalité
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="nationality"
+                                        name="nationality"
+                                        placeholder="Nationalité"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                                {/* Email */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="email"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        placeholder="Email"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="phone"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Téléphone
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="phone"
+                                        name="phone"
+                                        placeholder="Téléphone"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                               
+                                <div className="flex flex-col">
+                                   {/* Méthode de paiement */}
+                                   <label
+                                        htmlFor="paymentMethod"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Méthode de paiement
+                                    </label>
+                                    <select
+                                        id="paymentMethod"
+                                        name="paymentMethod"
+                                        value={formData.paymentMethod}
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    >
+                                        <option value="cash">Cash</option>
+                                        <option value="card">Carte</option>
+                                        <option value="cheque">Chèque</option>
+                                    </select>
+                                    {/* Nombre de passagers */}
+                                    <input
+                                        type="hidden"
+                                        id="passengerCount"
+                                        name="passengerCount"
+                                        min="1"
+                                        defaultValue={1}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                    />
+                                </div>
+
+                               
+
+
+                                {/* Bouton */}
+                                <div className="md:col-span-2">
+                                    <button
+                                        onClick={handleSubmit}
+                                        className="w-full rounded-md bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
+                                    >
+                                        Confirmer et Créer le Ticket
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
