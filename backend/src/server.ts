@@ -629,37 +629,7 @@ const [bookingResult] = await connection.query<mysql.OkPacket>(
   ],
 );
 
-    // 4. Enregistrer les passagers
-    for (const passenger of passengers) {
-      await connection.query(
-        `INSERT INTO passengers (
-          booking_id, first_name, middle_name, last_name,
-          date_of_birth, gender, title, address, type,
-          type_vol, type_v, country, nationality,
-          phone, email, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          bookingResult.insertId,
-          passenger.firstName,
-          passenger.middleName || null,
-          passenger.lastName,
-          passenger.dateOfBirth || null,
-          passenger.gender || "other",
-          passenger.title || "Mr",
-          passenger.address || null,
-          passenger.type,
-          passenger.typeVol || "plane",
-          passenger.typeVolV || "onway",
-          passenger.country,
-          passenger.nationality || null,
-          passenger.phone || contactInfo.phone,
-          passenger.email || contactInfo.email,
-          now,
-          now,
-        ],
-      );
-    }
-
+   
     // 5. Mise à jour des sièges
     for (const flight of flights) {
       await connection.execute(
