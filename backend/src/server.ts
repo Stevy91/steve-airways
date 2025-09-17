@@ -607,7 +607,7 @@ const [bookingResult] = await connection.query<mysql.OkPacket>(
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   [
     flightId,
-    null,
+    'dgfdgd',
     totalPrice,
     contactInfo.email,
     contactInfo.phone,
