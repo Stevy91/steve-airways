@@ -943,7 +943,7 @@ function formatDateToSQL(date?: string | Date | null): string | null {
 app.post("/api/create-ticket", async (req: Request, res: Response) => {
   const connection = await pool.getConnection();
 
-  console.log("🔵 CREATE-TICKET REQUEST RECEIVED:", JSON.stringify(req.body, null, 2));
+
 
   try {
     await connection.beginTransaction();
@@ -1016,8 +1016,8 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
         contactInfo.email,
         now,
         now,
-        depDate,
-        retDate,
+        departureDate,
+        returnDate,
         passengers.length,
         bookingReference,
         returnFlightId || null,
