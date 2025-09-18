@@ -1917,7 +1917,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
     }
 });
 
-app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
+ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
     let connection;
     try {
     
