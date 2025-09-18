@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays, PlaneIcon, PlaneTakeoff, PlaneLanding, AlertCircle } from "lucide-react";
 import { Icon } from "@iconify/react";
-import { addDays, isSameDay, parseISO, format, isBefore } from "date-fns";
+import { addDays, isSameDay, parseISO, format, isBefore,  } from "date-fns";
 import DateCarousel from "../../components/DateCarousel";
 import FlightCard from "../../components/FlightCard";
 import FlightDetail from "../../components/FlightDetail";
@@ -15,6 +15,7 @@ import { HeroSection } from "../../layouts/HeroSection";
 import CalendarModal from "../../components/Calendarmodal";
 import { HeroSectionSearch } from "../../layouts/HeroSectionSearch";
 import SessionTimeout from "../../components/SessionTimeout";
+import { toZonedTime } from "date-fns-tz";
 
 type FlightType = "plane" | "helicopter";
 
@@ -170,39 +171,75 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 
 
 
-const formatDate = (isoString: string) => {
-  return isoString.split("T")[0]; // yyyy-MM-dd
+// const formatDate = (isoString: string) => {
+//   return isoString.split("T")[0]; // yyyy-MM-dd
+// };
+
+// const formatTime = (isoString: string) => {
+//   const timePart = isoString.split("T")[1]; // "18:41:00.000Z" ou "18:41:00"
+//   if (!timePart) return "—";
+//   return timePart.slice(0, 5); // "18:41"
+// };
+
+
+// const mapFlight = (flight: any, locations: Location[]): Flight => {
+//         const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+//     const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+    
+// //   const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
+// //   const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
+
+// return {
+//   id: flight.id,
+//   from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
+//   to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
+//   date: formatDate(flight.departure_time),
+//   departure_time: formatTime(flight.departure_time),
+//   arrival_time: formatTime(flight.arrival_time),
+//   time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`, // ✅ pas de décalage
+//   type: flight.type,
+//   price: Number(flight.price),
+//   seat: flight.seats_available.toString(),
+//   noflight: flight.flight_number,
+// };
+
+// }
+
+
+
+
+
+const timeZone = "America/Port-au-Prince";
+
+const convertToHaitiTime = (isoString: string): Date => {
+  const date = parseISO(isoString);
+  return toZonedTime(date, timeZone);
 };
 
-const formatTime = (isoString: string) => {
-  const timePart = isoString.split("T")[1]; // "18:41:00.000Z" ou "18:41:00"
-  if (!timePart) return "—";
-  return timePart.slice(0, 5); // "18:41"
-};
-
+const formatDate = (isoString: string) => format(convertToHaitiTime(isoString), "yyyy-MM-dd");
+const formatTime = (isoString: string) => format(convertToHaitiTime(isoString), "HH:mm");
 
 const mapFlight = (flight: any, locations: Location[]): Flight => {
-        const depLoc = locations.find((l) => l.id === flight.departure_location_id);
-    const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
-    
-//   const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
-//   const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
+  const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+  const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
 
-return {
-  id: flight.id,
-  from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
-  to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
-  date: formatDate(flight.departure_time),
-  departure_time: formatTime(flight.departure_time),
-  arrival_time: formatTime(flight.arrival_time),
-  time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`, // ✅ pas de décalage
-  type: flight.type,
-  price: Number(flight.price),
-  seat: flight.seats_available.toString(),
-  noflight: flight.flight_number,
+  return {
+    id: flight.id,
+    from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
+    to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
+    date: formatDate(flight.departure_time),
+    departure_time: formatTime(flight.departure_time),
+    arrival_time: formatTime(flight.arrival_time),
+    time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`,
+    type: flight.type,
+    price: Number(flight.price),
+    seat: flight.seats_available.toString(),
+    noflight: flight.flight_number,
+  };
 };
 
-}
+
+
 export default function FlightSelection() {
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang
@@ -1017,3 +1054,7 @@ export default function FlightSelection() {
         );
     }
 }
+function utcToZonedTime(isoString: string, timeZone: string) {
+    throw new Error("Function not implemented.");
+}
+

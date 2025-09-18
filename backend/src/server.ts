@@ -47,7 +47,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-timezone: "-04:00", // Haïti
+
 });
 
 
@@ -410,135 +410,229 @@ app.get("/api/flightall", async (req: Request, res: Response) => {
 // });
 
 
-import { format, toZonedTime } from "date-fns-tz";
+// import { format, toZonedTime } from "date-fns-tz";
+
+// app.get("/api/flights", async (req: Request, res: Response) => {
+//     try {
+//         const {
+//             from,
+//             to,
+//             date,
+//             tab: type,
+//         } = req.query as {
+//             from: string;
+//             to: string;
+//             date: string;
+//             tab: string;
+//         };
+
+//         // Validation des paramètres
+//         if (!from || !to || !date || !type) {
+//             return res.status(400).json({
+//                 error: "Paramètres manquants",
+//                 required: ["from", "to", "date", "tab"],
+//                 received: { from, to, date, type },
+//             });
+//         }
+
+//         const validTypes = ["plane", "helicopter"];
+//         if (!validTypes.includes(type)) {
+//             return res.status(400).json({
+//                 error: "Type invalide",
+//                 validTypes,
+//                 received: type,
+//             });
+//         }
+
+//         // Vérification des aéroports
+//         const [departureAirport] = await pool.query<Location[]>(
+//             "SELECT id FROM locations WHERE code = ?",
+//             [from]
+//         );
+//         const [arrivalAirport] = await pool.query<Location[]>(
+//             "SELECT id FROM locations WHERE code = ?",
+//             [to]
+//         );
+
+//         if (departureAirport.length === 0 || arrivalAirport.length === 0) {
+//             return res.status(404).json({ error: "Aéroport non trouvé" });
+//         }
+
+//         // Requête principale
+//         const [flights] = await pool.query<Flight[]>(
+//             `SELECT f.*, 
+//                     dep.code as departure_code, 
+//                     arr.code as arrival_code
+//              FROM flights f
+//              JOIN locations dep ON f.departure_location_id = dep.id
+//              JOIN locations arr ON f.arrival_location_id = arr.id
+//              WHERE dep.code = ? 
+//              AND arr.code = ? 
+//              AND f.type = ?
+//              AND DATE(f.departure_time) = ?
+//              ORDER BY f.departure_time`,
+//             [from, to, type, date]
+//         );
+
+//         // 🔥 Conversion en timezone Haïti
+//         const timeZone = "America/Port-au-Prince";
+//         const flightsWithTZ = flights.map((f) => ({
+//             ...f,
+//             departure_time: format(
+//                 toZonedTime(f.departure_time, timeZone),
+//                 "yyyy-MM-dd HH:mm:ssXXX",
+//                 { timeZone }
+//             ),
+//             arrival_time: format(
+//                 toZonedTime(f.arrival_time, timeZone),
+//                 "yyyy-MM-dd HH:mm:ssXXX",
+//                 { timeZone }
+//             ),
+//         }));
+
+//         // Gestion des vols retour
+//         if (req.query.return_date) {
+//             const returnDate = req.query.return_date as string;
+
+//             const [returnFlights] = await pool.query<Flight[]>(
+//                 `SELECT f.*, 
+//                         dep.code as departure_code, 
+//                         arr.code as arrival_code
+//                  FROM flights f
+//                  JOIN locations dep ON f.departure_location_id = dep.id
+//                  JOIN locations arr ON f.arrival_location_id = arr.id
+//                  WHERE dep.code = ? 
+//                  AND arr.code = ? 
+//                  AND f.type = ?
+//                  AND DATE(f.departure_time) = ?
+//                  ORDER BY f.departure_time`,
+//                 [to, from, type, returnDate]
+//             );
+
+//             const returnFlightsWithTZ = returnFlights.map((f) => ({
+//                 ...f,
+//                 departure_time: format(
+//                     toZonedTime(f.departure_time, timeZone),
+//                     "yyyy-MM-dd HH:mm:ssXXX",
+//                     { timeZone }
+//                 ),
+//                 arrival_time: format(
+//                     toZonedTime(f.arrival_time, timeZone),
+//                     "yyyy-MM-dd HH:mm:ssXXX",
+//                     { timeZone }
+//                 ),
+//             }));
+
+//             return res.json({
+//                 outbound: flightsWithTZ,
+//                 return: returnFlightsWithTZ,
+//             });
+//         }
+
+//         res.json(flightsWithTZ);
+//     } catch (err) {
+//         console.error("Erreur:", err);
+//         res.status(500).json({
+//             error: "Erreur serveur",
+//             details: err instanceof Error ? err.message : String(err),
+//         });
+//     }
+// });
+
+
 
 app.get("/api/flights", async (req: Request, res: Response) => {
-    try {
-        const {
-            from,
-            to,
-            date,
-            tab: type,
-        } = req.query as {
-            from: string;
-            to: string;
-            date: string;
-            tab: string;
-        };
+  try {
+    const { from, to, date, tab: type } = req.query as {
+      from: string;
+      to: string;
+      date: string;
+      tab: string;
+    };
 
-        // Validation des paramètres
-        if (!from || !to || !date || !type) {
-            return res.status(400).json({
-                error: "Paramètres manquants",
-                required: ["from", "to", "date", "tab"],
-                received: { from, to, date, type },
-            });
-        }
-
-        const validTypes = ["plane", "helicopter"];
-        if (!validTypes.includes(type)) {
-            return res.status(400).json({
-                error: "Type invalide",
-                validTypes,
-                received: type,
-            });
-        }
-
-        // Vérification des aéroports
-        const [departureAirport] = await pool.query<Location[]>(
-            "SELECT id FROM locations WHERE code = ?",
-            [from]
-        );
-        const [arrivalAirport] = await pool.query<Location[]>(
-            "SELECT id FROM locations WHERE code = ?",
-            [to]
-        );
-
-        if (departureAirport.length === 0 || arrivalAirport.length === 0) {
-            return res.status(404).json({ error: "Aéroport non trouvé" });
-        }
-
-        // Requête principale
-        const [flights] = await pool.query<Flight[]>(
-            `SELECT f.*, 
-                    dep.code as departure_code, 
-                    arr.code as arrival_code
-             FROM flights f
-             JOIN locations dep ON f.departure_location_id = dep.id
-             JOIN locations arr ON f.arrival_location_id = arr.id
-             WHERE dep.code = ? 
-             AND arr.code = ? 
-             AND f.type = ?
-             AND DATE(f.departure_time) = ?
-             ORDER BY f.departure_time`,
-            [from, to, type, date]
-        );
-
-        // 🔥 Conversion en timezone Haïti
-        const timeZone = "America/Port-au-Prince";
-        const flightsWithTZ = flights.map((f) => ({
-            ...f,
-            departure_time: format(
-                toZonedTime(f.departure_time, timeZone),
-                "yyyy-MM-dd HH:mm:ssXXX",
-                { timeZone }
-            ),
-            arrival_time: format(
-                toZonedTime(f.arrival_time, timeZone),
-                "yyyy-MM-dd HH:mm:ssXXX",
-                { timeZone }
-            ),
-        }));
-
-        // Gestion des vols retour
-        if (req.query.return_date) {
-            const returnDate = req.query.return_date as string;
-
-            const [returnFlights] = await pool.query<Flight[]>(
-                `SELECT f.*, 
-                        dep.code as departure_code, 
-                        arr.code as arrival_code
-                 FROM flights f
-                 JOIN locations dep ON f.departure_location_id = dep.id
-                 JOIN locations arr ON f.arrival_location_id = arr.id
-                 WHERE dep.code = ? 
-                 AND arr.code = ? 
-                 AND f.type = ?
-                 AND DATE(f.departure_time) = ?
-                 ORDER BY f.departure_time`,
-                [to, from, type, returnDate]
-            );
-
-            const returnFlightsWithTZ = returnFlights.map((f) => ({
-                ...f,
-                departure_time: format(
-                    toZonedTime(f.departure_time, timeZone),
-                    "yyyy-MM-dd HH:mm:ssXXX",
-                    { timeZone }
-                ),
-                arrival_time: format(
-                    toZonedTime(f.arrival_time, timeZone),
-                    "yyyy-MM-dd HH:mm:ssXXX",
-                    { timeZone }
-                ),
-            }));
-
-            return res.json({
-                outbound: flightsWithTZ,
-                return: returnFlightsWithTZ,
-            });
-        }
-
-        res.json(flightsWithTZ);
-    } catch (err) {
-        console.error("Erreur:", err);
-        res.status(500).json({
-            error: "Erreur serveur",
-            details: err instanceof Error ? err.message : String(err),
-        });
+    // Validation des paramètres
+    if (!from || !to || !date || !type) {
+      return res.status(400).json({
+        error: "Paramètres manquants",
+        required: ["from", "to", "date", "tab"],
+        received: { from, to, date, type },
+      });
     }
-});
 
+    const validTypes = ["plane", "helicopter"];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        error: "Type invalide",
+        validTypes,
+        received: type,
+      });
+    }
+
+    // Vérification des aéroports
+    const [departureAirport] = await pool.query<Location[]>(
+      "SELECT id FROM locations WHERE code = ?",
+      [from]
+    );
+    const [arrivalAirport] = await pool.query<Location[]>(
+      "SELECT id FROM locations WHERE code = ?",
+      [to]
+    );
+
+    if (departureAirport.length === 0 || arrivalAirport.length === 0) {
+      return res.status(404).json({ error: "Aéroport non trouvé" });
+    }
+
+    // 🔹 Intervalle pour attraper tous les vols de la journée
+    const startOfDay = `${date} 00:00:00`;
+    const endOfDay = `${date} 23:59:59`;
+
+    const [flights] = await pool.query<Flight[]>(
+      `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
+       FROM flights f
+       JOIN locations dep ON f.departure_location_id = dep.id
+       JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE dep.code = ? 
+         AND arr.code = ? 
+         AND f.type = ?
+         AND f.departure_time BETWEEN ? AND ?
+       ORDER BY f.departure_time`,
+      [from, to, type, startOfDay, endOfDay]
+    );
+
+    // 🔹 Vols retour si return_date présent
+    if (req.query.return_date) {
+      const returnDate = req.query.return_date as string;
+      const startReturn = `${returnDate} 00:00:00`;
+      const endReturn = `${returnDate} 23:59:59`;
+
+      const [returnFlights] = await pool.query<Flight[]>(
+        `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
+         FROM flights f
+         JOIN locations dep ON f.departure_location_id = dep.id
+         JOIN locations arr ON f.arrival_location_id = arr.id
+         WHERE dep.code = ? 
+           AND arr.code = ? 
+           AND f.type = ?
+           AND f.departure_time BETWEEN ? AND ?
+         ORDER BY f.departure_time`,
+        [to, from, type, startReturn, endReturn]
+      );
+
+      return res.json({
+        outbound: flights,
+        return: returnFlights,
+      });
+    }
+
+    res.json(flights);
+  } catch (err) {
+    console.error("Erreur:", err);
+    res.status(500).json({
+      error: "Erreur serveur",
+      details: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
 
 
 // Endpoint pour récupérer les locations
