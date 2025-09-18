@@ -208,6 +208,8 @@ const convertToHaitiTime = (isoString: string): Date => {
   return toZonedTime(date, timeZone);
 };
 
+
+
 const formatDate = (isoString: string) => format(convertToHaitiTime(isoString), "yyyy-MM-dd");
 const formatTime = (isoString: string) => format(convertToHaitiTime(isoString), "HH:mm");
 
@@ -824,7 +826,7 @@ export default function FlightSelection() {
                         />
                         {booking.showOutboundSelection ? (
                             <>
-                                <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
+                                <div className="mb-6 mt-8 flex items-center gap-2 bg-blue-100 px-4 py-2">
                                     <button
                                         className="p-2 disabled:opacity-30"
                                         onClick={handlePrevClick}
@@ -909,7 +911,7 @@ export default function FlightSelection() {
 
                                 {booking.showReturnSelection ? (
                                     <>
-                                        <div className="mb-6 mt-8 flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2">
+                                        <div className="mb-6 mt-8 flex items-center gap-2  bg-blue-100 px-4 py-2">
                                             <button
                                                 className="p-2 disabled:opacity-30"
                                                 onClick={handleReturnPrevClick}

@@ -5,7 +5,8 @@ import { useAuth } from "../../../hooks/useAuth";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
 import BookingCreatedModal from "../../../components/BookingCreatedModdal";
 import toast from "react-hot-toast";
-import { parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 interface Flight {
     id: number;
@@ -253,10 +254,24 @@ const FlightTable = () => {
             showNotification(err.message || "Erreur inconnue", "error");
         }
     };
-    const formatDateTime = (dateTimeStr: string) => {
-  if (!dateTimeStr) return "N/A";
-  const parsed = parseISO(dateTimeStr.replace(" ", "T")); // transformer en ISO pour parseISO
-  return format(parsed, "dd/MM/yyyy HH:mm");
+// 🔹 Fuseau Haïti
+const formatDateForDisplay = (mysqlDate?: string | null) => {
+  if (!mysqlDate) return "—"; // pas de valeur
+
+  try {
+    const [datePart, timePart] = mysqlDate.split(" ");
+    if (!datePart || !timePart) return "—";
+
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute, second] = timePart.split(":").map(Number);
+
+    if ([year, month, day, hour, minute, second].some(isNaN)) return "—";
+
+    const d = new Date(year, month - 1, day, hour, minute, second);
+    return format(d, "dd/MM/yyyy HH:mm");
+  } catch {
+    return "—";
+  }
 };
 
     return (
@@ -321,8 +336,8 @@ const FlightTable = () => {
                                         <td className="table-cell text-center">{flight.airline}</td>
                                         <td className="table-cell text-center">{flight.from}</td>
                                         <td className="table-cell text-center">{flight.to}</td>
-                                        <td className="table-cell text-center">{flight.departure}</td>
-                                        <td className="table-cell text-center">{flight.arrival}</td>
+                                        <td className="table-cell text-center">{formatDateForDisplay(flight.departure)}</td>
+                                        <td className="table-cell text-center">{formatDateForDisplay(flight.arrival)}</td>
                                         <td className="table-cell text-center">${flight.price}</td>
                                         <td className="table-cell text-center">{flight.seats_available}</td>
                                         <td className="relative table-cell px-4 py-2 text-center">
