@@ -45,7 +45,8 @@ export default function FlightDetail({ flight, onBookNow, passengers, isReturnFl
                 style: {
                         background: "#fee2e2",
                         color: "#991b1b",
-                        border:"1px solid #f87171"
+                        border:"1px solid #f87171",
+                        
                     },
                     iconTheme: {
                         primary: "#fff",

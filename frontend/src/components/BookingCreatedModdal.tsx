@@ -362,17 +362,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 });
             }
         } catch (err) {
-            toast.error(`Impossible de créer le ticket pas de place`, {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: {
-                    primary: "#fff",
-                    secondary: "#dc2626",
-                },
-            });
+            console.error(err);
+            alert("❌ Impossible de créer le ticket.");
         }
     };
 

@@ -120,17 +120,29 @@ const FlightTable = () => {
         return location ? location.id.toString() : "";
     };
 
-    // Fonction pour formater la date pour datetime-local
-    const formatDateForInput = (dateString: string) => {
-        if (!dateString) return "";
-        try {
-            // Convertir le format "DD/MM/YYYY HH:MM" en "YYYY-MM-DDTHH:MM"
-            const [datePart, timePart] = dateString.split(" ");
-            const [day, month, year] = datePart.split("/");
-            return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${timePart}`;
-        } catch {
-            return "";
+    // MySQL DATETIME -> format input datetime-local
+    const formatDateForInput = (dateInput?: string | Date) => {
+        if (!dateInput) return "";
+
+        let d: Date;
+        if (typeof dateInput === "string") {
+            // Si la date vient de la DB (format 'YYYY-MM-DD HH:mm:ss')
+            d = parse(dateInput, "yyyy-MM-dd HH:mm:ss", new Date());
+        } else {
+            d = dateInput;
         }
+
+        // Convertir en timezone Haïti
+        const zonedDate = toZonedTime(d, "America/Port-au-Prince");
+
+        // YYYY-MM-DDTHH:MM
+        const year = zonedDate.getFullYear();
+        const month = String(zonedDate.getMonth() + 1).padStart(2, "0");
+        const day = String(zonedDate.getDate()).padStart(2, "0");
+        const hours = String(zonedDate.getHours()).padStart(2, "0");
+        const minutes = String(zonedDate.getMinutes()).padStart(2, "0");
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     const toggleDropdown = (index: number) => {
@@ -255,27 +267,26 @@ const FlightTable = () => {
         }
     };
 
+    const timeZone = "America/Port-au-Prince";
 
-const timeZone = "America/Port-au-Prince";
+    const formatDateForDisplay = (dateInput?: string | Date) => {
+        if (!dateInput) return "—";
 
-const formatDateForDisplay = (dateInput?: string | Date) => {
-  if (!dateInput) return "—";
+        try {
+            let d: Date;
+            if (typeof dateInput === "string") {
+                d = parse(dateInput, "yyyy-MM-dd HH:mm:ss", new Date());
+            } else {
+                d = dateInput;
+            }
 
-  try {
-    let d: Date;
-    if (typeof dateInput === "string") {
-      d = parse(dateInput, "yyyy-MM-dd HH:mm:ss", new Date());
-    } else {
-      d = dateInput;
-    }
-
-    const zonedDate = toZonedTime(d, timeZone);
-    return format(zonedDate, "dd/MM/yyyy HH:mm");
-  } catch (err) {
-    console.error("Erreur conversion date:", err, dateInput);
-    return "—";
-  }
-};
+            const zonedDate = toZonedTime(d, timeZone);
+            return format(zonedDate, "dd/MM/yyyy HH:mm");
+        } catch (err) {
+            console.error("Erreur conversion date:", err, dateInput);
+            return "—";
+        }
+    };
 
     return (
         <div className="p-6">
