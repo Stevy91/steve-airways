@@ -306,6 +306,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
+        
+
         // 2️⃣ Préparer les passagers
         const passengers: Passenger[] = [];
         const passengerCount = Number(formData.passengerCount || 1);

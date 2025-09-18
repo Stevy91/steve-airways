@@ -1,6 +1,10 @@
-import { ChevronDown, MapPinIcon, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, MapPinIcon, MoreVertical, Pencil, Ticket, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../hooks/useAuth";
+import toast from "react-hot-toast";
+import { format, toZonedTime } from "date-fns-tz";
+import { parse } from "date-fns";
+import BookingCreatedModal from "../../../components/BookingCreatedModdal";
 
 interface Flight {
     id: number;
@@ -57,6 +61,8 @@ const FlightTableHelico = () => {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(flights.length / itemsPerPage);
+const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+   const [open, setOpen] = useState(false);
 
     // Fetch flights
     const fetchFlights = async () => {
@@ -150,7 +156,7 @@ const FlightTableHelico = () => {
         setShowModal(true);
     };
 
-    const handleAddFlight = async (flightData: any) => {
+  const handleAddFlight = async (flightData: any) => {
         try {
             setSubmitting(true);
             const res = await fetch("https://steve-airways.onrender.com/api/addflighttable", {
@@ -168,7 +174,15 @@ const FlightTableHelico = () => {
             await fetchFlights();
 
             setShowModal(false);
-            showNotification("Vol ajouté avec succès", "success");
+
+            toast.success(`Vol ajouté avec succès`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
         } catch (err: any) {
             showNotification(err.message || "Erreur inconnue", "error");
         } finally {
@@ -199,7 +213,15 @@ const FlightTableHelico = () => {
 
             setEditingFlight(null);
             setShowModal(false);
-            showNotification("Vol modifié avec succès", "success");
+
+            toast.success(`Vol modifié avec succès`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
         } catch (err: any) {
             console.error("❌ Erreur complète:", err);
             showNotification(err.message || "Erreur inconnue lors de la modification", "error");
@@ -214,11 +236,39 @@ const FlightTableHelico = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Erreur suppression");
             setFlights((prev) => prev.filter((f) => f.id !== flightId));
-            showNotification("Vol supprimé", "success");
+            toast.success(`Vol supprimé`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
         } catch (err: any) {
             showNotification(err.message || "Erreur inconnue", "error");
         }
     };
+
+       const timeZone = "America/Port-au-Prince";
+    
+        const formatDateForDisplay = (dateInput?: string | Date) => {
+            if (!dateInput) return "—";
+    
+            try {
+                let d: Date;
+                if (typeof dateInput === "string") {
+                    d = parse(dateInput, "yyyy-MM-dd HH:mm:ss", new Date());
+                } else {
+                    d = dateInput;
+                }
+    
+                const zonedDate = toZonedTime(d, timeZone);
+                return format(zonedDate, "dd/MM/yyyy HH:mm");
+            } catch (err) {
+                console.error("Erreur conversion date:", err, dateInput);
+                return "—";
+            }
+        };
 
     return (
         <div className="p-6">
@@ -241,11 +291,13 @@ const FlightTableHelico = () => {
                         setSelectedDestination("");
                         setShowModal(true);
                     }}
-                    className="rounded bg-blue-600 table-cell text-center text-white hover:bg-blue-700"
+                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                 >
                     Add new flight
                 </button>
             </div>
+
+            
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
@@ -283,23 +335,54 @@ const FlightTableHelico = () => {
                                         <td className="table-cell text-center">{flight.from}</td>
                                         <td className="table-cell text-center">{flight.to}</td>
 
-                                        <td className="table-cell text-center">{flight.departure}</td>
-                                        <td className="table-cell text-center">{flight.arrival}</td>
+                                        <td className="table-cell text-center">{formatDateForDisplay(flight.departure)}</td>
+                                        <td className="table-cell text-center">{formatDateForDisplay(flight.arrival)}</td>
                                         <td className="table-cell text-center">${flight.price}</td>
                                         <td className="table-cell text-center">{flight.seats_available}</td>
-                                        <td className="relative table-cell text-center">
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
-                                                onClick={() => handleEditClick(flight)}
-                                            >
-                                                <Pencil className="h-4 w-4 text-blue-500" />
-                                            </button>
-                                            <button
-                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                                onClick={() => deleteFlight(flight.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                            </button>
+                                         <td className="relative table-cell px-4 py-2 text-center">
+                                            <div className="s relative text-left">
+                                                <button
+                                                    className="inline-flex w-full justify-center gap-2 rounded px-4 py-2 text-blue-500 hover:bg-gray-100"
+                                                    onClick={() => setOpenDropdown(openDropdown === flight.id ? null : flight.id)}
+                                                >
+                                                    <MoreVertical className="h-5 w-5 text-gray-700" />
+                                                </button>
+
+                                                {openDropdown === flight.id && (
+                                                    <div className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                        <div className="py-1">
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    handleEditClick(flight);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <Pencil className="h-4 w-4 text-blue-500" /> Edit
+                                                            </button>
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    deleteFlight(flight.id);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                                                            </button>
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    setSelectedFlight(flight);
+                                                                    setOpen(true);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -329,6 +412,11 @@ const FlightTableHelico = () => {
                     </button>
                 </div>
             </div>
+            <BookingCreatedModal
+                open={open}
+                onClose={() => setOpen(false)}
+                flight={selectedFlight!}
+            />
 
             {/* Modal Add/Edit */}
             {showModal && (
