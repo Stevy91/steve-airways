@@ -5,6 +5,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
 import BookingCreatedModal from "../../../components/BookingCreatedModdal";
 import toast from "react-hot-toast";
+import { parseISO } from "date-fns";
 
 interface Flight {
     id: number;
@@ -252,6 +253,11 @@ const FlightTable = () => {
             showNotification(err.message || "Erreur inconnue", "error");
         }
     };
+    const formatDateTime = (dateTimeStr: string) => {
+  if (!dateTimeStr) return "N/A";
+  const parsed = parseISO(dateTimeStr.replace(" ", "T")); // transformer en ISO pour parseISO
+  return format(parsed, "dd/MM/yyyy HH:mm");
+};
 
     return (
         <div className="p-6">
