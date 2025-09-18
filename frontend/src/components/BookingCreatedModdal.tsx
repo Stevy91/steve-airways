@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { format, parseISO, isValid, parse } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 const SENDER_EMAIL = "info@kashpaw.com"; // adresse "from"
 
@@ -61,21 +62,44 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const returnFlight = bookingData.return;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${bookingReference}&code=Code128&dpi=96`;
 
+    const timeZone = "America/Port-au-Prince";
+
     const formatDate = (dateString?: string) => {
         if (!dateString) return "N/A";
-        const parsedDate = parseISO(dateString);
-        if (!isValid(parsedDate)) return "Invalid date";
-        return format(parsedDate, "EEE, dd MMM");
+
+        try {
+            const [datePart] = dateString.split(" "); // Prend juste la date
+            const parsedDate = parse(datePart, "yyyy-MM-dd", new Date());
+
+            // Convertir en fuseau horaire Haïti
+            const zonedDate = toZonedTime(parsedDate, timeZone);
+
+            // Formater sans passer timeZone dans options
+            return format(zonedDate, "EEE, dd MMM");
+        } catch (err) {
+            console.error("Erreur formatDate:", err, dateString);
+            return "Invalid date";
+        }
     };
 
-    const formatDateToday = () => format(new Date(), "EEE, dd MMM");
+    const formatDateToday = () => {
+        const now = toZonedTime(new Date(), timeZone);
+        return format(now, "EEE, dd MMM");
+    };
+
+    // Exemple pour ton vol
+    const [departureDateStr] = outboundFlight.departure_time.split(" ");
+    const parsedDepartureDate = parse(departureDateStr, "yyyy-MM-dd", new Date());
+    const zonedDepartureDate = toZonedTime(parsedDepartureDate, timeZone);
+    const formattedDepartureDate = format(zonedDepartureDate, "EEE, dd MMM");
 
     const [departureDate, departureTime] = outboundFlight.departure_time.split(" ");
-    // Convertir DD/MM/YYYY en Date object
-    const parsedDepartureDate = parse(departureDate, "dd/MM/yyyy", new Date());
-
-    const formattedDate = format(parsedDepartureDate, "EEE, dd MMM");
     const [arrivalDate, arrivalTime] = outboundFlight.arrival_time.split(" ");
+
+    const [arrivalDateStr] = outboundFlight.arrival_time.split(" ");
+    const parsedArrivalDate = parse(arrivalDateStr, "yyyy-MM-dd", new Date());
+    const zonedArrivalDate = toZonedTime(parsedArrivalDate, timeZone);
+    const formattedArrivalDate = format(zonedArrivalDate, "EEE, dd MMM");
 
     return `
     <style>
@@ -136,7 +160,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                           <div>
                             <strong>From:</strong> ${bookingData.from}<br>
                             <strong>To:</strong> ${bookingData.to}<br>
-                            <strong>Date:</strong> ${formattedDate}
+                            <strong>Date:</strong> ${formattedDepartureDate}
                           </div>
                           <div>
                             <strong>Departure:</strong> ${departureTime}<br>
@@ -268,115 +292,123 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-  const handleSubmit = async () => {
-    // 1️⃣ Validation des champs obligatoires
-    if (
-        !formData.firstName ||
-        !formData.lastName ||
-        !formData.email ||
-        !formData.phone ||
-        !formData.nationality ||
-        !formData.dateOfBirth
-    ) {
-        toast.error(`Veuillez remplir tous les champs obligatoires`, {
-            style: {
-                background: "#fee2e2",
-                color: "#991b1b",
-                border: "1px solid #f87171",
-            },
-            iconTheme: { primary: "#fff", secondary: "#dc2626" },
-        });
-        return;
-    }
+    const handleSubmit = async () => {
+        // 1️⃣ Validation des champs obligatoires
+        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
+            toast.error(`Veuillez remplir tous les champs obligatoires`, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+            });
+            return;
+        }
 
-    // 2️⃣ Préparer les passagers
-    const passengers: Passenger[] = [];
-    const passengerCount = Number(formData.passengerCount || 1);
-    for (let i = 0; i < passengerCount; i++) {
-        passengers.push({
-            firstName: formData.firstName,
-            middleName: formData.middleName,
-            lastName: formData.lastName,
-            dateOfBirth: formData.dateOfBirth,
-            gender: formData.gender,
-            title: formData.title,
-            address: formData.address,
-            type: "adult",
-            typeVol: flight?.type || "plane",
-            typeVolV: "onway",
-            country: formData.country,
-            nationality: formData.nationality,
-            phone: formData.phone,
-            email: formData.email,
-        });
-    }
+        // 2️⃣ Préparer les passagers
+        const passengers: Passenger[] = [];
+        const passengerCount = Number(formData.passengerCount || 1);
+        for (let i = 0; i < passengerCount; i++) {
+            passengers.push({
+                firstName: formData.firstName,
+                middleName: formData.middleName,
+                lastName: formData.lastName,
+                dateOfBirth: formData.dateOfBirth,
+                gender: formData.gender,
+                title: formData.title,
+                address: formData.address,
+                type: "adult",
+                typeVol: flight?.type || "plane",
+                typeVolV: "onway",
+                country: formData.country,
+                nationality: formData.nationality,
+                phone: formData.phone,
+                email: formData.email,
+            });
+        }
 
-    // 3️⃣ Préparer le body à envoyer
-    const body = {
-        flightId: flight.id,
-        passengers,
-        contactInfo: { email: formData.email, phone: formData.phone },
-        totalPrice: flight.price * passengerCount,
-        departureDate: flight.departure.split("T")[0],
-        returnDate: formData.returnDate,
-        paymentMethod: formData.paymentMethod,
+        // 3️⃣ Préparer le body à envoyer
+        const body = {
+            flightId: flight.id,
+            passengers,
+            contactInfo: { email: formData.email, phone: formData.phone },
+            totalPrice: flight.price * passengerCount,
+            departureDate: flight.departure.split("T")[0],
+            returnDate: formData.returnDate,
+            paymentMethod: formData.paymentMethod,
+        };
+
+        try {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+
+            let data: any;
+
+            try {
+                data = await res.json();
+            } catch (jsonErr) {
+                console.error("Erreur parsing JSON:", jsonErr);
+                toast.error("❌ Réponse serveur invalide");
+                return;
+            }
+
+            // Vérifiez explicitement le statut HTTP ET le champ success
+            if (res.status === 200 && data.success) {
+            
+                 toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
+
+                try {
+                    console.log("📧 Tentative d'envoi d'email...");
+                    console.log("Données email:", {
+                        bookingReference: data.bookingReference,
+                        passengerCount: passengers.length,
+                        email: formData.email,
+                    });
+
+                    await sendTicketByEmail(
+                        {
+                            from: flight.from || "",
+                            to: flight.to || "",
+                            outbound: {
+                                date: flight.departure,
+                                noflight: flight.flight_number,
+                                departure_time: flight.departure,
+                                arrival_time: flight.arrival,
+                            },
+                            passengersData: { adults: passengers },
+                            totalPrice: body.totalPrice,
+                        },
+                        data.bookingReference,
+                        formData.paymentMethod,
+                    );
+
+                    console.log("✅ Email envoyé avec succès");
+                } catch (emailError) {
+                    console.error("❌ Erreur détaillée envoi email:", emailError);
+                    toast.error("Ticket créé mais email non envoyé");
+                }
+
+                onClose();
+            } else {
+                console.error("Erreur création ticket:", data);
+                toast.error(`❌ Erreur: ${data.error || data.message || "inconnue"}`);
+            }
+        } catch (err) {
+            console.error("Erreur réseau:", err);
+            toast.error("❌ Erreur de connexion au serveur");
+        }
     };
-
-  try {
-    const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    let data: any;
-    
-    try {
-      data = await res.json();
-    } catch (jsonErr) {
-      console.error("Erreur parsing JSON:", jsonErr);
-      toast.error("❌ Réponse serveur invalide");
-      return;
-    }
-
-    // Vérifiez explicitement le statut HTTP ET le champ success
-    if (res.status === 200 && data.success) {
-      toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`);
-      
-      // Envoi du mail
-      try {
-        await sendTicketByEmail(
-          {
-            from: flight.from || "",
-            to: flight.to || "",
-            outbound: {
-              date: flight.departure,
-              noflight: flight.flight_number,
-              departure_time: flight.departure,
-              arrival_time: flight.arrival,
-            },
-            passengersData: { adults: passengers },
-            totalPrice: body.totalPrice,
-          },
-          data.bookingReference,
-          formData.paymentMethod,
-        );
-      } catch (emailError) {
-        console.error("Erreur envoi email:", emailError);
-        toast.error("Ticket créé mais email non envoyé");
-      }
-      
-      onClose();
-    } else {
-      console.error("Erreur création ticket:", data);
-      toast.error(`❌ Erreur: ${data.error || data.message || "inconnue"}`);
-    }
-  } catch (err) {
-    console.error("Erreur réseau:", err);
-    toast.error("❌ Erreur de connexion au serveur");
-  }
-};
-
 
     return (
         <AnimatePresence>
@@ -586,10 +618,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                     />
                                 </div>
 
-                               
                                 <div className="flex flex-col">
-                                   {/* Méthode de paiement */}
-                                   <label
+                                    {/* Méthode de paiement */}
+                                    <label
                                         htmlFor="paymentMethod"
                                         className="mb-1 font-medium text-gray-700"
                                     >
@@ -618,9 +649,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                                     />
                                 </div>
-
-                               
-
 
                                 {/* Bouton */}
                                 <div className="md:col-span-2">

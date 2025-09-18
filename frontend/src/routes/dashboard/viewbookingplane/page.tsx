@@ -60,7 +60,7 @@ const ViewBookingPlane = () => {
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const rowsPerPage = 5; // Nombre de réservations par page
+    const rowsPerPage = 10; // Nombre de réservations par page
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;

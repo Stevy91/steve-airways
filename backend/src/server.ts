@@ -2180,13 +2180,13 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
             type_vol: row.type_vol,
             type_v: row.type_v,
         }));
-    const recentBookings = bookings.slice(0, 6);
 
-        // 8. Construction de la réponse
+        const allBookings = bookings; // toutes les réservations
         const response: BookingStats = {
-     
-            recentBookings,
-        };
+    recentBookings: allBookings, // ou renommer recentBookings en bookings si tu veux
+};
+
+   
 
         res.json(response);
     } catch (error) {
