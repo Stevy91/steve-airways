@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays, PlaneIcon, PlaneTakeoff, PlaneLanding, AlertCircle } from "lucide-react";
 import { Icon } from "@iconify/react";
-import { addDays, isSameDay, parseISO, format, isBefore,  } from "date-fns";
+import { addDays, isSameDay, parseISO, format, isBefore } from "date-fns";
 import DateCarousel from "../../components/DateCarousel";
 import FlightCard from "../../components/FlightCard";
 import FlightDetail from "../../components/FlightDetail";
@@ -31,7 +31,6 @@ interface Flight {
     type: FlightType | string;
     seat: string | number;
     noflight: string;
-    
 }
 
 interface Location {
@@ -62,7 +61,6 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     const { t, i18n } = useTranslation();
     return (
         <div className="relative mb-10 px-6">
-        
             <div className="absolute left-[14%] right-[14%] top-2 z-10 hidden h-0.5 bg-blue-900 md:block" />
             <div className="relative z-10 flex items-center justify-between">
                 {[t("Flight"), t("Passenger"), t("Pay"), "Confirmation"].map((step, idx) => {
@@ -169,8 +167,6 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 //     };
 // };
 
-
-
 // const formatDate = (isoString: string) => {
 //   return isoString.split("T")[0]; // yyyy-MM-dd
 // };
@@ -181,11 +177,10 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 //   return timePart.slice(0, 5); // "18:41"
 // };
 
-
 // const mapFlight = (flight: any, locations: Location[]): Flight => {
 //         const depLoc = locations.find((l) => l.id === flight.departure_location_id);
 //     const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
-    
+
 // //   const depLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.departure_location_id) : null;
 // //   const arrLoc = Array.isArray(locations) ? locations.find((l) => l.id === flight.arrival_location_id) : null;
 
@@ -206,20 +201,17 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 // }
 
 
-
-
-
 const timeZone = "America/Port-au-Prince";
 
 const convertToHaitiTime = (isoString: string): Date => {
-  const date = parseISO(isoString);
+  const date = new Date(isoString);
   return toZonedTime(date, timeZone);
 };
 
 const formatDate = (isoString: string) => format(convertToHaitiTime(isoString), "yyyy-MM-dd");
 const formatTime = (isoString: string) => format(convertToHaitiTime(isoString), "HH:mm");
 
-const mapFlight = (flight: any, locations: Location[]): Flight => {
+const mapFlight = (flight: any, locations: any[]) => {
   const depLoc = locations.find((l) => l.id === flight.departure_location_id);
   const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
 
@@ -237,8 +229,6 @@ const mapFlight = (flight: any, locations: Location[]): Flight => {
     noflight: flight.flight_number,
   };
 };
-
-
 
 export default function FlightSelection() {
     const { lang } = useParams<{ lang: string }>();
@@ -777,8 +767,8 @@ export default function FlightSelection() {
     } else {
         return (
             <>
-           {/* SessionTimeout */}
-                 {/* <SessionTimeout /> */}
+                {/* SessionTimeout */}
+                {/* <SessionTimeout /> */}
                 <HeroSectionSearch />
                 <div
                     className="z-1 relative flex h-[300px] w-full items-center justify-center bg-cover bg-center text-center text-white"
@@ -1053,8 +1043,5 @@ export default function FlightSelection() {
             </>
         );
     }
-}
-function utcToZonedTime(isoString: string, timeZone: string) {
-    throw new Error("Function not implemented.");
 }
 

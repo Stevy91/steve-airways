@@ -541,6 +541,9 @@ app.get("/api/flightall", async (req: Request, res: Response) => {
 
 
 
+
+
+// API pour récupérer les vols
 app.get("/api/flights", async (req: Request, res: Response) => {
   try {
     const { from, to, date, tab: type } = req.query as {
@@ -569,24 +572,19 @@ app.get("/api/flights", async (req: Request, res: Response) => {
     }
 
     // Vérification des aéroports
-    const [departureAirport] = await pool.query<Location[]>(
-      "SELECT id FROM locations WHERE code = ?",
-      [from]
-    );
-    const [arrivalAirport] = await pool.query<Location[]>(
-      "SELECT id FROM locations WHERE code = ?",
-      [to]
-    );
+    const [departureAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [from]);
+    const [arrivalAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [to]);
 
-    if (departureAirport.length === 0 || arrivalAirport.length === 0) {
+    if ((departureAirport as any[]).length === 0 || (arrivalAirport as any[]).length === 0) {
       return res.status(404).json({ error: "Aéroport non trouvé" });
     }
 
-    // 🔹 Intervalle pour attraper tous les vols de la journée
+    // Intervalle complet de la journée Haïti
     const startOfDay = `${date} 00:00:00`;
     const endOfDay = `${date} 23:59:59`;
 
-    const [flights] = await pool.query<Flight[]>(
+    // Requête principale
+    const [flights] = await pool.query(
       `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
        FROM flights f
        JOIN locations dep ON f.departure_location_id = dep.id
@@ -599,13 +597,13 @@ app.get("/api/flights", async (req: Request, res: Response) => {
       [from, to, type, startOfDay, endOfDay]
     );
 
-    // 🔹 Vols retour si return_date présent
+    // Vols retour si return_date présent
     if (req.query.return_date) {
       const returnDate = req.query.return_date as string;
       const startReturn = `${returnDate} 00:00:00`;
       const endReturn = `${returnDate} 23:59:59`;
 
-      const [returnFlights] = await pool.query<Flight[]>(
+      const [returnFlights] = await pool.query(
         `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
          FROM flights f
          JOIN locations dep ON f.departure_location_id = dep.id
@@ -633,6 +631,7 @@ app.get("/api/flights", async (req: Request, res: Response) => {
     });
   }
 });
+
 
 
 // Endpoint pour récupérer les locations
