@@ -5,7 +5,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
 import BookingCreatedModal from "../../../components/BookingCreatedModdal";
 import toast from "react-hot-toast";
-import { format, parseISO } from "date-fns";
+import { format, parse, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
 interface Flight {
@@ -254,22 +254,25 @@ const FlightTable = () => {
             showNotification(err.message || "Erreur inconnue", "error");
         }
     };
-// 🔹 Fuseau Haïti
-const formatDateForDisplay = (mysqlDate?: string | null) => {
-  if (!mysqlDate) return "—"; // pas de valeur
+
+
+const timeZone = "America/Port-au-Prince";
+
+const formatDateForDisplay = (dateInput?: string | Date) => {
+  if (!dateInput) return "—";
 
   try {
-    const [datePart, timePart] = mysqlDate.split(" ");
-    if (!datePart || !timePart) return "—";
+    let d: Date;
+    if (typeof dateInput === "string") {
+      d = parse(dateInput, "yyyy-MM-dd HH:mm:ss", new Date());
+    } else {
+      d = dateInput;
+    }
 
-    const [year, month, day] = datePart.split("-").map(Number);
-    const [hour, minute, second] = timePart.split(":").map(Number);
-
-    if ([year, month, day, hour, minute, second].some(isNaN)) return "—";
-
-    const d = new Date(year, month - 1, day, hour, minute, second);
-    return format(d, "dd/MM/yyyy HH:mm");
-  } catch {
+    const zonedDate = toZonedTime(d, timeZone);
+    return format(zonedDate, "dd/MM/yyyy HH:mm");
+  } catch (err) {
+    console.error("Erreur conversion date:", err, dateInput);
     return "—";
   }
 };

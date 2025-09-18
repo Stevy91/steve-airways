@@ -48,6 +48,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
    timezone: "-04:00", // Haïti
+   dateStrings: true,
 
 });
 
