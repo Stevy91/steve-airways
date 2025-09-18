@@ -268,7 +268,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-   const handleSubmit = async () => {
+  const handleSubmit = async () => {
     // 1️⃣ Validation des champs obligatoires
     if (
         !formData.firstName ||
@@ -322,66 +322,59 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         paymentMethod: formData.paymentMethod,
     };
 
+  try {
+    const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    let data: any;
+    
     try {
-        // 4️⃣ Appel à l'API
-        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        });
-
-        let data: any;
-        try {
-            data = await res.json();
-        } catch (jsonErr) {
-            console.error("Erreur parsing JSON:", jsonErr);
-            alert("❌ Impossible de créer le ticket (réponse JSON invalide)");
-            return;
-        }
-
-        // 5️⃣ Vérification HTTP
-        if (res.ok) {
-            if (data.success) {
-                toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
-                    style: {
-                        background: "#28a745",
-                        color: "#fff",
-                        border: "1px solid #1e7e34",
-                    },
-                    iconTheme: { primary: "#fff", secondary: "#1e7e34" },
-                });
-
-                // 6️⃣ Envoi du mail
-                await sendTicketByEmail(
-                    {
-                        from: flight.from || "",
-                        to: flight.to || "",
-                        outbound: {
-                            date: flight.departure,
-                            noflight: flight.flight_number,
-                            departure_time: flight.departure,
-                            arrival_time: flight.arrival,
-                        },
-                        passengersData: { adults: passengers },
-                        totalPrice: body.totalPrice,
-                    },
-                    data.bookingReference,
-                    formData.paymentMethod,
-                );
-
-                onClose();
-            } else {
-                console.error("Erreur côté serveur:", data);
-                alert(`❌ Impossible de créer le ticket: ${data.error || "inconnu"}`);
-            }
-        } else {
-            console.error("Erreur HTTP:", res.status, data);
-            alert(`❌ Impossible de créer le ticket: erreur serveur ${res.status}`);
-        }
-    } catch (err) {
-        console.error("Erreur fetch:", err);
-        alert("❌ Impossible de créer le ticket.");
+      data = await res.json();
+    } catch (jsonErr) {
+      console.error("Erreur parsing JSON:", jsonErr);
+      toast.error("❌ Réponse serveur invalide");
+      return;
     }
+
+    // Vérifiez explicitement le statut HTTP ET le champ success
+    if (res.status === 200 && data.success) {
+      toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`);
+      
+      // Envoi du mail
+      try {
+        await sendTicketByEmail(
+          {
+            from: flight.from || "",
+            to: flight.to || "",
+            outbound: {
+              date: flight.departure,
+              noflight: flight.flight_number,
+              departure_time: flight.departure,
+              arrival_time: flight.arrival,
+            },
+            passengersData: { adults: passengers },
+            totalPrice: body.totalPrice,
+          },
+          data.bookingReference,
+          formData.paymentMethod,
+        );
+      } catch (emailError) {
+        console.error("Erreur envoi email:", emailError);
+        toast.error("Ticket créé mais email non envoyé");
+      }
+      
+      onClose();
+    } else {
+      console.error("Erreur création ticket:", data);
+      toast.error(`❌ Erreur: ${data.error || data.message || "inconnue"}`);
+    }
+  } catch (err) {
+    console.error("Erreur réseau:", err);
+    toast.error("❌ Erreur de connexion au serveur");
+  }
 };
 
 

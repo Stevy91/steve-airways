@@ -943,8 +943,6 @@ function formatDateToSQL(date?: string | Date | null): string | null {
 app.post("/api/create-ticket", async (req: Request, res: Response) => {
   const connection = await pool.getConnection();
 
-
-
   try {
     await connection.beginTransaction();
     console.log("✅ Transaction started");
@@ -971,13 +969,16 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
     const typeVol = passengers[0]?.typeVol || "plane";
     const typeVolV = passengers[0]?.typeVolV || "onway";
 
-    // Vérifier les vols
+    // Vérifier les vols - utilisation de type casting
     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-    const [flights] = await connection.query<mysql.RowDataPacket[]>(
+    const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
       [flightIds],
     );
 
+    // Cast explicite vers RowDataPacket[]
+    const flights = flightsRows as mysql.RowDataPacket[];
+    
     if (flights.length !== flightIds.length) {
       throw new Error("One or more flights not found");
     }
@@ -988,13 +989,14 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
       }
     }
 
-    // Création réservation
+    // Création réservation - utilisation de type casting pour OkPacket
     const now = new Date();
     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
     
     const depDate = formatDateToSQL(departureDate);
     const retDate = formatDateToSQL(returnDate);
-    const [bookingResult] = await connection.query<mysql.OkPacket>(
+    
+    const [bookingResultRows] = await connection.query<mysql.OkPacket>(
       `INSERT INTO bookings (
           flight_id, payment_intent_id, total_price,
           contact_email, contact_phone, status,
@@ -1016,14 +1018,17 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
         contactInfo.email,
         now,
         now,
-        departureDate,
-        returnDate,
+        depDate,
+        retDate,
         passengers.length,
         bookingReference,
         returnFlightId || null,
         paymentMethod,
       ],
     );
+
+    // Cast explicite vers OkPacket
+    const bookingResult = bookingResultRows as mysql.OkPacket;
 
     // Enregistrer les passagers
     for (const passenger of passengers) {
@@ -1071,7 +1076,7 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
          VALUES (?, ?, ?, ?, ?)`,
         [
           "ticket",
-          `Création d’un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+          `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
           bookingResult.insertId,
           false,
           now,
@@ -1079,7 +1084,7 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
       );
 
       io.emit("new-notification", {
-        message: `Création d’un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+        message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
         bookingId: bookingResult.insertId,
         createdAt: now,
       });
@@ -1117,7 +1122,6 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
     connection.release();
   }
 });
-
 
 app.post("/api/confirm-booking", async (req: Request, res: Response) => {
  
