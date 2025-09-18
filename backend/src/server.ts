@@ -1945,7 +1945,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
             JOIN 
                 locations arr ON f.arrival_location_id = arr.id
             WHERE 
-                f.type = 'phelicopter'    
+                f.type = 'helicopter'    
             ORDER BY 
                 f.id DESC
         `;
