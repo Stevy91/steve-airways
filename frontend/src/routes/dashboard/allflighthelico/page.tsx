@@ -1,9 +1,9 @@
-import { ChevronDown, MapPinIcon, MoreVertical, Pencil, Ticket, Trash2, X } from "lucide-react";
+import { ChevronDown, MapPinIcon, MoreVertical, Pencil, PersonStanding, Ticket, Trash2, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../hooks/useAuth";
 import toast from "react-hot-toast";
 import { format, toZonedTime } from "date-fns-tz";
-import { parse } from "date-fns";
+import { parse, parseISO } from "date-fns";
 import BookingCreatedModalHelico from "../../../components/BookingCreatedModdalHelico";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -46,6 +46,7 @@ const FlightTableHelico = () => {
     const [error, setError] = useState<string | null>(null);
     const [openDropdown, setOpenDropdown] = useState<number | null>(null);
     const [showModal, setShowModal] = useState(false);
+     const [showModalPassager, setShowModalPassager] = useState(false);
     const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
     const [locations, setLocations] = useState<Location[]>([]);
     const [selectedDeparture, setSelectedDeparture] = useState("");
@@ -66,6 +67,22 @@ const FlightTableHelico = () => {
     const [open, setOpen] = useState(false);
 
     const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+     const [passengers, setPassengers] = useState<any[]>([]);
+    const [loadingPassengers, setLoadingPassengers] = useState(false);
+
+    const fetchPassengers = async (flightId: number) => {
+        setLoadingPassengers(true);
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/flights/${flightId}/passengers`);
+            const data = await res.json();
+            setPassengers(data);
+        } catch (err) {
+            console.error("Erreur fetch passagers:", err);
+        } finally {
+            setLoadingPassengers(false);
+        }
+    };
 
     // Fermer le dropdown si clic/touch extérieur de l'élément ouvert
     useEffect(() => {
@@ -332,7 +349,7 @@ const FlightTableHelico = () => {
                         setSelectedDestination("");
                         setShowModal(true);
                     }}
-                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
                 >
                     Add new flight
                 </button>
@@ -340,7 +357,7 @@ const FlightTableHelico = () => {
 
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
                 </div>
             )}
 
@@ -386,7 +403,7 @@ const FlightTableHelico = () => {
                                                 }}
                                             >
                                                 <button
-                                                    className="inline-flex w-full justify-center gap-2 rounded-lg p-2 px-4 py-2 text-center text-blue-500 hover:bg-amber-500"
+                                                    className="inline-flex w-full justify-center gap-2 rounded-lg p-2 px-4 py-2 text-center text-amber-500 hover:bg-amber-500"
                                                     onClick={() => setOpenDropdown(openDropdown === flight.id ? null : flight.id)}
                                                 >
                                                     <MoreVertical className="h-5 w-5 text-gray-700" />
@@ -396,13 +413,13 @@ const FlightTableHelico = () => {
                                                     <div className="absolute right-0 z-[9999] mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                         <div className="py-1">
                                                             <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     handleEditClick(flight);
                                                                     setOpenDropdown(null);
                                                                 }}
                                                             >
-                                                                <Pencil className="h-4 w-4 text-blue-500" /> Edit
+                                                                <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                             </button>
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
@@ -423,6 +440,16 @@ const FlightTableHelico = () => {
                                                             >
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
+                                                             <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    fetchPassengers(flight.id);
+                                                                    setShowModalPassager(true);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 )}
@@ -442,7 +469,7 @@ const FlightTableHelico = () => {
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                        className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-560 disabled:bg-gray-200"
                     >
                         Previous
                     </button>
@@ -450,7 +477,7 @@ const FlightTableHelico = () => {
                     <button
                         onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                        className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
                     >
                         Next
                     </button>
@@ -564,7 +591,7 @@ const FlightTableHelico = () => {
                                                 name="flight_number"
                                                 placeholder="Flight number"
                                                 defaultValue={editingFlight?.flight_number || ""}
-                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
                                         </div>
@@ -582,7 +609,7 @@ const FlightTableHelico = () => {
                                                 name="airline"
                                                 placeholder="Airline"
                                                 defaultValue={editingFlight?.airline || ""}
-                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
                                         </div>
@@ -593,7 +620,7 @@ const FlightTableHelico = () => {
                                             >
                                                 Select the departure
                                             </label>
-                                            <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                            <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
                                                     value={selectedDeparture}
@@ -654,7 +681,7 @@ const FlightTableHelico = () => {
                                             >
                                                 Select destination
                                             </label>
-                                            <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                            <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
                                                 <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                 <select
                                                     value={selectedDestination}
@@ -719,7 +746,7 @@ const FlightTableHelico = () => {
                                                 type="datetime-local"
                                                 name="departure_time"
                                                 defaultValue={formatDateForInput(editingFlight?.departure || "")}
-                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
                                         </div>
@@ -734,7 +761,7 @@ const FlightTableHelico = () => {
                                                 type="datetime-local"
                                                 name="arrival_time"
                                                 defaultValue={formatDateForInput(editingFlight?.arrival || "")}
-                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
                                         </div>
@@ -750,7 +777,7 @@ const FlightTableHelico = () => {
                                                 name="price"
                                                 placeholder="Price ($)"
                                                 defaultValue={editingFlight?.price}
-                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
                                         </div>
@@ -766,7 +793,7 @@ const FlightTableHelico = () => {
                                                 name="seats_available"
                                                 placeholder="Number of seats"
                                                 defaultValue={editingFlight?.seats_available}
-                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
                                         </div>
@@ -774,11 +801,11 @@ const FlightTableHelico = () => {
                                         <div className="md:col-span-2">
                                             <button
                                                 type="submit"
-                                                className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 align-middle font-semibold text-white transition-colors hover:bg-blue-700"
+                                                className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600"
                                                 disabled={submitting}
                                             >
                                                 {submitting && (
-                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-white"></div>
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
                                                 )}
                                                 {editingFlight ? "Update" : "Save"}
                                             </button>
@@ -1011,11 +1038,11 @@ const FlightTableHelico = () => {
 
                             <button
                                 type="submit"
-                                className="relative table-cell items-center justify-center rounded bg-blue-600 text-center text-white"
+                                className="relative table-cell items-center justify-center rounded bg-amber-500 text-center text-white"
                                 disabled={submitting}
                             >
                                 {submitting && (
-                                    <div className="absolute left-3 h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-white"></div>
+                                    <div className="absolute left-3 h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
                                 )}
                                 {editingFlight ? "Modifier" : "Enregistrer"}
                             </button>
@@ -1023,6 +1050,91 @@ const FlightTableHelico = () => {
                     </div>
                 </div>
             )} */}
+
+                        {/* Modal list passager*/}
+                        <AnimatePresence>
+                            {showModalPassager && (
+                                <div className="fixed inset-0 z-50">
+                                    <motion.div
+                                        className="absolute inset-0 bg-black/50"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => {
+                                            setShowModalPassager(false);
+                                        }}
+                                    />
+                                    <motion.div
+                                        role="dialog"
+                                        aria-modal="true"
+                                        className="absolute inset-0 mx-auto my-6 flex max-w-3xl items-start justify-center p-4 sm:my-12"
+                                        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    >
+                                        <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                                            <button
+                                                className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                                aria-label="Close"
+                                                onClick={() => {
+                                                    setShowModalPassager(false);
+                                                }}
+                                            >
+                                                <X className="h-5 w-5" />
+                                            </button>
+            
+                                            <div className="px-6 pt-6">
+                                                <h2 className="text-xl font-semibold text-slate-800"> Number of passengers ({passengers.length})</h2>
+                                            </div>
+            
+                                            <div className="my-4 h-px w-full bg-slate-100" />
+                                            {loadingPassengers ? (
+                                                <div className="flex items-center justify-center py-6">
+                                                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
+                                                </div>
+                                            ) : (
+                                                <table className="table">
+                                                    <thead className="">
+                                                        <tr className="">
+                                                            <th className="table-head">FirstName</th>
+                                                            <th className="table-head ">LastName</th>
+                                                            <th className="table-head ">Email Address</th>
+                                                            <th className="table-head ">Booking Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="table-body">
+                                                        {passengers.length > 0 ? (
+                                                            passengers.map((p) => (
+                                                                <tr
+                                                                    key={p.id}
+                                                                    className="hover:bg-gray-50"
+                                                                >
+                                                                    <td className="table-cell">{p.first_name}</td>
+                                                                    <td className="table-cell ">{p.last_name}</td>
+                                                                    <td className="table-cell ">{p.email}</td>
+                                                                    {/* <td className="table-cell ">{new Date(p.booking_date).toLocaleDateString()}</td> */}
+                                                                    <td className="table-cell ">{format(parseISO(p.booking_date), "EEE, dd MMM") } at {new Date(p.booking_date).toLocaleTimeString("fr-FR", {hour: "2-digit",  minute: "2-digit"})}</td>
+                                                                    
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td
+                                                                    colSpan={4}
+                                                                    className="py-4 text-center text-gray-500"
+                                                                >
+                                                                    No passenger found
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
         </div>
     );
 };

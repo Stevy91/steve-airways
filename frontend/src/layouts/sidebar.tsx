@@ -53,7 +53,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                 key={firstLink.label}
                                 to={firstLink.path}
                                 className={cn(
-                                    "sidebar-item flex items-center gap-2 rounded p-2 hover:bg-slate-100 hover:text-black dark:hover:bg-slate-800 dark:hover:text-white",
+                                    "sidebar-item-dashboard text-base font-medium text-slate-900 flex items-center gap-2 rounded p-2 hover:bg-slate-100 hover:text-black dark:hover:bg-slate-800 dark:hover:text-white dark:text-white",
                                     collapsed ? "mx-auto h-[45px] w-[45px] justify-center" : "w-full justify-start",
                                 )}
                             >

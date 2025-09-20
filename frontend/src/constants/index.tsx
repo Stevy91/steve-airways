@@ -21,7 +21,7 @@ export const NavbarLinks = (lang: string) => [
     links: [
       { label: "All flights", icon: Plane, path: `/${lang}/dashboard/flights` },
       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-plane` },
-      { label: "Airport", icon: TowerControl, path: `/${lang}/dashboard/airport` },
+    //   { label: "Airport", icon: TowerControl, path: `/${lang}/dashboard/airport` },
     ],
   },
   {
@@ -30,24 +30,24 @@ export const NavbarLinks = (lang: string) => [
     links: [
       { label: "All flights Helico", icon: HelicopterIcon, path: `/${lang}/dashboard/flights-helico` },
       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
-      { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
+    //   { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
     ],
   },
-  {
-    title: "Users",
-    icon: Users,
-    links: [
-      { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
-      { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
-    ],
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    links: [
-      { label: "Settings", icon: Settings, path: `/${lang}/dashboard/settings` },
-    ],
-  },
+//   {
+//     title: "Users",
+//     icon: Users,
+//     links: [
+//       { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
+//       { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+//     ],
+//   },
+//   {
+//     title: "Settings",
+//     icon: Settings,
+//     links: [
+//       { label: "Settings", icon: Settings, path: `/${lang}/dashboard/settings` },
+//     ],
+//   },
 ];
 
 

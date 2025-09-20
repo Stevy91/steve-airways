@@ -191,7 +191,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
                 {/* Total Price */}
                 <section className="space-y-2">
-                  <div className="text-lg font-bold text-orange-400">Total Price: {booking.totalPrice}</div>
+                  <div className="text-lg font-bold text-amber-500">Total Price: {booking.totalPrice}</div>
                 </section>
 
                 {/* Admin Controls */}
@@ -239,7 +239,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                     onClick={() =>
                       handleSave(paymentStatus as "pending" | "confirmed" | "cancelled")
                     }
-                    className="rounded-md bg-blue-900 px-4 py-2 text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="rounded-md bg-amber-500 px-4 py-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     Save changes
                   </button>
