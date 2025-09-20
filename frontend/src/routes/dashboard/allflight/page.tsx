@@ -1,5 +1,5 @@
-import { ChevronDown, MapPinIcon, MoreVertical, Pencil, Ticket, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ChevronDown, MapPinIcon, MoreVertical, Pencil, Ticket, Trash2, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 import { useAuth } from "../../../hooks/useAuth";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
@@ -7,6 +7,7 @@ import BookingCreatedModal from "../../../components/BookingCreatedModdal";
 import toast from "react-hot-toast";
 import { format, parse, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Flight {
     id: number;
@@ -58,6 +59,33 @@ const FlightTable = () => {
     const [open, setOpen] = useState(false);
 
     const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
+    const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+    // Fermer le dropdown si clic/touch extérieur de l'élément ouvert
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent | TouchEvent) {
+            if (openDropdown === null) return; // rien d'ouvert => pas besoin de vérifier
+
+            const el = dropdownRefs.current[openDropdown];
+            if (!el) {
+                setOpenDropdown(null);
+                return;
+            }
+
+            // si le clic / touch est en dehors de l'élément, fermer
+            if (!el.contains(event.target as Node)) {
+                setOpenDropdown(null);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("touchstart", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside);
+        };
+    }, [openDropdown]);
 
     useAuth();
 
@@ -322,8 +350,8 @@ const FlightTable = () => {
             )}
 
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
-                <div className="card-body overflow-auto p-0">
-                    <div className="relative w-full flex-shrink-0 overflow-auto rounded-none [scrollbar-width:_thin]">
+                <div className="card-body overflow-visible p-0">
+                    <div className="relative w-full flex-shrink-0 overflow-visible rounded-none [scrollbar-width:_thin]">
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
@@ -355,16 +383,21 @@ const FlightTable = () => {
                                         <td className="table-cell text-center">${flight.price}</td>
                                         <td className="table-cell text-center">{flight.seats_available}</td>
                                         <td className="relative table-cell px-4 py-2 text-center">
-                                            <div className="s relative text-left">
+                                            <div
+                                                className="relative text-left"
+                                                ref={(el) => {
+                                                    dropdownRefs.current[flight.id] = el;
+                                                }}
+                                            >
                                                 <button
-                                                    className="inline-flex w-full justify-center gap-2 rounded px-4 py-2 text-blue-500 hover:bg-gray-100"
+                                                    className="inline-flex w-full justify-center gap-2 rounded-lg p-2 px-4 py-2 text-center text-blue-500 hover:bg-amber-500"
                                                     onClick={() => setOpenDropdown(openDropdown === flight.id ? null : flight.id)}
                                                 >
                                                     <MoreVertical className="h-5 w-5 text-gray-700" />
                                                 </button>
 
                                                 {openDropdown === flight.id && (
-                                                    <div className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                    <div className="absolute right-0 z-[9999] mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                         <div className="py-1">
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-blue-500 hover:bg-gray-100"
@@ -435,230 +468,324 @@ const FlightTable = () => {
             />
 
             {/* Modal Add/Edit */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="w-full max-w-xl rounded-lg bg-white p-6">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-xl font-semibold">{editingFlight ? "Modifier le vol" : "Ajouter un vol"}</h2>
-                            <button
-                                onClick={() => {
-                                    setShowModal(false);
-                                    setEditingFlight(null);
-                                    setSelectedDeparture("");
-                                    setSelectedDestination("");
-                                }}
-                                className="text-xl text-gray-500 hover:text-black"
-                            >
-                                &times;
-                            </button>
-                        </div>
-
-                        <form
-                            onSubmit={async (e) => {
-                                e.preventDefault();
-                                setSubmitting(true);
-                                const formData = new FormData(e.currentTarget);
-
-                                const flightData = {
-                                    flight_number: formData.get("flight_number") as string,
-                                    type: "plane",
-                                    airline: formData.get("airline") as string,
-                                    departure_location_id: selectedDeparture,
-                                    arrival_location_id: selectedDestination,
-                                    departure_time: formData.get("departure_time") as string,
-                                    arrival_time: formData.get("arrival_time") as string,
-                                    price: Number(formData.get("price")), // Convertir en number
-                                    seats_available: Number(formData.get("seats_available")), // Convertir en number
-                                };
-
-                                console.log("Données à envoyer:", flightData);
-
-                                try {
-                                    if (editingFlight) {
-                                        await handleUpdateFlight(editingFlight.id, flightData);
-                                    } else {
-                                        await handleAddFlight(flightData);
-                                    }
-                                } catch (err) {
-                                    console.error("Erreur dans le formulaire:", err);
-                                } finally {
-                                    setSubmitting(false);
-                                }
+            <AnimatePresence>
+                {showModal && (
+                    <div className="fixed inset-0 z-50">
+                        <motion.div
+                            className="absolute inset-0 bg-black/50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                setShowModal(false);
+                                setEditingFlight(null);
+                                setSelectedDeparture("");
+                                setSelectedDestination("");
                             }}
-                            className="space-y-4"
+                        />
+                        <motion.div
+                            role="dialog"
+                            aria-modal="true"
+                            className="absolute inset-0 mx-auto my-6 flex max-w-3xl items-start justify-center p-4 sm:my-12"
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         >
-                            <input
-                                type="text"
-                                name="flight_number"
-                                placeholder="Numéro de vol"
-                                defaultValue={editingFlight?.flight_number || ""}
-                                className="w-full rounded-full border px-3 py-2"
-                                required
-                            />
-                            <input
-                                type="text"
-                                name="airline"
-                                placeholder="Compagnie aérienne"
-                                defaultValue={editingFlight?.airline || ""}
-                                className="w-full rounded-full border px-3 py-2"
-                                required
-                            />
-
-                            <div className="relative flex items-center rounded-full border p-2">
-                                <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
-                                <select
-                                    value={selectedDeparture}
-                                    onChange={(e) => setSelectedDeparture(e.target.value)}
-                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
-                                    required
-                                    disabled={loadingLocations} // Désactive pendant chargement
+                            <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                                <button
+                                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Close"
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        setEditingFlight(null);
+                                        setSelectedDeparture("");
+                                        setSelectedDestination("");
+                                    }}
                                 >
-                                    <option
-                                        value=""
-                                        disabled
+                                    <X className="h-5 w-5" />
+                                </button>
+
+                                <div className="px-6 pt-6">
+                                    <h2 className="text-xl font-semibold text-slate-800">{editingFlight ? "Update the flight" : "Add a flight"}</h2>
+                                </div>
+
+                                <div className="my-4 h-px w-full bg-slate-100" />
+                                
+                                    <form
+                                        onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            setSubmitting(true);
+                                            const formData = new FormData(e.currentTarget);
+
+                                            const flightData = {
+                                                flight_number: formData.get("flight_number") as string,
+                                                type: "plane",
+                                                airline: formData.get("airline") as string,
+                                                departure_location_id: selectedDeparture,
+                                                arrival_location_id: selectedDestination,
+                                                departure_time: formData.get("departure_time") as string,
+                                                arrival_time: formData.get("arrival_time") as string,
+                                                price: Number(formData.get("price")), // Convertir en number
+                                                seats_available: Number(formData.get("seats_available")), // Convertir en number
+                                            };
+
+                                            console.log("Données à envoyer:", flightData);
+
+                                            try {
+                                                if (editingFlight) {
+                                                    await handleUpdateFlight(editingFlight.id, flightData);
+                                                } else {
+                                                    await handleAddFlight(flightData);
+                                                }
+                                            } catch (err) {
+                                                console.error("Erreur dans le formulaire:", err);
+                                            } finally {
+                                                setSubmitting(false);
+                                            }
+                                        }}
+                                        className="space-y-4"
                                     >
-                                        Sélectionner le départ
-                                    </option>
-                                    {!loadingLocations &&
-                                        locations
-                                            .filter((loc) => String(loc.id) !== selectedDestination)
-                                            .map((loc) => (
-                                                <option
-                                                    key={loc.id}
-                                                    value={loc.id}
+
+                                        <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-2">
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Flight number
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="flight_number"
+                                                placeholder="Flight number"
+                                                defaultValue={editingFlight?.flight_number || ""}
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Airline
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                name="airline"
+                                                placeholder="Airline"
+                                                defaultValue={editingFlight?.airline || ""}
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Select the departure
+                                            </label>
+                                            <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                                <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
+                                                <select
+                                                    value={selectedDeparture}
+                                                    onChange={(e) => setSelectedDeparture(e.target.value)}
+                                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
+                                                    required
+                                                    disabled={loadingLocations} // Désactive pendant chargement
                                                 >
-                                                    {loc.city} ({loc.code})
-                                                </option>
-                                            ))}
-                                </select>
+                                                    <option
+                                                        value=""
+                                                        disabled
+                                                    >
+                                                        Select the departure
+                                                    </option>
+                                                    {!loadingLocations &&
+                                                        locations
+                                                            .filter((loc) => String(loc.id) !== selectedDestination)
+                                                            .map((loc) => (
+                                                                <option
+                                                                    key={loc.id}
+                                                                    value={loc.id}
+                                                                >
+                                                                    {loc.city} ({loc.code})
+                                                                </option>
+                                                            ))}
+                                                </select>
 
-                                {loadingLocations && (
-                                    <div className="absolute right-3">
-                                        <svg
-                                            className="h-5 w-5 animate-spin text-gray-500"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            ></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                            ></path>
-                                        </svg>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="relative flex items-center rounded-full border p-2">
-                                <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
-                                <select
-                                    value={selectedDestination}
-                                    onChange={(e) => setSelectedDestination(e.target.value)}
-                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
-                                    required
-                                    disabled={loadingLocations} // Désactive pendant chargement
-                                >
-                                    <option
-                                        value=""
-                                        disabled
-                                    >
-                                        Sélectionner le départ
-                                    </option>
-                                    {!loadingLocations &&
-                                        locations
-                                            .filter((loc) => String(loc.id) !== selectedDeparture)
-                                            .map((loc) => (
-                                                <option
-                                                    key={loc.id}
-                                                    value={loc.id}
+                                                {loadingLocations && (
+                                                    <div className="absolute right-3">
+                                                        <svg
+                                                            className="h-5 w-5 animate-spin text-gray-500"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle
+                                                                className="opacity-25"
+                                                                cx="12"
+                                                                cy="12"
+                                                                r="10"
+                                                                stroke="currentColor"
+                                                                strokeWidth="4"
+                                                            ></circle>
+                                                            <path
+                                                                className="opacity-75"
+                                                                fill="currentColor"
+                                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            ></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Select destination
+                                            </label>
+                                            <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                                <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
+                                                <select
+                                                    value={selectedDestination}
+                                                    onChange={(e) => setSelectedDestination(e.target.value)}
+                                                    className="w-full bg-transparent outline-none disabled:text-gray-400"
+                                                    required
+                                                    disabled={loadingLocations} // Désactive pendant chargement
                                                 >
-                                                    {loc.city} ({loc.code})
-                                                </option>
-                                            ))}
-                                </select>
+                                                    <option
+                                                        value=""
+                                                        disabled
+                                                    >
+                                                        Select destination
+                                                    </option>
+                                                    {!loadingLocations &&
+                                                        locations
+                                                            .filter((loc) => String(loc.id) !== selectedDeparture)
+                                                            .map((loc) => (
+                                                                <option
+                                                                    key={loc.id}
+                                                                    value={loc.id}
+                                                                >
+                                                                    {loc.city} ({loc.code})
+                                                                </option>
+                                                            ))}
+                                                </select>
 
-                                {loadingLocations && (
-                                    <div className="absolute right-3">
-                                        <svg
-                                            className="h-5 w-5 animate-spin text-gray-500"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            ></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                            ></path>
-                                        </svg>
-                                    </div>
-                                )}
+                                                {loadingLocations && (
+                                                    <div className="absolute right-3">
+                                                        <svg
+                                                            className="h-5 w-5 animate-spin text-gray-500"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <circle
+                                                                className="opacity-25"
+                                                                cx="12"
+                                                                cy="12"
+                                                                r="10"
+                                                                stroke="currentColor"
+                                                                strokeWidth="4"
+                                                            ></circle>
+                                                            <path
+                                                                className="opacity-75"
+                                                                fill="currentColor"
+                                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                            ></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Departure date
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                name="departure_time"
+                                                defaultValue={formatDateForInput(editingFlight?.departure || "")}
+                                                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Arrival date
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                name="arrival_time"
+                                                defaultValue={formatDateForInput(editingFlight?.arrival || "")}
+                                                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Price
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="price"
+                                                placeholder="Price ($)"
+                                                defaultValue={editingFlight?.price}
+                                                className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label
+                                                htmlFor="firstName"
+                                                className="mb-1 font-medium text-gray-700"
+                                            >
+                                                Number of seats
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="seats_available"
+                                                placeholder="Number of seats"
+                                                defaultValue={editingFlight?.seats_available}
+                                                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="md:col-span-2">
+                                             <button
+                                                type="submit"
+                                                className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 py-3 align-middle font-semibold text-white transition-colors hover:bg-blue-700"
+                                                disabled={submitting}
+                                            >
+                                                {submitting && (
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-white"></div>
+                                                )}
+                                                {editingFlight ? "Update" : "Save"}
+                                            </button>
+                                        </div>
+                                        </div>
+                                    </form>
+                               
                             </div>
-
-                            <input
-                                type="datetime-local"
-                                name="departure_time"
-                                defaultValue={formatDateForInput(editingFlight?.departure || "")}
-                                className="w-full rounded-full border px-3 py-2"
-                                required
-                            />
-
-                            <input
-                                type="datetime-local"
-                                name="arrival_time"
-                                defaultValue={formatDateForInput(editingFlight?.arrival || "")}
-                                className="w-full rounded-full border px-3 py-2"
-                                required
-                            />
-
-                            <input
-                                type="number"
-                                name="price"
-                                placeholder="Prix ($)"
-                                defaultValue={editingFlight?.price}
-                                className="w-full rounded-full border px-3 py-2"
-                                required
-                            />
-                            <input
-                                type="number"
-                                name="seats_available"
-                                placeholder="Nombre de sièges"
-                                defaultValue={editingFlight?.seats_available}
-                                className="w-full rounded-full border px-3 py-2"
-                                required
-                            />
-
-                            <button
-                                type="submit"
-                                className="relative flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-white"
-                                disabled={submitting}
-                            >
-                                {submitting && (
-                                    <div className="absolute left-3 h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-white"></div>
-                                )}
-                                {editingFlight ? "Modifier" : "Enregistrer"}
-                            </button>
-                        </form>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 };

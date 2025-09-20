@@ -963,7 +963,7 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
       returnFlightId,
       departureDate,
       returnDate,
-      paymentMethod = "cash",
+      paymentMethod = "card",
     } = req.body;
 
     const typeVol = passengers[0]?.typeVol || "plane";
@@ -1139,7 +1139,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
             }
         }
 
-        const { paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+        const { paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate, paymentMethod = "card", } = req.body;
         const typeVol = passengers[0]?.typeVol || "plane";
         const typeVolV = passengers[0]?.typeVolV || "onway";
 
@@ -1201,8 +1201,8 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
                 total_price, contact_email, contact_phone,
                 status, type_vol, type_v, guest_user, guest_email,
                 created_at, updated_at, departure_date,
-                return_date, passenger_count, booking_reference, return_flight_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                return_date, passenger_count, booking_reference, return_flight_id, payment_method
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 flightId,
                 paymentIntentId,
@@ -1221,6 +1221,7 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
                 passengers.length,
                 bookingReference,
                 returnFlightId || null,
+                paymentMethod,
             ],
         );
 
