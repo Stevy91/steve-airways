@@ -1124,7 +1124,7 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
 });
 
 // Récupérer les passagers d’un vol
-app.get("api/flights/:flightId/passengers", async (req, res) => {
+app.get("/api/flights/:flightId/passengers", async (req, res) => {
   const { flightId } = req.params;
 
   try {
