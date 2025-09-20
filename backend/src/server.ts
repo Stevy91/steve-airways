@@ -633,8 +633,6 @@ app.get("/api/flightall", async (req: Request, res: Response) => {
 //     });
 //   }
 // });
-
-
 app.get("/api/flights", async (req: Request, res: Response) => {
   try {
     const { from, to, date, tab: type } = req.query as {
@@ -663,30 +661,24 @@ app.get("/api/flights", async (req: Request, res: Response) => {
     }
 
     // Vérification des aéroports
-    const [departureAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [from]);
-    const [arrivalAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [to]);
+    const [departureAirport] = await pool.query(
+      "SELECT id FROM locations WHERE code = ?",
+      [from]
+    );
+    const [arrivalAirport] = await pool.query(
+      "SELECT id FROM locations WHERE code = ?",
+      [to]
+    );
 
     if ((departureAirport as any[]).length === 0 || (arrivalAirport as any[]).length === 0) {
       return res.status(404).json({ error: "Aéroport non trouvé" });
     }
 
-    // Date actuelle en Haïti
-    const haitiNow = new Date().toLocaleString("en-US", { timeZone: "America/Port-au-Prince" });
-    const now = new Date(haitiNow);
+    // Plage horaire : toujours toute la journée
+    const startOfDay = `${date} 00:00:00`;
+    const endOfDay = `${date} 23:59:59`;
 
-    const todayStr = now.toISOString().split("T")[0]; // ex: "2025-09-20"
-
-    // Plage horaire
-    let startOfDay = `${date} 00:00:00`;
-    let endOfDay = `${date} 23:59:59`;
-
-    // ✅ Si la date demandée est aujourd'hui → on prend seulement les vols à partir de l'heure actuelle
-    if (date === todayStr) {
-      const currentTime = now.toTimeString().split(" ")[0]; // "20:15:32"
-      startOfDay = `${date} ${currentTime}`;
-    }
-
-    // Requête principale
+    // Requête principale pour les vols aller
     const [flights] = await pool.query(
       `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
        FROM flights f
@@ -694,7 +686,7 @@ app.get("/api/flights", async (req: Request, res: Response) => {
        JOIN locations arr ON f.arrival_location_id = arr.id
        WHERE dep.code = ? 
          AND arr.code = ? 
-         AND f.type = ?
+         AND f.type = ? 
          AND f.departure_time BETWEEN ? AND ?
        ORDER BY f.departure_time`,
       [from, to, type, startOfDay, endOfDay]
@@ -703,14 +695,8 @@ app.get("/api/flights", async (req: Request, res: Response) => {
     // Vols retour si return_date présent
     if (req.query.return_date) {
       const returnDate = req.query.return_date as string;
-      let startReturn = `${returnDate} 00:00:00`;
-      let endReturn = `${returnDate} 23:59:59`;
-
-      // ⚡ Même logique pour les retours si la date = aujourd’hui
-      if (returnDate === todayStr) {
-        const currentTime = now.toTimeString().split(" ")[0];
-        startReturn = `${returnDate} ${currentTime}`;
-      }
+      const startReturn = `${returnDate} 00:00:00`;
+      const endReturn = `${returnDate} 23:59:59`;
 
       const [returnFlights] = await pool.query(
         `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
@@ -719,7 +705,7 @@ app.get("/api/flights", async (req: Request, res: Response) => {
          JOIN locations arr ON f.arrival_location_id = arr.id
          WHERE dep.code = ? 
            AND arr.code = ? 
-           AND f.type = ?
+           AND f.type = ? 
            AND f.departure_time BETWEEN ? AND ?
          ORDER BY f.departure_time`,
         [to, from, type, startReturn, endReturn]
@@ -731,6 +717,7 @@ app.get("/api/flights", async (req: Request, res: Response) => {
       });
     }
 
+    // Si pas de retour, on renvoie seulement les vols aller
     res.json(flights);
   } catch (err) {
     console.error("Erreur:", err);
@@ -740,6 +727,113 @@ app.get("/api/flights", async (req: Request, res: Response) => {
     });
   }
 });
+
+
+// app.get("/api/flights", async (req: Request, res: Response) => {
+//   try {
+//     const { from, to, date, tab: type } = req.query as {
+//       from: string;
+//       to: string;
+//       date: string;
+//       tab: string;
+//     };
+
+//     // Validation des paramètres
+//     if (!from || !to || !date || !type) {
+//       return res.status(400).json({
+//         error: "Paramètres manquants",
+//         required: ["from", "to", "date", "tab"],
+//         received: { from, to, date, type },
+//       });
+//     }
+
+//     const validTypes = ["plane", "helicopter"];
+//     if (!validTypes.includes(type)) {
+//       return res.status(400).json({
+//         error: "Type invalide",
+//         validTypes,
+//         received: type,
+//       });
+//     }
+
+//     // Vérification des aéroports
+//     const [departureAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [from]);
+//     const [arrivalAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [to]);
+
+//     if ((departureAirport as any[]).length === 0 || (arrivalAirport as any[]).length === 0) {
+//       return res.status(404).json({ error: "Aéroport non trouvé" });
+//     }
+
+//     // Date actuelle en Haïti
+//     const haitiNow = new Date().toLocaleString("en-US", { timeZone: "America/Port-au-Prince" });
+//     const now = new Date(haitiNow);
+
+//     const todayStr = now.toISOString().split("T")[0]; // ex: "2025-09-20"
+
+//     // Plage horaire
+//     let startOfDay = `${date} 00:00:00`;
+//     let endOfDay = `${date} 23:59:59`;
+
+//     // ✅ Si la date demandée est aujourd'hui → on prend seulement les vols à partir de l'heure actuelle
+//     if (date === todayStr) {
+//       const currentTime = now.toTimeString().split(" ")[0]; // "20:15:32"
+//       startOfDay = `${date} ${currentTime}`;
+//     }
+
+//     // Requête principale
+//     const [flights] = await pool.query(
+//       `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
+//        FROM flights f
+//        JOIN locations dep ON f.departure_location_id = dep.id
+//        JOIN locations arr ON f.arrival_location_id = arr.id
+//        WHERE dep.code = ? 
+//          AND arr.code = ? 
+//          AND f.type = ?
+//          AND f.departure_time BETWEEN ? AND ?
+//        ORDER BY f.departure_time`,
+//       [from, to, type, startOfDay, endOfDay]
+//     );
+
+//     // Vols retour si return_date présent
+//     if (req.query.return_date) {
+//       const returnDate = req.query.return_date as string;
+//       let startReturn = `${returnDate} 00:00:00`;
+//       let endReturn = `${returnDate} 23:59:59`;
+
+//       // ⚡ Même logique pour les retours si la date = aujourd’hui
+//       if (returnDate === todayStr) {
+//         const currentTime = now.toTimeString().split(" ")[0];
+//         startReturn = `${returnDate} ${currentTime}`;
+//       }
+
+//       const [returnFlights] = await pool.query(
+//         `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
+//          FROM flights f
+//          JOIN locations dep ON f.departure_location_id = dep.id
+//          JOIN locations arr ON f.arrival_location_id = arr.id
+//          WHERE dep.code = ? 
+//            AND arr.code = ? 
+//            AND f.type = ?
+//            AND f.departure_time BETWEEN ? AND ?
+//          ORDER BY f.departure_time`,
+//         [to, from, type, startReturn, endReturn]
+//       );
+
+//       return res.json({
+//         outbound: flights,
+//         return: returnFlights,
+//       });
+//     }
+
+//     res.json(flights);
+//   } catch (err) {
+//     console.error("Erreur:", err);
+//     res.status(500).json({
+//       error: "Erreur serveur",
+//       details: err instanceof Error ? err.message : String(err),
+//     });
+//   }
+// });
 
 
 
