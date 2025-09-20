@@ -1128,12 +1128,21 @@ app.get("/api/flights/:flightId/passengers", async (req, res) => {
   const { flightId } = req.params;
 
   try {
-    const [rows] =  await pool.query(
-      `SELECT p.id, p.first_name, p.last_name, p.email, b.created_at AS booking_date
+    const [rows] = await pool.query(
+      `SELECT 
+          p.id,
+          p.first_name,
+          p.last_name,
+          p.email,
+          b.created_at AS booking_date,
+          CASE 
+            WHEN b.flight_id = ? THEN 'outbound'
+            WHEN b.return_flight_id = ? THEN 'return'
+          END AS segment
        FROM passengers p
        INNER JOIN bookings b ON p.booking_id = b.id
-       WHERE b.flight_id = ?`,
-      [flightId]
+       WHERE b.flight_id = ? OR b.return_flight_id = ?`,
+      [flightId, flightId, flightId, flightId]
     );
 
     res.json(rows);
@@ -1142,6 +1151,8 @@ app.get("/api/flights/:flightId/passengers", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
+
 
 app.post("/api/confirm-booking", async (req: Request, res: Response) => {
  
