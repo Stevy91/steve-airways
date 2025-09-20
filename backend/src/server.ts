@@ -1123,6 +1123,26 @@ app.post("/api/create-ticket", async (req: Request, res: Response) => {
   }
 });
 
+// Récupérer les passagers d’un vol
+app.get("api/flights/:flightId/passengers", async (req, res) => {
+  const { flightId } = req.params;
+
+  try {
+    const [rows] =  await pool.query(
+      `SELECT p.id, p.first_name, p.last_name, p.email, b.created_at AS booking_date
+       FROM passengers p
+       INNER JOIN bookings b ON p.booking_id = b.id
+       WHERE b.flight_id = ?`,
+      [flightId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Erreur récupération passagers:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 app.post("/api/confirm-booking", async (req: Request, res: Response) => {
  
     const connection = await pool.getConnection();
