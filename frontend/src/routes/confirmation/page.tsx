@@ -344,12 +344,23 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
                 style={{
                     marginBottom: "10px",
                     textAlign: "center",
-                    fontSize: "25px",
+                    fontSize: "18px",
                     fontWeight: 700,
                 }}
                 className="text-blue-900"
             >
                 Trogon Airways - {t("Booking Confirmation")}
+            </h1>
+                        <h1
+                style={{
+                    marginBottom: "10px",
+                    textAlign: "center",
+                    fontSize: "25px",
+                    fontWeight: 700,
+                }}
+                className="text-blue-900"
+            >
+                {t("Your ticket has been sent to your email address.")}
             </h1>
 
             <div
