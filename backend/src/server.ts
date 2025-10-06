@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { zonedTimeToUtc } from "date-fns-tz";
+
+
 import mysql, { Pool } from 'mysql2/promise';
 import http from "http";
 import { Server } from "socket.io";
@@ -2309,7 +2310,7 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
     try {
           // Convertir created_at en heure Haïti
           const now = new Date();
-        const createdAt = zonedTimeToUtc(now, "America/Port-au-Prince");
+ 
 
         const [result] = await pool.execute<ResultSetHeader>(
             `INSERT INTO flights 
