@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-import { sendEmail } from "./utils/sendEmail"; // selon ton arborescence
+import fetch from "node-fetch";
 import mysql, { Pool } from 'mysql2/promise';
 import http from "http";
 import { Server } from "socket.io";
@@ -2551,39 +2551,70 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 
 
-app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
-  const { reference } = req.params;
-  const { paymentStatus } = req.body;
+// app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
+//   const { reference } = req.params;
+//   const { paymentStatus } = req.body;
 
-  // Validation du statut
-  if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
-    return res.status(400).json({ error: "Invalid payment status" });
+//   // Validation du statut
+//   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
+//     return res.status(400).json({ error: "Invalid payment status" });
+//   }
+
+//   let connection;
+//   try {
+//     connection = await pool.getConnection();
+
+//     // On met à jour en utilisant booking_reference au lieu de id
+//     const [result] = await connection.query(
+//       `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
+//       [paymentStatus, reference]
+//     );
+
+//     // Vérifie si une ligne a été mise à jour
+//     const affectedRows = (result as any).affectedRows;
+//     if (affectedRows === 0) {
+//       return res.status(404).json({ error: "Booking not found" });
+//     }
+
+//     res.json({ success: true, reference, newStatus: paymentStatus });
+//   } catch (err) {
+//     console.error("Error updating payment status:", err);
+//     res.status(500).json({ error: "Failed to update payment status" });
+//   } finally {
+//     if (connection) connection.release();
+//   }
+// });
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
+  const sender = 'info@kashapw.com';
+
+  if (!apiKey || !sender) {
+    console.error("SMTP2GO API key or sender missing in environment variables");
+    return;
   }
 
-  let connection;
+  const payload = {
+    api_key: apiKey,
+    sender,
+    to: [to],
+    subject,
+    html_body: html,
+  };
+
   try {
-    connection = await pool.getConnection();
+    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-    // On met à jour en utilisant booking_reference au lieu de id
-    const [result] = await connection.query(
-      `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
-      [paymentStatus, reference]
-    );
-
-    // Vérifie si une ligne a été mise à jour
-    const affectedRows = (result as any).affectedRows;
-    if (affectedRows === 0) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-
-    res.json({ success: true, reference, newStatus: paymentStatus });
+    const data = await response.json();
+    console.log("SMTP2GO response:", data);
   } catch (err) {
-    console.error("Error updating payment status:", err);
-    res.status(500).json({ error: "Failed to update payment status" });
-  } finally {
-    if (connection) connection.release();
+    console.error("Erreur lors de l’envoi de l’email:", err);
   }
-});
+}
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
@@ -2665,8 +2696,6 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
     }
 
 
-   
-    
 
     await connection.commit();
 
