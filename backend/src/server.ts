@@ -2587,12 +2587,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
-  const sender = 'info@kashapw.com';
-
-  if (!apiKey || !sender) {
-    console.error("SMTP2GO API key or sender missing in environment variables");
-    return;
-  }
+  const sender = "info@kashapw.com";
 
   const payload = {
     api_key: apiKey,
@@ -2610,11 +2605,17 @@ async function sendEmail(to: string, subject: string, html: string) {
     });
 
     const data = await response.json();
-    console.log("SMTP2GO response:", data);
+
+    if (data.data?.succeeded === 0) {
+      console.error("❌ Email non envoyé:", JSON.stringify(data, null, 2));
+    } else {
+      console.log("✅ Email envoyé avec succès:", JSON.stringify(data, null, 2));
+    }
   } catch (err) {
     console.error("Erreur lors de l’envoi de l’email:", err);
   }
 }
+
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
@@ -2631,11 +2632,13 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
     await connection.beginTransaction();
 
     // 2️⃣ Récupérer la réservation complète
-    const [bookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT id, flight_id, return_flight_id, passenger_count, status 
-       FROM bookings WHERE booking_reference = ? FOR UPDATE`,
-      [reference]
-    );
+const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+  `SELECT id, flight_id, return_flight_id, passenger_count, status,
+          customer_name, customer_email, booking_reference, flight_number
+   FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+  [reference]
+);
+
 
     if (bookings.length === 0) {
       await connection.rollback();
