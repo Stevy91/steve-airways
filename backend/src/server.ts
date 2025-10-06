@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { zonedTimeToUtc } from "date-fns-tz";
 import mysql, { Pool } from 'mysql2/promise';
 import http from "http";
 import { Server } from "socket.io";
@@ -2306,11 +2307,15 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
     }
 
     try {
+          // Convertir created_at en heure Haïti
+          const now = new Date();
+        const createdAt = zonedTimeToUtc(now, "America/Port-au-Prince");
+
         const [result] = await pool.execute<ResultSetHeader>(
             `INSERT INTO flights 
              (flight_number, type, airline, departure_location_id, arrival_location_id, 
-              departure_time, arrival_time, price, seats_available)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              departure_time, arrival_time, price, seats_available, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 req.body.flight_number ?? null,
                 req.body.type ?? null,
@@ -2321,6 +2326,7 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
                 req.body.arrival_time ?? null,
                 req.body.price ?? null,
                 req.body.seats_available ?? null,
+                req.body.createdAt ?? null,
             ],
         );
         console.log("Résultat INSERT:", result); // Ajouté pour le debug
@@ -2343,6 +2349,8 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
         }
     }
 });
+
+
 // Endpoint pour les données du dashboard
 app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     let connection;

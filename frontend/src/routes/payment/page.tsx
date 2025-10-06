@@ -949,7 +949,7 @@ export default function Pay() {
                                         </div>
                                     </label> */}
 
-                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
+                                            {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
@@ -960,7 +960,7 @@ export default function Pay() {
                                                 <div className="ml-3 flex items-center">
                                                     <h1>{t("Pay Later")}</h1>
                                                 </div>
-                                            </label>
+                                            </label> */}
                                         </div>
 
                                         {error && (
