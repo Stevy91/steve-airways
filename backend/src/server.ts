@@ -2632,13 +2632,11 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
     await connection.beginTransaction();
 
     // 2️⃣ Récupérer la réservation complète
-const [bookings] = await connection.query<mysql.RowDataPacket[]>(
-  `SELECT id, flight_id, return_flight_id, passenger_count, status,
-          customer_name, customer_email, booking_reference, flight_number
-   FROM bookings WHERE booking_reference = ? FOR UPDATE`,
-  [reference]
-);
-
+    const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+      `SELECT id, flight_id, return_flight_id, passenger_count, status 
+       FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+      [reference]
+    );
 
     if (bookings.length === 0) {
       await connection.rollback();
@@ -2654,49 +2652,71 @@ const [bookings] = await connection.query<mysql.RowDataPacket[]>(
     );
 
     // 4️⃣ Si la réservation est annulée
+   
+
+
+
     if (paymentStatus === "cancelled") {
-      const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
+  const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
 
-      // 🧹 Supprimer les passagers liés
-      await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
+  // 🧹 Supprimer les passagers liés
+  await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
 
-      // ✈️ Réaugmentation du nombre de sièges disponibles
-      await connection.query(
-        `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-        [passenger_count, flight_id]
-      );
+  // ✈️ Réaugmentation du nombre de sièges disponibles
+  await connection.query(
+    `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+    [passenger_count, flight_id]
+  );
 
-      // Si vol retour, on ajuste aussi
-      if (return_flight_id) {
-        await connection.query(
-          `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-          [passenger_count, return_flight_id]
-        );
-      }
- // 🔹 Envoi d'un email au client
-      const emailHtml = `
-        <h2>Annulation de votre vol</h2>
-        <p>Bonjour ${booking.customer_name},</p>
-        <p>Nous sommes désolés de vous informer que votre vol <b>${booking.flight_number}</b> a été <b>annulé</b>.</p>
-        <p>Référence de réservation : <b>${booking.booking_reference}</b></p>
-        <p>Pour toute assistance, veuillez contacter notre support.</p>
-        <br />
-        <p>Cordialement,<br/>L’équipe Support</p>
-      `;
+  if (return_flight_id) {
+    await connection.query(
+      `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+      [passenger_count, return_flight_id]
+    );
+  }
 
-      await sendEmail(
-        booking.customer_email,
-        "Votre vol a été annulé",
-        emailHtml
-      );
+  // 🔍 Récupérer les passagers concernés pour leur envoyer un email
+  const [passengers] = await connection.query<mysql.RowDataPacket[]>(
+    `
+    SELECT 
+      p.first_name, p.last_name, p.email, 
+      b.booking_reference, b.customer_name, b.customer_email, b.created_at AS booking_date,
+      CASE 
+        WHEN b.flight_id = ? THEN 'outbound'
+        WHEN b.return_flight_id = ? THEN 'return'
+      END AS segment
+    FROM passengers p
+    INNER JOIN bookings b ON p.booking_id = b.id
+    WHERE b.flight_id = ? OR b.return_flight_id = ?
+    `,
+    [flight_id, return_flight_id, flight_id, return_flight_id]
+  );
 
-      // 🔔 (Optionnel) Ajouter une notification d’annulation
-      await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
-      );
-    }
+  // ✉️ Envoyer un email à chaque passager
+  for (const passenger of passengers) {
+    const emailHtml = `
+      <h2>Annulation de vol</h2>
+      <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
+      <p>Nous sommes désolés de vous informer que votre vol <b>${passenger.segment === "outbound" ? "aller" : "retour"}</b> a été <b>annulé</b>.</p>
+      <p>Référence de réservation : <b>${passenger.booking_reference}</b></p>
+      <p>Merci de votre compréhension.<br/>L’équipe Support de Kashpaw Airlines</p>
+    `;
+
+    await sendEmail(
+      passenger.email,
+      "Votre vol a été annulé",
+      emailHtml
+    );
+  }
+
+  // 🔔 Notification d’annulation
+  await connection.query(
+    `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
+  );
+}
+
 
 
 
