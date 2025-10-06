@@ -205,9 +205,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                         onChange={(e) => setPaymentStatus(e.target.value)}
                         className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
                       >
-                        {["confirmed", "pending", "cancelled"].map((s) => (
+                        {["confirmed", "cancelled"].map((s) => (
                           <option key={s} value={s}>
-                            {s === "confirmed" ? "Paid" : s === "pending" ? "Unpaid" : "cancelled"}
+                            {s === "confirmed" ? "Paid" : "cancelled"}
                           </option>
                         ))}
                       </select>

@@ -2585,11 +2585,97 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 //   }
 // });
 
-app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
+// app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
+//   const { reference } = req.params;
+//   const { paymentStatus } = req.body;
+
+//   // 1️⃣ Validation du statut
+//   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
+//     return res.status(400).json({ error: "Invalid payment status" });
+//   }
+
+//   let connection;
+//   try {
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+
+//     // 2️⃣ Récupérer la réservation complète
+//     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT id, flight_id, return_flight_id, passenger_count, status 
+//        FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+//       [reference]
+//     );
+
+//     if (bookings.length === 0) {
+//       await connection.rollback();
+//       return res.status(404).json({ error: "Booking not found" });
+//     }
+
+//     const booking = bookings[0];
+
+//     // 3️⃣ Mise à jour du statut
+//     await connection.query(
+//       `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
+//       [paymentStatus, reference]
+//     );
+
+//     // 4️⃣ Si la réservation est annulée
+//     if (paymentStatus === "cancelled") {
+//       const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
+
+//       // 🧹 Supprimer les passagers liés
+//       await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
+
+//       // ✈️ Réaugmentation du nombre de sièges disponibles
+//       await connection.query(
+//         `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+//         [passenger_count, flight_id]
+//       );
+
+//       // Si vol retour, on ajuste aussi
+//       if (return_flight_id) {
+//         await connection.query(
+//           `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+//           [passenger_count, return_flight_id]
+//         );
+//       }
+
+//       // 🔔 (Optionnel) Ajouter une notification d’annulation
+//       await connection.query(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
+//       );
+//     }
+
+    
+
+//     await connection.commit();
+
+//     res.json({
+//       success: true,
+//       reference,
+//       newStatus: paymentStatus,
+//       message:
+//         paymentStatus === "cancelled"
+//           ? "Booking cancelled, passengers deleted and seats restored."
+//           : "Booking status updated successfully.",
+//     });
+//   } catch (err) {
+//     console.error("❌ Error updating payment status:", err);
+//     if (connection) await connection.rollback();
+//     res.status(500).json({ error: "Failed to update payment status" });
+//   } finally {
+//     if (connection) connection.release();
+//   }
+// });
+
+import { sendEmail } from "./utils/sendEmail"; // selon ton arborescence
+
+app.put("/api/booking-plane/:reference/payment-status", async (req, res) => {
   const { reference } = req.params;
   const { paymentStatus } = req.body;
 
-  // 1️⃣ Validation du statut
   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
     return res.status(400).json({ error: "Invalid payment status" });
   }
@@ -2597,77 +2683,57 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
   let connection;
   try {
     connection = await pool.getConnection();
-    await connection.beginTransaction();
 
-    // 2️⃣ Récupérer la réservation complète
-    const [bookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT id, flight_id, return_flight_id, passenger_count, status 
-       FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+    // 🔹 On récupère d'abord la réservation
+    const [bookingRows]: any = await connection.query(
+      "SELECT * FROM bookings WHERE booking_reference = ?",
       [reference]
     );
-
-    if (bookings.length === 0) {
-      await connection.rollback();
+    const booking = bookingRows[0];
+    if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    const booking = bookings[0];
-
-    // 3️⃣ Mise à jour du statut
+    // 🔹 Mise à jour du statut
     await connection.query(
-      `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
+      "UPDATE bookings SET status = ? WHERE booking_reference = ?",
       [paymentStatus, reference]
     );
 
-    // 4️⃣ Si la réservation est annulée
+    // 🔹 Si cancelled → on supprime les passagers et on libère les sièges
     if (paymentStatus === "cancelled") {
-      const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
-
-      // 🧹 Supprimer les passagers liés
-      await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
-
-      // ✈️ Réaugmentation du nombre de sièges disponibles
+      await connection.query("DELETE FROM passengers WHERE booking_id = ?", [booking.id]);
       await connection.query(
-        `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-        [passenger_count, flight_id]
+        "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
+        [booking.passengers_count, booking.flight_id]
       );
 
-      // Si vol retour, on ajuste aussi
-      if (return_flight_id) {
-        await connection.query(
-          `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-          [passenger_count, return_flight_id]
-        );
-      }
+      // 🔹 Envoi d'un email au client
+      const emailHtml = `
+        <h2>Annulation de votre vol</h2>
+        <p>Bonjour ${booking.customer_name},</p>
+        <p>Nous sommes désolés de vous informer que votre vol <b>${booking.flight_number}</b> a été <b>annulé</b>.</p>
+        <p>Référence de réservation : <b>${booking.booking_reference}</b></p>
+        <p>Pour toute assistance, veuillez contacter notre support.</p>
+        <br />
+        <p>Cordialement,<br/>L’équipe Support</p>
+      `;
 
-      // 🔔 (Optionnel) Ajouter une notification d’annulation
-      await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
+      await sendEmail(
+        booking.customer_email,
+        "Votre vol a été annulé",
+        emailHtml
       );
     }
 
-    await connection.commit();
-
-    res.json({
-      success: true,
-      reference,
-      newStatus: paymentStatus,
-      message:
-        paymentStatus === "cancelled"
-          ? "Booking cancelled, passengers deleted and seats restored."
-          : "Booking status updated successfully.",
-    });
+    res.json({ success: true, reference, newStatus: paymentStatus });
   } catch (err) {
-    console.error("❌ Error updating payment status:", err);
-    if (connection) await connection.rollback();
+    console.error("Error updating payment status:", err);
     res.status(500).json({ error: "Failed to update payment status" });
   } finally {
     if (connection) connection.release();
   }
 });
-
 
 
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
