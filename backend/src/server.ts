@@ -2845,7 +2845,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   // const sender = process.env.SMTP2GO_SENDER;
 
   const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
- const sender = "info@kashapw.com";
+ const sender = "info@kashpaw.com";
 
   if (!apiKey || !sender) {
     console.error("SMTP2GO API key or sender missing in environment variables");
@@ -2989,12 +2989,14 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
 
     res.json({
       success: true,
+      
       reference,
       newStatus: paymentStatus,
       message:
         paymentStatus === "cancelled"
           ? "Booking cancelled, passengers deleted and seats restored."
           : "Booking status updated successfully.",
+          
     });
   } catch (err) {
     console.error("❌ Error updating payment status:", err);
