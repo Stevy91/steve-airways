@@ -3052,9 +3052,9 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
 
 
       <div style="padding: 20px; font-size: 0.9em; color: #555;">
-       <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
+       <p>Thank you for choosing Trogon Airways.</p>
        
-        <p>We look forward to welcoming you on board.</p>
+    
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>
     </div>
