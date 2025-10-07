@@ -2904,33 +2904,6 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 
-// Route de test - À ajouter temporairement
-app.post("/test-email-debug", async (req: Request, res: Response) => {
-  const { email } = req.body;
-  
-  console.log("🧪 TEST EMAIL DÉMARRÉ");
-  console.log("  - Email de test:", email || "stevesainthubert701@gmail.com");
-  
-  const testEmail = email || "stevesainthubert701@gmail.com";
-  
-  const result = await sendEmail(
-    testEmail,
-    "Test Debug - Kashpaw Airlines",
-    `<h1>Test technique</h1>
-     <p>Ceci est un test de l'API SMTP2GO.</p>
-     <p>Si vous recevez ceci, tout fonctionne !</p>
-     <p>Time: ${new Date().toISOString()}</p>`
-  );
-  
-  console.log("🧪 RÉSULTAT DU TEST:", result);
-  
-  res.json({
-    test: "email_debug",
-    recipient: testEmail,
-    result: result
-  });
-});
-
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
@@ -3048,12 +3021,45 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
         console.log(`\n📧 DEBUG - Envoi email ${index + 1}/${passengersBeforeDelete.length} à: ${passenger.email}`);
         
         const emailHtml = `
-          <h2>Annulation de vol</h2>
-          <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
-          <p>Nous sommes désolés de vous informer que votre réservation a été <b>annulée</b>.</p>
-          <p>Référence de réservation : <b>${reference}</b></p>
-          <p>Merci de votre compréhension.<br/>L'équipe Support de Kashpaw Airlines</p>
-        `;
+          
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
+        .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+        .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .passenger-table th { background-color: #f2f2f2; }
+        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+      </style>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+        <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
+       
+        <p style="margin: 5px 0 0; font-size: 1.2em;">Flight cancellation</p>
+      </div>
+
+      <div style="padding: 20px;">
+        <p></p>Dear, ${passenger.first_name} ${passenger.last_name},</p>
+       
+       <p>We are sorry to inform you that your reservation has been <b>cancelled</b>.</p>
+       
+        
+         <p>Booking reference : <b>${reference}</b></p>
+      </div>
+
+
+      <div style="padding: 20px; font-size: 0.9em; color: #555;">
+       <p>Thank you for choosing Trogon Airways. Please find your e-ticket below. We recommend printing this section or having it available on your mobile device at the airport.</p>
+       
+        <p>We look forward to welcoming you on board.</p>
+        <p>Sincerely,<br>The Trogon Airways Team</p>
+      </div>
+    </div>
+
+`;
 
         console.log(`📝 DEBUG - HTML email généré pour ${passenger.email}`);
         const emailResult = await sendEmail(
