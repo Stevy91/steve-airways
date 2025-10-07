@@ -2936,58 +2936,71 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
   const { reference } = req.params;
   const { paymentStatus } = req.body;
 
+  console.log(`🔍 DEBUG - Début update payment-status`);
+  console.log(`  - Reference: ${reference}`);
+  console.log(`  - PaymentStatus: ${paymentStatus}`);
+  console.log(`  - Body complet:`, JSON.stringify(req.body, null, 2));
+
   // 1️⃣ Validation du statut
   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
+    console.log(`❌ DEBUG - Statut invalide: ${paymentStatus}`);
     return res.status(400).json({ error: "Invalid payment status" });
   }
 
   let connection;
   try {
+    console.log(`🔗 DEBUG - Obtention connexion DB`);
     connection = await pool.getConnection();
     await connection.beginTransaction();
+    console.log(`✅ DEBUG - Transaction démarrée`);
 
     // 2️⃣ Récupérer la réservation complète
+    console.log(`📋 DEBUG - Recherche booking: ${reference}`);
     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
       `SELECT id, flight_id, return_flight_id, passenger_count, status 
        FROM bookings WHERE booking_reference = ? FOR UPDATE`,
       [reference]
     );
 
+    console.log(`📊 DEBUG - Résultats recherche: ${bookings.length} booking(s) trouvé(s)`);
+    
     if (bookings.length === 0) {
+      console.log(`❌ DEBUG - Booking non trouvé: ${reference}`);
       await connection.rollback();
       return res.status(404).json({ error: "Booking not found" });
     }
 
     const booking = bookings[0];
+    console.log(`📖 DEBUG - Booking trouvé:`, {
+      id: booking.id,
+      flight_id: booking.flight_id,
+      return_flight_id: booking.return_flight_id,
+      passenger_count: booking.passenger_count,
+      status: booking.status
+    });
 
     // 3️⃣ Mise à jour du statut
+    console.log(`🔄 DEBUG - Mise à jour status: ${paymentStatus}`);
     await connection.query(
       `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
       [paymentStatus, reference]
     );
+    console.log(`✅ DEBUG - Status booking mis à jour`);
 
     // 4️⃣ Si la réservation est annulée
     if (paymentStatus === "cancelled") {
+      console.log(`🚨 DEBUG - Traitement annulation démarré`);
       const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
 
-      // 🧹 Supprimer les passagers liés
-      await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
-
-      // ✈️ Réaugmentation du nombre de sièges disponibles
-      await connection.query(
-        `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-        [passenger_count, flight_id]
-      );
-
-      if (return_flight_id) {
-        await connection.query(
-          `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-          [passenger_count, return_flight_id]
-        );
-      }
+      console.log(`📊 DEBUG - Données annulation:`, {
+        bookingId,
+        flight_id,
+        return_flight_id,
+        passenger_count
+      });
 
       // 🔍 CORRECTION : Récupérer les passagers AVANT suppression
-      // On récupère d'abord les emails avant de supprimer
+      console.log(`👥 DEBUG - Récupération passagers pour booking_id: ${bookingId}`);
       const [passengersBeforeDelete] = await connection.query<mysql.RowDataPacket[]>(
         `SELECT 
           first_name,
@@ -2998,9 +3011,42 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
         [bookingId]
       );
 
-      // ✉️ Envoyer un email à chaque passager
-      const emailResults = [];
+      console.log(`📧 DEBUG - Passagers récupérés: ${passengersBeforeDelete.length}`);
+      console.log(`📋 DEBUG - Détails passagers:`, JSON.stringify(passengersBeforeDelete, null, 2));
+
+      // Vérification des emails
       for (const passenger of passengersBeforeDelete) {
+        const emailValid = typeof passenger.email === 'string' && passenger.email.includes('@');
+        console.log(`✅ DEBUG - Email ${passenger.email}: ${emailValid ? 'VALIDE' : 'INVALIDE'}`);
+      }
+
+      // 🧹 Supprimer les passagers liés
+      console.log(`🗑️ DEBUG - Suppression des passagers`);
+      const deleteResult = await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
+      console.log(`✅ DEBUG - Passagers supprimés`);
+
+      // ✈️ Réaugmentation du nombre de sièges disponibles
+      console.log(`🔄 DEBUG - Mise à jour sièges vol aller: ${flight_id} (+${passenger_count})`);
+      await connection.query(
+        `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+        [passenger_count, flight_id]
+      );
+
+      if (return_flight_id) {
+        console.log(`🔄 DEBUG - Mise à jour sièges vol retour: ${return_flight_id} (+${passenger_count})`);
+        await connection.query(
+          `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+          [passenger_count, return_flight_id]
+        );
+      }
+
+      // ✉️ Envoyer un email à chaque passager
+      console.log(`📨 DEBUG - Début envoi des emails à ${passengersBeforeDelete.length} passager(s)`);
+      const emailResults = [];
+      
+      for (const [index, passenger] of passengersBeforeDelete.entries()) {
+        console.log(`\n📧 DEBUG - Envoi email ${index + 1}/${passengersBeforeDelete.length} à: ${passenger.email}`);
+        
         const emailHtml = `
           <h2>Annulation de vol</h2>
           <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
@@ -3009,47 +3055,65 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
           <p>Merci de votre compréhension.<br/>L'équipe Support de Kashpaw Airlines</p>
         `;
 
+        console.log(`📝 DEBUG - HTML email généré pour ${passenger.email}`);
         const emailResult = await sendEmail(
           passenger.email,
           "Votre vol a été annulé",
           emailHtml
         );
         
+        console.log(`📊 DEBUG - Résultat email ${passenger.email}:`, emailResult.success ? 'SUCCÈS' : 'ÉCHEC');
+        if (!emailResult.success) {
+          console.log(`❌ DEBUG - Erreur email:`, emailResult.error);
+        }
+        
         emailResults.push({
           passenger: passenger.email,
-          success: emailResult.success
+          success: emailResult.success,
+          error: emailResult.error
         });
       }
 
-      console.log("Résultats envoi emails:", emailResults);
+      console.log(`📋 DEBUG - Résumé envoi emails:`, JSON.stringify(emailResults, null, 2));
 
       // 🔔 Notification d'annulation
+      console.log(`🔔 DEBUG - Création notification annulation`);
       await connection.query(
         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
          VALUES (?, ?, ?, ?, ?)`,
         ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
       );
+      console.log(`✅ DEBUG - Notification créée`);
     }
 
+    console.log(`💾 DEBUG - Commit transaction`);
     await connection.commit();
+    console.log(`✅ DEBUG - Transaction commitée`);
 
     res.json({
       success: true,
-      
       reference,
       newStatus: paymentStatus,
       message:
         paymentStatus === "cancelled"
           ? "Booking cancelled, passengers deleted and seats restored."
           : "Booking status updated successfully.",
-          
     });
+
   } catch (err) {
-    console.error("❌ Error updating payment status:", err);
-    if (connection) await connection.rollback();
+    console.error("❌ ERROR - Erreur update payment status:", err);
+    console.error("❌ ERROR - Stack:", err instanceof Error ? err.stack : undefined);
+    if (connection) {
+      console.log(`🔙 DEBUG - Rollback transaction`);
+      await connection.rollback();
+    }
     res.status(500).json({ error: "Failed to update payment status" });
   } finally {
-    if (connection) connection.release();
+    if (connection) {
+      console.log(`🔓 DEBUG - Libération connexion`);
+      connection.release();
+    }
+    console.log(`🏁 DEBUG - Fin traitement payment-status`);
   }
 });
 
