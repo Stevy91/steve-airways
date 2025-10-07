@@ -3064,7 +3064,7 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
         console.log(`📝 DEBUG - HTML email généré pour ${passenger.email}`);
         const emailResult = await sendEmail(
           passenger.email,
-          "Votre vol a été annulé",
+          "Trogon Airways, Flight cancellation",
           emailHtml
         );
         
