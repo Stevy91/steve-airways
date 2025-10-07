@@ -2678,17 +2678,17 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
-  const sender = 'info@kashapw.com';
+  const sender = "info@kashapw.com";
 
   if (!apiKey || !sender) {
-    console.error("SMTP2GO API key or sender missing in environment variables");
+    console.error("SMTP2GO API key or sender missing");
     return;
   }
 
   const payload = {
     api_key: apiKey,
-    sender,
-    to: [to],
+    from: sender, // ✅ Utiliser 'from' au lieu de 'sender'
+    to: [{ email: to }], // ✅ Objet avec email
     subject,
     html_body: html,
   };
@@ -2702,10 +2702,15 @@ async function sendEmail(to: string, subject: string, html: string) {
 
     const data = await response.json();
     console.log("SMTP2GO response:", data);
+
+    if (!data.data || data.data.error) {
+      console.error("SMTP2GO send failed:", data.data?.error || data);
+    }
   } catch (err) {
     console.error("Erreur lors de l’envoi de l’email:", err);
   }
 }
+
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
