@@ -2676,19 +2676,186 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 
 
+// async function sendEmail(to: string, subject: string, html: string) {
+//   const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
+//   const sender = "info@kashapw.com";
+
+//   if (!apiKey || !sender) {
+//     console.error("SMTP2GO API key or sender missing");
+//     return;
+//   }
+
+//   const payload = {
+//     api_key: apiKey,
+//     from: sender, // ✅ Utiliser 'from' au lieu de 'sender'
+//     to: [{ email: to }], // ✅ Objet avec email
+//     subject,
+//     html_body: html,
+//   };
+
+//   try {
+//     const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(payload),
+//     });
+
+//     const data = await response.json();
+//     console.log("SMTP2GO response:", data);
+
+//     if (!data.data || data.data.error) {
+//       console.error("SMTP2GO send failed:", data.data?.error || data);
+//     }
+//   } catch (err) {
+//     console.error("Erreur lors de l’envoi de l’email:", err);
+//   }
+// }
+
+
+// app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
+//   const { reference } = req.params;
+//   const { paymentStatus } = req.body;
+
+//   // 1️⃣ Validation du statut
+//   if (!["pending", "confirmed", "cancelled"].includes(paymentStatus)) {
+//     return res.status(400).json({ error: "Invalid payment status" });
+//   }
+
+//   let connection;
+//   try {
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+
+//     // 2️⃣ Récupérer la réservation complète
+//     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT id, flight_id, return_flight_id, passenger_count, status 
+//        FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+//       [reference]
+//     );
+
+//     if (bookings.length === 0) {
+//       await connection.rollback();
+//       return res.status(404).json({ error: "Booking not found" });
+//     }
+
+//     const booking = bookings[0];
+
+//     // 3️⃣ Mise à jour du statut
+//     await connection.query(
+//       `UPDATE bookings SET status = ? WHERE booking_reference = ?`,
+//       [paymentStatus, reference]
+//     );
+
+//     // 4️⃣ Si la réservation est annulée
+// if (paymentStatus === "cancelled") {
+//   const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
+
+//   // 🧹 Supprimer les passagers liés
+//   await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
+
+//   // ✈️ Réaugmentation du nombre de sièges disponibles
+//   await connection.query(
+//     `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+//     [passenger_count, flight_id]
+//   );
+  
+
+//   if (return_flight_id) {
+//     await connection.query(
+//       `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+//       [passenger_count, return_flight_id]
+//     );
+//   }
+
+  
+
+//   // 🔍 Récupérer les passagers concernés pour leur envoyer un email
+//   const [passengers] = await connection.query<mysql.RowDataPacket[]>(
+//     `SELECT 
+//   p.first_name,
+//   p.last_name,
+//   p.email,
+//   b.booking_reference,
+//   b.created_at AS booking_date,
+//   CASE 
+//     WHEN b.flight_id = ? THEN 'outbound'
+//     WHEN b.return_flight_id = ? THEN 'return'
+//   END AS segment
+// FROM passengers p
+// INNER JOIN bookings b ON p.booking_id = b.id
+// WHERE b.flight_id = ? OR b.return_flight_id = ?
+
+//     `,
+//     [flight_id, return_flight_id, flight_id, return_flight_id]
+//   );
+
+//   // ✉️ Envoyer un email à chaque passager
+//   for (const passenger of passengers) {
+//     const emailHtml = `
+//       <h2>Annulation de vol</h2>
+//       <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
+//       <p>Nous sommes désolés de vous informer que votre vol <b>${passenger.segment === "outbound" ? "aller" : "retour"}</b> a été <b>annulé</b>.</p>
+//       <p>Référence de réservation : <b>${passenger.booking_reference}</b></p>
+//       <p>Merci de votre compréhension.<br/>L’équipe Support de Kashpaw Airlines</p>
+//     `;
+
+//     await sendEmail(
+//       passenger.email,
+//       "Votre vol a été annulé",
+//       emailHtml
+//     );
+//   }
+
+//   // 🔔 Notification d’annulation
+//   await connection.query(
+//     `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//      VALUES (?, ?, ?, ?, ?)`,
+//     ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
+//   );
+// }
+
+
+
+
+//     await connection.commit();
+
+//     res.json({
+//       success: true,
+//       reference,
+//       newStatus: paymentStatus,
+//       message:
+//         paymentStatus === "cancelled"
+//           ? "Booking cancelled, passengers deleted and seats restored."
+//           : "Booking status updated successfully.",
+//     });
+//   } catch (err) {
+//     console.error("❌ Error updating payment status:", err);
+//     if (connection) await connection.rollback();
+//     res.status(500).json({ error: "Failed to update payment status" });
+//   } finally {
+//     if (connection) connection.release();
+//   }
+// });
+
+
+
+// ✅ Utilisez les variables d'environnement pour la sécurité
 async function sendEmail(to: string, subject: string, html: string) {
+  // const apiKey = process.env.SMTP2GO_API_KEY;
+  // const sender = process.env.SMTP2GO_SENDER;
+
   const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
-  const sender = "info@kashapw.com";
+ const sender = "info@kashapw.com";
 
   if (!apiKey || !sender) {
-    console.error("SMTP2GO API key or sender missing");
-    return;
+    console.error("SMTP2GO API key or sender missing in environment variables");
+    return { success: false, error: "Configuration manquante" };
   }
 
   const payload = {
     api_key: apiKey,
-    from: sender, // ✅ Utiliser 'from' au lieu de 'sender'
-    to: [{ email: to }], // ✅ Objet avec email
+    sender,
+    to: [to],
     subject,
     html_body: html,
   };
@@ -2696,21 +2863,28 @@ async function sendEmail(to: string, subject: string, html: string) {
   try {
     const response = await fetch("https://api.smtp2go.com/v3/email/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "User-Agent": "YourApp/1.0"
+      },
       body: JSON.stringify(payload),
     });
 
     const data = await response.json();
     console.log("SMTP2GO response:", data);
 
-    if (!data.data || data.data.error) {
-      console.error("SMTP2GO send failed:", data.data?.error || data);
+    // ✅ Vérification de la réponse de l'API
+    if (data.data && data.data.succeeded === 1) {
+      return { success: true, data };
+    } else {
+      console.error("SMTP2GO API error:", data);
+      return { success: false, error: data };
     }
   } catch (err) {
-    console.error("Erreur lors de l’envoi de l’email:", err);
+    console.error("Erreur lors de l'envoi de l'email:", err);
+    return { success: false, error: err };
   }
 }
-
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
@@ -2747,75 +2921,69 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
     );
 
     // 4️⃣ Si la réservation est annulée
-if (paymentStatus === "cancelled") {
-  const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
+    if (paymentStatus === "cancelled") {
+      const { id: bookingId, flight_id, return_flight_id, passenger_count } = booking;
 
-  // 🧹 Supprimer les passagers liés
-  await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
+      // 🧹 Supprimer les passagers liés
+      await connection.query(`DELETE FROM passengers WHERE booking_id = ?`, [bookingId]);
 
-  // ✈️ Réaugmentation du nombre de sièges disponibles
-  await connection.query(
-    `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-    [passenger_count, flight_id]
-  );
-  
+      // ✈️ Réaugmentation du nombre de sièges disponibles
+      await connection.query(
+        `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+        [passenger_count, flight_id]
+      );
 
-  if (return_flight_id) {
-    await connection.query(
-      `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
-      [passenger_count, return_flight_id]
-    );
-  }
+      if (return_flight_id) {
+        await connection.query(
+          `UPDATE flights SET seats_available = seats_available + ? WHERE id = ?`,
+          [passenger_count, return_flight_id]
+        );
+      }
 
-  
+      // 🔍 CORRECTION : Récupérer les passagers AVANT suppression
+      // On récupère d'abord les emails avant de supprimer
+      const [passengersBeforeDelete] = await connection.query<mysql.RowDataPacket[]>(
+        `SELECT 
+          first_name,
+          last_name,
+          email
+         FROM passengers 
+         WHERE booking_id = ?`,
+        [bookingId]
+      );
 
-  // 🔍 Récupérer les passagers concernés pour leur envoyer un email
-  const [passengers] = await connection.query<mysql.RowDataPacket[]>(
-    `SELECT 
-  p.first_name,
-  p.last_name,
-  p.email,
-  b.booking_reference,
-  b.created_at AS booking_date,
-  CASE 
-    WHEN b.flight_id = ? THEN 'outbound'
-    WHEN b.return_flight_id = ? THEN 'return'
-  END AS segment
-FROM passengers p
-INNER JOIN bookings b ON p.booking_id = b.id
-WHERE b.flight_id = ? OR b.return_flight_id = ?
+      // ✉️ Envoyer un email à chaque passager
+      const emailResults = [];
+      for (const passenger of passengersBeforeDelete) {
+        const emailHtml = `
+          <h2>Annulation de vol</h2>
+          <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
+          <p>Nous sommes désolés de vous informer que votre réservation a été <b>annulée</b>.</p>
+          <p>Référence de réservation : <b>${reference}</b></p>
+          <p>Merci de votre compréhension.<br/>L'équipe Support de Kashpaw Airlines</p>
+        `;
 
-    `,
-    [flight_id, return_flight_id, flight_id, return_flight_id]
-  );
+        const emailResult = await sendEmail(
+          passenger.email,
+          "Votre vol a été annulé",
+          emailHtml
+        );
+        
+        emailResults.push({
+          passenger: passenger.email,
+          success: emailResult.success
+        });
+      }
 
-  // ✉️ Envoyer un email à chaque passager
-  for (const passenger of passengers) {
-    const emailHtml = `
-      <h2>Annulation de vol</h2>
-      <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
-      <p>Nous sommes désolés de vous informer que votre vol <b>${passenger.segment === "outbound" ? "aller" : "retour"}</b> a été <b>annulé</b>.</p>
-      <p>Référence de réservation : <b>${passenger.booking_reference}</b></p>
-      <p>Merci de votre compréhension.<br/>L’équipe Support de Kashpaw Airlines</p>
-    `;
+      console.log("Résultats envoi emails:", emailResults);
 
-    await sendEmail(
-      passenger.email,
-      "Votre vol a été annulé",
-      emailHtml
-    );
-  }
-
-  // 🔔 Notification d’annulation
-  await connection.query(
-    `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
-  );
-}
-
-
-
+      // 🔔 Notification d'annulation
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        ["cancellation", `Réservation ${reference} annulée.`, bookingId, false, new Date()]
+      );
+    }
 
     await connection.commit();
 
@@ -2836,6 +3004,7 @@ WHERE b.flight_id = ? OR b.return_flight_id = ?
     if (connection) connection.release();
   }
 });
+
 
 
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {

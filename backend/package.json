@@ -32,7 +32,8 @@
     "socket.io": "^4.8.1",
     "stripe": "^18.5.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
