@@ -2843,14 +2843,17 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 
 async function sendEmail(to: string, subject: string, html: string) {
-  // const apiKey = process.env.SMTP2GO_API_KEY;
-  // const sender = process.env.SMTP2GO_SENDER;
-
   const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
- const sender = "info@kashpaw.com";
+  const sender = "info@kashpaw.com";
+
+  console.log("🔍 DEBUG sendEmail appelé avec:");
+  console.log("  - to:", to);
+  console.log("  - subject:", subject);
+  console.log("  - sender:", sender);
+  console.log("  - apiKey présente:", !!apiKey);
 
   if (!apiKey || !sender) {
-    console.error("SMTP2GO API key or sender missing in environment variables");
+    console.error("❌ Configuration manquante");
     return { success: false, error: "Configuration manquante" };
   }
 
@@ -2862,32 +2865,71 @@ async function sendEmail(to: string, subject: string, html: string) {
     html_body: html,
   };
 
+  console.log("📦 Payload envoyé à SMTP2GO:", JSON.stringify(payload));
+
   try {
+    console.log("🔄 Envoi de la requête à SMTP2GO...");
+    
     const response = await fetch("https://api.smtp2go.com/v3/email/send", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "User-Agent": "YourApp/1.0"
       },
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
-    console.log("SMTP2GO response:", data);
+    console.log("📊 Status HTTP reçu:", response.status);
+    console.log("📊 Headers reçus:", response.headers);
 
-    // ✅ Vérification de la réponse de l'API
+    const data = await response.json();
+    console.log("📨 Réponse COMPLÈTE SMTP2GO:", JSON.stringify(data, null, 2));
+
     if (data.data && data.data.succeeded === 1) {
+      console.log("✅ SUCCÈS - Email accepté par SMTP2GO");
       return { success: true, data };
     } else {
-      console.error("SMTP2GO API error:", data);
+      console.error("❌ ÉCHEC - SMTP2GO a refusé l'email");
+      console.error("   Erreur:", data.data?.error);
+      console.error("   Code:", data.data?.error_code);
       return { success: false, error: data };
     }
   } catch (err) {
-    console.error("Erreur lors de l'envoi de l'email:", err);
+    console.error("💥 ERREUR RÉSEAU/FETCH:", err);
+    if (err instanceof Error) {
+      console.error("   Message:", err.message);
+      console.error("   Stack:", err.stack);
+    }
     return { success: false, error: err };
   }
 }
 
+
+// Route de test - À ajouter temporairement
+app.post("/test-email-debug", async (req: Request, res: Response) => {
+  const { email } = req.body;
+  
+  console.log("🧪 TEST EMAIL DÉMARRÉ");
+  console.log("  - Email de test:", email || "stevesainthubert701@gmail.com");
+  
+  const testEmail = email || "stevesainthubert701@gmail.com";
+  
+  const result = await sendEmail(
+    testEmail,
+    "Test Debug - Kashpaw Airlines",
+    `<h1>Test technique</h1>
+     <p>Ceci est un test de l'API SMTP2GO.</p>
+     <p>Si vous recevez ceci, tout fonctionne !</p>
+     <p>Time: ${new Date().toISOString()}</p>`
+  );
+  
+  console.log("🧪 RÉSULTAT DU TEST:", result);
+  
+  res.json({
+    test: "email_debug",
+    recipient: testEmail,
+    result: result
+  });
+});
 
 
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
@@ -2968,7 +3010,7 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
         `;
 
         const emailResult = await sendEmail(
-          'stevesainthubert701@gmail.com',
+          passenger.email,
           "Votre vol a été annulé",
           emailHtml
         );
