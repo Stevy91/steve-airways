@@ -28,12 +28,12 @@ export default function FlightCard({ flight, onToggle }: FlightCardProps) {
 
     const hasSeats = flight.seat !== "0";
 
-    // 🔹 Vérification si le vol est passé
-
-
+    // 🔹 CORRECTION : Vérification si le vol est passé
     const flightDateTime = new Date(`${flight.date}T${flight.departure_time}:00`);
-const isFlightClosed = flightDateTime.getTime() < new Date().getTime();
-
+    const now = new Date();
+    
+    // Un vol est "fermé" seulement si sa date/heure de départ est passée
+    const isFlightClosed = flightDateTime < now;
 
     return (
         <div className="mb-4 flex flex-col rounded-lg border border-blue-900 px-6 py-4 transition-all hover:shadow-md md:flex-row md:items-center">
