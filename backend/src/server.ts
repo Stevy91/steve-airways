@@ -1356,7 +1356,48 @@ app.get("/api/flights/:flightId/passengers", async (req, res) => {
   }
 });
 
+// Dans votre backend - route de test
+app.get("/api/flights-debug", async (req: Request, res: Response) => {
+  try {
+    const { from, to, date, tab: type } = req.query;
 
+    const [flightsResult] = await pool.query(
+      `SELECT 
+        f.*,
+        DATE(CONVERT_TZ(f.departure_time, '+00:00', '-04:00')) as date_haiti,
+        TIME(CONVERT_TZ(f.departure_time, '+00:00', '-04:00')) as time_haiti,
+        CONVERT_TZ(f.departure_time, '+00:00', '-04:00') as full_dt_haiti
+       FROM flights f
+       JOIN locations dep ON f.departure_location_id = dep.id
+       JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE dep.code = ? 
+         AND arr.code = ? 
+         AND f.type = ? 
+         AND DATE(CONVERT_TZ(f.departure_time, '+00:00', '-04:00')) = ?
+       ORDER BY f.departure_time`,
+      [from, to, type, date]
+    );
+    const flights = flightsResult as mysql.RowDataPacket[];
+
+    const now = new Date();
+    const nowHaiti = new Date(now.toLocaleString("en-US", { timeZone: "America/Port-au-Prince" }));
+
+    res.json({
+      debug_info: {
+        requête: { from, to, date, type },
+        heure_actuelle: {
+          utc: now,
+          haiti: nowHaiti,
+          haiti_local: nowHaiti.toLocaleString("fr-FR")
+        },
+        nombre_vols: flights.length
+      },
+      flights: flights
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : "Erreur inconnue" });
+  }
+});
 
 app.post("/api/confirm-booking", async (req: Request, res: Response) => {
  

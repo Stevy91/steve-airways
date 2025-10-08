@@ -213,9 +213,41 @@ const convertToHaitiTime = (isoString: string): Date => {
 const formatDate = (isoString: string) => format(convertToHaitiTime(isoString), "yyyy-MM-dd");
 const formatTime = (isoString: string) => format(convertToHaitiTime(isoString), "HH:mm");
 
+// const mapFlight = (flight: any, locations: any[]) => {
+//   const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+//   const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+
+//   return {
+//     id: flight.id,
+//     from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
+//     to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
+//     date: formatDate(flight.departure_time),
+//     departure_time: formatTime(flight.departure_time),
+//     arrival_time: formatTime(flight.arrival_time),
+//     time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`,
+//     type: flight.type,
+//     price: Number(flight.price),
+//     seat: flight.seats_available.toString(),
+//     noflight: flight.flight_number,
+//   };
+// };
+
 const mapFlight = (flight: any, locations: any[]) => {
   const depLoc = locations.find((l) => l.id === flight.departure_location_id);
   const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+
+  const haitiDeparture = convertToHaitiTime(flight.departure_time);
+  const haitiArrival = convertToHaitiTime(flight.arrival_time);
+
+  // 🔹 DEBUG: Afficher les conversions de temps
+  console.log(`🕒 Vol ${flight.id}:`, {
+    departure_original: flight.departure_time,
+    departure_haiti: haitiDeparture,
+    departure_formatted: formatTime(flight.departure_time),
+    date_formatted: formatDate(flight.departure_time),
+    now_haiti: convertToHaitiTime(new Date().toISOString()),
+    is_future: haitiDeparture > new Date()
+  });
 
   return {
     id: flight.id,
@@ -445,16 +477,51 @@ export default function FlightSelection() {
         return datesArray;
     }, [state.allFlights, fromParam, toParam, selectedTab]); // Ajouter selectedTab aux dépendances
 
-    const filteredFlights = useMemo(() => {
-        if (!state.filteredFlights.length) return [];
 
-        const selectedDate = allDates[selectedDateIndex]?.date;
-        if (!selectedDate) return [];
 
-        const isoDate = selectedDate.toISOString().split("T")[0];
 
-        return state.filteredFlights.filter((f) => f.date === isoDate && f.from.includes(fromParam || "") && f.to.includes(toParam || ""));
-    }, [state.filteredFlights, allDates, selectedDateIndex, fromParam, toParam]);
+
+    // const filteredFlights = useMemo(() => {
+    //     if (!state.filteredFlights.length) return [];
+
+    //     const selectedDate = allDates[selectedDateIndex]?.date;
+    //     if (!selectedDate) return [];
+
+    //     const isoDate = selectedDate.toISOString().split("T")[0];
+
+    //     return state.filteredFlights.filter((f) => f.date === isoDate && f.from.includes(fromParam || "") && f.to.includes(toParam || ""));
+    // }, [state.filteredFlights, allDates, selectedDateIndex, fromParam, toParam]);
+
+
+const filteredFlights = useMemo(() => {
+    if (!state.filteredFlights.length) return [];
+
+    const selectedDate = allDates[selectedDateIndex]?.date;
+    if (!selectedDate) return [];
+
+    const isoDate = selectedDate.toISOString().split("T")[0];
+
+    console.log("🔍 Filtrage des vols - DÉTAIL:", {
+        selectedDate: isoDate,
+        totalFlightsDisponibles: state.filteredFlights.length,
+        volsFiltrés: state.filteredFlights.filter((f) => {
+            const matches = f.date === isoDate;
+            if (!matches) {
+                console.log(`❌ Vol ${f.id} exclu:`, {
+                    volDate: f.date,
+                    dateSélectionnée: isoDate,
+                    correspond: matches
+                });
+            }
+            return matches;
+        })
+    });
+
+    return state.filteredFlights.filter((f) => f.date === isoDate);
+}, [state.filteredFlights, allDates, selectedDateIndex]);
+
+
+
 
     const filteredReturnFlights = useMemo(() => {
         if (!state.returnFlights.length) return [];

@@ -35,6 +35,16 @@ export default function FlightCard({ flight, onToggle }: FlightCardProps) {
     // Un vol est "fermé" seulement si sa date/heure de départ est passée
     const isFlightClosed = flightDateTime < now;
 
+      // 🔹 DEBUG: Afficher la comparaison
+    console.log(`✈️ FlightCard ${flight.id}:`, {
+        flightDate: flight.date,
+        flightTime: flight.departure_time,
+        flightDateTime,
+        now,
+        isFlightClosed,
+        timeDifference: now.getTime() - flightDateTime.getTime()
+    });
+
     return (
         <div className="mb-4 flex flex-col rounded-lg border border-blue-900 px-6 py-4 transition-all hover:shadow-md md:flex-row md:items-center">
             <div
