@@ -406,7 +406,6 @@
   "seat(s) available for": "seat(s) available for",
   "passenger(s)": "passenger(s)",
   "Erreur lors du chargement des données": "Erreur lors du chargement des données",
-  "The return date cannot be earlier than the departure date.": "The return date cannot be earlier than the departure date.",
   "The departure date cannot be later than the return date.": "The departure date cannot be later than the return date.",
   "Search another flight": "Search another flight",
   "Search": "Search",
@@ -415,5 +414,15 @@
   "second":"second",
   "Session Expired":"Session Expired",
   "Flight closed":"Flight closed",
-  "Your ticket has been sent to your email address.":"Your ticket has been sent to your email address."
+  "Your ticket has been sent to your email address.":"Your ticket has been sent to your email address.",
+  "The return date cannot be earlier than the departure date.": "The return date cannot be earlier than the departure date.",
+  "On the same day, the return flight must be after the departure flight.": "On the same day, the return flight must be after the departure flight.",
+  "Please select both outbound and return flights.": "Please select both outbound and return flights.",
+ 
+  "The return flight must be at least 20 minutes after the arrival of the departure flight.": "The return flight must be at least 20 minutes after the arrival of the departure flight.",
+  "The return flight must depart at least 20 minutes after arrival. The earliest available return time is 20.": "The return flight must depart at least 20 minutes after arrival. The earliest available return time is 20.",
+  "The return flight must be at least 20 minutes after arrival. Earliest return time: 20.": "The return flight must be at least 20 minutes after arrival. Earliest return time: 20."
+
+ 
+ 
 }

@@ -2,6 +2,7 @@ import { Plane, Sofa, XCircle } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
 export interface UIFlight {
     id: string | number;
@@ -28,22 +29,47 @@ export default function FlightCard({ flight, onToggle }: FlightCardProps) {
 
     const hasSeats = flight.seat !== "0";
 
-    // 🔹 CORRECTION : Vérification si le vol est passé
-    const flightDateTime = new Date(`${flight.date}T${flight.departure_time}:00`);
-    const now = new Date();
-    
-    // Un vol est "fermé" seulement si sa date/heure de départ est passée
-    const isFlightClosed = flightDateTime < now;
+    // 🔹 SOLUTION DÉFINITIVE
+    // const isFlightClosed = useMemo(() => {
+    //     // Méthode 1: Créer la date en forçant le fuseau Haïti
+    //     const flightDateTime = new Date(`${flight.date}T${flight.departure_time}:00-04:00`);
+        
+    //     // Méthode 2: Obtenir l'heure actuelle en Haïti
+    //     const nowInHaiti = new Date().toLocaleString("en-US", { 
+    //         timeZone: "America/Port-au-Prince" 
+    //     });
+    //     const now = new Date(nowInHaiti);
 
-      // 🔹 DEBUG: Afficher la comparaison
-    console.log(`✈️ FlightCard ${flight.id}:`, {
-        flightDate: flight.date,
-        flightTime: flight.departure_time,
-        flightDateTime,
-        now,
-        isFlightClosed,
-        timeDifference: now.getTime() - flightDateTime.getTime()
-    });
+    //     const isClosed = flightDateTime < now;
+
+    //     console.log("✅ SOLUTION - Comparaison:", {
+    //         flight: `${flight.date} ${flight.departure_time}`,
+    //         flightDateTime: flightDateTime.toString(),
+    //         nowInHaiti: now.toString(),
+    //         isClosed
+    //     });
+
+    //     return isClosed;
+    // }, [flight.date, flight.departure_time]);
+
+  
+const isFlightClosed = useMemo(() => {
+    try {
+        // Créer la date du vol en forçant le fuseau Haïti
+        const flightDateTime = new Date(`${flight.date}T${flight.departure_time}:00-04:00`);
+        
+        // Obtenir l'heure actuelle en Haïti
+        const nowInHaiti = new Date().toLocaleString("en-US", { 
+            timeZone: "America/Port-au-Prince" 
+        });
+        const now = new Date(nowInHaiti);
+
+        return flightDateTime < now;
+    } catch (error) {
+        console.error("Erreur de comparaison de dates:", error);
+        return false; // En cas d'erreur, afficher le vol comme disponible
+    }
+}, [flight.date, flight.departure_time]);
 
     return (
         <div className="mb-4 flex flex-col rounded-lg border border-blue-900 px-6 py-4 transition-all hover:shadow-md md:flex-row md:items-center">

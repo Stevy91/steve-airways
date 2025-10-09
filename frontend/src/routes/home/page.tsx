@@ -189,7 +189,7 @@ export default function HomePage() {
                                 alt={hotel.name}
                                 className="h-48 w-full object-cover"
                             />
-                            <div className="p-4">
+                            <div className=" p-4">
                                 <h3 className="text-lg font-semibold text-blue-900">{hotel.name}</h3>
                                 <p className="text-gray-700">{hotel.location}</p>
                             </div>

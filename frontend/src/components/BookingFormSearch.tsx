@@ -257,7 +257,7 @@ export default function BookingFormSearch({ onSearch, onClose,}: BookingFormProp
     }, []);
 
     return (
-        <div className="relative  px-4 md:px-10 mt-20">
+        <div className="relative  px-4 md:px-10">
             <div className="relative mx-auto max-w-6xl rounded-bl-3xl rounded-br-3xl rounded-tr-3xl p-4 ">
                 <div className="absolute  top-[-24px] z-[40] flex w-fit space-x-2 bg-blue-900 bg-opacity-40 shadow-md">
                     <button

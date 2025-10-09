@@ -200,68 +200,33 @@ const RouteHeader = ({ from, to, locations, prefix = "Vol" }: { from: string | n
 
 // }
 
-
 const timeZone = "America/Port-au-Prince";
 
 const convertToHaitiTime = (isoString: string): Date => {
-  const date = new Date(isoString);
-  return toZonedTime(date, timeZone);
+    const date = new Date(isoString);
+    return toZonedTime(date, timeZone);
 };
-
-
 
 const formatDate = (isoString: string) => format(convertToHaitiTime(isoString), "yyyy-MM-dd");
 const formatTime = (isoString: string) => format(convertToHaitiTime(isoString), "HH:mm");
 
-// const mapFlight = (flight: any, locations: any[]) => {
-//   const depLoc = locations.find((l) => l.id === flight.departure_location_id);
-//   const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
-
-//   return {
-//     id: flight.id,
-//     from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
-//     to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
-//     date: formatDate(flight.departure_time),
-//     departure_time: formatTime(flight.departure_time),
-//     arrival_time: formatTime(flight.arrival_time),
-//     time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`,
-//     type: flight.type,
-//     price: Number(flight.price),
-//     seat: flight.seats_available.toString(),
-//     noflight: flight.flight_number,
-//   };
-// };
-
 const mapFlight = (flight: any, locations: any[]) => {
-  const depLoc = locations.find((l) => l.id === flight.departure_location_id);
-  const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
+    const depLoc = locations.find((l) => l.id === flight.departure_location_id);
+    const arrLoc = locations.find((l) => l.id === flight.arrival_location_id);
 
-  const haitiDeparture = convertToHaitiTime(flight.departure_time);
-  const haitiArrival = convertToHaitiTime(flight.arrival_time);
-
-  // 🔹 DEBUG: Afficher les conversions de temps
-  console.log(`🕒 Vol ${flight.id}:`, {
-    departure_original: flight.departure_time,
-    departure_haiti: haitiDeparture,
-    departure_formatted: formatTime(flight.departure_time),
-    date_formatted: formatDate(flight.departure_time),
-    now_haiti: convertToHaitiTime(new Date().toISOString()),
-    is_future: haitiDeparture > new Date()
-  });
-
-  return {
-    id: flight.id,
-    from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
-    to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
-    date: formatDate(flight.departure_time),
-    departure_time: formatTime(flight.departure_time),
-    arrival_time: formatTime(flight.arrival_time),
-    time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`,
-    type: flight.type,
-    price: Number(flight.price),
-    seat: flight.seats_available.toString(),
-    noflight: flight.flight_number,
-  };
+    return {
+        id: flight.id,
+        from: depLoc ? `${depLoc.city} (${depLoc.code})` : "Inconnu",
+        to: arrLoc ? `${arrLoc.city} (${arrLoc.code})` : "Inconnu",
+        date: formatDate(flight.departure_time),
+        departure_time: formatTime(flight.departure_time),
+        arrival_time: formatTime(flight.arrival_time),
+        time: `${formatTime(flight.departure_time)} - ${formatTime(flight.arrival_time)}`,
+        type: flight.type,
+        price: Number(flight.price),
+        seat: flight.seats_available.toString(),
+        noflight: flight.flight_number,
+    };
 };
 
 export default function FlightSelection() {
@@ -425,42 +390,177 @@ export default function FlightSelection() {
         return () => controller.abort();
     }, [searchParams, tripTypeParam]);
 
+    // const allDates = useMemo(() => {
+    //     if (!state.allFlights.length) return [];
+
+    //     const datesArray = Array.from({ length: 31 }).map((_, i) => {
+    //         const date = addDays(new Date(), i);
+    //         const isoDate = date.toISOString().split("T")[0];
+
+    //         const matchingFlights = state.allFlights.filter(
+    //             (f) => f.from.includes(fromParam || "") && f.to.includes(toParam || "") && f.type === selectedTab, // Filtrer par type de vol
+    //         );
+
+    //         const dayFlights = matchingFlights.filter((f) => f.date === isoDate);
+
+    //         return {
+    //             date,
+    //             price: dayFlights.length ? Math.min(...dayFlights.map((f) => f.price)) : null,
+    //             hasFlight: dayFlights.length > 0,
+    //             hasAnyFlight: state.allFlights.some(
+    //                 (f) => f.date === isoDate && f.type === selectedTab, // Filtrer par type de vol
+    //             ),
+    //         };
+    //     });
+
+    //     return datesArray;
+    // }, [state.allFlights, fromParam, toParam, selectedTab]);
+
+    // const allReturnDates = useMemo(() => {
+    //     if (!state.allFlights.length || !toParam || !fromParam) return [];
+
+    //     const datesArray = Array.from({ length: 31 }).map((_, i) => {
+    //         const date = addDays(new Date(), i);
+    //         const isoDate = date.toISOString().split("T")[0];
+
+    //         const matchingFlights = state.allFlights.filter(
+    //             (f) => f.from.includes(toParam) && f.to.includes(fromParam) && f.type === selectedTab, // Filtrer par type de vol
+    //         );
+
+    //         const dayFlights = matchingFlights.filter((f) => f.date === isoDate);
+
+    //         return {
+    //             date,
+    //             price: dayFlights.length ? Math.min(...dayFlights.map((f) => f.price)) : null,
+    //             hasFlight: dayFlights.length > 0,
+    //             hasAnyFlight: state.allFlights.some(
+    //                 (f) => f.date === isoDate && f.type === selectedTab, // Filtrer par type de vol
+    //             ),
+    //         };
+    //     });
+
+    //     return datesArray;
+    // }, [state.allFlights, fromParam, toParam, selectedTab]);
+
+    const validateBookingDates = (): { isValid: boolean; error?: string } => {
+        if (selectedTabTrip === "oneway") {
+            return { isValid: true };
+        }
+
+        if (!booking.outbound || !booking.return) {
+            return {
+                isValid: false,
+                error: t("Please select both outbound and return flights."),
+            };
+        }
+
+        const outboundDate = new Date(booking.outbound.date);
+        const returnDate = new Date(booking.return.date);
+
+        // Vérification si la date de retour est avant la date d'aller
+        if (returnDate < outboundDate) {
+            return {
+                isValid: false,
+                error: t("The return date cannot be earlier than the departure date."),
+            };
+        }
+
+        // Vérification si même jour
+        if (returnDate.getTime() === outboundDate.getTime()) {
+            // Créer des objets Date complets pour calculer le temps d'arrivée
+            const outboundDepartureDateTime = new Date(`${booking.outbound.date}T${booking.outbound.departure_time}:00`);
+            const outboundArrivalDateTime = new Date(`${booking.outbound.date}T${booking.outbound.arrival_time}:00`);
+            const returnDepartureDateTime = new Date(`${booking.return.date}T${booking.return.departure_time}:00`);
+
+            // Calculer la durée du vol aller en minutes
+            const flightDurationMinutes = (outboundArrivalDateTime.getTime() - outboundDepartureDateTime.getTime()) / (1000 * 60);
+
+            // Délai minimum requis après l'arrivée (20 minutes)
+            const minimumGapMinutes = 20;
+
+            // Temps d'arrivée estimé + délai
+            const earliestReturnTime = new Date(outboundArrivalDateTime.getTime() + minimumGapMinutes * 60 * 1000);
+
+            if (returnDepartureDateTime < earliestReturnTime) {
+                const availableFromTime = format(earliestReturnTime, "HH:mm");
+                return {
+                    isValid: false,
+                    error: t("The return flight must depart at least 20 minutes after arrival. The earliest available return time is 20.", {
+                        minutes: minimumGapMinutes,
+                        time: availableFromTime,
+                    }),
+                };
+            }
+        }
+
+        return { isValid: true };
+    };
+
     const allDates = useMemo(() => {
         if (!state.allFlights.length) return [];
 
         const datesArray = Array.from({ length: 31 }).map((_, i) => {
-            const date = addDays(new Date(), i);
+            // 🔹 CORRECTION : Créer la date à minuit en temps Haïti
+            const todayInHaiti = new Date().toLocaleString("en-US", {
+                timeZone: "America/Port-au-Prince",
+            });
+            const today = new Date(todayInHaiti);
+            today.setHours(0, 0, 0, 0);
+
+            const date = addDays(today, i); // Ajouter les jours à minuit
             const isoDate = date.toISOString().split("T")[0];
 
             const matchingFlights = state.allFlights.filter(
-                (f) => f.from.includes(fromParam || "") && f.to.includes(toParam || "") && f.type === selectedTab, // Filtrer par type de vol
+                (f) => f.from.includes(fromParam || "") && f.to.includes(toParam || "") && f.type === selectedTab,
             );
 
             const dayFlights = matchingFlights.filter((f) => f.date === isoDate);
+
+            // 🔹 DEBUG: Vérifier ce qui se passe
+            if (i === 0 || i === 1 || i === 30) {
+                console.log(`📅 Date ${i}:`, {
+                    date: date.toISOString(),
+                    isoDate,
+                    hasFlights: dayFlights.length > 0,
+                    matchingFlightsCount: matchingFlights.length,
+                });
+            }
 
             return {
                 date,
                 price: dayFlights.length ? Math.min(...dayFlights.map((f) => f.price)) : null,
                 hasFlight: dayFlights.length > 0,
-                hasAnyFlight: state.allFlights.some(
-                    (f) => f.date === isoDate && f.type === selectedTab, // Filtrer par type de vol
-                ),
+                hasAnyFlight: dayFlights.length > 0,
             };
         });
 
+        console.log(
+            "📊 allDates généré:",
+            datesArray.map((d) => ({
+                date: d.date.toISOString().split("T")[0],
+                hasFlight: d.hasFlight,
+                price: d.price,
+            })),
+        );
+
         return datesArray;
-    }, [state.allFlights, fromParam, toParam, selectedTab]); // Ajouter selectedTab aux dépendances
+    }, [state.allFlights, fromParam, toParam, selectedTab]);
 
     const allReturnDates = useMemo(() => {
         if (!state.allFlights.length || !toParam || !fromParam) return [];
 
         const datesArray = Array.from({ length: 31 }).map((_, i) => {
-            const date = addDays(new Date(), i);
+            // 🔹 Même correction pour les dates retour
+            const todayInHaiti = new Date().toLocaleString("en-US", {
+                timeZone: "America/Port-au-Prince",
+            });
+            const today = new Date(todayInHaiti);
+            today.setHours(0, 0, 0, 0);
+
+            const date = addDays(today, i);
             const isoDate = date.toISOString().split("T")[0];
 
-            const matchingFlights = state.allFlights.filter(
-                (f) => f.from.includes(toParam) && f.to.includes(fromParam) && f.type === selectedTab, // Filtrer par type de vol
-            );
+            const matchingFlights = state.allFlights.filter((f) => f.from.includes(toParam) && f.to.includes(fromParam) && f.type === selectedTab);
 
             const dayFlights = matchingFlights.filter((f) => f.date === isoDate);
 
@@ -468,60 +568,23 @@ export default function FlightSelection() {
                 date,
                 price: dayFlights.length ? Math.min(...dayFlights.map((f) => f.price)) : null,
                 hasFlight: dayFlights.length > 0,
-                hasAnyFlight: state.allFlights.some(
-                    (f) => f.date === isoDate && f.type === selectedTab, // Filtrer par type de vol
-                ),
+                hasAnyFlight: dayFlights.length > 0,
             };
         });
 
         return datesArray;
-    }, [state.allFlights, fromParam, toParam, selectedTab]); // Ajouter selectedTab aux dépendances
+    }, [state.allFlights, fromParam, toParam, selectedTab]);
 
+    const filteredFlights = useMemo(() => {
+        if (!state.filteredFlights.length) return [];
 
+        const selectedDate = allDates[selectedDateIndex]?.date;
+        if (!selectedDate) return [];
 
+        const isoDate = selectedDate.toISOString().split("T")[0];
 
-
-    // const filteredFlights = useMemo(() => {
-    //     if (!state.filteredFlights.length) return [];
-
-    //     const selectedDate = allDates[selectedDateIndex]?.date;
-    //     if (!selectedDate) return [];
-
-    //     const isoDate = selectedDate.toISOString().split("T")[0];
-
-    //     return state.filteredFlights.filter((f) => f.date === isoDate && f.from.includes(fromParam || "") && f.to.includes(toParam || ""));
-    // }, [state.filteredFlights, allDates, selectedDateIndex, fromParam, toParam]);
-
-
-const filteredFlights = useMemo(() => {
-    if (!state.filteredFlights.length) return [];
-
-    const selectedDate = allDates[selectedDateIndex]?.date;
-    if (!selectedDate) return [];
-
-    const isoDate = selectedDate.toISOString().split("T")[0];
-
-    console.log("🔍 Filtrage des vols - DÉTAIL:", {
-        selectedDate: isoDate,
-        totalFlightsDisponibles: state.filteredFlights.length,
-        volsFiltrés: state.filteredFlights.filter((f) => {
-            const matches = f.date === isoDate;
-            if (!matches) {
-                console.log(`❌ Vol ${f.id} exclu:`, {
-                    volDate: f.date,
-                    dateSélectionnée: isoDate,
-                    correspond: matches
-                });
-            }
-            return matches;
-        })
-    });
-
-    return state.filteredFlights.filter((f) => f.date === isoDate);
-}, [state.filteredFlights, allDates, selectedDateIndex]);
-
-
-
+        return state.filteredFlights.filter((f) => f.date === isoDate && f.from.includes(fromParam || "") && f.to.includes(toParam || ""));
+    }, [state.filteredFlights, allDates, selectedDateIndex, fromParam, toParam]);
 
     const filteredReturnFlights = useMemo(() => {
         if (!state.returnFlights.length) return [];
@@ -687,6 +750,28 @@ const filteredFlights = useMemo(() => {
         return Math.round(adultPrice + childPrice + infantPrice);
     };
 
+    // const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
+    //     const flightWithTotalPrice = {
+    //         ...flight,
+    //         totalPrice: calculateTotalPrice(flight),
+    //     };
+
+    //     if (isReturnFlight) {
+    //         setBooking({
+    //             ...booking,
+    //             return: flightWithTotalPrice,
+    //             showReturnSelection: false,
+    //         });
+    //     } else {
+    //         setBooking({
+    //             outbound: flightWithTotalPrice,
+    //             showOutboundSelection: false,
+    //             return: undefined,
+    //             showReturnSelection: selectedTabTrip === "roundtrip",
+    //         });
+    //     }
+    // };
+
     const handleBookNow = (flight: Flight, isReturnFlight: boolean = false) => {
         const flightWithTotalPrice = {
             ...flight,
@@ -694,6 +779,22 @@ const filteredFlights = useMemo(() => {
         };
 
         if (isReturnFlight) {
+            // Vérifier que le vol retour n'est pas avant le vol aller
+            if (booking.outbound && new Date(flight.date) < new Date(booking.outbound.date)) {
+                toast.error(t("The return date cannot be earlier than the departure date."), {
+                    style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
+                    },
+                    iconTheme: {
+                        primary: "#fff",
+                        secondary: "#dc2626",
+                    },
+                });
+                return;
+            }
+
             setBooking({
                 ...booking,
                 return: flightWithTotalPrice,
@@ -935,9 +1036,9 @@ const filteredFlights = useMemo(() => {
                                         <Spinner size="md" />
                                         <p className="ml-3 text-blue-900">{t("Loading flights...")}</p>
                                     </div>
-                                ) : filteredFlights.length > 0 ? (
+                                ) : state.filteredFlights.length > 0 ? (
                                     <div className="mb-[80px] space-y-4">
-                                        {filteredFlights.map((flight) => (
+                                        {state.filteredFlights.map((flight) => (
                                             <div key={`${flight.id}-${flight.date}`}>
                                                 <FlightCard
                                                     flight={flight}
@@ -978,7 +1079,7 @@ const filteredFlights = useMemo(() => {
 
                                 {booking.showReturnSelection ? (
                                     <>
-                                        <div className="mb-6 mt-8 flex items-center gap-2  bg-blue-100 px-4 py-2">
+                                        <div className="mb-6 mt-8 flex items-center gap-2 bg-blue-100 px-4 py-2">
                                             <button
                                                 className="p-2 disabled:opacity-30"
                                                 onClick={handleReturnPrevClick}
@@ -1021,9 +1122,9 @@ const filteredFlights = useMemo(() => {
                                                 <Spinner size="md" />
                                                 <p className="ml-3 text-blue-900">{t("Loading flights...")}</p>
                                             </div>
-                                        ) : filteredReturnFlights.length > 0 ? (
+                                        ) : state.returnFlights.length > 0 ? (
                                             <div className="space-y-4">
-                                                {filteredReturnFlights.map((flight) => (
+                                                {state.returnFlights.map((flight) => (
                                                     <div key={`return-${flight.id}-${flight.date}`}>
                                                         <FlightCard
                                                             flight={flight}
@@ -1063,6 +1164,23 @@ const filteredFlights = useMemo(() => {
                                 <div className="mt-6 flex justify-end">
                                     <button
                                         onClick={() => {
+                                            // 🔹 VALIDATION DES DATES
+                                            const validation = validateBookingDates();
+                                            if (!validation.isValid) {
+                                                toast.error(validation.error!, {
+                                                    style: {
+                                                        background: "#fee2e2",
+                                                        color: "#991b1b",
+                                                        border: "1px solid #f87171",
+                                                    },
+                                                    iconTheme: {
+                                                        primary: "#fff",
+                                                        secondary: "#dc2626",
+                                                    },
+                                                });
+                                                return;
+                                            }
+
                                             const fromLocation = state.locations.find((loc) => loc.code === fromParam);
                                             const toLocation = state.locations.find((loc) => loc.code === toParam);
 
@@ -1113,4 +1231,3 @@ const filteredFlights = useMemo(() => {
         );
     }
 }
-

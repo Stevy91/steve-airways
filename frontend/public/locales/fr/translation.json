@@ -404,7 +404,7 @@
   "Cannot book: only": "Impossible de réserver: seulement",
   "seat(s) available for": "siège(s) disponible(s) pour",
   "passenger(s)": "passager(s)",
-   "The return date cannot be earlier than the departure date.":"La date de retour ne peut pas être antérieure à la date de départ.",
+ 
    "The departure date cannot be later than the return date.":"La date de départ ne peut pas être postérieure à la date de retour.",
     "Search another flight": "Chercher un autre vol",
   "Search": "Recherche",
@@ -413,6 +413,18 @@
   "second":"seconde",
   "Session Expired":"Session expirée",
   "Flight closed":"Vol fermé",
-   "Your ticket has been sent to your email address.":"Votre ticket a été envoyé à votre adresse email."
+   "Your ticket has been sent to your email address.":"Votre ticket a été envoyé à votre adresse email.",
+
+  "The return date cannot be earlier than the departure date.": "La date de retour ne peut pas être antérieure à la date de départ.",
+  "On the same day, the return flight must be after the departure flight.": "Le même jour, le vol retour doit être après le vol aller.",
+  "Please select both outbound and return flights.": "Veuillez sélectionner les vols aller et retour.",
+ 
+  "The return flight must be at least 20 minutes after the arrival of the departure flight.": "Le vol retour doit être au moins 20 minutes après l'arrivée du vol aller.",
+  "The return flight must depart at least 20 minutes after arrival. The earliest available return time is 20.": "Le vol retour doit décoller au moins 20 minutes après l'arrivée. Le premier vol retour disponible est à 20.",
+  "The return flight must be at least 20 minutes after arrival. Earliest return time: 20.": "Le vol retour doit être au moins 20 minutes après l'arrivée. Premier vol retour possible : 20."
+
+ 
+
+
 
 }
