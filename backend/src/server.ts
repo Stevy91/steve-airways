@@ -90,6 +90,8 @@ export interface Booking {
     contact_email: string;
     type_vol: "plane" | "helicopter";
     type_v: "onway" | "roundtrip";
+    created_by_name?: string;  // NOUVEAU CHAMP
+    created_by_email?: string; // NOUVEAU CHAMP
 }
 
 export interface Flights {
@@ -969,6 +971,8 @@ function formatDateToSQL(date?: string | Date | null): string | null {
   if (isNaN(d.getTime())) return null; // invalide → null
   return d.toISOString().split("T")[0]; // YYYY-MM-DD
 }
+
+
 // app.post("/api/create-ticket", async (req: Request, res: Response) => {
 //   const connection = await pool.getConnection();
 
@@ -1144,188 +1148,202 @@ function formatDateToSQL(date?: string | Date | null): string | null {
 //     connection.release();
 //   }
 // });
-app.post("/api/create-ticket", async (req: Request, res: Response) => {
-  const connection = await pool.getConnection();
 
-  try {
-    await connection.beginTransaction();
-    console.log("✅ Transaction started");
 
-    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        console.error(`Missing field: ${field}`);
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
 
-    const {
-      flightId,
-      passengers,
-      contactInfo,
-      totalPrice,
-      returnFlightId,
-      departureDate,
-      returnDate,
-      paymentMethod = "card",
-    } = req.body;
 
-    const typeVol = passengers[0]?.typeVol || "plane";
-    const typeVolV = passengers[0]?.typeVolV || "onway";
+//-----------------------good------------------------
+// app.post("/api/create-ticket", async (req: Request, res: Response) => {
+//   const connection = await pool.getConnection();
 
-    // Vérifier les vols - utilisation de type casting
-    const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-    const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
-      "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
-      [flightIds],
-    );
+//   try {
+//     await connection.beginTransaction();
+//     console.log("✅ Transaction started");
 
-    // Cast explicite vers RowDataPacket[]
-    const flights = flightsRows as mysql.RowDataPacket[];
+//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+//     for (const field of requiredFields) {
+//       if (!req.body[field]) {
+//         console.error(`Missing field: ${field}`);
+//         throw new Error(`Missing required field: ${field}`);
+//       }
+//     }
+
+//     const {
+//       flightId,
+//       passengers,
+//       contactInfo,
+//       totalPrice,
+//       returnFlightId,
+//       departureDate,
+//       returnDate,
+//       paymentMethod = "card",
+//     } = req.body;
+
+//     const typeVol = passengers[0]?.typeVol || "plane";
+//     const typeVolV = passengers[0]?.typeVolV || "onway";
+
+//     // Vérifier les vols - utilisation de type casting
+//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+//     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+//       [flightIds],
+//     );
+
+//     // Cast explicite vers RowDataPacket[]
+//     const flights = flightsRows as mysql.RowDataPacket[];
     
-    if (flights.length !== flightIds.length) {
-      throw new Error("One or more flights not found");
-    }
+//     if (flights.length !== flightIds.length) {
+//       throw new Error("One or more flights not found");
+//     }
 
-    for (const flight of flights) {
-      if (flight.seats_available < passengers.length) {
-        throw new Error(`Not enough seats available for flight ${flight.id}`);
-      }
-    }
+//     for (const flight of flights) {
+//       if (flight.seats_available < passengers.length) {
+//         throw new Error(`Not enough seats available for flight ${flight.id}`);
+//       }
+//     }
 
-    // Création réservation - utilisation de type casting pour OkPacket
-    const now = new Date();
-    const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+//     // Création réservation - utilisation de type casting pour OkPacket
+//     const now = new Date();
+//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
     
-    const depDate = formatDateToSQL(departureDate);
-    const retDate = formatDateToSQL(returnDate);
+//     const depDate = formatDateToSQL(departureDate);
+//     const retDate = formatDateToSQL(returnDate);
     
-    const [bookingResultRows] = await connection.query<mysql.OkPacket>(
-      `INSERT INTO bookings (
-          flight_id, payment_intent_id, total_price,
-          contact_email, contact_phone, status,
-          type_vol, type_v, guest_user, guest_email,
-          created_at, updated_at, departure_date,
-          return_date, passenger_count, booking_reference, return_flight_id,
-          payment_method
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        flightId,
-        '0',
-        totalPrice,
-        contactInfo.email,
-        contactInfo.phone,
-        "confirmed",
-        typeVol,
-        typeVolV,
-        1,
-        contactInfo.email,
-        now,
-        now,
-        depDate,
-        retDate,
-        passengers.length,
-        bookingReference,
-        returnFlightId || null,
-        paymentMethod,
-      ],
-    );
+//     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+//       `INSERT INTO bookings (
+//           flight_id, payment_intent_id, total_price,
+//           contact_email, contact_phone, status,
+//           type_vol, type_v, guest_user, guest_email,
+//           created_at, updated_at, departure_date,
+//           return_date, passenger_count, booking_reference, return_flight_id,
+//           payment_method
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//       [
+//         flightId,
+//         '0',
+//         totalPrice,
+//         contactInfo.email,
+//         contactInfo.phone,
+//         "confirmed",
+//         typeVol,
+//         typeVolV,
+//         1,
+//         contactInfo.email,
+//         now,
+//         now,
+//         depDate,
+//         retDate,
+//         passengers.length,
+//         bookingReference,
+//         returnFlightId || null,
+//         paymentMethod,
+//       ],
+//     );
 
-    // Cast explicite vers OkPacket
-    const bookingResult = bookingResultRows as mysql.OkPacket;
+//     // Cast explicite vers OkPacket
+//     const bookingResult = bookingResultRows as mysql.OkPacket;
 
-    // Enregistrer les passagers
-    for (const passenger of passengers) {
-      await connection.query(
-        `INSERT INTO passengers (
-          booking_id, first_name, middle_name, last_name,
-          date_of_birth, gender, title, address, type,
-          type_vol, type_v, country, nationality,
-          phone, email, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          bookingResult.insertId,
-          passenger.firstName,
-          passenger.middleName || null,
-          passenger.lastName,
-          passenger.dateOfBirth || null,
-          passenger.gender || "other",
-          passenger.title || "Mr",
-          passenger.address || null,
-          passenger.type,
-          passenger.typeVol || "plane",
-          passenger.typeVolV || "onway",
-          passenger.country,
-          passenger.nationality || null,
-          passenger.phone || contactInfo.phone,
-          passenger.email || contactInfo.email,
-          now,
-          now,
-        ],
-      );
-    }
+//     // Enregistrer les passagers
+//     for (const passenger of passengers) {
+//       await connection.query(
+//         `INSERT INTO passengers (
+//           booking_id, first_name, middle_name, last_name,
+//           date_of_birth, gender, title, address, type,
+//           type_vol, type_v, country, nationality,
+//           phone, email, created_at, updated_at
+//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//         [
+//           bookingResult.insertId,
+//           passenger.firstName,
+//           passenger.middleName || null,
+//           passenger.lastName,
+//           passenger.dateOfBirth || null,
+//           passenger.gender || "other",
+//           passenger.title || "Mr",
+//           passenger.address || null,
+//           passenger.type,
+//           passenger.typeVol || "plane",
+//           passenger.typeVolV || "onway",
+//           passenger.country,
+//           passenger.nationality || null,
+//           passenger.phone || contactInfo.phone,
+//           passenger.email || contactInfo.email,
+//           now,
+//           now,
+//         ],
+//       );
+//     }
 
-    // Mise à jour des sièges
-    for (const flight of flights) {
-      await connection.execute(
-        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-        [passengers.length, flight.id],
-      );
-    }
+//     // Mise à jour des sièges
+//     for (const flight of flights) {
+//       await connection.execute(
+//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//         [passengers.length, flight.id],
+//       );
+//     }
 
-    // Notification
-    try {
-      await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          "ticket",
-          `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-          bookingResult.insertId,
-          false,
-          now,
-        ],
-      );
+//     // Notification
+//     try {
+//       await connection.query(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           "ticket",
+//           `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//           bookingResult.insertId,
+//           false,
+//           now,
+//         ],
+//       );
 
-      io.emit("new-notification", {
-        message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-        bookingId: bookingResult.insertId,
-        createdAt: now,
-      });
-    } catch (notifyErr) {
-      console.error("⚠️ Notification error (non bloquant):", notifyErr);
-    }
+//       io.emit("new-notification", {
+//         message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//         bookingId: bookingResult.insertId,
+//         createdAt: now,
+//       });
+//     } catch (notifyErr) {
+//       console.error("⚠️ Notification error (non bloquant):", notifyErr);
+//     }
 
-    // Commit final
-    await connection.commit();
+//     // Commit final
+//     await connection.commit();
 
-    // ✅ Réponse succès
-    res.status(200).json({
-      success: true,
-      bookingId: bookingResult.insertId,
-      bookingReference,
-      passengerCount: passengers.length,
-      paymentMethod,
-    });
+//     // ✅ Réponse succès
+//     res.status(200).json({
+//       success: true,
+//       bookingId: bookingResult.insertId,
+//       bookingReference,
+//       passengerCount: passengers.length,
+//       paymentMethod,
+//     });
 
-  } catch (error: any) {
-    await connection.rollback();
-    console.error("❌ ERREUR DÉTAILLÉE:", {
-      message: error.message,
-      stack: error.stack,
-      sqlMessage: error.sqlMessage,
-      code: error.code,
-      sql: error.sql
-    });
+//   } catch (error: any) {
+//     await connection.rollback();
+//     console.error("❌ ERREUR DÉTAILLÉE:", {
+//       message: error.message,
+//       stack: error.stack,
+//       sqlMessage: error.sqlMessage,
+//       code: error.code,
+//       sql: error.sql
+//     });
 
-    res.status(500).json({
-      error: "Ticket creation failed",
-      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
-    });
-  } finally {
-    connection.release();
-  }
-});
+//     res.status(500).json({
+//       error: "Ticket creation failed",
+//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+//     });
+//   } finally {
+//     connection.release();
+//   }
+// });
+
+
+
+
+
+
+
+
+
 
 // Récupérer les passagers d’un vol
 app.get("/api/flights/:flightId/passengers", async (req, res) => {
@@ -1895,7 +1913,189 @@ interface User extends mysql.RowDataPacket {
 
 //-------------------------user------------------------------------------------------
 
-// Register
+app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
+  const connection = await pool.getConnection();
+  const userId = req.user.id; // Récupérer l'ID de l'utilisateur connecté
+
+  try {
+    await connection.beginTransaction();
+    console.log("✅ Transaction started");
+
+    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        console.error(`Missing field: ${field}`);
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    const {
+      flightId,
+      passengers,
+      contactInfo,
+      totalPrice,
+      returnFlightId,
+      departureDate,
+      returnDate,
+      paymentMethod = "card",
+    } = req.body;
+
+    const typeVol = passengers[0]?.typeVol || "plane";
+    const typeVolV = passengers[0]?.typeVolV || "onway";
+
+    // Vérifier les vols
+    const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+    const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+      [flightIds],
+    );
+
+    const flights = flightsRows as mysql.RowDataPacket[];
+    
+    if (flights.length !== flightIds.length) {
+      throw new Error("One or more flights not found");
+    }
+
+    for (const flight of flights) {
+      if (flight.seats_available < passengers.length) {
+        throw new Error(`Not enough seats available for flight ${flight.id}`);
+      }
+    }
+
+    // Création réservation - AJOUT du champ user_created_booking
+    const now = new Date();
+    const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    const depDate = formatDateToSQL(departureDate);
+    const retDate = formatDateToSQL(returnDate);
+    
+    const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO bookings (
+          flight_id, payment_intent_id, total_price,
+          contact_email, contact_phone, status,
+          type_vol, type_v, guest_user, guest_email,
+          created_at, updated_at, departure_date,
+          return_date, passenger_count, booking_reference, return_flight_id,
+          payment_method, user_created_booking  // NOUVEAU CHAMP AJOUTÉ
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Ajout d'un ? supplémentaire
+      [
+        flightId,
+        '0',
+        totalPrice,
+        contactInfo.email,
+        contactInfo.phone,
+        "confirmed",
+        typeVol,
+        typeVolV,
+        1,
+        contactInfo.email,
+        now,
+        now,
+        depDate,
+        retDate,
+        passengers.length,
+        bookingReference,
+        returnFlightId || null,
+        paymentMethod,
+        userId, // ID de l'utilisateur connecté
+      ],
+    );
+
+    const bookingResult = bookingResultRows as mysql.OkPacket;
+
+    // Enregistrer les passagers (reste identique)
+    for (const passenger of passengers) {
+      await connection.query(
+        `INSERT INTO passengers (
+          booking_id, first_name, middle_name, last_name,
+          date_of_birth, gender, title, address, type,
+          type_vol, type_v, country, nationality,
+          phone, email, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          bookingResult.insertId,
+          passenger.firstName,
+          passenger.middleName || null,
+          passenger.lastName,
+          passenger.dateOfBirth || null,
+          passenger.gender || "other",
+          passenger.title || "Mr",
+          passenger.address || null,
+          passenger.type,
+          passenger.typeVol || "plane",
+          passenger.typeVolV || "onway",
+          passenger.country,
+          passenger.nationality || null,
+          passenger.phone || contactInfo.phone,
+          passenger.email || contactInfo.email,
+          now,
+          now,
+        ],
+      );
+    }
+
+    // Mise à jour des sièges (reste identique)
+    for (const flight of flights) {
+      await connection.execute(
+        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+        [passengers.length, flight.id],
+      );
+    }
+
+    // Notification (reste identique)
+    try {
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          "ticket",
+          `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+          bookingResult.insertId,
+          false,
+          now,
+        ],
+      );
+
+      io.emit("new-notification", {
+        message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+        bookingId: bookingResult.insertId,
+        createdAt: now,
+      });
+    } catch (notifyErr) {
+      console.error("⚠️ Notification error (non bloquant):", notifyErr);
+    }
+
+    // Commit final
+    await connection.commit();
+
+    // ✅ Réponse succès
+    res.status(200).json({
+      success: true,
+      bookingId: bookingResult.insertId,
+      bookingReference,
+      passengerCount: passengers.length,
+      paymentMethod,
+      createdBy: userId, // Optionnel: retourner l'ID de l'utilisateur
+    });
+
+  } catch (error: any) {
+    await connection.rollback();
+    console.error("❌ ERREUR DÉTAILLÉE:", {
+      message: error.message,
+      stack: error.stack,
+      sqlMessage: error.sqlMessage,
+      code: error.code,
+      sql: error.sql
+    });
+
+    res.status(500).json({
+      error: "Ticket creation failed",
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+    });
+  } finally {
+    connection.release();
+  }
+});
 
 
 // Middleware général pour vérifier le token
@@ -2549,21 +2749,78 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
     } 
 });
 
+
+
+
+// app.get("/api/booking-helico", async (req: Request, res: Response) => {
+//     let connection;
+//     try {
+       
+//         // 1. Récupérer les réservations avec un typage explicite
+//    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+//   `SELECT 
+//       id, booking_reference, total_price, status, created_at, 
+//       passenger_count, contact_email, type_vol, type_v
+//    FROM bookings 
+//    WHERE type_vol = ?
+//    ORDER BY created_at DESC`,
+//   ["helicopter"]
+// );
+//         // Convertir en type Booking[]
+//         const bookings: Booking[] = bookingRows.map((row) => ({
+//             id: row.id,
+//             booking_reference: row.booking_reference,
+//             total_price: Number(row.total_price),
+//             status: row.status,
+//             created_at: new Date(row.created_at).toISOString(),
+//             passenger_count: row.passenger_count,
+//             contact_email: row.contact_email,
+//             type_vol: row.type_vol,
+//             type_v: row.type_v,
+//         }));
+//     const recentBookings = bookings.slice(0, 6);
+
+//         // 8. Construction de la réponse
+//         const response: BookingStats = {
+     
+//             recentBookings,
+//         };
+
+//         res.json(response);
+//     } catch (error) {
+//         console.error("Dashboard error:", error);
+//         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+//     } 
+// });
+
+
+
+
 app.get("/api/booking-helico", async (req: Request, res: Response) => {
     let connection;
     try {
-       
-        // 1. Récupérer les réservations avec un typage explicite
-   const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-  `SELECT 
-      id, booking_reference, total_price, status, created_at, 
-      passenger_count, contact_email, type_vol, type_v
-   FROM bookings 
-   WHERE type_vol = ?
-   ORDER BY created_at DESC`,
-  ["helicopter"]
-);
-        // Convertir en type Booking[]
+        // 1. Récupérer les réservations avec jointure pour avoir le nom de l'utilisateur
+        const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+            `SELECT 
+                b.id, 
+                b.booking_reference, 
+                b.total_price, 
+                b.status, 
+                b.created_at, 
+                b.passenger_count, 
+                b.contact_email, 
+                b.type_vol, 
+                b.type_v,
+                u.name as created_by_name,  // NOUVEAU CHAMP
+                u.email as created_by_email // NOUVEAU CHAMP (optionnel)
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id  // JOINTURE AVEC LA TABLE USERS
+            WHERE b.type_vol = ?
+            ORDER BY b.created_at DESC`,
+            ["helicopter"]
+        );
+
+        // Convertir en type Booking[] avec le nouveau champ
         const bookings: Booking[] = bookingRows.map((row) => ({
             id: row.id,
             booking_reference: row.booking_reference,
@@ -2574,12 +2831,14 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
             contact_email: row.contact_email,
             type_vol: row.type_vol,
             type_v: row.type_v,
+            created_by_name: row.created_by_name,  // AJOUT DU CHAMP
+            created_by_email: row.created_by_email // AJOUT DU CHAMP (optionnel)
         }));
-    const recentBookings = bookings.slice(0, 6);
+
+        const recentBookings = bookings.slice(0, 6);
 
         // 8. Construction de la réponse
         const response: BookingStats = {
-     
             recentBookings,
         };
 
@@ -2589,7 +2848,6 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
     } 
 });
-
 
 
 async function sendEmail(to: string, subject: string, html: string) {
@@ -2875,13 +3133,102 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
 
 
 
+// app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
+//   try {
+//     const bookingId = req.params.id;
+
+//     // Récupérer la réservation
+//     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+//       `SELECT * FROM bookings WHERE id = ?`,
+//       [bookingId]
+//     );
+
+//     if (bookingRows.length === 0) {
+//       return res.status(404).json({ error: "Booking not found" });
+//     }
+
+//     const booking = bookingRows[0];
+
+//     // Récupérer les passagers liés
+//     const [passengerRows] = await pool.query<mysql.RowDataPacket[]>(
+//       `SELECT 
+//           id, 
+//           booking_id, 
+//           first_name, middle_name, last_name,
+//           date_of_birth, gender, title, address, type,
+//           type_vol, type_v, country, nationality,
+//           phone, email, created_at, updated_at
+//        FROM passengers 
+//        WHERE booking_id = ?`,
+//       [bookingId]
+//     );
+
+//     // Récupérer les vols liés avec JOIN sur locations
+//     const flightIds = [booking.flight_id];
+//     if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
+
+//     const flightQuery = `
+//       SELECT 
+//           f.id,
+//           f.flight_number AS code,
+//           f.type,
+//           f.airline,
+//           f.departure_time AS date,
+//           f.arrival_time,
+//           f.price,
+//           f.seats_available,
+//           dep.name AS departure_airport_name,
+//           dep.city AS departure_city,
+//           dep.code AS departure_code,
+//           arr.name AS arrival_airport_name,
+//           arr.city AS arrival_city,
+//           arr.code AS arrival_code
+//       FROM flights f
+//       JOIN locations dep ON f.departure_location_id = dep.id
+//       JOIN locations arr ON f.arrival_location_id = arr.id
+//       WHERE f.id IN (?)
+//     `;
+
+//     const [flightRows] = await pool.query<mysql.RowDataPacket[]>(
+//       flightQuery,
+//       [flightIds]
+//     );
+
+//     const details = {
+//       id: booking.id,
+//       booking_reference: booking.booking_reference,
+//       total_price: Number(booking.total_price),
+//       status: booking.status,
+//       created_at: new Date(booking.created_at).toISOString(),
+//       passenger_count: booking.passenger_count,
+//       contact_email: booking.contact_email,
+//       type_vol: booking.type_vol,
+//       type_v: booking.type_v,
+//       passengers: passengerRows,
+//       flights: flightRows,
+//     };
+
+//     res.json(details);
+//   } catch (error) {
+//     console.error("Booking detail error:", error);
+//     res.status(500).json({ error: "Erreur lors de la récupération du détail de la réservation" });
+//   }
+// });
+
+
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
   try {
     const bookingId = req.params.id;
 
-    // Récupérer la réservation
+    // Récupérer la réservation avec jointure pour avoir le nom de l'utilisateur
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT * FROM bookings WHERE id = ?`,
+      `SELECT 
+          b.*,
+          u.name as created_by_name,  // NOUVEAU CHAMP
+          u.email as created_by_email // NOUVEAU CHAMP (optionnel)
+       FROM bookings b
+       LEFT JOIN users u ON b.user_created_booking = u.id  // JOINTURE AVEC LA TABLE USERS
+       WHERE b.id = ?`,
       [bookingId]
     );
 
@@ -2891,7 +3238,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
 
     const booking = bookingRows[0];
 
-    // Récupérer les passagers liés
+    // Récupérer les passagers liés (reste identique)
     const [passengerRows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
           id, 
@@ -2905,7 +3252,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
       [bookingId]
     );
 
-    // Récupérer les vols liés avec JOIN sur locations
+    // Récupérer les vols liés avec JOIN sur locations (reste identique)
     const flightIds = [booking.flight_id];
     if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
 
@@ -2936,6 +3283,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
       [flightIds]
     );
 
+    // Construction de la réponse avec les nouveaux champs
     const details = {
       id: booking.id,
       booking_reference: booking.booking_reference,
@@ -2946,6 +3294,9 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
       contact_email: booking.contact_email,
       type_vol: booking.type_vol,
       type_v: booking.type_v,
+      created_by_name: booking.created_by_name,  // AJOUT DU CHAMP
+      created_by_email: booking.created_by_email, // AJOUT DU CHAMP (optionnel)
+      user_created_booking: booking.user_created_booking, // ID de l'utilisateur
       passengers: passengerRows,
       flights: flightRows,
     };
@@ -2956,6 +3307,8 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la récupération du détail de la réservation" });
   }
 });
+
+
 
 app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
     const flightId = req.params.id;
