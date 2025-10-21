@@ -3227,7 +3227,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
           u.name as created_by_name,  
           u.email as created_by_email 
        FROM bookings b
-       LEFT JOIN users u ON b.user_created_booking = u.id  // JOINTURE AVEC LA TABLE USERS
+       LEFT JOIN users u ON b.user_created_booking = u.id
        WHERE b.id = ?`,
       [bookingId]
     );

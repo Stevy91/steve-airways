@@ -20,6 +20,8 @@ type Booking = {
     contact_email: string;
     type_vol: string;
     type_v: string;
+     created_by_name?: string;  // NOUVEAU CHAMP
+    created_by_email?: string; // NOUVEAU CHAMP
 };
 
 interface ChartData {
@@ -158,6 +160,7 @@ const ViewBookingHelico = () => {
                                     <th className="table-head text-center">Total Price</th>
                                     <th className="table-head text-center">Passengers</th>
                                     <th className="table-head text-center">Payment</th>
+                                    <th className="table-head text-center">Créé par</th>
                                     <th className="table-head text-center">Booking Date</th>
                                     <th className="table-head text-center">Action</th>
                                 </tr>
@@ -203,6 +206,7 @@ const ViewBookingHelico = () => {
                                                 {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : "Cancelled"}
                                             </span>
                                         </td>
+                                         <td className="table-cell text-center">{booking.created_by_name || 'Le client Online'}</td>
                                         <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
                                         <td className="table-cell text-center">
                                             <button

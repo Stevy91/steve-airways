@@ -16,6 +16,9 @@ export type BookingDetails = {
   id?: string;
   typeVol?: string;
   typeV?: string;
+   created_by_name?: string;  
+  created_by_email?: string; 
+  user_created_booking?: number; 
   adminNotes?: string;
 };
 
