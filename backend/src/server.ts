@@ -1976,7 +1976,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           type_vol, type_v, guest_user, guest_email,
           created_at, updated_at, departure_date,
           return_date, passenger_count, booking_reference, return_flight_id,
-          payment_method, user_created_booking  // NOUVEAU CHAMP AJOUTÉ
+          payment_method, user_created_booking
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Ajout d'un ? supplémentaire
       [
         flightId,
@@ -1997,7 +1997,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
         bookingReference,
         returnFlightId || null,
         paymentMethod,
-        userId, // ID de l'utilisateur connecté
+        userId, 
       ],
     );
 
@@ -2811,10 +2811,10 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
                 b.contact_email, 
                 b.type_vol, 
                 b.type_v,
-                u.name as created_by_name,  // NOUVEAU CHAMP
-                u.email as created_by_email // NOUVEAU CHAMP (optionnel)
+                u.name as created_by_name,  
+                u.email as created_by_email 
             FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id  // JOINTURE AVEC LA TABLE USERS
+            LEFT JOIN users u ON b.user_created_booking = u.id  
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
             ["helicopter"]
@@ -3224,8 +3224,8 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
           b.*,
-          u.name as created_by_name,  // NOUVEAU CHAMP
-          u.email as created_by_email // NOUVEAU CHAMP (optionnel)
+          u.name as created_by_name,  
+          u.email as created_by_email 
        FROM bookings b
        LEFT JOIN users u ON b.user_created_booking = u.id  // JOINTURE AVEC LA TABLE USERS
        WHERE b.id = ?`,

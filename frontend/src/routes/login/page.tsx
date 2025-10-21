@@ -14,39 +14,40 @@ export default function Login() {
     const currentLang = lang || "en"; // <-- ici on définit currentLang
     useAuth();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
+   // Dans votre composant Login
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-        try {
-            const res = await fetch("https://steve-airways.onrender.com/api/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
+    try {
+        const res = await fetch("https://steve-airways.onrender.com/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
 
-            const data = await res.json();
+        const data = await res.json();
 
-            if (!res.ok) {
-                setError(data.error || "Échec de la connexion");
-                setLoading(false);
-                return;
-            }
-
-            // Sauvegarder le token + user dans localStorage
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-
-           
-            navigate(`/${currentLang}/dashboard`);
-        } catch (err) {
-            console.error(err);
-            setError("Erreur serveur, réessayez plus tard.");
-        } finally {
+        if (!res.ok) {
+            setError(data.error || "Échec de la connexion");
             setLoading(false);
+            return;
         }
-    };
+
+        // ✅ CORRECTION : Stocker avec la clé 'authToken'
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("token", data.token); // Garder les deux pour compatibilité
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        navigate(`/${currentLang}/dashboard`);
+    } catch (err) {
+        console.error(err);
+        setError("Erreur serveur, réessayez plus tard.");
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-100">
