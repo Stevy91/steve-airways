@@ -18,6 +18,7 @@ type Booking = {
     updated_at: string;
     passenger_count: number;
     contact_email: string;
+    payment_method: string;
     type_vol: string;
     type_v: string;
      created_by_name?: string;  // NOUVEAU CHAMP
@@ -159,7 +160,8 @@ const ViewBookingHelico = () => {
                                     <th className="table-head text-center">Contact Email</th>
                                     <th className="table-head text-center">Total Price</th>
                                     <th className="table-head text-center">Passengers</th>
-                                    <th className="table-head text-center">Payment</th>
+                                    <th className="table-head text-center">Paiement</th>
+                                    <th className="table-head text-center">Méthode de paiement</th>
                                     <th className="table-head text-center">Créé par</th>
                                     <th className="table-head text-center">Booking Date</th>
                                     <th className="table-head text-center">Action</th>
@@ -206,6 +208,7 @@ const ViewBookingHelico = () => {
                                                 {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : "Cancelled"}
                                             </span>
                                         </td>
+                                        <td className="table-cell text-center">{booking.payment_method}</td>
                                          <td className="table-cell text-center">{booking.created_by_name || 'Le client Online'}</td>
                                         <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
                                         <td className="table-cell text-center">
