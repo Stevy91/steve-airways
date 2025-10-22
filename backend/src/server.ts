@@ -2805,6 +2805,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
             `SELECT 
                 b.id, 
                 b.booking_reference, 
+                b.payment_intent_id, 
                 b.total_price, 
                 b.status, 
                 b.created_at, 
@@ -2826,6 +2827,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
         const bookings: Booking[] = bookingRows.map((row) => ({
             id: row.id,
             booking_reference: row.booking_reference,
+            payment_intent_id: row.payment_intent_id,
             total_price: Number(row.total_price),
             status: row.status,
             created_at: new Date(row.created_at).toISOString(),

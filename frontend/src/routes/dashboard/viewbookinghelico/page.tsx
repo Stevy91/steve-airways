@@ -12,6 +12,7 @@ import { useAuth } from "../../../hooks/useAuth";
 type Booking = {
     id: number;
     booking_reference: string;
+    payment_intent_id: string;
     total_price: number;
     status: string;
     created_at: string;
@@ -154,7 +155,8 @@ const ViewBookingHelico = () => {
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
-                                    <th className="table-head text-center">Booking Reference</th>
+                                    <th className="table-head text-center">Booking Référence</th>
+                                    <th className="table-head text-center">Paiement Référence</th>
                                     <th className="table-head text-center">Type</th>
                                     <th className="table-head text-center">Type Vol</th>
                                     <th className="table-head text-center">Contact Email</th>
@@ -175,6 +177,9 @@ const ViewBookingHelico = () => {
                                     >
                                         <td className="table-cell text-center">
                                             <p>{booking.booking_reference}</p>
+                                        </td>
+                                        <td className="table-cell text-center">
+                                            <p>{booking.payment_intent_id}</p>
                                         </td>
                                         <td className="table-cell text-center">
                                             <p>{booking.type_vol}</p>
