@@ -1,17 +1,43 @@
+// hooks/useAuth.ts
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 export const useAuth = () => {
     const navigate = useNavigate();
     const { lang } = useParams<{ lang: string }>();
-    const currentLang = lang || "en"; // <-- ici on définit currentLang
+    const currentLang = lang || "en";
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem("token"); // ou cookie
+        const token = localStorage.getItem("token");
+        const userData = localStorage.getItem("user");
+
         if (!token) {
-            navigate(`/${currentLang}/login`); // redirige vers login si pas connecté
+            navigate(`/${currentLang}/login`);
+            return;
         }
-    }, [navigate]);
+
+        if (userData) {
+            try {
+                setUser(JSON.parse(userData));
+            } catch (error) {
+                console.error("Erreur parsing user data:", error);
+                localStorage.removeItem("user");
+                localStorage.removeItem("token");
+                navigate(`/${currentLang}/login`);
+            }
+        }
+
+        setLoading(false);
+    }, [navigate, currentLang]);
+
+    const isAdmin = user?.role === "admin";
+
+    return { 
+        user, 
+        loading, 
+        isAdmin 
+    };
 };

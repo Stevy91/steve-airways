@@ -7,6 +7,7 @@ export default function Register() {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
+    const [role, setRole] = useState("");
     const [password, setPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ export default function Register() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
                 },
-                body: JSON.stringify({ name, phone, email, password, role: "user" }),
+                body: JSON.stringify({ name, phone, email, password, role}),
             });
 
             const data = await res.json();
@@ -97,6 +98,18 @@ export default function Register() {
                             placeholder="admin@trogonairways.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Role</label>
+                        <input
+                            type="text"
+                            placeholder="admin, user"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
                             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                             required
                         />

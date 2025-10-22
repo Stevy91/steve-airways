@@ -1,7 +1,7 @@
 // src/components/Login.tsx
 import { useEffect, useState } from "react";
 import { LogIn } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom"; // si tu utilises react-router-dom
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function Login() {
@@ -11,44 +11,47 @@ export default function Login() {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const { lang } = useParams<{ lang: string }>();
-    const currentLang = lang || "en"; // <-- ici on définit currentLang
+    const currentLang = lang || "en";
     useAuth();
 
-   // Dans votre composant Login
-const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
 
-    try {
-        const res = await fetch("https://steve-airways.onrender.com/api/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
+        try {
+            const res = await fetch("https://steve-airways.onrender.com/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
 
-        const data = await res.json();
+            const data = await res.json();
 
-        if (!res.ok) {
-            setError(data.error || "Échec de la connexion");
+            if (!res.ok) {
+                setError(data.error || "Échec de la connexion");
+                setLoading(false);
+                return;
+            }
+
+            // ✅ Stocker le token et les données utilisateur
+            localStorage.setItem("authToken", data.token);
+            localStorage.setItem("token", data.token); // Garder les deux pour compatibilité
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+            // ✅ Redirection conditionnelle selon le rôle
+            if (data.user.role === "admin") {
+                navigate(`/${currentLang}/dashboard`);
+            } else {
+                navigate(`/${currentLang}/dashboard/flights-helico`);
+            }
+        } catch (err) {
+            console.error(err);
+            setError("Erreur serveur, réessayez plus tard.");
+        } finally {
             setLoading(false);
-            return;
         }
-
-        // ✅ CORRECTION : Stocker avec la clé 'authToken'
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("token", data.token); // Garder les deux pour compatibilité
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        navigate(`/${currentLang}/dashboard`);
-    } catch (err) {
-        console.error(err);
-        setError("Erreur serveur, réessayez plus tard.");
-    } finally {
-        setLoading(false);
-    }
-};
-
+    };
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-100">
             <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">

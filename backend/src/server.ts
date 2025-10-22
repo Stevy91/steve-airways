@@ -1934,6 +1934,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       passengers,
       contactInfo,
       totalPrice,
+      referenceNumber,
       returnFlightId,
       departureDate,
       returnDate,
@@ -1980,7 +1981,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Ajout d'un ? supplémentaire
       [
         flightId,
-        '0',
+        referenceNumber,
         totalPrice,
         contactInfo.email,
         contactInfo.phone,

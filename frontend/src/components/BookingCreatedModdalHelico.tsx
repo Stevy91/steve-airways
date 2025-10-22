@@ -28,6 +28,7 @@ type Passenger = {
     firstName: string;
     middleName?: string;
     lastName: string;
+    reference: string;
     dateOfBirth?: string;
     gender?: string;
     title?: string;
@@ -273,6 +274,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         firstName: "",
         middleName: "",
         lastName: "",
+        reference: "",
         dateOfBirth: "",
         gender: "other",
         title: "Mr",
@@ -294,7 +296,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
    const handleSubmit = async () => {
     // 1️⃣ Validation des champs obligatoires
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
+    if (!formData.firstName || !formData.lastName || !formData.reference || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
         toast.error(`Veuillez remplir tous les champs obligatoires`, {
             style: {
                 background: "#fee2e2",
@@ -314,6 +316,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             firstName: formData.firstName,
             middleName: formData.middleName,
             lastName: formData.lastName,
+            reference: formData.reference,
             dateOfBirth: formData.dateOfBirth,
             gender: formData.gender,
             title: formData.title,
@@ -332,6 +335,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const body = {
         flightId: flight.id,
         passengers,
+        referenceNumber: formData.reference,
         contactInfo: { email: formData.email, phone: formData.phone },
         totalPrice: flight.price * passengerCount,
         departureDate: flight.departure.split("T")[0],
@@ -657,6 +661,24 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         name="passengerCount"
                                         min="1"
                                         defaultValue={1}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="reference"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Numéro de Référence
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="reference"
+                                        name="reference"
+                                        placeholder="Numéro de Référence"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
