@@ -53,11 +53,11 @@ const FlightTableHelico = () => {
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
-    
+
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
-   
+
     const { user, loading: authLoading, isAdmin } = useAuth();
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -123,7 +123,9 @@ const FlightTableHelico = () => {
             setLoading(false);
         }
     };
-
+    const refreshFlights = () => {
+        fetchFlights();
+    };
     useEffect(() => {
         fetchFlights();
     }, []);
@@ -359,7 +361,7 @@ const FlightTableHelico = () => {
 
             <div className="mb-4 flex items-center justify-between">
                 <h1 className="text-2xl font-bold">All Flight Helico</h1>
-                
+
                 {/* Bouton Add new flight seulement pour les admins */}
                 {isAdmin && (
                     <button
@@ -445,7 +447,7 @@ const FlightTableHelico = () => {
                                                                     >
                                                                         <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                                     </button>
-                                                                    <button
+                                                                    {/* <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                                         onClick={() => {
                                                                             deleteFlight(flight.id);
@@ -453,10 +455,10 @@ const FlightTableHelico = () => {
                                                                         }}
                                                                     >
                                                                         <Trash2 className="h-4 w-4 text-red-500" /> Delete
-                                                                    </button>
+                                                                    </button> */}
                                                                 </>
                                                             )}
-                                                            
+
                                                             {/* Option Create Ticket disponible pour tous */}
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
@@ -468,7 +470,7 @@ const FlightTableHelico = () => {
                                                             >
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
-                                                            
+
                                                             {/* Option Passengers réservée aux admins */}
                                                             {isAdmin && (
                                                                 <button
@@ -493,7 +495,7 @@ const FlightTableHelico = () => {
                         </table>
                     </div>
                 </div>
-                
+
                 {/* 🔹 Pagination */}
                 <div className="mt-4 flex justify-center gap-2">
                     <span>
@@ -502,7 +504,7 @@ const FlightTableHelico = () => {
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-560 disabled:bg-gray-200"
+                        className="hover:bg-amber-560 rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200"
                     >
                         Previous
                     </button>
@@ -516,11 +518,12 @@ const FlightTableHelico = () => {
                     </button>
                 </div>
             </div>
-            
+
             <BookingCreatedModalHelico
                 open={open}
                 onClose={() => setOpen(false)}
                 flight={selectedFlight!}
+                onTicketCreated={refreshFlights}
             />
 
             {/* Modal Add/Edit - Seulement accessible aux admins */}
@@ -563,7 +566,9 @@ const FlightTableHelico = () => {
                                     </button>
 
                                     <div className="px-6 pt-6">
-                                        <h2 className="text-xl font-semibold text-slate-800">{editingFlight ? "Update the flight" : "Add a flight"}</h2>
+                                        <h2 className="text-xl font-semibold text-slate-800">
+                                            {editingFlight ? "Update the flight" : "Add a flight"}
+                                        </h2>
                                     </div>
 
                                     <div className="my-4 h-px w-full bg-slate-100" />
@@ -899,9 +904,9 @@ const FlightTableHelico = () => {
                                             <thead className="">
                                                 <tr className="">
                                                     <th className="table-head">FirstName</th>
-                                                    <th className="table-head ">LastName</th>
-                                                    <th className="table-head ">Email Address</th>
-                                                    <th className="table-head ">Booking Date</th>
+                                                    <th className="table-head">LastName</th>
+                                                    <th className="table-head">Email Address</th>
+                                                    <th className="table-head">Booking Date</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="table-body">
@@ -912,9 +917,15 @@ const FlightTableHelico = () => {
                                                             className="hover:bg-gray-50"
                                                         >
                                                             <td className="table-cell">{p.first_name}</td>
-                                                            <td className="table-cell ">{p.last_name}</td>
-                                                            <td className="table-cell ">{p.email}</td>
-                                                            <td className="table-cell ">{format(parseISO(p.booking_date), "EEE, dd MMM") } at {new Date(p.booking_date).toLocaleTimeString("fr-FR", {hour: "2-digit",  minute: "2-digit"})}</td>
+                                                            <td className="table-cell">{p.last_name}</td>
+                                                            <td className="table-cell">{p.email}</td>
+                                                            <td className="table-cell">
+                                                                {format(parseISO(p.booking_date), "EEE, dd MMM")} at{" "}
+                                                                {new Date(p.booking_date).toLocaleTimeString("fr-FR", {
+                                                                    hour: "2-digit",
+                                                                    minute: "2-digit",
+                                                                })}
+                                                            </td>
                                                         </tr>
                                                     ))
                                                 ) : (

@@ -216,427 +216,6 @@ app.get("/api/flightall", async (req: Request, res: Response) => {
     }
 });
 
-// app.get("/api/flights", async (req: Request, res: Response) => {
-//     try {
-//         const {
-//             from,
-//             to,
-//             date,
-//             tab: type,
-//         } = req.query as {
-//             from: string;
-//             to: string;
-//             date: string;
-//             tab: string;
-//         };
-
-//         // Validation des paramètres
-//         if (!from || !to || !date || !type) {
-//             return res.status(400).json({
-//                 error: "Paramètres manquants",
-//                 required: ["from", "to", "date", "tab"],
-//                 received: { from, to, date, type },
-//             });
-//         }
-
-//         const validTypes = ["plane", "helicopter"];
-//         if (!validTypes.includes(type)) {
-//             return res.status(400).json({
-//                 error: "Type invalide",
-//                 validTypes,
-//                 received: type,
-//             });
-//         }
-
-       
-
-//         // Vérification des aéroports
-//         const [departureAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [from]);
-
-//         const [arrivalAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [to]);
-
-//         if (departureAirport.length === 0 || arrivalAirport.length === 0) {
-           
-//             return res.status(404).json({ error: "Aéroport non trouvé" });
-//         }
-
-//         // Requête principale
-      
-
-//         const [flights] = await pool.query<Flight[]>(
-//             `SELECT f.*, 
-//                     dep.code as departure_code, 
-//                     arr.code as arrival_code
-//             FROM flights f
-//             JOIN locations dep ON f.departure_location_id = dep.id
-//             JOIN locations arr ON f.arrival_location_id = arr.id
-//             WHERE dep.code = ? 
-//             AND arr.code = ? 
-//             AND f.type = ?
-//             AND (
-//                 (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
-//                 OR DATE(f.departure_time) > ?
-//             )
-//             ORDER BY f.departure_time`,
-//             [from, to, type, date, date]
-//         );
-
-
-//         // Gestion des vols aller-retour
-//         if (req.query.return_date) {
-//             const returnDate = req.query.return_date as string;
-
-
-//             const [returnFlights] = await pool.query<Flight[]>(
-//                 `SELECT f.*, 
-//                         dep.code as departure_code, 
-//                         arr.code as arrival_code
-//                 FROM flights f
-//                 JOIN locations dep ON f.departure_location_id = dep.id
-//                 JOIN locations arr ON f.arrival_location_id = arr.id
-//                 WHERE dep.code = ? 
-//                 AND arr.code = ? 
-//                 AND f.type = ?
-//                 AND (
-//                     (DATE(f.departure_time) = ? AND f.departure_time >= NOW())
-//                     OR DATE(f.departure_time) > ?
-//                 )
-//                 ORDER BY f.departure_time`,
-//                 [to, from, type, returnDate, returnDate]
-//             );
-
-          
-//             return res.json({
-//                 outbound: flights,
-//                 return: returnFlights,
-//             });
-//         }
-
-      
-//         res.json(flights);
-//     } catch (err) {
-//         console.error("Erreur:", err);
-//         res.status(500).json({
-//             error: "Erreur serveur",
-//             details: err instanceof Error ? err.message : String(err),
-//         });
-//     }
-// });
-
-// app.get("/api/flights", async (req: Request, res: Response) => {
-//     try {
-//         const {
-//             from,
-//             to,
-//             date,
-//             tab: type,
-//         } = req.query as {
-//             from: string;
-//             to: string;
-//             date: string;
-//             tab: string;
-//         };
-
-//         // Validation des paramètres
-//         if (!from || !to || !date || !type) {
-//             return res.status(400).json({
-//                 error: "Paramètres manquants",
-//                 required: ["from", "to", "date", "tab"],
-//                 received: { from, to, date, type },
-//             });
-//         }
-
-//         const validTypes = ["plane", "helicopter"];
-//         if (!validTypes.includes(type)) {
-//             return res.status(400).json({
-//                 error: "Type invalide",
-//                 validTypes,
-//                 received: type,
-//             });
-//         }
-
-//         // Vérification des aéroports
-//         const [departureAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [from]);
-//         const [arrivalAirport] = await pool.query<Location[]>("SELECT id FROM locations WHERE code = ?", [to]);
-
-//         if (departureAirport.length === 0 || arrivalAirport.length === 0) {
-//             return res.status(404).json({ error: "Aéroport non trouvé" });
-//         }
-
-//         // Requête principale - CORRIGÉE
-//         // On utilise seulement la date sans comparer avec l'heure actuelle
-//         const [flights] = await pool.query<Flight[]>(
-//             `SELECT f.*, 
-//                     dep.code as departure_code, 
-//                     arr.code as arrival_code
-//             FROM flights f
-//             JOIN locations dep ON f.departure_location_id = dep.id
-//             JOIN locations arr ON f.arrival_location_id = arr.id
-//             WHERE dep.code = ? 
-//             AND arr.code = ? 
-//             AND f.type = ?
-//             AND DATE(f.departure_time) = ?
-//             ORDER BY f.departure_time`,
-//             [from, to, type, date]
-//         );
-
-//         // Gestion des vols aller-retour
-//         if (req.query.return_date) {
-//             const returnDate = req.query.return_date as string;
-
-//             const [returnFlights] = await pool.query<Flight[]>(
-//                 `SELECT f.*, 
-//                         dep.code as departure_code, 
-//                         arr.code as arrival_code
-//                 FROM flights f
-//                 JOIN locations dep ON f.departure_location_id = dep.id
-//                 JOIN locations arr ON f.arrival_location_id = arr.id
-//                 WHERE dep.code = ? 
-//                 AND arr.code = ? 
-//                 AND f.type = ?
-//                 AND DATE(f.departure_time) = ?
-//                 ORDER BY f.departure_time`,
-//                 [to, from, type, returnDate]
-//             );
-
-//             return res.json({
-//                 outbound: flights,
-//                 return: returnFlights,
-//             });
-//         }
-
-//         res.json(flights);
-//     } catch (err) {
-//         console.error("Erreur:", err);
-//         res.status(500).json({
-//             error: "Erreur serveur",
-//             details: err instanceof Error ? err.message : String(err),
-//         });
-//     }
-// });
-
-
-// import { format, toZonedTime } from "date-fns-tz";
-
-// app.get("/api/flights", async (req: Request, res: Response) => {
-//     try {
-//         const {
-//             from,
-//             to,
-//             date,
-//             tab: type,
-//         } = req.query as {
-//             from: string;
-//             to: string;
-//             date: string;
-//             tab: string;
-//         };
-
-//         // Validation des paramètres
-//         if (!from || !to || !date || !type) {
-//             return res.status(400).json({
-//                 error: "Paramètres manquants",
-//                 required: ["from", "to", "date", "tab"],
-//                 received: { from, to, date, type },
-//             });
-//         }
-
-//         const validTypes = ["plane", "helicopter"];
-//         if (!validTypes.includes(type)) {
-//             return res.status(400).json({
-//                 error: "Type invalide",
-//                 validTypes,
-//                 received: type,
-//             });
-//         }
-
-//         // Vérification des aéroports
-//         const [departureAirport] = await pool.query<Location[]>(
-//             "SELECT id FROM locations WHERE code = ?",
-//             [from]
-//         );
-//         const [arrivalAirport] = await pool.query<Location[]>(
-//             "SELECT id FROM locations WHERE code = ?",
-//             [to]
-//         );
-
-//         if (departureAirport.length === 0 || arrivalAirport.length === 0) {
-//             return res.status(404).json({ error: "Aéroport non trouvé" });
-//         }
-
-//         // Requête principale
-//         const [flights] = await pool.query<Flight[]>(
-//             `SELECT f.*, 
-//                     dep.code as departure_code, 
-//                     arr.code as arrival_code
-//              FROM flights f
-//              JOIN locations dep ON f.departure_location_id = dep.id
-//              JOIN locations arr ON f.arrival_location_id = arr.id
-//              WHERE dep.code = ? 
-//              AND arr.code = ? 
-//              AND f.type = ?
-//              AND DATE(f.departure_time) = ?
-//              ORDER BY f.departure_time`,
-//             [from, to, type, date]
-//         );
-
-//         // 🔥 Conversion en timezone Haïti
-//         const timeZone = "America/Port-au-Prince";
-//         const flightsWithTZ = flights.map((f) => ({
-//             ...f,
-//             departure_time: format(
-//                 toZonedTime(f.departure_time, timeZone),
-//                 "yyyy-MM-dd HH:mm:ssXXX",
-//                 { timeZone }
-//             ),
-//             arrival_time: format(
-//                 toZonedTime(f.arrival_time, timeZone),
-//                 "yyyy-MM-dd HH:mm:ssXXX",
-//                 { timeZone }
-//             ),
-//         }));
-
-//         // Gestion des vols retour
-//         if (req.query.return_date) {
-//             const returnDate = req.query.return_date as string;
-
-//             const [returnFlights] = await pool.query<Flight[]>(
-//                 `SELECT f.*, 
-//                         dep.code as departure_code, 
-//                         arr.code as arrival_code
-//                  FROM flights f
-//                  JOIN locations dep ON f.departure_location_id = dep.id
-//                  JOIN locations arr ON f.arrival_location_id = arr.id
-//                  WHERE dep.code = ? 
-//                  AND arr.code = ? 
-//                  AND f.type = ?
-//                  AND DATE(f.departure_time) = ?
-//                  ORDER BY f.departure_time`,
-//                 [to, from, type, returnDate]
-//             );
-
-//             const returnFlightsWithTZ = returnFlights.map((f) => ({
-//                 ...f,
-//                 departure_time: format(
-//                     toZonedTime(f.departure_time, timeZone),
-//                     "yyyy-MM-dd HH:mm:ssXXX",
-//                     { timeZone }
-//                 ),
-//                 arrival_time: format(
-//                     toZonedTime(f.arrival_time, timeZone),
-//                     "yyyy-MM-dd HH:mm:ssXXX",
-//                     { timeZone }
-//                 ),
-//             }));
-
-//             return res.json({
-//                 outbound: flightsWithTZ,
-//                 return: returnFlightsWithTZ,
-//             });
-//         }
-
-//         res.json(flightsWithTZ);
-//     } catch (err) {
-//         console.error("Erreur:", err);
-//         res.status(500).json({
-//             error: "Erreur serveur",
-//             details: err instanceof Error ? err.message : String(err),
-//         });
-//     }
-// });
-
-
-
-
-
-// API pour récupérer les vols bon bon bon
-// app.get("/api/flights", async (req: Request, res: Response) => {
-//   try {
-//     const { from, to, date, tab: type } = req.query as {
-//       from: string;
-//       to: string;
-//       date: string;
-//       tab: string;
-//     };
-
-//     // Validation des paramètres
-//     if (!from || !to || !date || !type) {
-//       return res.status(400).json({
-//         error: "Paramètres manquants",
-//         required: ["from", "to", "date", "tab"],
-//         received: { from, to, date, type },
-//       });
-//     }
-
-//     const validTypes = ["plane", "helicopter"];
-//     if (!validTypes.includes(type)) {
-//       return res.status(400).json({
-//         error: "Type invalide",
-//         validTypes,
-//         received: type,
-//       });
-//     }
-
-//     // Vérification des aéroports
-//     const [departureAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [from]);
-//     const [arrivalAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [to]);
-
-//     if ((departureAirport as any[]).length === 0 || (arrivalAirport as any[]).length === 0) {
-//       return res.status(404).json({ error: "Aéroport non trouvé" });
-//     }
-
-//     // Intervalle complet de la journée Haïti
-//     const startOfDay = `${date} 00:00:00`;
-//     const endOfDay = `${date} 23:59:59`;
-
-//     // Requête principale
-//     const [flights] = await pool.query(
-//       `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
-//        FROM flights f
-//        JOIN locations dep ON f.departure_location_id = dep.id
-//        JOIN locations arr ON f.arrival_location_id = arr.id
-//        WHERE dep.code = ? 
-//          AND arr.code = ? 
-//          AND f.type = ?
-//          AND f.departure_time BETWEEN ? AND ?
-//        ORDER BY f.departure_time`,
-//       [from, to, type, startOfDay, endOfDay]
-//     );
-
-//     // Vols retour si return_date présent
-//     if (req.query.return_date) {
-//       const returnDate = req.query.return_date as string;
-//       const startReturn = `${returnDate} 00:00:00`;
-//       const endReturn = `${returnDate} 23:59:59`;
-
-//       const [returnFlights] = await pool.query(
-//         `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
-//          FROM flights f
-//          JOIN locations dep ON f.departure_location_id = dep.id
-//          JOIN locations arr ON f.arrival_location_id = arr.id
-//          WHERE dep.code = ? 
-//            AND arr.code = ? 
-//            AND f.type = ?
-//            AND f.departure_time BETWEEN ? AND ?
-//          ORDER BY f.departure_time`,
-//         [to, from, type, startReturn, endReturn]
-//       );
-
-//       return res.json({
-//         outbound: flights,
-//         return: returnFlights,
-//       });
-//     }
-
-//     res.json(flights);
-//   } catch (err) {
-//     console.error("Erreur:", err);
-//     res.status(500).json({
-//       error: "Erreur serveur",
-//       details: err instanceof Error ? err.message : String(err),
-//     });
-//   }
-// });
 app.get("/api/flights", async (req: Request, res: Response) => {
   try {
     const { from, to, date, tab: type } = req.query as {
@@ -731,114 +310,6 @@ app.get("/api/flights", async (req: Request, res: Response) => {
     });
   }
 });
-
-
-// app.get("/api/flights", async (req: Request, res: Response) => {
-//   try {
-//     const { from, to, date, tab: type } = req.query as {
-//       from: string;
-//       to: string;
-//       date: string;
-//       tab: string;
-//     };
-
-//     // Validation des paramètres
-//     if (!from || !to || !date || !type) {
-//       return res.status(400).json({
-//         error: "Paramètres manquants",
-//         required: ["from", "to", "date", "tab"],
-//         received: { from, to, date, type },
-//       });
-//     }
-
-//     const validTypes = ["plane", "helicopter"];
-//     if (!validTypes.includes(type)) {
-//       return res.status(400).json({
-//         error: "Type invalide",
-//         validTypes,
-//         received: type,
-//       });
-//     }
-
-//     // Vérification des aéroports
-//     const [departureAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [from]);
-//     const [arrivalAirport] = await pool.query("SELECT id FROM locations WHERE code = ?", [to]);
-
-//     if ((departureAirport as any[]).length === 0 || (arrivalAirport as any[]).length === 0) {
-//       return res.status(404).json({ error: "Aéroport non trouvé" });
-//     }
-
-//     // Date actuelle en Haïti
-//     const haitiNow = new Date().toLocaleString("en-US", { timeZone: "America/Port-au-Prince" });
-//     const now = new Date(haitiNow);
-
-//     const todayStr = now.toISOString().split("T")[0]; // ex: "2025-09-20"
-
-//     // Plage horaire
-//     let startOfDay = `${date} 00:00:00`;
-//     let endOfDay = `${date} 23:59:59`;
-
-//     // ✅ Si la date demandée est aujourd'hui → on prend seulement les vols à partir de l'heure actuelle
-//     if (date === todayStr) {
-//       const currentTime = now.toTimeString().split(" ")[0]; // "20:15:32"
-//       startOfDay = `${date} ${currentTime}`;
-//     }
-
-//     // Requête principale
-//     const [flights] = await pool.query(
-//       `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
-//        FROM flights f
-//        JOIN locations dep ON f.departure_location_id = dep.id
-//        JOIN locations arr ON f.arrival_location_id = arr.id
-//        WHERE dep.code = ? 
-//          AND arr.code = ? 
-//          AND f.type = ?
-//          AND f.departure_time BETWEEN ? AND ?
-//        ORDER BY f.departure_time`,
-//       [from, to, type, startOfDay, endOfDay]
-//     );
-
-//     // Vols retour si return_date présent
-//     if (req.query.return_date) {
-//       const returnDate = req.query.return_date as string;
-//       let startReturn = `${returnDate} 00:00:00`;
-//       let endReturn = `${returnDate} 23:59:59`;
-
-//       // ⚡ Même logique pour les retours si la date = aujourd’hui
-//       if (returnDate === todayStr) {
-//         const currentTime = now.toTimeString().split(" ")[0];
-//         startReturn = `${returnDate} ${currentTime}`;
-//       }
-
-//       const [returnFlights] = await pool.query(
-//         `SELECT f.*, dep.code as departure_code, arr.code as arrival_code
-//          FROM flights f
-//          JOIN locations dep ON f.departure_location_id = dep.id
-//          JOIN locations arr ON f.arrival_location_id = arr.id
-//          WHERE dep.code = ? 
-//            AND arr.code = ? 
-//            AND f.type = ?
-//            AND f.departure_time BETWEEN ? AND ?
-//          ORDER BY f.departure_time`,
-//         [to, from, type, startReturn, endReturn]
-//       );
-
-//       return res.json({
-//         outbound: flights,
-//         return: returnFlights,
-//       });
-//     }
-
-//     res.json(flights);
-//   } catch (err) {
-//     console.error("Erreur:", err);
-//     res.status(500).json({
-//       error: "Erreur serveur",
-//       details: err instanceof Error ? err.message : String(err),
-//     });
-//   }
-// });
-
 
 
 
@@ -971,375 +442,6 @@ function formatDateToSQL(date?: string | Date | null): string | null {
   if (isNaN(d.getTime())) return null; // invalide → null
   return d.toISOString().split("T")[0]; // YYYY-MM-DD
 }
-
-
-// app.post("/api/create-ticket", async (req: Request, res: Response) => {
-//   const connection = await pool.getConnection();
-
-//    console.log("🔵 CREATE-TICKET REQUEST RECEIVED:", JSON.stringify(req.body, null, 2));
-
-//   try {
-//     await connection.beginTransaction();
-//     console.log("✅ Transaction started");
-
-
-//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-//     for (const field of requiredFields) {
-//     if (!req.body[field]) {
-//         console.error(`Missing field: ${field}`);
-//         throw new Error(`Missing required field: ${field}`);
-//     }
-//     }
-
-
-
-//     const {
-//       flightId,
-//       passengers,
-//       contactInfo,
-//       totalPrice,
-//       returnFlightId,
-//       departureDate,
-//       returnDate,
-//       paymentMethod = "cash", // ex: cash, card, cheque
-//     } = req.body;
-
-//     const typeVol = passengers[0]?.typeVol || "plane";
-//     const typeVolV = passengers[0]?.typeVolV || "onway";
-
-//     // 2. Vérifier les vols
-//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-//     const [flights] = await connection.query<mysql.RowDataPacket[]>(
-//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
-//       [flightIds],
-//     );
-
-//     if (flights.length !== flightIds.length) {
-//       throw new Error("One or more flights not found");
-//     }
-
-//     for (const flight of flights) {
-//       if (flight.seats_available < passengers.length) {
-//         throw new Error(`Not enough seats available for flight ${flight.id}`);
-//       }
-//     }
-
-//     // 3. Création réservation
-//     const now = new Date();
-//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-//     const depDate = formatDateToSQL(departureDate);
-//     const retDate = formatDateToSQL(returnDate);
-//     const [bookingResult] = await connection.query<mysql.OkPacket>(
-//     `INSERT INTO bookings (
-//         flight_id, payment_intent_id, total_price,
-//         contact_email, contact_phone, status,
-//         type_vol, type_v, guest_user, guest_email,
-//         created_at, updated_at, departure_date,
-//         return_date, passenger_count, booking_reference, return_flight_id,
-//         payment_method
-//     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//     [
-//         flightId,
-//         '0',
-//         totalPrice,
-//         contactInfo.email,
-//         contactInfo.phone,
-//         "confirmed",
-//         typeVol,
-//         typeVolV,
-//         1,
-//         contactInfo.email,
-//         now,
-//         now,
-//         depDate,
-//         retDate ,
-//         passengers.length,
-//         bookingReference,
-//         returnFlightId || null,
-//         paymentMethod,
-
-        
-//     ],
-//     );
-
-//     // 4. Enregistrer les passagers
-//     for (const passenger of passengers) {
-//       await connection.query(
-//         `INSERT INTO passengers (
-//           booking_id, first_name, middle_name, last_name,
-//           date_of_birth, gender, title, address, type,
-//           type_vol, type_v, country, nationality,
-//           phone, email, created_at, updated_at
-//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           bookingResult.insertId,
-//           passenger.firstName,
-//           passenger.middleName || null,
-//           passenger.lastName,
-//           passenger.dateOfBirth || null,
-//           passenger.gender || "other",
-//           passenger.title || "Mr",
-//           passenger.address || null,
-//           passenger.type,
-//           passenger.typeVol || "plane",
-//           passenger.typeVolV || "onway",
-//           passenger.country,
-//           passenger.nationality || null,
-//           passenger.phone || contactInfo.phone,
-//           passenger.email || contactInfo.email,
-//           now,
-//           now,
-//         ],
-//       );
-//     }
-
-//     // 5. Mise à jour des sièges
-//     for (const flight of flights) {
-//       await connection.execute(
-//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-//         [passengers.length, flight.id],
-//       );
-//     }
-
-//     // 6. Notification
-//     await connection.query(
-//       `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-//        VALUES (?, ?, ?, ?, ?)`,
-//       [
-//         "ticket",
-//         `Création d’un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-//         bookingResult.insertId,
-//         false,
-//         now,
-//       ],
-//     );
-
-//     io.emit("new-notification", {
-//       message: `Création d’un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-//       bookingId: bookingResult.insertId,
-//       createdAt: now,
-//     });
-
-//     await connection.commit();
-
-//     res.json({
-//       success: true,
-//       bookingId: bookingResult.insertId,
-//       bookingReference,
-//       passengerCount: passengers.length,
-//       paymentMethod,
-//     });
-// } catch (error: any) {
-//     await connection.rollback();
-//     console.error("❌ ERREUR DÉTAILLÉE:", {
-//       message: error.message,
-//       stack: error.stack,
-//       sqlMessage: error.sqlMessage, // <-- Ceci est important !
-//       code: error.code,
-//       sql: error.sql
-//     });
-
-//     res.status(500).json({
-//       error: "Ticket creation failed",
-//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
-//     });
-//   } finally {
-//     connection.release();
-//   }
-// });
-
-
-
-
-//-----------------------good------------------------
-// app.post("/api/create-ticket", async (req: Request, res: Response) => {
-//   const connection = await pool.getConnection();
-
-//   try {
-//     await connection.beginTransaction();
-//     console.log("✅ Transaction started");
-
-//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-//     for (const field of requiredFields) {
-//       if (!req.body[field]) {
-//         console.error(`Missing field: ${field}`);
-//         throw new Error(`Missing required field: ${field}`);
-//       }
-//     }
-
-//     const {
-//       flightId,
-//       passengers,
-//       contactInfo,
-//       totalPrice,
-//       returnFlightId,
-//       departureDate,
-//       returnDate,
-//       paymentMethod = "card",
-//     } = req.body;
-
-//     const typeVol = passengers[0]?.typeVol || "plane";
-//     const typeVolV = passengers[0]?.typeVolV || "onway";
-
-//     // Vérifier les vols - utilisation de type casting
-//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-//     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
-//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
-//       [flightIds],
-//     );
-
-//     // Cast explicite vers RowDataPacket[]
-//     const flights = flightsRows as mysql.RowDataPacket[];
-    
-//     if (flights.length !== flightIds.length) {
-//       throw new Error("One or more flights not found");
-//     }
-
-//     for (const flight of flights) {
-//       if (flight.seats_available < passengers.length) {
-//         throw new Error(`Not enough seats available for flight ${flight.id}`);
-//       }
-//     }
-
-//     // Création réservation - utilisation de type casting pour OkPacket
-//     const now = new Date();
-//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-//     const depDate = formatDateToSQL(departureDate);
-//     const retDate = formatDateToSQL(returnDate);
-    
-//     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
-//       `INSERT INTO bookings (
-//           flight_id, payment_intent_id, total_price,
-//           contact_email, contact_phone, status,
-//           type_vol, type_v, guest_user, guest_email,
-//           created_at, updated_at, departure_date,
-//           return_date, passenger_count, booking_reference, return_flight_id,
-//           payment_method
-//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//       [
-//         flightId,
-//         '0',
-//         totalPrice,
-//         contactInfo.email,
-//         contactInfo.phone,
-//         "confirmed",
-//         typeVol,
-//         typeVolV,
-//         1,
-//         contactInfo.email,
-//         now,
-//         now,
-//         depDate,
-//         retDate,
-//         passengers.length,
-//         bookingReference,
-//         returnFlightId || null,
-//         paymentMethod,
-//       ],
-//     );
-
-//     // Cast explicite vers OkPacket
-//     const bookingResult = bookingResultRows as mysql.OkPacket;
-
-//     // Enregistrer les passagers
-//     for (const passenger of passengers) {
-//       await connection.query(
-//         `INSERT INTO passengers (
-//           booking_id, first_name, middle_name, last_name,
-//           date_of_birth, gender, title, address, type,
-//           type_vol, type_v, country, nationality,
-//           phone, email, created_at, updated_at
-//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           bookingResult.insertId,
-//           passenger.firstName,
-//           passenger.middleName || null,
-//           passenger.lastName,
-//           passenger.dateOfBirth || null,
-//           passenger.gender || "other",
-//           passenger.title || "Mr",
-//           passenger.address || null,
-//           passenger.type,
-//           passenger.typeVol || "plane",
-//           passenger.typeVolV || "onway",
-//           passenger.country,
-//           passenger.nationality || null,
-//           passenger.phone || contactInfo.phone,
-//           passenger.email || contactInfo.email,
-//           now,
-//           now,
-//         ],
-//       );
-//     }
-
-//     // Mise à jour des sièges
-//     for (const flight of flights) {
-//       await connection.execute(
-//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-//         [passengers.length, flight.id],
-//       );
-//     }
-
-//     // Notification
-//     try {
-//       await connection.query(
-//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-//          VALUES (?, ?, ?, ?, ?)`,
-//         [
-//           "ticket",
-//           `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-//           bookingResult.insertId,
-//           false,
-//           now,
-//         ],
-//       );
-
-//       io.emit("new-notification", {
-//         message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-//         bookingId: bookingResult.insertId,
-//         createdAt: now,
-//       });
-//     } catch (notifyErr) {
-//       console.error("⚠️ Notification error (non bloquant):", notifyErr);
-//     }
-
-//     // Commit final
-//     await connection.commit();
-
-//     // ✅ Réponse succès
-//     res.status(200).json({
-//       success: true,
-//       bookingId: bookingResult.insertId,
-//       bookingReference,
-//       passengerCount: passengers.length,
-//       paymentMethod,
-//     });
-
-//   } catch (error: any) {
-//     await connection.rollback();
-//     console.error("❌ ERREUR DÉTAILLÉE:", {
-//       message: error.message,
-//       stack: error.stack,
-//       sqlMessage: error.sqlMessage,
-//       code: error.code,
-//       sql: error.sql
-//     });
-
-//     res.status(500).json({
-//       error: "Ticket creation failed",
-//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
-//     });
-//   } finally {
-//     connection.release();
-//   }
-// });
-
-
-
-
-
 
 
 
@@ -2465,75 +1567,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
     }
 });
 
-// app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
-//     let connection;
-//     try {
-      
 
-//         const query = `
-//             SELECT 
-//                 f.id,
-//                 f.flight_number,
-//                 f.type,
-//                 f.airline,
-//                 f.departure_time,
-//                 f.arrival_time,
-//                 f.price,
-//                 f.seats_available,
-//                 dep.name AS departure_airport_name,
-//                 dep.city AS departure_city,
-//                 dep.code AS departure_code,
-//                 arr.name AS arrival_airport_name,
-//                 arr.city AS arrival_city,
-//                 arr.code AS arrival_code
-//             FROM 
-//                 flights f
-//             JOIN 
-//                 locations dep ON f.departure_location_id = dep.id
-//             JOIN 
-//                 locations arr ON f.arrival_location_id = arr.id
-//             WHERE 
-//                 f.type = 'helicopter'    
-//             ORDER BY 
-//                 f.id DESC
-//         `;
-
-//         console.log("Exécution de la requête SQL...");
-//         const [flights] = await pool.query<FlightWithAirports[]>(query);
-//         console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
-
-//         // Formater les données
-//         const formattedFlights = flights.map((flight) => ({
-//             id: flight.id,
-//             flight_number: flight.flight_number,
-//             type: flight.type,
-//             airline: flight.airline,
-//             from: `${flight.departure_airport_name} (${flight.departure_code})`,
-//             to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
-//             departure: formatDate(flight.departure_time),
-//             arrival: formatDate(flight.arrival_time),
-//             price: flight.price,
-//             seats_available: flight.seats_available.toString(),
-//             departure_city: flight.departure_city,
-//             arrival_city: flight.arrival_city,
-//         }));
-
-       
-//         res.json(formattedFlights);
-//     } catch (err) {
-//         console.error("ERREUR DÉTAILLÉE:", {
-//             message: err instanceof Error ? err.message : "Erreur inconnue",
-//             stack: err instanceof Error ? err.stack : undefined,
-           
-//         });
-
-//         if (connection) 
-//         res.status(500).json({
-//             error: "Erreur serveur",
-//             details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
-//         });
-//     }
-// });
 
 app.post("/api/addflighttable", async (req: Request, res: Response) => {
     console.log("Données reçues:", req.body); // Ajouté pour le debug
@@ -2751,49 +1785,265 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
 });
 
 
+// API pour modifier une réservation (passagers, vols, etc.)
+app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
+  const { reference } = req.params;
+  const {
+    passengers,
+    flights,
+    contactEmail,
+    contactPhone,
+    totalPrice,
+    paymentStatus
+  } = req.body;
 
+  console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
+  console.log(`📦 Données reçues:`, JSON.stringify(req.body, null, 2));
 
-// app.get("/api/booking-helico", async (req: Request, res: Response) => {
-//     let connection;
-//     try {
-       
-//         // 1. Récupérer les réservations avec un typage explicite
-//    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-//   `SELECT 
-//       id, booking_reference, total_price, status, created_at, 
-//       passenger_count, contact_email, type_vol, type_v
-//    FROM bookings 
-//    WHERE type_vol = ?
-//    ORDER BY created_at DESC`,
-//   ["helicopter"]
-// );
-//         // Convertir en type Booking[]
-//         const bookings: Booking[] = bookingRows.map((row) => ({
-//             id: row.id,
-//             booking_reference: row.booking_reference,
-//             total_price: Number(row.total_price),
-//             status: row.status,
-//             created_at: new Date(row.created_at).toISOString(),
-//             passenger_count: row.passenger_count,
-//             contact_email: row.contact_email,
-//             type_vol: row.type_vol,
-//             type_v: row.type_v,
-//         }));
-//     const recentBookings = bookings.slice(0, 6);
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    console.log(`✅ Transaction démarrée`);
 
-//         // 8. Construction de la réponse
-//         const response: BookingStats = {
-     
-//             recentBookings,
-//         };
+    // 1. Vérifier que la réservation existe
+    const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+      `SELECT id, status FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+      [reference]
+    );
 
-//         res.json(response);
-//     } catch (error) {
-//         console.error("Dashboard error:", error);
-//         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
-//     } 
-// });
+    if (bookings.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        error: "Réservation non trouvée" 
+      });
+    }
 
+    const booking = bookings[0];
+    console.log(`📋 Réservation trouvée:`, booking);
+
+    // 2. Mettre à jour les informations générales de la réservation
+    if (contactEmail || contactPhone || totalPrice || paymentStatus) {
+      const updateFields = [];
+      const updateValues = [];
+
+      if (contactEmail) {
+        updateFields.push("contact_email = ?");
+        updateValues.push(contactEmail);
+      }
+      if (contactPhone) {
+        updateFields.push("contact_phone = ?");
+        updateValues.push(contactPhone);
+      }
+      if (totalPrice) {
+        updateFields.push("total_price = ?");
+        updateValues.push(totalPrice);
+      }
+      if (paymentStatus) {
+        updateFields.push("status = ?");
+        updateValues.push(paymentStatus);
+      }
+
+      if (updateFields.length > 0) {
+        updateValues.push(reference);
+        await connection.query(
+          `UPDATE bookings SET ${updateFields.join(", ")}, updated_at = NOW() WHERE booking_reference = ?`,
+          updateValues
+        );
+        console.log(`✅ Informations réservation mises à jour`);
+      }
+    }
+
+    // 3. Mettre à jour les passagers
+    if (passengers && Array.isArray(passengers)) {
+      console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
+      
+      // Supprimer les anciens passagers
+      await connection.query(
+        `DELETE FROM passengers WHERE booking_id = ?`,
+        [booking.id]
+      );
+      console.log(`🗑️ Anciens passagers supprimés`);
+
+      // Insérer les nouveaux passagers
+      for (const passenger of passengers) {
+        await connection.query(
+          `INSERT INTO passengers (
+            booking_id, first_name, middle_name, last_name,
+            date_of_birth, gender, title, address, type,
+            type_vol, type_v, country, nationality,
+            phone, email, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            booking.id,
+            passenger.firstName || passenger.name || '',
+            passenger.middleName || null,
+            passenger.lastName || '',
+            passenger.dateOfBirth || passenger.dob || null,
+            passenger.gender || "other",
+            passenger.title || "Mr",
+            passenger.address || null,
+            passenger.type || "adult",
+            passenger.typeVol || "plane",
+            passenger.typeVolV || "onway",
+            passenger.country || null,
+            passenger.nationality || null,
+            passenger.phone || null,
+            passenger.email || null,
+            new Date(),
+            new Date()
+          ]
+        );
+      }
+      console.log(`✅ ${passengers.length} passager(s) insérés`);
+    }
+
+    // 4. Mettre à jour les vols (si nécessaire)
+    if (flights && Array.isArray(flights) && flights.length > 0) {
+      console.log(`✈️ Mise à jour des vols: ${flights.length} vol(s)`);
+      
+      // Note: La modification des vols est plus complexe car elle implique
+      // de gérer la disponibilité des sièges. Pour l'instant, on ne met à jour
+      // que les informations de base si nécessaire.
+      
+      // Ici vous pourriez ajouter la logique pour changer les vols associés
+      // mais cela nécessiterait une gestion plus avancée des sièges
+      console.log(`ℹ️  Modification des vols nécessite une logique avancée`);
+    }
+
+    // 5. Créer une notification pour la modification
+    await connection.query(
+      `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        "update",
+        `Réservation ${reference} modifiée.`,
+        booking.id,
+        false,
+        new Date()
+      ]
+    );
+    console.log(`🔔 Notification de modification créée`);
+
+    await connection.commit();
+    console.log(`💾 Transaction commitée`);
+
+    // 6. Récupérer la réservation mise à jour pour la réponse
+    const [updatedBooking] = await connection.query<mysql.RowDataPacket[]>(
+      `SELECT 
+          b.*,
+          u.name as created_by_name,
+          u.email as created_by_email
+       FROM bookings b
+       LEFT JOIN users u ON b.user_created_booking = u.id
+       WHERE b.booking_reference = ?`,
+      [reference]
+    );
+
+    const [updatedPassengers] = await connection.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM passengers WHERE booking_id = ?`,
+      [booking.id]
+    );
+
+    res.json({
+      success: true,
+      message: "Réservation mise à jour avec succès",
+      booking: updatedBooking[0],
+      passengers: updatedPassengers,
+      updatedAt: new Date()
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur modification réservation:", error);
+    if (connection) {
+      await connection.rollback();
+    }
+    res.status(500).json({
+      success: false,
+      error: "Échec de la modification de la réservation",
+      details: error instanceof Error ? error.message : "Erreur inconnue"
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+    console.log(`🏁 Fin modification réservation: ${reference}`);
+  }
+});
+
+// API pour récupérer les détails d'une réservation par référence
+app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
+  const { reference } = req.params;
+
+  try {
+    // Récupérer la réservation avec les informations utilisateur
+    const [bookings] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+          b.*,
+          u.name as created_by_name,
+          u.email as created_by_email
+       FROM bookings b
+       LEFT JOIN users u ON b.user_created_booking = u.id
+       WHERE b.booking_reference = ?`,
+      [reference]
+    );
+
+    if (bookings.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "Réservation non trouvée" 
+      });
+    }
+
+    const booking = bookings[0];
+
+    // Récupérer les passagers
+    const [passengers] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM passengers WHERE booking_id = ?`,
+      [booking.id]
+    );
+
+    // Récupérer les vols
+    const flightIds = [booking.flight_id];
+    if (booking.return_flight_id) {
+      flightIds.push(booking.return_flight_id);
+    }
+
+    const [flights] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+          f.*,
+          dep.name AS departure_airport_name,
+          dep.city AS departure_city,
+          dep.code AS departure_code,
+          arr.name AS arrival_airport_name,
+          arr.city AS arrival_city,
+          arr.code AS arrival_code
+       FROM flights f
+       JOIN locations dep ON f.departure_location_id = dep.id
+       JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE f.id IN (?)`,
+      [flightIds]
+    );
+
+    res.json({
+      success: true,
+      booking: {
+        ...booking,
+        passengers: passengers,
+        flights: flights
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur récupération réservation:", error);
+    res.status(500).json({
+      success: false,
+      error: "Échec de la récupération de la réservation",
+      details: error instanceof Error ? error.message : "Erreur inconnue"
+    });
+  }
+});
 
 
 
@@ -3137,88 +2387,6 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
 });
 
 
-
-// app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
-//   try {
-//     const bookingId = req.params.id;
-
-//     // Récupérer la réservation
-//     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-//       `SELECT * FROM bookings WHERE id = ?`,
-//       [bookingId]
-//     );
-
-//     if (bookingRows.length === 0) {
-//       return res.status(404).json({ error: "Booking not found" });
-//     }
-
-//     const booking = bookingRows[0];
-
-//     // Récupérer les passagers liés
-//     const [passengerRows] = await pool.query<mysql.RowDataPacket[]>(
-//       `SELECT 
-//           id, 
-//           booking_id, 
-//           first_name, middle_name, last_name,
-//           date_of_birth, gender, title, address, type,
-//           type_vol, type_v, country, nationality,
-//           phone, email, created_at, updated_at
-//        FROM passengers 
-//        WHERE booking_id = ?`,
-//       [bookingId]
-//     );
-
-//     // Récupérer les vols liés avec JOIN sur locations
-//     const flightIds = [booking.flight_id];
-//     if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
-
-//     const flightQuery = `
-//       SELECT 
-//           f.id,
-//           f.flight_number AS code,
-//           f.type,
-//           f.airline,
-//           f.departure_time AS date,
-//           f.arrival_time,
-//           f.price,
-//           f.seats_available,
-//           dep.name AS departure_airport_name,
-//           dep.city AS departure_city,
-//           dep.code AS departure_code,
-//           arr.name AS arrival_airport_name,
-//           arr.city AS arrival_city,
-//           arr.code AS arrival_code
-//       FROM flights f
-//       JOIN locations dep ON f.departure_location_id = dep.id
-//       JOIN locations arr ON f.arrival_location_id = arr.id
-//       WHERE f.id IN (?)
-//     `;
-
-//     const [flightRows] = await pool.query<mysql.RowDataPacket[]>(
-//       flightQuery,
-//       [flightIds]
-//     );
-
-//     const details = {
-//       id: booking.id,
-//       booking_reference: booking.booking_reference,
-//       total_price: Number(booking.total_price),
-//       status: booking.status,
-//       created_at: new Date(booking.created_at).toISOString(),
-//       passenger_count: booking.passenger_count,
-//       contact_email: booking.contact_email,
-//       type_vol: booking.type_vol,
-//       type_v: booking.type_v,
-//       passengers: passengerRows,
-//       flights: flightRows,
-//     };
-
-//     res.json(details);
-//   } catch (error) {
-//     console.error("Booking detail error:", error);
-//     res.status(500).json({ error: "Erreur lors de la récupération du détail de la réservation" });
-//   }
-// });
 
 
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {

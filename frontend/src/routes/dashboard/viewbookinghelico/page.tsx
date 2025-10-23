@@ -161,7 +161,7 @@ const ViewBookingHelico = () => {
                                     <th className="table-head text-center">Type Vol</th>
                                     <th className="table-head text-center">Contact Email</th>
                                     <th className="table-head text-center">Total Price</th>
-                                    <th className="table-head text-center">Passengers</th>
+                                    <th className="table-head text-center">Passager</th>
                                     <th className="table-head text-center">Paiement</th>
                                     <th className="table-head text-center">Méthode de paiement</th>
                                     <th className="table-head text-center">Créé par</th>
@@ -240,7 +240,7 @@ const ViewBookingHelico = () => {
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                                className="hover:bg-amber-560 rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200"
                             >
                                 Previous
                             </button>
@@ -248,7 +248,7 @@ const ViewBookingHelico = () => {
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                                className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
                             >
                                 Next
                             </button>

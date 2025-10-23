@@ -20,6 +20,7 @@ type Flight = {
 };
 
 type BookingCreatedModalProps = {
+    onTicketCreated?: () => void;
     open: boolean;
     flight: Flight | null;
     onClose: () => void;
@@ -269,7 +270,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     console.log("✅ Email sent", data);
 };
 
-const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight }) => {
+const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
     const [formData, setFormData] = useState({
         firstName: "",
         middleName: "",
@@ -284,7 +285,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         email: "",
         phone: "",
         passengerCount: 1,
-        paymentMethod: "cash",
+        paymentMethod: "Cash",
         returnDate: "",
     });
 
@@ -294,138 +295,150 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-   const handleSubmit = async () => {
-    // 1️⃣ Validation des champs obligatoires
-    if (!formData.firstName || !formData.lastName || !formData.reference || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
-        toast.error(`Veuillez remplir tous les champs obligatoires`, {
-            style: {
-                background: "#fee2e2",
-                color: "#991b1b",
-                border: "1px solid #f87171",
-            },
-            iconTheme: { primary: "#fff", secondary: "#dc2626" },
-        });
-        return;
-    }
-
-    // 2️⃣ Préparer les passagers
-    const passengers: Passenger[] = [];
-    const passengerCount = Number(formData.passengerCount || 1);
-    for (let i = 0; i < passengerCount; i++) {
-        passengers.push({
-            firstName: formData.firstName,
-            middleName: formData.middleName,
-            lastName: formData.lastName,
-            reference: formData.reference,
-            dateOfBirth: formData.dateOfBirth,
-            gender: formData.gender,
-            title: formData.title,
-            address: formData.address,
-            type: "adult",
-            typeVol: flight?.type || "plane",
-            typeVolV: "onway",
-            country: formData.country,
-            nationality: formData.nationality,
-            phone: formData.phone,
-            email: formData.email,
-        });
-    }
-
-    // 3️⃣ Préparer le body à envoyer
-    const body = {
-        flightId: flight.id,
-        passengers,
-        referenceNumber: formData.reference,
-        contactInfo: { email: formData.email, phone: formData.phone },
-        totalPrice: flight.price * passengerCount,
-        departureDate: flight.departure.split("T")[0],
-        returnDate: formData.returnDate,
-        paymentMethod: formData.paymentMethod,
-    };
-
-    try {
-        // Récupérer le token depuis le localStorage ou le contexte d'authentification
-        const token = localStorage.getItem('authToken'); // ou depuis votre contexte/auth
-        
-        if (!token) {
-            toast.error("❌ Vous devez être connecté pour créer un ticket");
-            // Rediriger vers la page de login si nécessaire
-            // window.location.href = '/login';
+    const handleSubmit = async () => {
+        // 1️⃣ Validation des champs obligatoires
+        if (
+            !formData.firstName ||
+            !formData.lastName ||
+            !formData.reference ||
+            !formData.email ||
+            !formData.phone ||
+            !formData.nationality ||
+            !formData.dateOfBirth
+        ) {
+            toast.error(`Veuillez remplir tous les champs obligatoires`, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+            });
             return;
         }
 
-        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}` // AJOUT DU TOKEN
-            },
-            body: JSON.stringify(body),
-        });
+        // 2️⃣ Préparer les passagers
+        const passengers: Passenger[] = [];
+        const passengerCount = Number(formData.passengerCount || 1);
+        for (let i = 0; i < passengerCount; i++) {
+            passengers.push({
+                firstName: formData.firstName,
+                middleName: formData.middleName,
+                lastName: formData.lastName,
+                reference: formData.reference,
+                dateOfBirth: formData.dateOfBirth,
+                gender: formData.gender,
+                title: formData.title,
+                address: formData.address,
+                type: "adult",
+                typeVol: flight?.type || "plane",
+                typeVolV: "onway",
+                country: formData.country,
+                nationality: formData.nationality,
+                phone: formData.phone,
+                email: formData.email,
+            });
+        }
 
-        let data: any;
+        // 3️⃣ Préparer le body à envoyer
+        const body = {
+            flightId: flight.id,
+            passengers,
+            referenceNumber: formData.reference,
+            contactInfo: { email: formData.email, phone: formData.phone },
+            totalPrice: flight.price * passengerCount,
+            departureDate: flight.departure.split("T")[0],
+            returnDate: formData.returnDate,
+            paymentMethod: formData.paymentMethod,
+        };
 
         try {
-            data = await res.json();
-        } catch (jsonErr) {
-            console.error("Erreur parsing JSON:", jsonErr);
-            toast.error("❌ Réponse serveur invalide");
-            return;
-        }
+            // Récupérer le token depuis le localStorage ou le contexte d'authentification
+            const token = localStorage.getItem("authToken"); // ou depuis votre contexte/auth
 
-        // Vérifiez explicitement le statut HTTP ET le champ success
-        if (res.status === 200 && data.success) {
-        
-            toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
-            style: {
-                background: "#28a745",
-                color: "#fff",
-                border: "1px solid #1e7e34",
-            },
-            iconTheme: { primary: "#fff", secondary: "#1e7e34" },
-        });
-
-            try {
-                console.log("📧 Tentative d'envoi d'email...");
-                console.log("Données email:", {
-                    bookingReference: data.bookingReference,
-                    passengerCount: passengers.length,
-                    email: formData.email,
-                });
-
-                await sendTicketByEmail(
-                    {
-                        from: flight.from || "",
-                        to: flight.to || "",
-                        outbound: {
-                            date: flight.departure,
-                            noflight: flight.flight_number,
-                            departure_time: flight.departure,
-                            arrival_time: flight.arrival,
-                        },
-                        passengersData: { adults: passengers },
-                        totalPrice: body.totalPrice,
-                    },
-                    data.bookingReference,
-                    formData.paymentMethod,
-                );
-
-                console.log("✅ Email envoyé avec succès");
-            } catch (emailError) {
-                console.error("❌ Erreur détaillée envoi email:", emailError);
-                toast.error("Ticket créé mais email non envoyé");
+            if (!token) {
+                toast.error("❌ Vous devez être connecté pour créer un ticket");
+                // Rediriger vers la page de login si nécessaire
+                // window.location.href = '/login';
+                return;
             }
 
-            onClose();
-        } else {
-            console.error("Erreur création ticket:", data);
-            toast.error(`❌ Erreur: ${data.error || data.message || "inconnue"}`);
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`, // AJOUT DU TOKEN
+                },
+                body: JSON.stringify(body),
+            });
+
+            let data: any;
+
+            try {
+                data = await res.json();
+            } catch (jsonErr) {
+                console.error("Erreur parsing JSON:", jsonErr);
+                toast.error("❌ Réponse serveur invalide");
+                return;
+            }
+
+            // Vérifiez explicitement le statut HTTP ET le champ success
+            if (res.status === 200 && data.success) {
+                toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+                    style: {
+                        background: "#28a745",
+                        color: "#fff",
+                        border: "1px solid #1e7e34",
+                    },
+
+                    iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+                });
+
+                try {
+                    console.log("📧 Tentative d'envoi d'email...");
+                    console.log("Données email:", {
+                        bookingReference: data.bookingReference,
+                        passengerCount: passengers.length,
+                        email: formData.email,
+                    });
+
+                    await sendTicketByEmail(
+                        {
+                            from: flight.from || "",
+                            to: flight.to || "",
+                            outbound: {
+                                date: flight.departure,
+                                noflight: flight.flight_number,
+                                departure_time: flight.departure,
+                                arrival_time: flight.arrival,
+                            },
+                            passengersData: { adults: passengers },
+                            totalPrice: body.totalPrice,
+                        },
+                        data.bookingReference,
+                        formData.paymentMethod,
+                    );
+
+                    console.log("✅ Email envoyé avec succès");
+                } catch (emailError) {
+                    console.error("❌ Erreur détaillée envoi email:", emailError);
+                    toast.error("Ticket créé mais email non envoyé");
+                }
+
+                if (onTicketCreated) {
+                    onTicketCreated();
+                }
+
+                onClose();
+            } else {
+                console.error("Erreur création ticket:", data);
+                toast.error(`❌ Erreur: ${data.error || data.message || "inconnue"}`);
+            }
+        } catch (err) {
+            console.error("Erreur réseau:", err);
+            toast.error("❌ Erreur de connexion au serveur");
         }
-    } catch (err) {
-        console.error("Erreur réseau:", err);
-        toast.error("❌ Erreur de connexion au serveur");
-    }
-};
+    };
 
     return (
         <AnimatePresence>
