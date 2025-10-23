@@ -296,7 +296,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         contactEmail: apiData.contact_email,
         bookedOn: new Date(apiData.created_at).toLocaleDateString(),
         paymentStatus: formattedStatus, // ici on utilise la variable loggée
-        totalPrice: `$${apiData.total_price}`,
+        totalPrice: `${apiData.total_price}`,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,
         adminNotes: apiData.admin_notes || "",

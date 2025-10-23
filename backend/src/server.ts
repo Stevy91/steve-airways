@@ -1946,6 +1946,14 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       [booking.id]
     );
 
+      for (const flight of flights) {
+      await connection.execute(
+        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+        [passengers.length, flight.id],
+      );
+    }
+
+
     res.json({
       success: true,
       message: "Réservation mise à jour avec succès",
