@@ -1808,7 +1808,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
     // 1. Vérifier que la réservation existe
     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT id, status FROM bookings WHERE booking_reference = ? FOR UPDATE`,
+      `SELECT id, status, flight_id, return_flight_id, passenger_count FROM bookings WHERE booking_reference = ? FOR UPDATE`,
       [reference]
     );
 
@@ -1855,7 +1855,36 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       }
     }
 
-    // 3. Mettre à jour les passagers
+    // 3. GESTION DES SIÈGES - AVANT la modification des passagers
+    const oldPassengerCount = booking.passenger_count;
+    const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
+    
+    if (newPassengerCount !== oldPassengerCount) {
+      console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
+      
+      // Récupérer les vols de la réservation
+      const flightIds = [booking.flight_id];
+      if (booking.return_flight_id) {
+        flightIds.push(booking.return_flight_id);
+      }
+
+      // Calculer la différence
+      const seatDifference = newPassengerCount - oldPassengerCount;
+      
+      if (seatDifference !== 0) {
+        for (const flightId of flightIds) {
+          if (flightId) {
+            await connection.execute(
+              "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+              [seatDifference, flightId]
+            );
+            console.log(`✅ Sièges ajustés pour le vol ${flightId}: ${seatDifference}`);
+          }
+        }
+      }
+    }
+
+    // 4. Mettre à jour les passagers
     if (passengers && Array.isArray(passengers)) {
       console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
       
@@ -1897,19 +1926,15 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         );
       }
       console.log(`✅ ${passengers.length} passager(s) insérés`);
-    }
 
-    // 4. Mettre à jour les vols (si nécessaire)
-    if (flights && Array.isArray(flights) && flights.length > 0) {
-      console.log(`✈️ Mise à jour des vols: ${flights.length} vol(s)`);
-      
-      // Note: La modification des vols est plus complexe car elle implique
-      // de gérer la disponibilité des sièges. Pour l'instant, on ne met à jour
-      // que les informations de base si nécessaire.
-      
-      // Ici vous pourriez ajouter la logique pour changer les vols associés
-      // mais cela nécessiterait une gestion plus avancée des sièges
-      console.log(`ℹ️  Modification des vols nécessite une logique avancée`);
+      // Mettre à jour le nombre de passagers dans la réservation
+      if (newPassengerCount !== oldPassengerCount) {
+        await connection.query(
+          "UPDATE bookings SET passenger_count = ? WHERE id = ?",
+          [newPassengerCount, booking.id]
+        );
+        console.log(`✅ Nombre de passagers mis à jour: ${newPassengerCount}`);
+      }
     }
 
     // 5. Créer une notification pour la modification
@@ -1925,9 +1950,6 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       ]
     );
     console.log(`🔔 Notification de modification créée`);
-
-    await connection.commit();
-    console.log(`💾 Transaction commitée`);
 
     // 6. Récupérer la réservation mise à jour pour la réponse
     const [updatedBooking] = await connection.query<mysql.RowDataPacket[]>(
@@ -1946,13 +1968,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       [booking.id]
     );
 
-      for (const flight of flights) {
-      await connection.execute(
-        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-        [passengers.length, flight.id],
-      );
-    }
-
+    // ✅ COMMIT APRÈS toutes les opérations
+    await connection.commit();
+    console.log(`💾 Transaction commitée`);
 
     res.json({
       success: true,
@@ -1979,7 +1997,6 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     console.log(`🏁 Fin modification réservation: ${reference}`);
   }
 });
-
 // API pour récupérer les détails d'une réservation par référence
 app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
