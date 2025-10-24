@@ -299,7 +299,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         totalPrice: `${apiData.total_price}`,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,
-        adminNotes: apiData.admin_notes || "",
+        adminNotes: apiData.adminNotes || "",
 
         passengers: apiData.passengers.map((p: any) => ({
             name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
