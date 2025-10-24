@@ -305,6 +305,16 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
             name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
             email: p.email,
             dob: p.date_of_birth,
+            firstName: p.first_name,
+            lastName: p.last_name,
+            middleName: p.middle_name,
+            gender: p.gender,
+            title: p.title,
+            phone: p.phone,
+            nationality: p.nationality,
+            country: p.country,
+            address: p.address,
+            dateOfBirth: p.dateOfBirth
         })),
 
         flights: apiData.flights.map((f: any) => ({

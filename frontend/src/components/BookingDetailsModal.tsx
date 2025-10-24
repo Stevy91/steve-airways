@@ -28,6 +28,8 @@ export type Passenger = {
     phone?: string;
     nationality?: string;
     country?: string;
+    address?: string;
+    dateOfBirth?: string;
 };
 
 export type BookingDetails = {
@@ -127,6 +129,15 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             dob: "",
             firstName: "",
             lastName: "",
+            middleName: "",
+            dateOfBirth: "",
+            gender: "",
+            title: "",
+            address: "",
+            country: "",
+            nationality: "",
+            phone: "",
+               
         };
 
         setEditedBooking({
@@ -453,16 +464,21 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                     {isEditing ? (
                                                         <>
                                                             <input
-                                                                value={passenger.name}
-                                                                onChange={(e) => handlePassengerChange(idx, "name", e.target.value)}
-                                                                placeholder="Nom complet"
+                                                                value={passenger.firstName}
+                                                                onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
+                                                                placeholder="Nom"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
                                                             <input
-                                                                type="email"
-                                                                value={passenger.email}
-                                                                onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
-                                                                placeholder="Email"
+                                                                value={passenger.middleName}
+                                                                onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
+                                                                placeholder="Deuxième prénom"
+                                                                className="rounded border px-2 py-1 text-sm"
+                                                            />
+                                                            <input
+                                                                value={passenger.lastName}
+                                                                onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
+                                                                placeholder="Prénom"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
                                                             <input
@@ -472,6 +488,35 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                                 placeholder="Date de naissance"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
+                                                            <input
+                                                                
+                                                                value={passenger.address}
+                                                                onChange={(e) => handlePassengerChange(idx, "address", e.target.value)}
+                                                                placeholder="Adresse"
+                                                                className="rounded border px-2 py-1 text-sm"
+                                                            />
+                                                            <input
+                                                                
+                                                                value={passenger.country}
+                                                                onChange={(e) => handlePassengerChange(idx, "country", e.target.value)}
+                                                                placeholder="Pays"
+                                                                className="rounded border px-2 py-1 text-sm"
+                                                            />
+                                                             <input
+                                                                
+                                                                value={passenger.nationality}
+                                                                onChange={(e) => handlePassengerChange(idx, "nationality", e.target.value)}
+                                                                placeholder="Nationalité"
+                                                                className="rounded border px-2 py-1 text-sm"
+                                                            />
+                                                            <input
+                                                                type="email"
+                                                                value={passenger.email}
+                                                                onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
+                                                                placeholder="Email"
+                                                                className="rounded border px-2 py-1 text-sm"
+                                                            />
+                                                            
                                                             <input
                                                                 value={passenger.phone || ""}
                                                                 onChange={(e) => handlePassengerChange(idx, "phone", e.target.value)}
@@ -484,6 +529,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <div>{passenger.name}</div>
                                                             <div>{passenger.email}</div>
                                                             <div>Naissance: {passenger.dob}</div>
+                                                           
                                                             {passenger.phone && <div>Tél: {passenger.phone}</div>}
                                                         </div>
                                                     )}

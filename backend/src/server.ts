@@ -458,6 +458,7 @@ app.get("/api/flights/:flightId/passengers", async (req, res) => {
           p.first_name,
           p.last_name,
           p.email,
+          p.phone,
           b.created_at AS booking_date,
           CASE 
             WHEN b.flight_id = ? THEN 'outbound'

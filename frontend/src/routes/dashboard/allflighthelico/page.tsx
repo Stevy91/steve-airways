@@ -874,12 +874,12 @@ const FlightTableHelico = () => {
                             <motion.div
                                 role="dialog"
                                 aria-modal="true"
-                                className="absolute inset-0 mx-auto my-6 flex max-w-3xl items-start justify-center p-4 sm:my-12"
+                                className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
                                 initial={{ opacity: 0, y: 20, scale: 0.98 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.98 }}
                             >
-                                <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                                <div className="relative max-h-[90vh] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                                     <button
                                         className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                                         aria-label="Close"
@@ -900,46 +900,56 @@ const FlightTableHelico = () => {
                                             <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
                                         </div>
                                     ) : (
-                                        <table className="table">
-                                            <thead className="">
-                                                <tr className="">
-                                                    <th className="table-head">FirstName</th>
-                                                    <th className="table-head">LastName</th>
-                                                    <th className="table-head">Email Address</th>
-                                                    <th className="table-head">Booking Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="table-body">
-                                                {passengers.length > 0 ? (
-                                                    passengers.map((p) => (
-                                                        <tr
-                                                            key={p.id}
-                                                            className="hover:bg-gray-50"
-                                                        >
-                                                            <td className="table-cell">{p.first_name}</td>
-                                                            <td className="table-cell">{p.last_name}</td>
-                                                            <td className="table-cell">{p.email}</td>
-                                                            <td className="table-cell">
-                                                                {format(parseISO(p.booking_date), "EEE, dd MMM")} at{" "}
-                                                                {new Date(p.booking_date).toLocaleTimeString("fr-FR", {
-                                                                    hour: "2-digit",
-                                                                    minute: "2-digit",
-                                                                })}
+                                        <div className="max-h-[60vh] overflow-auto">
+                                            {" "}
+                                            {/* Ajout d'un conteneur scrollable */}
+                                            <table className="table w-full">
+                                                {" "}
+                                                {/* Ajout de w-full */}
+                                                <thead className="sticky top-0 bg-white">
+                                                    {" "}
+                                                    {/* Header fixe */}
+                                                    <tr>
+                                                        <th className="table-head px-6 py-4 text-left">FirstName</th> {/* Plus de padding */}
+                                                        <th className="table-head px-6 py-4 text-left">LastName</th>
+                                                        <th className="table-head px-6 py-4 text-left">Email Address</th>
+                                                        <th className="table-head px-6 py-4 text-left">Phone</th> {/* Nouvelle colonne */}
+                                                        <th className="table-head px-6 py-4 text-left">Booking Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="table-body">
+                                                    {passengers.length > 0 ? (
+                                                        passengers.map((p) => (
+                                                            <tr
+                                                                key={p.id}
+                                                                className="border-b hover:bg-gray-50"
+                                                            >
+                                                                <td className="table-cell px-6 py-4">{p.first_name}</td>
+                                                                <td className="table-cell px-6 py-4">{p.last_name}</td>
+                                                                <td className="table-cell px-6 py-4">{p.email}</td>
+                                                                <td className="table-cell px-6 py-4">{p.phone || "N/A"}</td> {/* Nouvelle colonne */}
+                                                                <td className="table-cell px-6 py-4">
+                                                                    {format(parseISO(p.booking_date), "EEE, dd MMM")} at{" "}
+                                                                    {new Date(p.booking_date).toLocaleTimeString("fr-FR", {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                    })}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr>
+                                                            <td
+                                                                colSpan={5}
+                                                                className="py-8 text-center text-gray-500"
+                                                            >
+                                                                No passenger found
                                                             </td>
                                                         </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={4}
-                                                            className="py-4 text-center text-gray-500"
-                                                        >
-                                                            No passenger found
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     )}
                                 </div>
                             </motion.div>
