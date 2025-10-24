@@ -2498,7 +2498,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
       contact_email: booking.contact_email,
       type_vol: booking.type_vol,
       type_v: booking.type_v,
-      adminNotes: booking.adminnotes,
+      adminNotes: booking.adminNotes,
       created_by_name: booking.created_by_name,  // AJOUT DU CHAMP
       created_by_email: booking.created_by_email, // AJOUT DU CHAMP (optionnel)
       user_created_booking: booking.user_created_booking, // ID de l'utilisateur

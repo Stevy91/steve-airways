@@ -20,6 +20,7 @@ type Booking = {
     passenger_count: number;
     contact_email: string;
     payment_method: string;
+    adminNotes: string;
     type_vol: string;
     type_v: string;
      created_by_name?: string;  // NOUVEAU CHAMP

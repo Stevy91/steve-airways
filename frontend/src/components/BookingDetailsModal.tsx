@@ -30,6 +30,7 @@ export type Passenger = {
     country?: string;
     address?: string;
     dateOfBirth?: string;
+    adminNotes?: string
 };
 
 export type BookingDetails = {
@@ -137,6 +138,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             country: "",
             nationality: "",
             phone: "",
+            adminNotes: ""
                
         };
 
