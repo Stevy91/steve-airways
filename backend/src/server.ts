@@ -1795,6 +1795,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     contactEmail,
     contactPhone,
     totalPrice,
+    adminNotes,
     paymentStatus
   } = req.body;
 
@@ -1825,7 +1826,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     console.log(`📋 Réservation trouvée:`, booking);
 
     // 2. Mettre à jour les informations générales de la réservation
-    if (contactEmail || contactPhone || totalPrice || paymentStatus) {
+    if (contactEmail || contactPhone || totalPrice || paymentStatus || adminNotes) {
       const updateFields = [];
       const updateValues = [];
 
@@ -1840,6 +1841,10 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       if (totalPrice) {
         updateFields.push("total_price = ?");
         updateValues.push(totalPrice);
+      }
+      if (adminNotes) {
+        updateFields.push("adminNotes = ?");
+        updateValues.push(adminNotes);
       }
       if (paymentStatus) {
         updateFields.push("status = ?");

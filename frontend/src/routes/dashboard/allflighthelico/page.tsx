@@ -927,7 +927,7 @@ const FlightTableHelico = () => {
                                                                 <td className="table-cell px-6 py-4">{p.first_name}</td>
                                                                 <td className="table-cell px-6 py-4">{p.last_name}</td>
                                                                 <td className="table-cell px-6 py-4">{p.email}</td>
-                                                                <td className="table-cell px-6 py-4">{p.phone || "N/A"}</td> {/* Nouvelle colonne */}
+                                                                <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td> {/* Nouvelle colonne */}
                                                                 <td className="table-cell px-6 py-4">
                                                                     {format(parseISO(p.booking_date), "EEE, dd MMM")} at{" "}
                                                                     {new Date(p.booking_date).toLocaleTimeString("fr-FR", {

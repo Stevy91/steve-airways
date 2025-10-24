@@ -207,6 +207,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                     contactPhone: editedBooking.contactPhone,
                     totalPrice: editedBooking.totalPrice,
                     paymentStatus: paymentStatus,
+                    adminNotes: editedBooking.adminNotes
                 }),
             });
 
