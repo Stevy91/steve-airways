@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plane, Calendar, Mail, Edit, Save, Plus, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 export type Flight = {
     code: string;
@@ -30,7 +31,7 @@ export type Passenger = {
     country?: string;
     address?: string;
     dateOfBirth?: string;
-    adminNotes?: string
+    adminNotes?: string;
 };
 
 export type BookingDetails = {
@@ -53,6 +54,7 @@ export type BookingDetails = {
 
 type BookingDetailsModalProps = {
     open: boolean;
+    bookingModify?: () => void;
     data?: BookingDetails;
     onClose: () => void;
     onSave: (updated: BookingDetails) => void;
@@ -64,7 +66,7 @@ const badgeStyles: Record<string, string> = {
     cancelled: "bg-red-100 text-red-800 ring-1 ring-red-200",
 };
 
-const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, onClose, onSave }) => {
+const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, onClose, onSave, bookingModify }) => {
     const [booking, setBooking] = useState<BookingDetails | undefined>(data);
     const [loading, setLoading] = useState(true);
     const [paymentStatus, setPaymentStatus] = useState<string>(data?.paymentStatus || "pending");
@@ -73,6 +75,18 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
     const [saving, setSaving] = useState(false);
 
     const dialogRef = useRef<HTMLDivElement | null>(null);
+
+    // Calculer le prix de base par passager à partir du prix total initial
+    const getPassengerPrice = useCallback((totalPrice: string, passengerCount: number) => {
+        const priceValue = parseFloat(totalPrice.replace("$", "").replace(",", ""));
+        return passengerCount > 0 ? priceValue / passengerCount : priceValue;
+    }, []);
+
+    // Calculer le nouveau prix total basé sur le nombre de passagers et le prix de base
+    const calculateTotalPrice = useCallback((passengers: Passenger[], basePassengerPrice: number) => {
+        const total = passengers.length * basePassengerPrice;
+        return `$${total}`;
+    }, []);
 
     useEffect(() => {
         if (data) {
@@ -138,13 +152,24 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             country: "",
             nationality: "",
             phone: "",
-            adminNotes: ""
-               
+            adminNotes: "",
         };
+
+        const updatedPassengers = [...editedBooking.passengers, newPassenger];
+
+        // Calculer le prix de base par passager
+        const basePassengerPrice = getPassengerPrice(
+            booking?.totalPrice || editedBooking.totalPrice,
+            booking?.passengers.length || editedBooking.passengers.length,
+        );
+
+        // Calculer le nouveau prix total
+        const newTotalPrice = calculateTotalPrice(updatedPassengers, basePassengerPrice);
 
         setEditedBooking({
             ...editedBooking,
-            passengers: [...editedBooking.passengers, newPassenger],
+            passengers: updatedPassengers,
+            totalPrice: newTotalPrice,
         });
     };
 
@@ -152,9 +177,20 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         if (!editedBooking) return;
 
         const updatedPassengers = editedBooking.passengers.filter((_, i) => i !== index);
+
+        // Calculer le prix de base par passager
+        const basePassengerPrice = getPassengerPrice(
+            booking?.totalPrice || editedBooking.totalPrice,
+            booking?.passengers.length || editedBooking.passengers.length,
+        );
+
+        // Calculer le nouveau prix total
+        const newTotalPrice = calculateTotalPrice(updatedPassengers, basePassengerPrice);
+
         setEditedBooking({
             ...editedBooking,
             passengers: updatedPassengers,
+            totalPrice: newTotalPrice,
         });
     };
 
@@ -198,6 +234,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
         setSaving(true);
         try {
+            // Utiliser directement le prix total depuis editedBooking au lieu de le recalculer
+            const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
+
             // Sauvegarder les modifications via API
             const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
                 method: "PUT",
@@ -207,9 +246,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                     flights: editedBooking.flights,
                     contactEmail: editedBooking.contactEmail,
                     contactPhone: editedBooking.contactPhone,
-                    totalPrice: editedBooking.totalPrice,
+                    totalPrice: totalPriceForAPI, // Utiliser la valeur directement depuis l'input
                     paymentStatus: paymentStatus,
-                    adminNotes: editedBooking.adminNotes
+                    adminNotes: editedBooking.adminNotes,
                 }),
             });
 
@@ -220,12 +259,20 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
             const updatedData = await res.json();
 
-            // Mettre à jour le state local
-            setBooking(editedBooking);
+            // Mettre à jour le state local avec le prix formaté ($)
+            const updatedBookingWithFormattedPrice = {
+                ...editedBooking,
+                totalPrice: `$${totalPriceForAPI}`,
+            };
+
+            setBooking(updatedBookingWithFormattedPrice);
             setIsEditing(false);
 
             // Callback pour le parent
-            onSave && onSave(editedBooking);
+            onSave && onSave(updatedBookingWithFormattedPrice);
+             if (bookingModify) {
+                bookingModify();
+            }
         } catch (err) {
             console.error("❌ Failed to update booking", err);
             alert("Impossible de mettre à jour la réservation.");
@@ -256,10 +303,26 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             setBooking((prev) => (prev ? { ...prev, paymentStatus: data.newStatus } : prev));
             setEditedBooking((prev) => (prev ? { ...prev, paymentStatus: data.newStatus } : prev));
 
+            
+
             onSave && onSave({ ...booking, paymentStatus: data.newStatus });
+           
         } catch (err) {
             console.error("❌ Failed to update payment status", err);
             alert("Impossible de mettre à jour le paiement.");
+        }
+    };
+
+    // Fonction utilitaire pour formater les dates en toute sécurité
+    const formatDateSafely = (dateString: string, formatString: string) => {
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return "Invalid date";
+            }
+            return format(date, formatString);
+        } catch (error) {
+            return "Invalid date";
         }
     };
 
@@ -273,12 +336,16 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             </div>
         );
 
+    // Calculer le prix de base par passager pour l'affichage
+    const basePassengerPrice = getPassengerPrice(booking.totalPrice, booking.passengers.length);
+
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {open && (
                 <div className="fixed inset-0 z-50">
                     {/* Backdrop */}
                     <motion.div
+                        key={`modal-${booking?.reference || "new"}`}
                         className="absolute inset-0 bg-black/50"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -313,7 +380,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                             className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-white hover:bg-blue-600"
                                         >
                                             {isEditing ? <X size={16} /> : <Edit size={16} />}
-                                            {isEditing ? "Annuler" : "Modifier"}
+                                            {isEditing ? "Cancel" : "Edit"}
                                         </button>
                                         <button
                                             onClick={onClose}
@@ -344,7 +411,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                     )}
                                     <span className="mx-1">|</span>
                                     <Calendar className="h-4 w-4" />
-                                    <span>Booked on: {booking.bookedOn}</span>
+                                    <span>Booked on: {formatDateSafely(booking.bookedOn, "EEE, dd MMM yy")}</span>
                                 </div>
                             </div>
 
@@ -354,7 +421,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                             <div className="space-y-6 px-6 py-6 sm:px-8">
                                 {/* Payment Status */}
                                 <section className="space-y-2">
-                                    <h3 className="text-base font-semibold text-slate-700">Payment Status</h3>
+                                    <h3 className="text-lg font-bold text-amber-500">Payment Status</h3>
                                     <div className="flex items-center gap-3">
                                         <span
                                             className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-sm font-medium ${
@@ -366,16 +433,17 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                     </div>
                                 </section>
 
-                                {/* Flights */}
-                                <section className="space-y-4">
+                                {/* add Flights important*/}
+
+                                {/* <section className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-base font-semibold text-slate-700">Flights</h3>
+                                        <h3 className="text-lg font-bold text-amber-500">Flights</h3>
                                         {isEditing && (
                                             <button
                                                 onClick={handleAddFlight}
                                                 className="flex items-center gap-2 rounded-lg bg-green-500 px-3 py-1 text-white hover:bg-green-600"
                                             >
-                                                <Plus size={16} /> Ajouter un vol
+                                                <Plus size={16} /> Add Flight
                                             </button>
                                         )}
                                     </div>
@@ -392,19 +460,19 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <input
                                                                 value={flight.code}
                                                                 onChange={(e) => handleFlightChange(idx, "code", e.target.value)}
-                                                                placeholder="Code vol"
+                                                                placeholder="Flight code"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
                                                             <input
                                                                 value={flight.from}
                                                                 onChange={(e) => handleFlightChange(idx, "from", e.target.value)}
-                                                                placeholder="De"
+                                                                placeholder="From"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
                                                             <input
                                                                 value={flight.to}
                                                                 onChange={(e) => handleFlightChange(idx, "to", e.target.value)}
-                                                                placeholder="Vers"
+                                                                placeholder="To"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
                                                             <input
@@ -415,9 +483,32 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             />
                                                         </>
                                                     ) : (
-                                                        <span className="text-sm text-slate-600">
-                                                            {flight.from} → {flight.to} ({flight.date}) - {flight.code}
-                                                        </span>
+                                                        <div className="text-sm text-slate-600">
+                                                            <div>
+                                                                <span className="font-semibold text-slate-700">Depart: </span>
+                                                                {flight.from} → {flight.to}
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-semibold text-slate-700">Date: </span>
+                                                                {formatDateSafely(flight.date, "EEE, dd MMM yy")} at{" "}
+                                                                {(() => {
+                                                                    try {
+                                                                        const date = new Date(flight.date);
+                                                                        return isNaN(date.getTime())
+                                                                            ? "Invalid time"
+                                                                            : date.toLocaleTimeString("fr-FR", {
+                                                                                  hour: "2-digit",
+                                                                                  minute: "2-digit",
+                                                                              });
+                                                                    } catch (error) {
+                                                                        return "Invalid time";
+                                                                    }
+                                                                })()}
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-semibold text-slate-700">Flight Number:</span> {flight.code}
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                                 {isEditing && editedBooking.flights.length > 1 && (
@@ -431,18 +522,18 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                             </li>
                                         ))}
                                     </ul>
-                                </section>
+                                </section> */}
 
                                 {/* Passengers */}
                                 <section className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-base font-semibold text-slate-700">Passengers</h3>
+                                        <h3 className="text-lg font-bold text-amber-500">Passengers ({editedBooking.passengers.length})</h3>
                                         {isEditing && (
                                             <button
                                                 onClick={handleAddPassenger}
                                                 className="flex items-center gap-2 rounded-lg bg-green-500 px-3 py-1 text-white hover:bg-green-600"
                                             >
-                                                <Plus size={16} /> Ajouter passager
+                                                <Plus size={16} /> Add Passenger
                                             </button>
                                         )}
                                     </div>
@@ -453,7 +544,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                 className="space-y-2 rounded-lg border p-3"
                                             >
                                                 <div className="flex items-start justify-between">
-                                                    <span className="font-medium text-slate-700">Passager {idx + 1}</span>
+                                                    <span className="font-medium text-slate-700">Passenger {idx + 1}</span>
                                                     {isEditing && editedBooking.passengers.length > 1 && (
                                                         <button
                                                             onClick={() => handleRemovePassenger(idx)}
@@ -466,74 +557,126 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                                     {isEditing ? (
                                                         <>
-                                                            <input
-                                                                value={passenger.firstName}
-                                                                onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
-                                                                placeholder="Nom"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            <input
-                                                                value={passenger.middleName}
-                                                                onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
-                                                                placeholder="Deuxième prénom"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            <input
-                                                                value={passenger.lastName}
-                                                                onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
-                                                                placeholder="Prénom"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            <input
-                                                                type="date"
-                                                                value={passenger.dob}
-                                                                onChange={(e) => handlePassengerChange(idx, "dob", e.target.value)}
-                                                                placeholder="Date de naissance"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            <input
-                                                                
-                                                                value={passenger.address}
-                                                                onChange={(e) => handlePassengerChange(idx, "address", e.target.value)}
-                                                                placeholder="Adresse"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            <input
-                                                                
-                                                                value={passenger.country}
-                                                                onChange={(e) => handlePassengerChange(idx, "country", e.target.value)}
-                                                                placeholder="Pays"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                             <input
-                                                                
-                                                                value={passenger.nationality}
-                                                                onChange={(e) => handlePassengerChange(idx, "nationality", e.target.value)}
-                                                                placeholder="Nationalité"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            <input
-                                                                type="email"
-                                                                value={passenger.email}
-                                                                onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
-                                                                placeholder="Email"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
-                                                            
-                                                            <input
-                                                                value={passenger.phone || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "phone", e.target.value)}
-                                                                placeholder="Téléphone"
-                                                                className="rounded border px-2 py-1 text-sm"
-                                                            />
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Firstname</label>
+                                                                <input
+                                                                    value={passenger.firstName || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
+                                                                    placeholder="First name"
+                                                                    className="w-full rounded-md border border-gray-300 px-4 py-1 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Middle Name</label>
+                                                                <input
+                                                                    value={passenger.middleName || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
+                                                                    placeholder="Middle name"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Lastname</label>
+                                                                <input
+                                                                    value={passenger.lastName || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
+                                                                    placeholder="Last name"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Birthday</label>
+                                                                <input
+                                                                    type="date"
+                                                                    value={passenger.dob || passenger.dateOfBirth || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "dob", e.target.value)}
+                                                                    placeholder="Date of birth"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Address</label>
+                                                                <input
+                                                                    value={passenger.address || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "address", e.target.value)}
+                                                                    placeholder="Address"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Country</label>
+                                                                <input
+                                                                    value={passenger.country || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "country", e.target.value)}
+                                                                    placeholder="Country"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Nationality</label>
+                                                                <input
+                                                                    value={passenger.nationality || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "nationality", e.target.value)}
+                                                                    placeholder="Nationality"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Email Address</label>
+                                                                <input
+                                                                    type="email"
+                                                                    value={passenger.email || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
+                                                                    placeholder="Email"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <label className="mb-1 font-medium text-gray-700">Phone</label>
+                                                                <input
+                                                                    value={passenger.phone || ""}
+                                                                    onChange={(e) => handlePassengerChange(idx, "phone", e.target.value)}
+                                                                    placeholder="Phone"
+                                                                    className="rounded border px-2 py-1 text-sm"
+                                                                />
+                                                            </div>
                                                         </>
                                                     ) : (
                                                         <div className="text-sm text-slate-600">
-                                                            <div>{passenger.name}</div>
-                                                            <div>{passenger.email}</div>
-                                                            <div>Naissance: {passenger.dob}</div>
-                                                           
-                                                            {passenger.phone && <div>Tél: {passenger.phone}</div>}
+                                                            <div>
+                                                                <span className="font-semibold text-slate-700">Name: </span>{" "}
+                                                                {passenger.name || `${passenger.firstName} ${passenger.lastName}`}
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-semibold text-slate-700">Email: </span> {passenger.email}
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-semibold text-slate-700">Birthday: </span>{" "}
+                                                                {formatDateSafely(passenger.dob || passenger.dateOfBirth || "", "EEE, dd MMM yyyy")}
+                                                            </div>
+                                                            {passenger.phone && (
+                                                                <div>
+                                                                    <span className="font-semibold text-slate-700">Phone: </span> {passenger.phone}
+                                                                </div>
+                                                            )}
+                                                            {passenger.address && (
+                                                                <div>
+                                                                    <span className="font-semibold text-slate-700">Address: </span>{" "}
+                                                                    {passenger.address}
+                                                                </div>
+                                                            )}
+                                                            {passenger.country && (
+                                                                <div>
+                                                                    <span className="font-semibold text-slate-700">Country: </span>{" "}
+                                                                    {passenger.country}
+                                                                </div>
+                                                            )}
+                                                            {passenger.nationality && (
+                                                                <div>
+                                                                    <span className="font-semibold text-slate-700">Nationality: </span>{" "}
+                                                                    {passenger.nationality}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -543,31 +686,22 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                 </section>
 
                                 {/* Total Price */}
+                                {/* Total Price - Version calcul automatique seulement */}
                                 <section className="space-y-2">
                                     <div className="text-lg font-bold text-amber-500">
-                                        Total Price:{" "}
-                                        {isEditing ? (
-                                            <div className="flex items-center gap-2">
-                                                <span>$</span>
-                                                <input
-                                                    value={editedBooking.totalPrice.replace("$", "")} // Enlève le $ pour l'édition
-                                                    onChange={(e) => handleGeneralInfoChange("totalPrice", e.target.value)}
-                                                    className="w-32 rounded border px-2 py-1 text-sm"
-                                                />
-                                            </div>
-                                        ) : (
-                                            `$${booking.totalPrice}`
-                                        )}
+                                        Total Price: ${calculateTotalPrice(editedBooking.passengers, basePassengerPrice).replace("$", "")}
+                                        {/* <div className="text-sm font-normal text-gray-500">
+            ({editedBooking.passengers.length} passenger(s) × ${basePassengerPrice.toFixed(2)})
+        </div> */}
                                     </div>
                                 </section>
 
                                 {/* Admin Controls */}
                                 <section className="space-y-4">
-                                    <h3 className="text-xl font-semibold text-blue-900">Admin Controls</h3>
+                                    <h3 className="text-lg font-bold text-blue-900">Admin Controls</h3>
 
                                     {/* Payment Status Control */}
                                     <div className="grid gap-3 sm:max-w-md">
-                                        <label className="text-sm font-medium text-slate-600">Payment Status</label>
                                         <div className="relative">
                                             <select
                                                 value={paymentStatus}
@@ -588,19 +722,17 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
                                     {/* Admin Notes */}
                                     <div className="grid gap-3">
-                                        <label className="text-sm font-medium text-slate-600">Admin Notes</label>
+                                        <label className="text-lg font-bold text-amber-500">Admin Notes</label>
                                         {isEditing ? (
                                             <textarea
                                                 value={editedBooking.adminNotes || ""}
                                                 onChange={(e) => handleGeneralInfoChange("adminNotes", e.target.value)}
-                                                placeholder="Notes administratives..."
+                                                placeholder="Admin notes..."
                                                 className="w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
                                                 rows={3}
                                             />
                                         ) : (
-                                            <div className="rounded bg-slate-50 p-2 text-sm text-slate-600">
-                                                {booking.adminNotes || "Aucune note"}
-                                            </div>
+                                            <div className="rounded bg-slate-50 p-2 text-sm text-slate-600">{booking.adminNotes || "No notes"}</div>
                                         )}
                                     </div>
                                 </section>
@@ -612,7 +744,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                         onClick={onClose}
                                         className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     >
-                                        Fermer
+                                        Close
                                     </button>
 
                                     {isEditing ? (
@@ -623,7 +755,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                             className="flex items-center gap-2 rounded-md bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-gray-400"
                                         >
                                             <Save size={16} />
-                                            {saving ? "Sauvegarde..." : "Sauvegarder"}
+                                            {saving ? "Saving..." : "Save"}
                                         </button>
                                     ) : (
                                         <button
@@ -631,7 +763,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                             onClick={() => handleSavePaymentStatus(paymentStatus as "pending" | "confirmed" | "cancelled")}
                                             className="rounded-md bg-amber-500 px-4 py-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                         >
-                                            Mettre à jour le statut
+                                            Update Status
                                         </button>
                                     )}
                                 </div>

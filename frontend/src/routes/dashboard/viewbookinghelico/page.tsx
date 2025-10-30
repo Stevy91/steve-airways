@@ -7,6 +7,7 @@ import { Footer } from "../../../layouts/footer";
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
 import { useAuth } from "../../../hooks/useAuth";
+import { format, parseISO } from "date-fns";
 
 // Types pour les données
 type Booking = {
@@ -88,8 +89,7 @@ const ViewBookingHelico = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
+            const fetchDashboardData = async () => {
             try {
                 setLoading(true);
 
@@ -119,9 +119,13 @@ const ViewBookingHelico = () => {
             }
         };
 
-        fetchDashboardData();
-    }, []);
-
+        const refreshBooking = () => {
+            fetchDashboardData();
+        };
+        useEffect(() => {
+            fetchDashboardData();
+        }, []);
+    
     if (loading) {
         return (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
@@ -216,7 +220,14 @@ const ViewBookingHelico = () => {
                                         </td>
                                         <td className="table-cell text-center">{booking.payment_method}</td>
                                          <td className="table-cell text-center">{booking.created_by_name || 'Le client Online'}</td>
-                                        <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
+                                        <td className="table-cell text-center">
+                                            {format(parseISO(booking.created_at), "EEE, dd MMM yy")} at{" "}
+                                                {new Date(booking.created_at).toLocaleTimeString("fr-FR", {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                            })}
+                                        </td>
+                                         
                                         <td className="table-cell text-center">
                                             <button
                                                 onClick={() => {
@@ -257,6 +268,7 @@ const ViewBookingHelico = () => {
                         {/* Popup modal */}
 
                         <BookingDetailsModal
+                            bookingModify={refreshBooking}
                             open={open}
                             data={selectedBooking}
                             onClose={() => setOpen(false)}

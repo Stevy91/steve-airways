@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { useTheme } from "../../../contexts/theme-context";
-import { ShoppingCart, Gift, Tags, Plane } from "lucide-react";
+import { ShoppingCart, Gift, Tags, Plane, Search } from "lucide-react";
 import { Footer } from "../../../layouts/footer";
 
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
@@ -49,41 +49,98 @@ const DashboardPage = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
- useAuth(); 
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
+    const [searchLoading, setSearchLoading] = useState(false);
+    
+    useAuth();
 
+    // Fonction pour formater la date en YYYY-MM-DD
+    const formatDateForInput = (date: Date) => {
+        return date.toISOString().split('T')[0];
+    };
+
+    // Initialiser les dates par défaut (30 derniers jours)
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-
-                const response = await fetch("https://steve-airways.onrender.com/api/dashboard-stats");
-
-                if (!response.ok) {
-                    throw new Error(`Erreur HTTP: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                setStats({
-                    totalRevenue: data.totalRevenue || 0,
-                    totalBookings: data.totalBookings || 0,
-                    flightsAvailable: data.flightsAvailable || 0,
-                    averageBookingValue: data.averageBookingValue || 0,
-                    bookingsByStatus: data.bookingsByStatus || [],
-                    revenueByMonth: data.revenueByMonth || [],
-                    bookingsByFlightType: data.bookingsByFlightType || [],
-                    recentBookings: data.recentBookings || [],
-                });
-            } catch (err) {
-                console.error("Erreur de récupération des données:", err);
-                setError("Impossible de charger les données du dashboard");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDashboardData();
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30);
+        
+        setStartDate(formatDateForInput(start));
+        setEndDate(formatDateForInput(end));
     }, []);
+
+    const fetchDashboardData = async (start?: string, end?: string) => {
+        try {
+            setLoading(true);
+            setSearchLoading(true);
+
+            // Construire l'URL avec les paramètres de date
+            let url = "https://steve-airways.onrender.com/api/dashboard-stats";
+            const params = new URLSearchParams();
+            
+            if (start) params.append('startDate', start);
+            if (end) params.append('endDate', end);
+            
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            setStats({
+                totalRevenue: data.totalRevenue || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValue: data.averageBookingValue || 0,
+                bookingsByStatus: data.bookingsByStatus || [],
+                revenueByMonth: data.revenueByMonth || [],
+                bookingsByFlightType: data.bookingsByFlightType || [],
+                recentBookings: data.recentBookings || [],
+            });
+        } catch (err) {
+            console.error("Erreur de récupération des données:", err);
+            setError("Impossible de charger les données du dashboard");
+        } finally {
+            setLoading(false);
+            setSearchLoading(false);
+        }
+    };
+
+    // Charger les données initiales
+    useEffect(() => {
+        fetchDashboardData(startDate, endDate);
+    }, []);
+
+    const handleSearch = () => {
+        if (!startDate || !endDate) {
+            alert("Veuillez sélectionner les deux dates");
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            alert("La date de début ne peut pas être après la date de fin");
+            return;
+        }
+        
+        fetchDashboardData(startDate, endDate);
+    };
+
+    const handleReset = () => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 30);
+        
+        setStartDate(formatDateForInput(start));
+        setEndDate(formatDateForInput(end));
+        fetchDashboardData(formatDateForInput(start), formatDateForInput(end));
+    };
 
     if (loading) {
         return (
@@ -114,6 +171,65 @@ const DashboardPage = () => {
     return (
         <div className="flex flex-col gap-y-4">
             <h1 className="title">Dashboard</h1>
+
+            {/* Filtres de date */}
+            <div className="card mb-4">
+                <div className="card-body">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                            <div className="flex flex-col">
+                                <label htmlFor="startDate" className="mb-2 font-medium text-gray-700">
+                                    Date de début
+                                </label>
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                            
+                            <div className="flex flex-col">
+                                <label htmlFor="endDate" className="mb-2 font-medium text-gray-700">
+                                    Date de fin
+                                </label>
+                                <input
+                                    type="date"
+                                    id="endDate"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSearch}
+                                disabled={searchLoading}
+                                className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-white hover:bg-amber-600 disabled:opacity-50"
+                            >
+                                <Search size={18} />
+                                {searchLoading ? "Recherche..." : "Rechercher"}
+                            </button>
+                            
+                            <button
+                                onClick={handleReset}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {startDate && endDate && (
+                        <div className="mt-3 text-sm text-gray-600">
+                            Période sélectionnée : du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Carte Revenu Total */}
