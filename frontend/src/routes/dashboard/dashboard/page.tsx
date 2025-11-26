@@ -42,11 +42,19 @@ interface DashboardStats {
     recentBookings: Booking[];
 }
 
+interface FilteredStats {
+    totalRevenue: number;
+    totalBookings: number;
+    flightsAvailable: number;
+    averageBookingValue: number;
+}
+
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const DashboardPage = () => {
     const { theme } = useTheme();
     const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [filteredStats, setFilteredStats] = useState<FilteredStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [startDate, setStartDate] = useState<string>("");
@@ -60,33 +68,54 @@ const DashboardPage = () => {
         return date.toISOString().split('T')[0];
     };
 
-    // Initialiser les dates par défaut (30 derniers jours)
-    useEffect(() => {
+    // Fonction pour obtenir le premier jour du mois
+    const getFirstDayOfMonth = () => {
+        const date = new Date();
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    };
+
+    // Fonction pour obtenir la date du jour
+    const getCurrentDate = () => {
+        return new Date();
+    };
+
+    // Fonction pour initialiser les dates par défaut (premier du mois jusqu'à aujourd'hui)
+    // const initializeDefaultDates = () => {
+    //     const start = getFirstDayOfMonth();
+    //     const end = getCurrentDate();
+        
+    //     return {
+    //         start: formatDateForInput(start),
+    //         end: formatDateForInput(end)
+    //     };
+    // };
+       const initializeDefaultDates = () => {
         const end = new Date();
         const start = new Date();
         start.setDate(start.getDate() - 30);
         
-        setStartDate(formatDateForInput(start));
-        setEndDate(formatDateForInput(end));
+        return {
+            start: formatDateForInput(start),
+            end: formatDateForInput(end)
+        };
+    };
+
+    // Initialiser les dates par défaut au chargement du composant
+    useEffect(() => {
+        const defaultDates = initializeDefaultDates();
+        setStartDate(defaultDates.start);
+        setEndDate(defaultDates.end);
+        
+        // Charger les données globales
+        fetchDashboardData();
     }, []);
 
-    const fetchDashboardData = async (start?: string, end?: string) => {
+    // Fonction pour charger les données globales (sans filtre de date)
+    const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            setSearchLoading(true);
 
-            // Construire l'URL avec les paramètres de date
-            let url = "https://steve-airways.onrender.com/api/dashboard-stats";
-            const params = new URLSearchParams();
-            
-            if (start) params.append('startDate', start);
-            if (end) params.append('endDate', end);
-            
-            if (params.toString()) {
-                url += `?${params.toString()}`;
-            }
-
-            const response = await fetch(url);
+            const response = await fetch("https://steve-airways.onrender.com/api/dashboard-stats");
 
             if (!response.ok) {
                 throw new Error(`Erreur HTTP: ${response.status}`);
@@ -104,19 +133,58 @@ const DashboardPage = () => {
                 bookingsByFlightType: data.bookingsByFlightType || [],
                 recentBookings: data.recentBookings || [],
             });
+
+            // Initialiser les stats filtrées avec les mêmes données globales
+            setFilteredStats({
+                totalRevenue: data.totalRevenue || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValue: data.averageBookingValue || 0,
+            });
         } catch (err) {
             console.error("Erreur de récupération des données:", err);
             setError("Impossible de charger les données du dashboard");
         } finally {
             setLoading(false);
-            setSearchLoading(false);
         }
     };
 
-    // Charger les données initiales
-    useEffect(() => {
-        fetchDashboardData(startDate, endDate);
-    }, []);
+    // Fonction pour charger les données filtrées par date
+    const fetchFilteredData = async (start: string, end: string) => {
+        try {
+            setSearchLoading(true);
+
+            // Construire l'URL avec les paramètres de date
+            let url = "https://steve-airways.onrender.com/api/dashboard-stats";
+            const params = new URLSearchParams();
+            
+            params.append('startDate', start);
+            params.append('endDate', end);
+            
+            url += `?${params.toString()}`;
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Mettre à jour seulement les stats filtrées
+            setFilteredStats({
+                totalRevenue: data.totalRevenue || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValue: data.averageBookingValue || 0,
+            });
+        } catch (err) {
+            console.error("Erreur de récupération des données filtrées:", err);
+            alert("Impossible de charger les données filtrées");
+        } finally {
+            setSearchLoading(false);
+        }
+    };
 
     const handleSearch = () => {
         if (!startDate || !endDate) {
@@ -129,17 +197,15 @@ const DashboardPage = () => {
             return;
         }
         
-        fetchDashboardData(startDate, endDate);
+        fetchFilteredData(startDate, endDate);
     };
 
     const handleReset = () => {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(start.getDate() - 30);
-        
-        setStartDate(formatDateForInput(start));
-        setEndDate(formatDateForInput(end));
-        fetchDashboardData(formatDateForInput(start), formatDateForInput(end));
+        const defaultDates = initializeDefaultDates();
+        setStartDate(defaultDates.start);
+        setEndDate(defaultDates.end);
+        // Recharger les données globales
+        fetchDashboardData();
     };
 
     if (loading) {
@@ -164,7 +230,7 @@ const DashboardPage = () => {
         );
     }
 
-    if (!stats) {
+    if (!stats || !filteredStats) {
         return null;
     }
 
@@ -231,6 +297,7 @@ const DashboardPage = () => {
                 </div>
             </div>
 
+            {/* Cartes de statistiques (affectées par la recherche) */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Carte Revenu Total */}
                 <div className="card-1">
@@ -238,7 +305,7 @@ const DashboardPage = () => {
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
                             <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">
-                                ${stats.totalRevenue.toLocaleString()}
+                                ${filteredStats.totalRevenue.toLocaleString()}
                             </p>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <ShoppingCart
@@ -256,7 +323,7 @@ const DashboardPage = () => {
                     <p className="card-title text-slate-50">RÉSERVATIONS</p>
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
-                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">{stats.totalBookings}</p>
+                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">{filteredStats.totalBookings}</p>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Tags
                                     color="#ffffff"
@@ -273,7 +340,7 @@ const DashboardPage = () => {
                     <p className="card-title text-slate-50">VOLS DISPONIBLES</p>
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
-                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">{stats.flightsAvailable}</p>
+                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">{filteredStats.flightsAvailable}</p>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Plane
                                     color="#ffffff"
@@ -291,7 +358,7 @@ const DashboardPage = () => {
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
                             <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">
-                                ${stats.averageBookingValue.toFixed(2)}
+                                ${filteredStats.averageBookingValue.toFixed(2)}
                             </p>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Gift
@@ -305,6 +372,7 @@ const DashboardPage = () => {
                 </div>
             </div>
 
+            {/* Graphiques (données globales, non affectées par la recherche) */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8">
                 {/* Graphique Revenu par Mois */}
                 <div className="card col-span-1 md:col-span-2 lg:col-span-4">
@@ -509,7 +577,7 @@ const DashboardPage = () => {
                 </div>
             </div>
 
-            <Footer />
+            {/* <Footer /> */}
         </div>
     );
 };

@@ -1844,6 +1844,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
             name,
             total,
         }));
+        
 
         const recentBookings = bookings.slice(0, 6);
 
@@ -2260,7 +2261,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4";
+  const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B";
   const sender = "info@kashpaw.com";
 
   console.log("🔍 DEBUG sendEmail appelé avec:");

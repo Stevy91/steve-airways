@@ -1084,7 +1084,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
 };
 
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string, paymentMethod: string) => {
-    const apiKey = "api-3E50B3ECEA894D1E8A8FFEF38495B5C4"; // ou process.env.SMTP2GO_API_KEY
+    const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B"; // ou process.env.SMTP2GO_API_KEY
     const recipientEmail = bookingData.passengersData.adults[0].email;
 
     const emailContent = generateEmailContent(bookingData, bookingReference, paymentMethod);

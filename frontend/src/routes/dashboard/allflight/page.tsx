@@ -129,6 +129,9 @@ const FlightTable = () => {
         }
     };
 
+     const refreshFlights = () => {
+        fetchFlights();
+    };
     useEffect(() => {
         fetchFlights();
     }, []);
@@ -425,7 +428,7 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                                             >
                                                                 <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                             </button>
-                                                            <button
+                                                            {/* <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     deleteFlight(flight.id);
@@ -433,7 +436,7 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                                                 }}
                                                             >
                                                                 <Trash2 className="h-4 w-4 text-red-500" /> Delete
-                                                            </button>
+                                                            </button> */}
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
                                                                 onClick={() => {
@@ -493,6 +496,7 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                 open={open}
                 onClose={() => setOpen(false)}
                 flight={selectedFlight!}
+                onTicketCreated={refreshFlights}
             />
 
             {/* Modal Add/Edit */}
