@@ -1,7 +1,7 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
-const SENDER_EMAIL = "info@kashpaw.com"; // A reasonable "from" address
+const SENDER_EMAIL = "booking@trogonairways.com"; // A reasonable "from" address
 import { format, parseISO, isValid } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { HeroSection } from "../../layouts/HeroSection";
@@ -1084,7 +1084,7 @@ const PrintableContent = ({ bookingData, paymentMethod }: { bookingData: Booking
 };
 
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string, paymentMethod: string) => {
-    const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B"; // ou process.env.SMTP2GO_API_KEY
+    const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B"; //api-3E50B3ECEA894D1E8A8FFEF38495B5C4 //api-F876F566C8754DB299476B9DF6E9B82B//api-F876F566C8754DB299476B9DF6E9B82B
     const recipientEmail = bookingData.passengersData.adults[0].email;
 
     const emailContent = generateEmailContent(bookingData, bookingReference, paymentMethod);

@@ -2262,7 +2262,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B";
-  const sender = "info@kashpaw.com";
+  const sender = "booking@trogonairways.com";
 
   console.log("🔍 DEBUG sendEmail appelé avec:");
   console.log("  - to:", to);
