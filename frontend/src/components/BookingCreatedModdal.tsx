@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { format, parseISO, isValid, parse } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
-const SENDER_EMAIL = "info@kashpaw.com"; // adresse "from"
+const SENDER_EMAIL = "booking@trogonairways.com"; // adresse "from"
 
 type Flight = {
     id: number;
@@ -41,6 +41,7 @@ type Passenger = {
     nationality?: string;
     phone?: string;
     email?: string;
+    paymentMethod?: string
 };
 
 type BookingData = {
@@ -130,9 +131,10 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       <!-- E-Ticket Section -->
       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
         <div style="padding: 20px; text-align: center;">
-          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> ${
-              paymentMethod === "paypal" ? "PayPal" : paymentMethod === "paylater" ? "Pay Later" : "Credit/Debit Card"
-          }</p>
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> 
+          
+          ${paymentMethod === "Cash" ? "Cash" : paymentMethod === "Card" ? "Credit/Debit Card" : "Bank Check" }
+          </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Air Plane"
           }</p>
@@ -221,9 +223,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
                       <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
-                      <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>${
-                          paymentMethod === "paypal" ? "Paid" : paymentMethod === "paylater" ? "Unpaid" : "Paid"
-                      }</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
+                      ${paymentMethod === "paypal" ? "Paid" : paymentMethod === "paylater" ? "Unpaid" : "Paid"}
+                      </p>
                     </td>
                   </tr>
                 </table>
@@ -252,7 +254,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     const payload = {
         api_key: apiKey,
         to: [recipientEmail],
-        sender: SENDER_EMAIL,
+        sender: "Booking Trogon Airways <booking@trogonairways.com>",
         subject: `Your Trogon Airways E-Ticket - Booking ID: ${bookingReference}`,
         html_body: emailContent,
     };
@@ -667,7 +669,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     >
                                         <option value="Cash">Cash</option>
-                                        <option value="Carte">Carte</option>
+                                        <option value="Card">Carte</option>
                                         <option value="Chèque">Chèque</option>
                                     </select>
                                     {/* Nombre de passagers */}

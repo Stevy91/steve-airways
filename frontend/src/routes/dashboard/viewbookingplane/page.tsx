@@ -295,15 +295,25 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         contactEmail: apiData.contact_email,
         bookedOn: new Date(apiData.created_at).toLocaleDateString(),
         paymentStatus: formattedStatus, // ici on utilise la variable loggée
-        totalPrice: `$${apiData.total_price}`,
+        totalPrice: `${apiData.total_price}`,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,
-        adminNotes: apiData.admin_notes || "",
+        adminNotes: apiData.adminNotes || "",
 
         passengers: apiData.passengers.map((p: any) => ({
             name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
             email: p.email,
             dob: p.date_of_birth,
+            firstName: p.first_name,
+            lastName: p.last_name,
+            middleName: p.middle_name,
+            gender: p.gender,
+            title: p.title,
+            phone: p.phone,
+            nationality: p.nationality,
+            country: p.country,
+            address: p.address,
+            dateOfBirth: p.dateOfBirth
         })),
 
         flights: apiData.flights.map((f: any) => ({

@@ -1092,8 +1092,8 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     const customerPayload = {
         api_key: apiKey,
         to: [recipientEmail],
-        sender: SENDER_EMAIL,
-        subject: `Your Trogon Airways E-Ticket - Booking ID: ${bookingReference}`,
+        sender: "Booking Trogon Airways <booking@trogonairways.com>",
+        subject: `Your Trogon Airways E-Tickett - Booking ID: ${bookingReference}`,
         html_body: emailContent,
     };
 

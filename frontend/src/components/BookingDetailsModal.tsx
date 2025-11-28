@@ -659,11 +659,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                                     <span className="font-semibold text-slate-700">Phone: </span> {passenger.phone}
                                                                 </div>
                                                             )}
-                                                            {passenger.email && (
-                                                                <div>
-                                                                    <span className="font-semibold text-slate-700">Phone: </span> {passenger.email}
-                                                                </div>
-                                                            )}
+                                                            
                                                             {passenger.address && (
                                                                 <div>
                                                                     <span className="font-semibold text-slate-700">Address: </span>{" "}
