@@ -2185,7 +2185,7 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
             LEFT JOIN users u ON b.user_created_booking = u.id  
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
-            ["helicopter"]
+            ["plane"]
         );
         // Convertir en type Booking[]
         const bookings: Booking[] = bookingRows.map((row) => ({
