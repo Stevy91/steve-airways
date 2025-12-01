@@ -89,7 +89,7 @@ const ViewBookingHelico = () => {
         }
     };
 
-            const fetchDashboardData = async () => {
+        const fetchDashboardData = async () => {
             try {
                 setLoading(true);
 

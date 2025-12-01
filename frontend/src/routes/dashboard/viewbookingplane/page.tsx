@@ -12,14 +12,19 @@ import { useAuth } from "../../../hooks/useAuth";
 type Booking = {
     id: number;
     booking_reference: string;
+    payment_intent_id: string;
     total_price: number;
     status: string;
     created_at: string;
     updated_at: string;
     passenger_count: number;
     contact_email: string;
+    payment_method: string;
+    adminNotes: string;
     type_vol: string;
     type_v: string;
+     created_by_name?: string;  // NOUVEAU CHAMP
+    created_by_email?: string; // NOUVEAU CHAMP
 };
 type Notification = {
     message: string;
@@ -94,7 +99,7 @@ const ViewBookingPlane = () => {
         }
     };
 
-    useEffect(() => {
+   
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
@@ -125,8 +130,14 @@ const ViewBookingPlane = () => {
             }
         };
 
-        fetchDashboardData();
-    }, []);
+
+
+        const refreshBooking = () => {
+            fetchDashboardData();
+        };
+        useEffect(() => {
+            fetchDashboardData();
+        }, []);
 
     if (loading) {
         return (
@@ -162,13 +173,16 @@ const ViewBookingPlane = () => {
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
-                                    <th className="table-head text-center">Booking Reference</th>
+                                    <th className="table-head text-center">Booking Référence</th>
+                                    <th className="table-head text-center">Paiement Référence</th>
                                     <th className="table-head text-center">Type</th>
                                     <th className="table-head text-center">Type Vol</th>
                                     <th className="table-head text-center">Contact Email</th>
                                     <th className="table-head text-center">Total Price</th>
-                                    <th className="table-head text-center">Passengers</th>
-                                    <th className="table-head text-center">Payment</th>
+                                    <th className="table-head text-center">Passager</th>
+                                    <th className="table-head text-center">Paiement</th>
+                                    <th className="table-head text-center">Méthode de paiement</th>
+                                    <th className="table-head text-center">Créé par</th>
                                     <th className="table-head text-center">Booking Date</th>
                                     <th className="table-head text-center">Action</th>
                                 </tr>
@@ -181,6 +195,9 @@ const ViewBookingPlane = () => {
                                     >
                                         <td className="table-cell text-center">
                                             <p>{booking.booking_reference}</p>
+                                        </td>
+                                        <td className="table-cell text-center">
+                                            <p>{booking.payment_intent_id}</p>
                                         </td>
                                         <td className="table-cell text-center">
                                             <p>{booking.type_vol}</p>
@@ -214,6 +231,8 @@ const ViewBookingPlane = () => {
                                                 {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : "Cancelled"}
                                             </span>
                                         </td>
+                                        <td className="table-cell text-center">{booking.payment_method}</td>
+                                         <td className="table-cell text-center">{booking.created_by_name || 'Le client Online'}</td>
                                         <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
                                         <td className="table-cell text-center">
                                             <button
@@ -255,6 +274,7 @@ const ViewBookingPlane = () => {
                         {/* Popup modal */}
 
                         <BookingDetailsModal
+                        bookingModify={refreshBooking}
                             open={open}
                             data={selectedBooking}
                             onClose={() => setOpen(false)}
