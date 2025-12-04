@@ -2593,7 +2593,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
           first_name, middle_name, last_name,
           date_of_birth, gender, title, address, type,
           type_vol, type_v, country, nationality,
-          phone, email, created_at, updated_at
+          phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
        FROM passengers 
        WHERE booking_id = ?`,
       [bookingId]
