@@ -58,7 +58,8 @@ const FlightTableHelico = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    const { user, loading: authLoading, isAdmin } = useAuth();
+    const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
+  
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;

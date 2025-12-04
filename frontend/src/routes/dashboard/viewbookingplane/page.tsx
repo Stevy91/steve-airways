@@ -23,7 +23,7 @@ type Booking = {
     adminNotes: string;
     type_vol: string;
     type_v: string;
-     created_by_name?: string;  // NOUVEAU CHAMP
+    created_by_name?: string; // NOUVEAU CHAMP
     created_by_email?: string; // NOUVEAU CHAMP
 };
 type Notification = {
@@ -71,7 +71,7 @@ const ViewBookingPlane = () => {
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
     const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
-     useAuth(); 
+    const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
 
     const showNotification = (message: string, type: "success" | "error") => {
         setNotification({ message, type });
@@ -99,45 +99,42 @@ const ViewBookingPlane = () => {
         }
     };
 
-   
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
 
-                const response = await fetch("https://steve-airways.onrender.com/api/booking-plane");
+            const response = await fetch("https://steve-airways.onrender.com/api/booking-plane");
 
-                if (!response.ok) {
-                    throw new Error(`Erreur HTTP: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                setStats({
-                    totalRevenue: data.totalRevenue || 0,
-                    totalBookings: data.totalBookings || 0,
-                    flightsAvailable: data.flightsAvailable || 0,
-                    averageBookingValue: data.averageBookingValue || 0,
-                    bookingsByStatus: data.bookingsByStatus || [],
-                    revenueByMonth: data.revenueByMonth || [],
-                    bookingsByFlightType: data.bookingsByFlightType || [],
-                    recentBookings: data.recentBookings || [],
-                });
-            } catch (err) {
-                console.error("Erreur de récupération des données:", err);
-                setError("Impossible de charger les données du dashboard");
-            } finally {
-                setLoading(false);
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
             }
-        };
 
+            const data = await response.json();
 
+            setStats({
+                totalRevenue: data.totalRevenue || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValue: data.averageBookingValue || 0,
+                bookingsByStatus: data.bookingsByStatus || [],
+                revenueByMonth: data.revenueByMonth || [],
+                bookingsByFlightType: data.bookingsByFlightType || [],
+                recentBookings: data.recentBookings || [],
+            });
+        } catch (err) {
+            console.error("Erreur de récupération des données:", err);
+            setError("Impossible de charger les données du dashboard");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        const refreshBooking = () => {
-            fetchDashboardData();
-        };
-        useEffect(() => {
-            fetchDashboardData();
-        }, []);
+    const refreshBooking = () => {
+        fetchDashboardData();
+    };
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
 
     if (loading) {
         return (
@@ -232,18 +229,22 @@ const ViewBookingPlane = () => {
                                             </span>
                                         </td>
                                         <td className="table-cell text-center">{booking.payment_method}</td>
-                                         <td className="table-cell text-center">{booking.created_by_name || 'Le client Online'}</td>
+                                        <td className="table-cell text-center">{booking.created_by_name || "Le client Online"}</td>
                                         <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
                                         <td className="table-cell text-center">
-                                            <button
-                                                onClick={() => {
-                                                    handleViewDetails(booking.id);
-                                                    setOpen(true);
-                                                }}
-                                                className="flex w-full gap-2 rounded-lg p-2 text-center hover:bg-amber-500"
-                                            >
-                                                <Eye className="h-6 w-4" /> <span>View Details</span>
-                                            </button>
+                                            {(isAdmin || isOperateur) && (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            handleViewDetails(booking.id);
+                                                            setOpen(true);
+                                                        }}
+                                                        className="flex w-full gap-2 rounded-lg p-2 text-center hover:bg-amber-500"
+                                                    >
+                                                        <Eye className="h-6 w-4" /> <span>View Details</span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -274,7 +275,7 @@ const ViewBookingPlane = () => {
                         {/* Popup modal */}
 
                         <BookingDetailsModal
-                        bookingModify={refreshBooking}
+                            bookingModify={refreshBooking}
                             open={open}
                             data={selectedBooking}
                             onClose={() => setOpen(false)}
@@ -333,7 +334,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
             nationality: p.nationality,
             country: p.country,
             address: p.address,
-            dateOfBirth: p.dateOfBirth
+            dateOfBirth: p.dateOfBirth,
         })),
 
         flights: apiData.flights.map((f: any) => ({

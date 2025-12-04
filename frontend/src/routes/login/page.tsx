@@ -43,7 +43,7 @@ export default function Login() {
             if (data.user.role === "admin") {
                 navigate(`/${currentLang}/dashboard`);
             } else {
-                navigate(`/${currentLang}/dashboard/flights-helico`);
+                navigate(`/${currentLang}/dashboard/flights`);
             }
         } catch (err) {
             console.error(err);

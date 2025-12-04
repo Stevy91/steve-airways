@@ -104,7 +104,7 @@ const FlightTable = () => {
         };
     }, [openDropdown]);
 
-    useAuth();
+    const { user, loading: authLoading, isAdmin } = useAuth();
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -129,7 +129,7 @@ const FlightTable = () => {
         }
     };
 
-     const refreshFlights = () => {
+    const refreshFlights = () => {
         fetchFlights();
     };
     useEffect(() => {
@@ -203,6 +203,11 @@ const FlightTable = () => {
     };
 
     const handleEditClick = (flight: Flight) => {
+        if (!isAdmin) {
+            toast.error("❌ Accès refusé - Admin uniquement");
+            return;
+        }
+
         console.log("Flight à éditer:", flight);
 
         // Extraire les codes d'aéroport depuis les champs from/to
@@ -223,6 +228,10 @@ const FlightTable = () => {
     };
 
     const handleAddFlight = async (flightData: any) => {
+        if (!isAdmin) {
+            toast.error("❌ Accès refusé - Admin uniquement");
+            return;
+        }
         try {
             setSubmitting(true);
             const res = await fetch("https://steve-airways.onrender.com/api/addflighttable", {
@@ -257,6 +266,10 @@ const FlightTable = () => {
     };
 
     const handleUpdateFlight = async (flightId: number, updatedData: any) => {
+        if (!isAdmin) {
+            toast.error("❌ Accès refusé - Admin uniquement");
+            return;
+        }
         try {
             setSubmitting(true);
             const res = await fetch(`https://steve-airways.onrender.com/api/updateflight/${flightId}`, {
@@ -335,7 +348,7 @@ const FlightTable = () => {
             return "—";
         }
     };
-const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
+    const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd MMM");
     return (
         <div className="p-6">
             {notification && (
@@ -351,17 +364,20 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
             <div className="mb-4 flex items-center justify-between">
                 <h1 className="text-2xl font-bold">All Flight Airplane</h1>
 
-                <button
-                    onClick={() => {
-                        setEditingFlight(null);
-                        setSelectedDeparture("");
-                        setSelectedDestination("");
-                        setShowModal(true);
-                    }}
-                    className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
-                >
-                    Add new flight
-                </button>
+                {/* Bouton Add new flight seulement pour les admins */}
+                {isAdmin && (
+                    <button
+                        onClick={() => {
+                            setEditingFlight(null);
+                            setSelectedDeparture("");
+                            setSelectedDestination("");
+                            setShowModal(true);
+                        }}
+                        className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
+                    >
+                        Add new flight
+                    </button>
+                )}
             </div>
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
@@ -419,16 +435,18 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                                 {openDropdown === flight.id && (
                                                     <div className="absolute right-0 z-[9999] mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                         <div className="py-1">
-                                                            <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    handleEditClick(flight);
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <Pencil className="h-4 w-4 text-amber-500" /> Edit
-                                                            </button>
-                                                            {/* <button
+                                                            {isAdmin && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            handleEditClick(flight);
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <Pencil className="h-4 w-4 text-amber-500" /> Edit
+                                                                    </button>
+                                                                    {/* <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     deleteFlight(flight.id);
@@ -437,6 +455,9 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                                             >
                                                                 <Trash2 className="h-4 w-4 text-red-500" /> Delete
                                                             </button> */}
+                                                                </>
+                                                            )}
+
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
                                                                 onClick={() => {
@@ -447,17 +468,20 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                                             >
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
-
-                                                            <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    fetchPassengers(flight.id);
-                                                                    setShowModalPassager(true);
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <PersonStanding className="h-6 w-6 text-amber-500" /> Passengers
-                                                            </button>
+                                                            {isAdmin && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            fetchPassengers(flight.id);
+                                                                            setShowModalPassager(true);
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <PersonStanding className="h-6 w-6 text-amber-500" /> Passengers
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -863,9 +887,9 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                         <thead className="">
                                             <tr className="">
                                                 <th className="table-head">FirstName</th>
-                                                <th className="table-head ">LastName</th>
-                                                <th className="table-head ">Email Address</th>
-                                                <th className="table-head ">Booking Date</th>
+                                                <th className="table-head">LastName</th>
+                                                <th className="table-head">Email Address</th>
+                                                <th className="table-head">Booking Date</th>
                                             </tr>
                                         </thead>
                                         <tbody className="table-body">
@@ -876,11 +900,16 @@ const formatDate = (dateString: string) => format(parseISO(dateString), "EEE, dd
                                                         className="hover:bg-gray-50"
                                                     >
                                                         <td className="table-cell">{p.first_name}</td>
-                                                        <td className="table-cell ">{p.last_name}</td>
-                                                        <td className="table-cell ">{p.email}</td>
+                                                        <td className="table-cell">{p.last_name}</td>
+                                                        <td className="table-cell">{p.email}</td>
                                                         {/* <td className="table-cell ">{new Date(p.booking_date).toLocaleDateString()}</td> */}
-                                                        <td className="table-cell ">{format(parseISO(p.booking_date), "EEE, dd MMM") } at {new Date(p.booking_date).toLocaleTimeString("fr-FR", {hour: "2-digit",  minute: "2-digit"})}</td>
-                                                        
+                                                        <td className="table-cell">
+                                                            {format(parseISO(p.booking_date), "EEE, dd MMM")} at{" "}
+                                                            {new Date(p.booking_date).toLocaleTimeString("fr-FR", {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            })}
+                                                        </td>
                                                     </tr>
                                                 ))
                                             ) : (

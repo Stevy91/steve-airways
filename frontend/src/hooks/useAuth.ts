@@ -34,10 +34,12 @@ export const useAuth = () => {
     }, [navigate, currentLang]);
 
     const isAdmin = user?.role === "admin";
+    const isOperateur = user?.role === "operateur"; // <-- nouvelle vérification
 
     return { 
         user, 
         loading, 
-        isAdmin 
+        isAdmin,
+        isOperateur // <-- on retourne aussi ce booléen
     };
 };

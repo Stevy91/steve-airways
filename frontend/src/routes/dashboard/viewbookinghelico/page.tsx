@@ -66,7 +66,7 @@ const ViewBookingHelico = () => {
     const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
 
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
-     useAuth(); 
+     const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
 
     const handleViewDetails = async (id: number) => {
         try {
@@ -229,7 +229,10 @@ const ViewBookingHelico = () => {
                                         </td>
                                          
                                         <td className="table-cell text-center">
-                                            <button
+
+                                            {(isAdmin || isOperateur) && (
+                                                <>
+                                                    <button
                                                 onClick={() => {
                                                     handleViewDetails(booking.id);
                                                     setOpen(true);
@@ -238,6 +241,9 @@ const ViewBookingHelico = () => {
                                             >
                                                 <Eye className="h-6 w-4" /> <span>View Details</span>
                                             </button>
+                                                </>
+                                            )}
+                                            
                                         </td>
                                     </tr>
                                 ))}

@@ -1114,8 +1114,8 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           booking_id, first_name, middle_name, last_name,
           date_of_birth, gender, title, address, type,
           type_vol, type_v, country, nationality,
-          phone, email, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookingResult.insertId,
           passenger.firstName,
@@ -1132,6 +1132,9 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           passenger.nationality || null,
           passenger.phone || contactInfo.phone,
           passenger.email || contactInfo.email,
+          passenger.nom_urgence  || null,
+          passenger.email_urgence  || null,
+          passenger.tel_urgence  || null,
           now,
           now,
         ],
