@@ -647,29 +647,29 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                                 />
                                                             </div>
                                                              <div className="flex flex-col">
-                                                                <label className="mb-1 font-medium text-gray-700">Nom personne en cas urgence</label>
+                                                                <label className="mb-1 font-medium text-gray-700">Emergency contact person name</label>
                                                                 <input
                                                                     value={passenger.nom_urgence || ""}
                                                                     onChange={(e) => handlePassengerChange(idx, "nom_urgence", e.target.value)}
-                                                                    placeholder="Nom personne en cas urgence"
+                                                                    placeholder="Emergency contact person name"
                                                                     className="rounded border px-2 py-1 text-sm"
                                                                 />
                                                             </div>
                                                              <div className="flex flex-col">
-                                                                <label className="mb-1 font-medium text-gray-700">Email personne en cas urgence</label>
+                                                                <label className="mb-1 font-medium text-gray-700">Emergency contact email</label>
                                                                 <input
                                                                     value={passenger.email_urgence || ""}
                                                                     onChange={(e) => handlePassengerChange(idx, "email_urgence", e.target.value)}
-                                                                    placeholder="Email personne en cas urgence"
+                                                                    placeholder="Emergency contact email"
                                                                     className="rounded border px-2 py-1 text-sm"
                                                                 />
                                                             </div>
                                                              <div className="flex flex-col">
-                                                                <label className="mb-1 font-medium text-gray-700">Telephone personne en cas urgence</label>
+                                                                <label className="mb-1 font-medium text-gray-700">Emergency contact number</label>
                                                                 <input
                                                                     value={passenger.tel_urgence || ""}
                                                                     onChange={(e) => handlePassengerChange(idx, "tel_urgence", e.target.value)}
-                                                                    placeholder="Telephone personne en cas urgence"
+                                                                    placeholder="Emergency contact number"
                                                                     className="rounded border px-2 py-1 text-sm"
                                                                 />
                                                             </div>
@@ -713,19 +713,19 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             )}
                                                             {passenger.nom_urgence && (
                                                                 <div>
-                                                                    <span className="font-semibold text-slate-700">Nom personne en cas urgence: </span>{" "}
+                                                                    <span className="font-semibold text-slate-700">Emergency contact person name: </span>{" "}
                                                                     {passenger.nom_urgence}
                                                                 </div>
                                                             )}
                                                             {passenger.email_urgence && (
                                                                 <div>
-                                                                    <span className="font-semibold text-slate-700">Email personne en cas urgence: </span>{" "}
+                                                                    <span className="font-semibold text-slate-700">Emergency contact email: </span>{" "}
                                                                     {passenger.email_urgence}
                                                                 </div>
                                                             )}
                                                             {passenger.tel_urgence && (
                                                                 <div>
-                                                                    <span className="font-semibold text-slate-700">Telephone personne en cas urgence: </span>{" "}
+                                                                    <span className="font-semibold text-slate-700">Emergency contact number: </span>{" "}
                                                                     {passenger.tel_urgence}
                                                                 </div>
                                                             )}

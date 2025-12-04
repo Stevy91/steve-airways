@@ -714,13 +714,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                     <label
                                         htmlFor="nom_urgence"
                                         className="mb-1 font-medium text-gray-700"
-                                    >Nom personne en cas urgence
+                                    >Emergency contact person name
                                     </label>
                                     <input
                                         type="text"
                                         id="nom_urgence"
                                         name="nom_urgence"
-                                        placeholder="Nom personne en cas urgence"
+                                        placeholder="Emergency contact person name"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -731,13 +731,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="email_urgence"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                       Email personne en cas urgence
+                                       Emergency contact email
                                     </label>
                                     <input
                                         type="text"
                                         id="email_urgence"
                                         name="email_urgence"
-                                        placeholder="Email personne en cas urgence"
+                                        placeholder="Emergency contact email"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -748,13 +748,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="tel_urgence"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Telephone personne en cas urgence
+                                        Emergency contact number
                                     </label>
                                     <input
                                         type="text"
                                         id="tel_urgence"
                                         name="tel_urgence"
-                                        placeholder="Telephone personne en cas urgence"
+                                        placeholder="Emergency contact number"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"

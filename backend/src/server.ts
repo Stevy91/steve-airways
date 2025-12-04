@@ -1995,8 +1995,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             booking_id, first_name, middle_name, last_name,
             date_of_birth, gender, title, address, type,
             type_vol, type_v, country, nationality,
-            phone, email, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             booking.id,
             passenger.firstName || passenger.name || '',
@@ -2013,6 +2013,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             passenger.nationality || null,
             passenger.phone || null,
             passenger.email || null,
+            passenger.nom_urgence || null,
+            passenger.email_urgence || null,
+            passenger.tel_urgence || null,
             new Date(),
             new Date()
           ]

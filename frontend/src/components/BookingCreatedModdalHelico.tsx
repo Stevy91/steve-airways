@@ -30,6 +30,9 @@ type Passenger = {
     middleName?: string;
     lastName: string;
     reference: string;
+    nom_urgence: string;
+    email_urgence: string;
+    tel_urgence: string;
     dateOfBirth?: string;
     gender?: string;
     title?: string;
@@ -276,6 +279,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         middleName: "",
         lastName: "",
         reference: "",
+        nom_urgence: "",
+        email_urgence: "",
+        tel_urgence: "",
         dateOfBirth: "",
         gender: "other",
         title: "Mr",
@@ -326,6 +332,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 middleName: formData.middleName,
                 lastName: formData.lastName,
                 reference: formData.reference,
+                nom_urgence: formData.nom_urgence,
+                email_urgence: formData.email_urgence,
+                tel_urgence: formData.tel_urgence,
                 dateOfBirth: formData.dateOfBirth,
                 gender: formData.gender,
                 title: formData.title,
@@ -692,6 +701,56 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         id="reference"
                                         name="reference"
                                         placeholder="Numéro de Référence"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="nom_urgence"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >Emergency contact person name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="nom_urgence"
+                                        name="nom_urgence"
+                                        placeholder="Emergency contact person name"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="email_urgence"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                       Emergency contact email
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="email_urgence"
+                                        name="email_urgence"
+                                        placeholder="Emergency contact email"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="tel_urgence"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Emergency contact number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="tel_urgence"
+                                        name="tel_urgence"
+                                        placeholder="Emergency contact number"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
