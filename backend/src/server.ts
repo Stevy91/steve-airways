@@ -2396,33 +2396,23 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
         // Génération Excel
         const workbook = new ExcelJS.Workbook();
-const sheet = workbook.addWorksheet("Bookings");
+        const sheet = workbook.addWorksheet("Bookings");
 
-// 1️⃣ Header global au milieu
-sheet.mergeCells('A1:K1'); // fusion de la première ligne de A à K
-const titleCell = sheet.getCell('A1');
-titleCell.value = 'Liste des Bookings Avion'; // texte du header
-titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-titleCell.font = { size: 14, bold: true };
+        sheet.columns = [
+            { header: "Booking Reference", key: "booking_reference" },
+            { header: "Payment Ref", key: "payment_intent_id" },
+            { header: "Type", key: "type_vol" },
+            { header: "Trajet", key: "type_v" },
+            { header: "Email", key: "contact_email" },
+            { header: "Total", key: "total_price" },
+            { header: "Passagers", key: "passenger_count" },
+            { header: "Status", key: "status" },
+            { header: "Méthode", key: "payment_method" },
+            { header: "Créé par", key: "created_by_name" },
+            { header: "Date", key: "created_at" }
+        ];
 
-// 2️⃣ Colonnes et titres en gras
-sheet.columns = [
-    { header: "Booking Reference", key: "booking_reference" },
-    { header: "Payment Ref", key: "payment_intent_id" },
-    { header: "Type", key: "type_vol" },
-    { header: "Trajet", key: "type_v" },
-    { header: "Email", key: "contact_email" },
-    { header: "Total", key: "total_price" },
-    { header: "Passagers", key: "passenger_count" },
-    { header: "Status", key: "status" },
-    { header: "Méthode", key: "payment_method" },
-    { header: "Créé par", key: "created_by_name" },
-    { header: "Date", key: "created_at" }
-];
-
-// Mettre les titres en gras
-sheet.getRow(2).font = { bold: true }; // les titres sont sur la 2e ligne
-
+       
 
         rows.forEach((r) => sheet.addRow(r));
 
@@ -2481,32 +2471,25 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 
         // Génération Excel
         const workbook = new ExcelJS.Workbook();
-const sheet = workbook.addWorksheet("Bookings");
+        const sheet = workbook.addWorksheet("Bookings");
 
-// 1️⃣ Header global au milieu
-sheet.mergeCells('A1:K1'); // fusion de la première ligne de A à K
-const titleCell = sheet.getCell('A1');
-titleCell.value = 'Liste des Bookings Avion'; // texte du header
-titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-titleCell.font = { size: 14, bold: true };
+       
 
-// 2️⃣ Colonnes et titres en gras
-sheet.columns = [
-    { header: "Booking Reference", key: "booking_reference" },
-    { header: "Payment Ref", key: "payment_intent_id" },
-    { header: "Type", key: "type_vol" },
-    { header: "Trajet", key: "type_v" },
-    { header: "Email", key: "contact_email" },
-    { header: "Total", key: "total_price" },
-    { header: "Passagers", key: "passenger_count" },
-    { header: "Status", key: "status" },
-    { header: "Méthode", key: "payment_method" },
-    { header: "Créé par", key: "created_by_name" },
-    { header: "Date", key: "created_at" }
-];
+        // 2️⃣ Colonnes et titres en gras
+        sheet.columns = [
+            { header: "Booking Reference", key: "booking_reference" },
+            { header: "Payment Ref", key: "payment_intent_id" },
+            { header: "Type", key: "type_vol" },
+            { header: "Trajet", key: "type_v" },
+            { header: "Email", key: "contact_email" },
+            { header: "Total", key: "total_price" },
+            { header: "Passagers", key: "passenger_count" },
+            { header: "Status", key: "status" },
+            { header: "Méthode", key: "payment_method" },
+            { header: "Créé par", key: "created_by_name" },
+            { header: "Date", key: "created_at" }
+        ];
 
-// Mettre les titres en gras
-sheet.getRow(2).font = { bold: true }; // les titres sont sur la 2e ligne
 
 
         rows.forEach((r) => sheet.addRow(r));
