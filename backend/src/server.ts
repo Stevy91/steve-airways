@@ -2293,7 +2293,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
         const { startDate, endDate, type } = req.query;
 
         // Conditions dynamiques
-        let conditions = " WHERE b.type_vol = 'helicoter' ";
+        let conditions = " WHERE b.type_vol = 'helicopter' ";
         const params: any[] = [];
 
         // 🔹 Aucun filtre → date du jour
