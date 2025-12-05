@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
+import ExcelJS from 'exceljs';
 
 import mysql, { Pool } from 'mysql2/promise';
 import http from "http";
@@ -2223,6 +2223,156 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
     } 
 });
+
+
+
+// 🔍 Recherche avancée sur les bookings avion
+app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
+    try {
+        const { startDate, endDate, type } = req.query;
+
+        // Conditions dynamiques
+        let conditions = " WHERE b.type_vol = 'plane' ";
+        const params: any[] = [];
+
+        // 🔹 Aucun filtre → date du jour
+        if (!startDate && !endDate && !type) {
+            conditions += " AND DATE(b.created_at) = CURDATE() ";
+        }
+
+        // 🔹 Avec Date Début
+        if (startDate) {
+            conditions += " AND DATE(b.created_at) >= ? ";
+            params.push(startDate);
+        }
+
+        // 🔹 Avec Date Fin
+        if (endDate) {
+            conditions += " AND DATE(b.created_at) <= ? ";
+            params.push(endDate);
+        }
+
+        // 🔹 Avec type de transaction
+        if (type) {
+            conditions += " AND b.payment_method = ? ";
+            params.push(type);
+        }
+
+        const [rows] = await pool.query<mysql.RowDataPacket[]>(
+            `SELECT 
+                b.id, 
+                b.booking_reference, 
+                b.payment_intent_id, 
+                b.total_price, 
+                b.status, 
+                b.created_at, 
+                b.passenger_count, 
+                b.payment_method, 
+                b.contact_email, 
+                b.type_vol, 
+                b.type_v,
+                u.name AS created_by_name,
+                u.email AS created_by_email
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id
+            ${conditions}
+            ORDER BY b.created_at DESC`,
+            params
+        );
+
+        res.json({ bookings: rows });
+
+    } catch (error) {
+        console.error("Erreur recherche booking:", error);
+        res.status(500).json({ error: "Erreur lors de la recherche" });
+    }
+});
+
+
+
+
+
+app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
+    try {
+        const { startDate, endDate, type } = req.query;
+
+        let conditions = " WHERE b.type_vol = 'plane' ";
+        const params: any[] = [];
+
+        if (!startDate && !endDate && !type) {
+            conditions += " AND DATE(b.created_at) = CURDATE() ";
+        }
+
+        if (startDate) {
+            conditions += " AND DATE(b.created_at) >= ? ";
+            params.push(startDate);
+        }
+
+        if (endDate) {
+            conditions += " AND DATE(b.created_at) <= ? ";
+            params.push(endDate);
+        }
+
+        if (type) {
+            conditions += " AND b.payment_method = ? ";
+            params.push(type);
+        }
+
+        const [rows] = await pool.query<mysql.RowDataPacket[]>(
+            `SELECT 
+                booking_reference,
+                payment_intent_id,
+                type_vol,
+                type_v,
+                contact_email,
+                total_price,
+                passenger_count,
+                status,
+                payment_method,
+                created_by_name,
+                created_at
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id
+            ${conditions}
+            ORDER BY b.created_at DESC`,
+            params
+        );
+
+        // 📌 Génération Excel
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Bookings");
+
+        sheet.columns = [
+            { header: "Booking Reference", key: "booking_reference" },
+            { header: "Payment Ref", key: "payment_intent_id" },
+            { header: "Type", key: "type_vol" },
+            { header: "Trajet", key: "type_v" },
+            { header: "Email", key: "contact_email" },
+            { header: "Total", key: "total_price" },
+            { header: "Passagers", key: "passenger_count" },
+            { header: "Status", key: "status" },
+            { header: "Méthode", key: "payment_method" },
+            { header: "Créé par", key: "created_by_name" },
+            { header: "Date", key: "created_at" }
+        ];
+
+        rows.forEach((r) => sheet.addRow(r));
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader("Content-Disposition", "attachment; filename=bookings.xlsx");
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error("Erreur Excel:", error);
+        res.status(500).json({ error: "Erreur export Excel" });
+    }
+});
+
 
 app.get("/api/booking-helico", async (req: Request, res: Response) => {
     let connection;
