@@ -2299,10 +2299,6 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         let conditions = " WHERE b.type_vol = 'plane' ";
         const params: any[] = [];
 
-        if (!startDate && !endDate && !type) {
-            conditions += " AND DATE(b.created_at) = CURDATE() ";
-        }
-
         if (startDate) {
             conditions += " AND DATE(b.created_at) >= ? ";
             params.push(startDate);
@@ -2319,26 +2315,25 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         }
 
         const [rows] = await pool.query<mysql.RowDataPacket[]>(`
-    SELECT 
-        booking_reference,
-        payment_intent_id,
-        type_vol,
-        type_v,
-        contact_email,
-        total_price,
-        passenger_count,
-        status,
-        payment_method,
-        u.name AS created_by_name,
-        created_at
-    FROM bookings b
-    LEFT JOIN users u ON b.user_created_booking = u.id
-    ${conditions}
-    ORDER BY b.created_at DESC
-`, params);
+            SELECT 
+                b.booking_reference,
+                b.payment_intent_id,
+                b.type_vol,
+                b.type_v,
+                b.contact_email,
+                b.total_price,
+                b.passenger_count,
+                b.status,
+                b.payment_method,
+                u.name AS created_by_name,
+                b.created_at
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id
+            ${conditions}
+            ORDER BY b.created_at DESC
+        `, params);
 
-
-        // 📌 Génération Excel
+        // Génération Excel
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet("Bookings");
 
@@ -2358,10 +2353,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
         rows.forEach((r) => sheet.addRow(r));
 
-        res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.setHeader("Content-Disposition", "attachment; filename=bookings.xlsx");
 
         await workbook.xlsx.write(res);
@@ -2372,6 +2364,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Erreur export Excel" });
     }
 });
+
 
 
 app.get("/api/booking-helico", async (req: Request, res: Response) => {
