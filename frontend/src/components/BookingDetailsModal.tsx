@@ -656,20 +656,20 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                                 />
                                                             </div>
                                                              <div className="flex flex-col">
-                                                                <label className="mb-1 font-medium text-gray-700">Emergency contact email</label>
+                                                                <label className="mb-1 font-medium text-gray-700">Email personne en cas urgence</label>
                                                                 <input
                                                                     value={passenger.email_urgence || ""}
                                                                     onChange={(e) => handlePassengerChange(idx, "email_urgence", e.target.value)}
-                                                                    placeholder="Emergency contact email"
+                                                                    placeholder="Email personne en cas urgence"
                                                                     className="rounded border px-2 py-1 text-sm"
                                                                 />
                                                             </div>
                                                              <div className="flex flex-col">
-                                                                <label className="mb-1 font-medium text-gray-700">Emergency contact number</label>
+                                                                <label className="mb-1 font-medium text-gray-700">Telephone personne en cas urgence</label>
                                                                 <input
                                                                     value={passenger.tel_urgence || ""}
                                                                     onChange={(e) => handlePassengerChange(idx, "tel_urgence", e.target.value)}
-                                                                    placeholder="Emergency contact number"
+                                                                    placeholder="Telephone personne en cas urgence"
                                                                     className="rounded border px-2 py-1 text-sm"
                                                                 />
                                                             </div>
@@ -719,7 +719,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             )}
                                                             {passenger.email_urgence && (
                                                                 <div>
-                                                                    <span className="font-semibold text-slate-700">Emergency contact email: </span>{" "}
+                                                                    <span className="font-semibold text-slate-700">Email person in case of emergency: </span>{" "}
                                                                     {passenger.email_urgence}
                                                                 </div>
                                                             )}

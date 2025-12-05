@@ -162,7 +162,48 @@ const ViewBookingPlane = () => {
     return (
         <div className="flex flex-col gap-y-4">
             <h1 className="title">View Booking Air Plane</h1>
-
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Date début</label>
+                    <input
+                        type="date"
+                        placeholder="First name"
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Date fin</label>
+                    <input
+                        type="date"
+                        placeholder="Middle name"
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Type de transaction</label>
+                    <select className="rounded border px-4 py-2 text-sm">
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Carte</option>
+                        <option value="Chèque">Chèque</option>
+                    </select>
+                </div>
+                <div className="flex flex-col">
+                    <label className="mb-7 font-medium text-gray-700"></label>
+                    <button
+                        type="button"
+                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                        Search
+                    </button>
+                </div>
+                <button
+                        type="button"
+                        className="rounded-md w-24 bg-slate-400 px-4 py-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                        Excel
+                    </button>
+            </div>
+            
             {/* Tableau des Dernières Réservations */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                 <div className="card-body overflow-auto p-0">
