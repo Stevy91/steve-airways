@@ -2394,84 +2394,94 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
             ORDER BY b.created_at DESC
         `, params);
 
-             // Génération Excel
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("Bookings");
+                  const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Bookings");
 
-      // 1️⃣ Ajouter un en-tête global au milieu en gras (fusionné)
-      sheet.mergeCells('A1:K1');
-      const headerRow = sheet.getRow(1);
-      const headerCell = headerRow.getCell(1);
-      headerCell.value = "TROGON HELICO TRANSACTIONS";
-      headerCell.font = { bold: true, size: 14 };
-      headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        // 1️⃣ Ajouter un en-tête global au milieu en gras (fusionné)
+        sheet.mergeCells('A1:K1');
+        const headerRow = sheet.getRow(1);
+        const headerCell = headerRow.getCell(1);
+        headerCell.value = "TROGON AVION TRANSACTIONS";
+        headerCell.font = { bold: true, size: 14 };
+        headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-      // 2️⃣ Définir les colonnes
-      sheet.columns = [
-          { header: "Booking Reference", key: "booking_reference" },
-          { header: "Payment Ref", key: "payment_intent_id" },
-          { header: "Type", key: "type_vol" },
-          { header: "Trajet", key: "type_v" },
-          { header: "Email", key: "contact_email" },
-          { header: "Total", key: "total_price" },
-          { header: "Passagers", key: "passenger_count" },
-          { header: "Status", key: "status" },
-          { header: "Méthode", key: "payment_method" },
-          { header: "Créé par", key: "created_by_name" },
-          { header: "Date", key: "created_at" }
-      ];
+        // 2️⃣ Ajouter les en-têtes de colonnes sur la ligne 2
+        const headers = [
+            "Booking Reference", 
+            "Payment Ref", 
+            "Type", 
+            "Trajet", 
+            "Email", 
+            "Total", 
+            "Passagers", 
+            "Status", 
+            "Méthode", 
+            "Créé par", 
+            "Date"
+        ];
 
-      // 3️⃣ Appliquer le style gras aux en-têtes des colonnes (ligne 2 maintenant)
-      const titleRow = sheet.getRow(2); // Les titres sont sur la ligne 2 après l'en-tête global
-      titleRow.eachCell((cell) => {
-          cell.font = { bold: true };
-      });
+        // Ajouter la ligne d'en-têtes
+        const titleRow = sheet.addRow(headers);
 
-      // 4️⃣ Ajouter les données (commençant à la ligne 3)
-      rows.forEach((r) => sheet.addRow(r));
+        // 3️⃣ Mettre les en-têtes en gras
+        titleRow.eachCell((cell) => {
+            cell.font = { bold: true };
+        });
 
-      // 5️⃣ Ajuster la largeur des colonnes automatiquement (avec vérification de sécurité)
-      sheet.columns.forEach((column) => {
-          if (column && typeof column.eachCell === 'function') {
-              let maxLength = 0;
-              column.eachCell({ includeEmpty: true }, (cell) => {
-                  const columnLength = cell.value ? cell.value.toString().length : 10;
-                  if (columnLength > maxLength) {
-                      maxLength = columnLength;
-                  }
-              });
-              column.width = maxLength < 10 ? 10 : maxLength + 2;
-          }
-      });
+        // 4️⃣ Définir les clés pour les colonnes (facultatif mais utile)
+        sheet.columns = [
+            { key: "booking_reference" },
+            { key: "payment_intent_id" },
+            { key: "type_vol" },
+            { key: "type_v" },
+            { key: "contact_email" },
+            { key: "total_price" },
+            { key: "passenger_count" },
+            { key: "status" },
+            { key: "payment_method" },
+            { key: "created_by_name" },
+            { key: "created_at" }
+        ];
 
-      // OU Solution alternative plus simple pour éviter l'erreur :
-      sheet.columns.forEach((column, index) => {
-          // Vérifier si la colonne existe
-          if (column) {
-              // Calculer la largeur manuellement sans utiliser eachCell
-              const columnIndex = index + 1;
-              let maxLength = 0;
-              
-              // Parcourir les lignes de la colonne
-              for (let i = 2; i <= sheet.rowCount; i++) {
-                  const cell = sheet.getRow(i).getCell(columnIndex);
-                  const cellValue = cell.value;
-                  const length = cellValue ? cellValue.toString().length : 0;
-                  if (length > maxLength) {
-                      maxLength = length;
-                  }
-              }
-              
-              // Ajuster la largeur (minimum 10 caractères)
-              column.width = Math.max(maxLength + 2, 10);
-          }
-      });
+        // 5️⃣ Ajouter les données (commençant à la ligne 3)
+        rows.forEach((row) => {
+            sheet.addRow([
+                row.booking_reference,
+                row.payment_intent_id,
+                row.type_vol,
+                row.type_v,
+                row.contact_email,
+                row.total_price,
+                row.passenger_count,
+                row.status,
+                row.payment_method,
+                row.created_by_name,
+                row.created_at
+            ]);
+        });
 
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Avion.xlsx");
+        // OU si vos objets ont exactement les mêmes propriétés que les clés :
+        // rows.forEach((r) => sheet.addRow(r));
 
-      await workbook.xlsx.write(res);
-      res.end();
+        // 6️⃣ Ajuster la largeur des colonnes automatiquement
+        sheet.columns.forEach((column) => {
+            if (column && column.eachCell) {
+                let maxLength = 0;
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value ? cell.value.toString().length : 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+                column.width = maxLength < 10 ? 10 : maxLength + 2;
+            }
+        });
+
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Avion.xlsx");
+
+        await workbook.xlsx.write(res);
+        res.end();
 
     } catch (error) {
         console.error("Erreur Excel:", error);
@@ -2521,96 +2531,95 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
         `, params);
 
         // Génération Excel
-      // Génération Excel
-// Génération Excel
-const workbook = new ExcelJS.Workbook();
-const sheet = workbook.addWorksheet("Bookings");
+  
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Bookings");
 
-// 1️⃣ Ajouter un en-tête global au milieu en gras (fusionné)
-sheet.mergeCells('A1:K1');
-const headerRow = sheet.getRow(1);
-const headerCell = headerRow.getCell(1);
-headerCell.value = "TROGON HELICO TRANSACTIONS";
-headerCell.font = { bold: true, size: 14 };
-headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        // 1️⃣ Ajouter un en-tête global au milieu en gras (fusionné)
+        sheet.mergeCells('A1:K1');
+        const headerRow = sheet.getRow(1);
+        const headerCell = headerRow.getCell(1);
+        headerCell.value = "TROGON HELICO TRANSACTIONS";
+        headerCell.font = { bold: true, size: 14 };
+        headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-// 2️⃣ Ajouter les en-têtes de colonnes sur la ligne 2
-const headers = [
-    "Booking Reference", 
-    "Payment Ref", 
-    "Type", 
-    "Trajet", 
-    "Email", 
-    "Total", 
-    "Passagers", 
-    "Status", 
-    "Méthode", 
-    "Créé par", 
-    "Date"
-];
+        // 2️⃣ Ajouter les en-têtes de colonnes sur la ligne 2
+        const headers = [
+            "Booking Reference", 
+            "Payment Ref", 
+            "Type", 
+            "Trajet", 
+            "Email", 
+            "Total", 
+            "Passagers", 
+            "Status", 
+            "Méthode", 
+            "Créé par", 
+            "Date"
+        ];
 
-// Ajouter la ligne d'en-têtes
-const titleRow = sheet.addRow(headers);
+        // Ajouter la ligne d'en-têtes
+        const titleRow = sheet.addRow(headers);
 
-// 3️⃣ Mettre les en-têtes en gras
-titleRow.eachCell((cell) => {
-    cell.font = { bold: true };
-});
+        // 3️⃣ Mettre les en-têtes en gras
+        titleRow.eachCell((cell) => {
+            cell.font = { bold: true };
+        });
 
-// 4️⃣ Définir les clés pour les colonnes (facultatif mais utile)
-sheet.columns = [
-    { key: "booking_reference" },
-    { key: "payment_intent_id" },
-    { key: "type_vol" },
-    { key: "type_v" },
-    { key: "contact_email" },
-    { key: "total_price" },
-    { key: "passenger_count" },
-    { key: "status" },
-    { key: "payment_method" },
-    { key: "created_by_name" },
-    { key: "created_at" }
-];
+        // 4️⃣ Définir les clés pour les colonnes (facultatif mais utile)
+        sheet.columns = [
+            { key: "booking_reference" },
+            { key: "payment_intent_id" },
+            { key: "type_vol" },
+            { key: "type_v" },
+            { key: "contact_email" },
+            { key: "total_price" },
+            { key: "passenger_count" },
+            { key: "status" },
+            { key: "payment_method" },
+            { key: "created_by_name" },
+            { key: "created_at" }
+        ];
 
-// 5️⃣ Ajouter les données (commençant à la ligne 3)
-rows.forEach((row) => {
-    sheet.addRow([
-        row.booking_reference,
-        row.payment_intent_id,
-        row.type_vol,
-        row.type_v,
-        row.contact_email,
-        row.total_price,
-        row.passenger_count,
-        row.status,
-        row.payment_method,
-        row.created_by_name,
-        row.created_at
-    ]);
-});
+        // 5️⃣ Ajouter les données (commençant à la ligne 3)
+        rows.forEach((row) => {
+            sheet.addRow([
+                row.booking_reference,
+                row.payment_intent_id,
+                row.type_vol,
+                row.type_v,
+                row.contact_email,
+                row.total_price,
+                row.passenger_count,
+                row.status,
+                row.payment_method,
+                row.created_by_name,
+                row.created_at
+            ]);
+        });
 
-// OU si vos objets ont exactement les mêmes propriétés que les clés :
-// rows.forEach((r) => sheet.addRow(r));
+        // OU si vos objets ont exactement les mêmes propriétés que les clés :
+        // rows.forEach((r) => sheet.addRow(r));
 
-// 6️⃣ Ajuster la largeur des colonnes automatiquement
-sheet.columns.forEach((column) => {
-    if (column && column.eachCell) {
-        let maxLength = 0;
-        column.eachCell({ includeEmpty: true }, (cell) => {
-            const columnLength = cell.value ? cell.value.toString().length : 10;
-            if (columnLength > maxLength) {
-                maxLength = columnLength;
+        // 6️⃣ Ajuster la largeur des colonnes automatiquement
+        sheet.columns.forEach((column) => {
+            if (column && column.eachCell) {
+                let maxLength = 0;
+                column.eachCell({ includeEmpty: true }, (cell) => {
+                    const columnLength = cell.value ? cell.value.toString().length : 10;
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+                column.width = maxLength < 10 ? 10 : maxLength + 2;
             }
         });
-        column.width = maxLength < 10 ? 10 : maxLength + 2;
-    }
-});
 
-res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Helico.xlsx");
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Helico.xlsx");
 
-await workbook.xlsx.write(res);
-res.end();
+        await workbook.xlsx.write(res);
+        res.end();
     } catch (error) {
         console.error("Erreur Excel:", error);
         res.status(500).json({ error: "Erreur export Excel" });
