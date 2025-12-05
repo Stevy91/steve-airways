@@ -2417,7 +2417,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         rows.forEach((r) => sheet.addRow(r));
 
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", "attachment; filename=Trogon_transactions.xlsx");
+        res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Avion.xlsx");
 
         await workbook.xlsx.write(res);
         res.end();
@@ -2495,7 +2495,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
         rows.forEach((r) => sheet.addRow(r));
 
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", "attachment; filename=Trogon_transactions.xlsx");
+        res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Helico.xlsx");
 
         await workbook.xlsx.write(res);
         res.end();
