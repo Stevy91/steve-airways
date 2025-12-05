@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
-import { useTheme } from "../../../contexts/theme-context";
-import { ShoppingCart, Gift, Tags, Plane, Trash2, Eye } from "lucide-react";
-import { Footer } from "../../../layouts/footer";
-
-import type { Payload } from "recharts/types/component/DefaultTooltipContent";
+import { Eye } from "lucide-react";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
+import { useTheme } from "../../../contexts/theme-context";
 import { useAuth } from "../../../hooks/useAuth";
 
-// Types pour les données
+// Types
 type Booking = {
     id: number;
     booking_reference: string;
@@ -23,118 +19,98 @@ type Booking = {
     adminNotes: string;
     type_vol: string;
     type_v: string;
-    created_by_name?: string; // NOUVEAU CHAMP
-    created_by_email?: string; // NOUVEAU CHAMP
+    created_by_name?: string; 
+    created_by_email?: string;
 };
-type Notification = {
-    message: string;
-    type: "success" | "error";
-};
-
-interface ChartData {
-    name: string;
-    value: number;
-}
-
-const data: ChartData[] = [
-    { name: "Avion", value: 400 },
-    { name: "Hélicoptère", value: 300 },
-];
-
-interface DashboardStats {
-    totalRevenue: number;
-    totalBookings: number;
-    flightsAvailable: number;
-    averageBookingValue: number;
-    bookingsByStatus: { name: string; value: number }[];
-    revenueByMonth: { name: string; total: number }[];
-    bookingsByFlightType: { name: string; value: number }[];
-    recentBookings: Booking[];
-}
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const ViewBookingPlane = () => {
     const { theme } = useTheme();
-    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const { isAdmin, isOperateur } = useAuth();
+
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
-    const [notification, setNotification] = useState<Notification | null>(null);
-
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
 
+    // Champs filtres
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [transactionType, setTransactionType] = useState("");
+
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const rowsPerPage = 10; // Nombre de réservations par page
+    const rowsPerPage = 10;
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
     const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
-    const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
 
-    const showNotification = (message: string, type: "success" | "error") => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 5000);
-    };
-
-    const handleViewDetails = async (id: number) => {
-        try {
-            const res = await fetch(`https://steve-airways.onrender.com/api/booking-plane-pop/${id}`);
-
-            if (!res.ok) {
-                const text = await res.text();
-                console.error(`Erreur API (${res.status}):`, text);
-                alert("Réservation introuvable ou erreur serveur");
-                return;
-            }
-
-            const apiData = await res.json();
-            const mapped = mapApiBookingToBookingDetails(apiData);
-            setSelectedBooking(mapped);
-            setOpen(true);
-        } catch (err) {
-            console.error("Erreur fetch booking:", err);
-            alert("Impossible de récupérer les détails de la réservation");
-        }
-    };
-
+    // Charger liste par défaut = date du jour
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-
-            const response = await fetch("https://steve-airways.onrender.com/api/booking-plane");
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
-            }
-
+            const response = await fetch(`https://steve-airways.onrender.com/api/booking-plane`);
             const data = await response.json();
-
-            setStats({
-                totalRevenue: data.totalRevenue || 0,
-                totalBookings: data.totalBookings || 0,
-                flightsAvailable: data.flightsAvailable || 0,
-                averageBookingValue: data.averageBookingValue || 0,
-                bookingsByStatus: data.bookingsByStatus || [],
-                revenueByMonth: data.revenueByMonth || [],
-                bookingsByFlightType: data.bookingsByFlightType || [],
-                recentBookings: data.recentBookings || [],
-            });
+            setStats(data);
         } catch (err) {
-            console.error("Erreur de récupération des données:", err);
-            setError("Impossible de charger les données du dashboard");
+            setError("Impossible de charger les données");
         } finally {
             setLoading(false);
         }
     };
 
-    const refreshBooking = () => {
-        fetchDashboardData();
+    // API recherche
+    
+
+    const handleSearch = async () => {
+    try {
+        setLoading(true);
+
+        const url = new URL("https://steve-airways.onrender.com/api/booking-plane-search");
+        if (startDate) url.searchParams.append("startDate", startDate);
+        if (endDate) url.searchParams.append("endDate", endDate);
+        if (transactionType) url.searchParams.append("type", transactionType);
+
+        const res = await fetch(url.toString());
+        const data = await res.json();
+
+        setStats({ recentBookings: data.bookings });
+        setCurrentPage(1);
+    } catch (err) {
+        alert("Erreur lors de la recherche");
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+    // API EXPORT EXCEL
+    const downloadExcel = () => {
+        let url =
+            "https://steve-airways.onrender.com/api/booking-plane-export?" +
+            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}`;
+
+        window.open(url, "_blank");
     };
+
     useEffect(() => {
         fetchDashboardData();
     }, []);
+
+    // Voir détails
+    const handleViewDetails = async (id: number) => {
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/booking-plane-pop/${id}`);
+            const apiData = await res.json();
+            const mapped = mapApiBookingToBookingDetails(apiData);
+            setSelectedBooking(mapped);
+            setOpen(true);
+        } catch (err) {
+            alert("Impossible de récupérer les détails");
+        }
+    };
 
     if (loading) {
         return (
@@ -145,69 +121,71 @@ const ViewBookingPlane = () => {
     }
 
     if (error) {
-        return (
-            <div className="flex flex-col gap-y-4">
-                <h1 className="title">Dashboard</h1>
-                <div className="flex h-64 items-center justify-center">
-                    <p className="text-red-500">{error}</p>
-                </div>
-            </div>
-        );
+        return <p className="text-red-500">{error}</p>;
     }
 
-    if (!stats) {
-        return null;
-    }
+    if (!stats) return null;
 
     return (
         <div className="flex flex-col gap-y-4">
             <h1 className="title">View Booking Air Plane</h1>
+            {/* Filtres */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Date début</label>
                     <input
                         type="date"
-                        placeholder="First name"
+                        onChange={(e) => setStartDate(e.target.value)}
                         className="rounded border px-4 py-2 text-sm"
                     />
                 </div>
+
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Date fin</label>
                     <input
                         type="date"
-                        placeholder="Middle name"
+                        onChange={(e) => setEndDate(e.target.value)}
                         className="rounded border px-4 py-2 text-sm"
                     />
                 </div>
+
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Type de transaction</label>
-                    <select className="rounded border px-4 py-2 text-sm">
+                    <select
+                        onChange={(e) => setTransactionType(e.target.value)}
+                        className="rounded border px-4 py-2 text-sm"
+                    >
+                        <option value="">Tous</option>
                         <option value="Cash">Cash</option>
                         <option value="Card">Carte</option>
                         <option value="Chèque">Chèque</option>
                     </select>
                 </div>
+
                 <div className="flex flex-col">
                     <label className="mb-7 font-medium text-gray-700"></label>
                     <button
                         type="button"
-                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        onClick={handleSearch}
+                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
                     >
                         Search
                     </button>
                 </div>
+
                 <button
-                        type="button"
-                        className="rounded-md w-24 bg-slate-400 px-4 py-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    >
-                        Excel
-                    </button>
+                    type="button"
+                    onClick={downloadExcel}
+                    className="rounded-md w-24 bg-slate-400 px-4 py-2 text-white hover:bg-amber-600"
+                >
+                    Excel
+                </button>
             </div>
-            
-            {/* Tableau des Dernières Réservations */}
+
+            {/* TABLEAU BOOKINGS */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                 <div className="card-body overflow-auto p-0">
-                    <div className="relative w-full flex-shrink-0 overflow-auto rounded-none [scrollbar-width:_thin]">
+                    <div className="relative w-full flex-shrink-0 overflow-auto">
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
@@ -219,144 +197,124 @@ const ViewBookingPlane = () => {
                                     <th className="table-head text-center">Total Price</th>
                                     <th className="table-head text-center">Passager</th>
                                     <th className="table-head text-center">Paiement</th>
-                                    <th className="table-head text-center">Méthode de paiement</th>
+                                    <th className="table-head text-center">Méthode</th>
                                     <th className="table-head text-center">Créé par</th>
-                                    <th className="table-head text-center">Booking Date</th>
+                                    <th className="table-head text-center">Date</th>
                                     <th className="table-head text-center">Action</th>
                                 </tr>
                             </thead>
+
                             <tbody className="table-body">
                                 {currentBookings.map((booking) => (
-                                    <tr
-                                        key={booking.id}
-                                        className="table-row"
-                                    >
-                                        <td className="table-cell text-center">
-                                            <p>{booking.booking_reference}</p>
-                                        </td>
-                                        <td className="table-cell text-center">
-                                            <p>{booking.payment_intent_id}</p>
-                                        </td>
-                                        <td className="table-cell text-center">
-                                            <p>{booking.type_vol}</p>
-                                        </td>
+                                    <tr key={booking.id} className="table-row">
+                                        <td className="table-cell text-center">{booking.booking_reference}</td>
+                                        <td className="table-cell text-center">{booking.payment_intent_id}</td>
+                                        <td className="table-cell text-center">{booking.type_vol}</td>
+
                                         <td className="table-cell text-center">
                                             <span
-                                                className={`rounded-3xl text-center ${
+                                                className={`rounded-3xl ${
                                                     booking.type_v === "roundtrip"
                                                         ? "bg-blue-900 px-4 pb-1 text-gray-50"
                                                         : booking.type_v === "onway"
-                                                          ? "border-2 px-2"
-                                                          : "bg-red-600"
+                                                        ? "border-2 px-2"
+                                                        : "bg-red-600"
                                                 }`}
                                             >
-                                                {booking.type_v === "roundtrip" ? "Round-Trip" : "On-Way"}
+                                                {booking.type_v === "roundtrip"
+                                                    ? "Round-Trip"
+                                                    : "On-Way"}
                                             </span>
                                         </td>
+
                                         <td className="table-cell text-center">{booking.contact_email}</td>
                                         <td className="table-cell text-center">${booking.total_price}</td>
                                         <td className="table-cell text-center">{booking.passenger_count}</td>
+
                                         <td className="table-cell text-center">
                                             <span
-                                                className={`rounded-3xl text-center ${
+                                                className={`rounded-3xl ${
                                                     booking.status === "confirmed"
                                                         ? "bg-green-100 px-5 text-green-800 ring-1 ring-green-200"
                                                         : booking.status === "pending"
-                                                          ? "bg-yellow-100 px-3 text-yellow-800 ring-1 ring-yellow-200"
-                                                          : "bg-red-100 px-2 text-red-800 ring-1 ring-red-200"
+                                                        ? "bg-yellow-100 px-3 text-yellow-800 ring-1 ring-yellow-200"
+                                                        : "bg-red-100 px-2 text-red-800 ring-1 ring-red-200"
                                                 }`}
                                             >
-                                                {booking.status === "confirmed" ? "Paid" : booking.status === "pending" ? "Unpaid" : "Cancelled"}
+                                                {booking.status === "confirmed"
+                                                    ? "Paid"
+                                                    : booking.status === "pending"
+                                                    ? "Unpaid"
+                                                    : "Cancelled"}
                                             </span>
                                         </td>
+
                                         <td className="table-cell text-center">{booking.payment_method}</td>
-                                        <td className="table-cell text-center">{booking.created_by_name || "Le client Online"}</td>
-                                        <td className="table-cell text-center">{new Date(booking.created_at).toLocaleDateString()}</td>
+                                        <td className="table-cell text-center">{booking.created_by_name || "Client Online"}</td>
+
+                                        <td className="table-cell text-center">
+                                            {new Date(booking.created_at).toLocaleDateString()}
+                                        </td>
+
                                         <td className="table-cell text-center">
                                             {(isAdmin || isOperateur) && (
-                                                <>
-                                                    <button
-                                                        onClick={() => {
-                                                            handleViewDetails(booking.id);
-                                                            setOpen(true);
-                                                        }}
-                                                        className="flex w-full gap-2 rounded-lg p-2 text-center hover:bg-amber-500"
-                                                    >
-                                                        <Eye className="h-6 w-4" /> <span>View Details</span>
-                                                    </button>
-                                                </>
+                                                <button
+                                                    className="flex w-full gap-2 rounded-lg p-2 hover:bg-amber-500"
+                                                    onClick={() => handleViewDetails(booking.id)}
+                                                >
+                                                    <Eye className="h-6 w-4" /> View Details
+                                                </button>
                                             )}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {/* 🔹 Pagination */}
+
+                        {/* PAGINATION */}
                         <div className="mt-4 flex justify-center gap-2">
                             <span>
                                 Page {currentPage} / {totalPages}
                             </span>
+
                             <button
-                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                                 disabled={currentPage === 1}
-                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200 hover:bg-orange-400"
                             >
                                 Previous
                             </button>
 
                             <button
-                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                                 disabled={currentPage === totalPages}
-                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 hover:bg-orange-400 disabled:bg-gray-200"
+                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200 hover:bg-orange-400"
                             >
                                 Next
                             </button>
                         </div>
-
-                        {/* Popup modal */}
-
-                        <BookingDetailsModal
-                            bookingModify={refreshBooking}
-                            open={open}
-                            data={selectedBooking}
-                            onClose={() => setOpen(false)}
-                            onSave={(updated) => {
-                                console.log("Saving...", updated.reference);
-
-                                if (!stats) return;
-
-                                // Met à jour la liste des recentBookings
-                                const updatedBookings = stats.recentBookings.map((b) =>
-                                    b.booking_reference === updated.reference
-                                        ? { ...b, status: updated.paymentStatus.toLowerCase() } // on met à jour le status
-                                        : b,
-                                );
-
-                                setStats({ ...stats, recentBookings: updatedBookings });
-
-                                // Ferme le modal
-                                setOpen(false);
-                            }}
-                        />
                     </div>
                 </div>
+
+                {/* MODAL */}
+                <BookingDetailsModal
+                    open={open}
+                    data={selectedBooking}
+                    onClose={() => setOpen(false)}
+                    onSave={() => {}}
+                    bookingModify={fetchDashboardData}
+                />
             </div>
         </div>
     );
 };
 
 const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
-    // Transforme le status
-    const formattedStatus = apiData.status;
-
-    // Log pour vérifier
-    console.log("Formatted paymentStatus:", formattedStatus);
-
     return {
         reference: apiData.booking_reference,
         contactEmail: apiData.contact_email,
         bookedOn: new Date(apiData.created_at).toLocaleDateString(),
-        paymentStatus: formattedStatus, // ici on utilise la variable loggée
+        paymentStatus: apiData.status,
         totalPrice: `${apiData.total_price}`,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,

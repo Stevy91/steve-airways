@@ -2318,25 +2318,25 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
             params.push(type);
         }
 
-        const [rows] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT 
-                booking_reference,
-                payment_intent_id,
-                type_vol,
-                type_v,
-                contact_email,
-                total_price,
-                passenger_count,
-                status,
-                payment_method,
-                created_by_name,
-                created_at
-            FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id
-            ${conditions}
-            ORDER BY b.created_at DESC`,
-            params
-        );
+        const [rows] = await pool.query<mysql.RowDataPacket[]>(`
+    SELECT 
+        booking_reference,
+        payment_intent_id,
+        type_vol,
+        type_v,
+        contact_email,
+        total_price,
+        passenger_count,
+        status,
+        payment_method,
+        u.name AS created_by_name,
+        created_at
+    FROM bookings b
+    LEFT JOIN users u ON b.user_created_booking = u.id
+    ${conditions}
+    ORDER BY b.created_at DESC
+`, params);
+
 
         // 📌 Génération Excel
         const workbook = new ExcelJS.Workbook();
