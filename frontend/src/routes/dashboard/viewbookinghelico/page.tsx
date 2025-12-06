@@ -176,7 +176,7 @@ const ViewBookingHelico = () => {
                 <button
                     type="button"
                     onClick={downloadExcel}
-                    className="rounded-md w-24 bg-slate-400 px-4 py-2 text-white hover:bg-amber-600"
+                    className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
                 >
                     Excel
                 </button>

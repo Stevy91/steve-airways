@@ -37,6 +37,7 @@ const ViewBookingPlane = () => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [transactionType, setTransactionType] = useState("");
+    const [status, setStatus] = useState("");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -72,6 +73,7 @@ const ViewBookingPlane = () => {
         if (startDate) url.searchParams.append("startDate", startDate);
         if (endDate) url.searchParams.append("endDate", endDate);
         if (transactionType) url.searchParams.append("type", transactionType);
+        if (status) url.searchParams.append("status", status);
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -90,7 +92,7 @@ const ViewBookingPlane = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-plane-export?" +
-            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}`;
+            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}&status=${status}`;
 
         window.open(url, "_blank");
     };
@@ -130,7 +132,7 @@ const ViewBookingPlane = () => {
         <div className="flex flex-col gap-y-4">
             <h1 className="title">View Booking Air Plane</h1>
             {/* Filtres */}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Date début</label>
                     <input
@@ -147,6 +149,20 @@ const ViewBookingPlane = () => {
                         onChange={(e) => setEndDate(e.target.value)}
                         className="rounded border px-4 py-2 text-sm"
                     />
+                </div>
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Status Paiement</label>
+                    <select
+                       onChange={(e) => setStatus(e.target.value)}
+                        className="rounded border px-4 py-2 text-sm"
+                    >
+                        <option value="">Tous</option>
+                        <option value="confirmed">Paid</option>
+                        <option value="pending">UnPaid</option>
+                        <option value="cancelled">Cancelled</option>
+                       
+                        
+                    </select>
                 </div>
 
                 <div className="flex flex-col">
@@ -176,10 +192,11 @@ const ViewBookingPlane = () => {
                 <button
                     type="button"
                     onClick={downloadExcel}
-                    className="rounded-md w-24 bg-slate-400 px-4 py-2 text-white hover:bg-amber-600"
+                    className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
                 >
                     Excel
                 </button>
+                
             </div>
 
             {/* TABLEAU BOOKINGS */}

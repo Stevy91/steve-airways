@@ -65,6 +65,19 @@ const FlightTable = () => {
     const [passengers, setPassengers] = useState<any[]>([]);
     const [loadingPassengers, setLoadingPassengers] = useState(false);
 
+        const generateFlightNumber = () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Lettres possibles
+  const prefix = "TR"; // Préfixe fixe
+  const number = Math.floor(1000 + Math.random() * 9000); // Nombre à 4 chiffres aléatoire
+  return `${prefix}${number}`;
+};
+
+const [flightNumber, setFlightNumber] = useState("");
+
+  const handleGenerate = () => {
+    setFlightNumber(generateFlightNumber());
+  };
+
     const fetchPassengers = async (flightId: number) => {
         setLoadingPassengers(true);
         try {
@@ -372,6 +385,7 @@ const FlightTable = () => {
                             setSelectedDeparture("");
                             setSelectedDestination("");
                             setShowModal(true);
+                            handleGenerate();
                         }}
                         className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
                     >
@@ -613,7 +627,7 @@ const FlightTable = () => {
                                                 type="text"
                                                 name="flight_number"
                                                 placeholder="Flight number"
-                                                defaultValue={editingFlight?.flight_number || ""}
+                                                defaultValue={flightNumber}
                                                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
@@ -624,7 +638,7 @@ const FlightTable = () => {
                                                 htmlFor="firstName"
                                                 className="mb-1 font-medium text-gray-700"
                                             >
-                                                Airline
+                                                Tail Number
                                             </label>
 
                                             <input

@@ -2229,7 +2229,7 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
 // 🔍 Recherche avancée sur les bookings avion
 app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type } = req.query;
+        const { startDate, endDate, type, status } = req.query;
 
         // Conditions dynamiques
         let conditions = " WHERE b.type_vol = 'plane' ";
@@ -2256,6 +2256,12 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
         if (type) {
             conditions += " AND b.payment_method = ? ";
             params.push(type);
+        }
+
+        // 🔹 Avec type de status
+        if (status) {
+            conditions += " AND b.status = ? ";
+            params.push(status);
         }
 
         const [rows] = await pool.query<mysql.RowDataPacket[]>(
@@ -2290,7 +2296,7 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type } = req.query;
+        const { startDate, endDate, type, status } = req.query;
 
         // Conditions dynamiques
         let conditions = " WHERE b.type_vol = 'helicopter' ";
@@ -2317,6 +2323,12 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
         if (type) {
             conditions += " AND b.payment_method = ? ";
             params.push(type);
+        }
+
+         // 🔹 Avec type de status
+        if (status) {
+            conditions += " AND b.status = ? ";
+            params.push(status);
         }
 
         const [rows] = await pool.query<mysql.RowDataPacket[]>(
@@ -2355,7 +2367,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
 
 app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type } = req.query;
+        const { startDate, endDate, type, status } = req.query;
 
         let conditions = " WHERE b.type_vol = 'plane' ";
         const params: any[] = [];
@@ -2373,6 +2385,11 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         if (type) {
             conditions += " AND b.payment_method = ? ";
             params.push(type);
+        }
+
+        if (status) {
+            conditions += " AND b.status = ? ";
+            params.push(status);
         }
 
         const [rows] = await pool.query<mysql.RowDataPacket[]>(`
@@ -2491,7 +2508,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type } = req.query;
+        const { startDate, endDate, type, status } = req.query;
 
         let conditions = " WHERE b.type_vol = 'helicopter' ";
         const params: any[] = [];
@@ -2509,6 +2526,11 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
         if (type) {
             conditions += " AND b.payment_method = ? ";
             params.push(type);
+        }
+
+        if (status) {
+            conditions += " AND b.status = ? ";
+            params.push(status);
         }
 
         const [rows] = await pool.query<mysql.RowDataPacket[]>(`

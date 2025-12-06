@@ -640,13 +640,13 @@ const FlightTableHelico = () => {
                                                     htmlFor="firstName"
                                                     className="mb-1 font-medium text-gray-700"
                                                 >
-                                                    Airline
+                                                    Tail Number
                                                 </label>
 
                                                 <input
                                                     type="text"
                                                     name="airline"
-                                                    placeholder="Airline"
+                                                    placeholder="Tail Number"
                                                     defaultValue={editingFlight?.airline || ""}
                                                     className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                     required
