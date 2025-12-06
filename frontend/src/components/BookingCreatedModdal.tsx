@@ -44,7 +44,7 @@ type Passenger = {
     nationality?: string;
     phone?: string;
     email?: string;
-    paymentMethod?: string
+    paymentMethod?: string;
 };
 
 type BookingData = {
@@ -136,7 +136,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <div style="padding: 20px; text-align: center;">
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> 
           
-          ${paymentMethod === "Cash" ? "Cash" : paymentMethod === "Card" ? "Credit/Debit Card" : "Bank Check" }
+          ${paymentMethod === "Cash" ? "Cash" : paymentMethod === "Card" ? "Credit/Debit Card" : "Bank Check"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Air Plane"
@@ -247,6 +247,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 
       <div style="padding: 20px; font-size: 0.9em; color: #555;">
         <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+       <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 10 lb for hand baggage and 20  lb for BackPack, cabin baggage (for a total of 20 lb). In addition, users will exceptionally be able to reserve excess baggage of up to 5 lb and will be accepted or not depending on the available payload. Any other requirements exceeding from 40 to 50 lb in total must be met via Cargo requests sent to reservation@trogonairways.com . Excess baggage is charged $100 Usd</p>
+        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+        <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>
@@ -272,7 +275,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <div style="padding: 20px; text-align: center;">
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
           
-          ${paymentMethod === "Cash" ? "Cash" : paymentMethod === "Card" ? "Carte" : "chèque bancaire" }
+          ${paymentMethod === "Cash" ? "Cash" : paymentMethod === "Card" ? "Carte" : "chèque bancaire"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Avion"
@@ -350,8 +353,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
                 
                     <p style="margin: 0;">${bookingData.passengersData?.adults
-                    ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email}`)
-                    .join("<br>")}</p>
+                        ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email}`)
+                        .join("<br>")}</p>
                
               </td>
             </tr>
@@ -382,7 +385,12 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       <!-- End E-Ticket Section -->
 
       <div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+        <p><strong>Limitation des bagages: **</strong> La franchise bagages maximale est de 10 lb pour les bagages à main et de 20 lb pour les sacs à dos (soit un total de 20 lb). Exceptionnellement, il est possible de réserver un excédent de bagages jusqu'à 5 lb kg, sous réserve de la disponibilité de la charge utile. Tout autre excédent de bagages, supérieur à 40 à 50 lb, doit faire l'objet d'une demande de fret à l'adresse reservation@trogonairways.com. Les excédents de bagages sont facturés 100 USD.</p>
+        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
+Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
+</p>
+        <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
         <p>Nous nous réjouissons de vous accueillir à bord..</p>
         <p>Cordialement,<br>L'équipe de Trogon Airways</p>
       </div>
@@ -417,7 +425,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     console.log("✅ Email sent", data);
 };
 
-const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated  }) => {
+const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
     const [formData, setFormData] = useState({
         firstName: "",
         middleName: "",
@@ -445,10 +453,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
- 
-
-
-        const handleSubmit = async () => {
+    const handleSubmit = async () => {
         // 1️⃣ Validation des champs obligatoires
         if (
             !formData.firstName ||
@@ -469,7 +474,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             });
             return;
         }
-        
 
         // 2️⃣ Préparer les passagers
         const passengers: Passenger[] = [];
@@ -837,7 +841,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
-                                 <div className="flex flex-col">
+                                <div className="flex flex-col">
                                     <label
                                         htmlFor="reference"
                                         className="mb-1 font-medium text-gray-700"
@@ -858,7 +862,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                     <label
                                         htmlFor="nom_urgence"
                                         className="mb-1 font-medium text-gray-700"
-                                    >Emergency contact person name
+                                    >
+                                        Emergency contact person name
                                     </label>
                                     <input
                                         type="text"
@@ -875,7 +880,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="email_urgence"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                       Emergency contact email
+                                        Emergency contact email
                                     </label>
                                     <input
                                         type="text"
