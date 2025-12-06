@@ -37,6 +37,7 @@ const ViewBookingHelico = () => {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [transactionType, setTransactionType] = useState("");
+    const [status, setStatus] = useState("");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -71,7 +72,8 @@ const ViewBookingHelico = () => {
         const url = new URL("https://steve-airways.onrender.com/api/booking-helico-search");
         if (startDate) url.searchParams.append("startDate", startDate);
         if (endDate) url.searchParams.append("endDate", endDate);
-        if (transactionType) url.searchParams.append("type", transactionType);
+        if (transactionType) url.searchParams.append("transactionType", transactionType);
+        if (status) url.searchParams.append("status", status);
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -90,7 +92,7 @@ const ViewBookingHelico = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-helico-export?" +
-            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}`;
+            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}&status=${status}`;
 
         window.open(url, "_blank");
     };
@@ -130,7 +132,7 @@ const ViewBookingHelico = () => {
         <div className="flex flex-col gap-y-4">
             <h1 className="title">View Booking Helico</h1>
             {/* Filtres */}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Date début</label>
                     <input
@@ -148,6 +150,18 @@ const ViewBookingHelico = () => {
                         className="rounded border px-4 py-2 text-sm"
                     />
                 </div>
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Status</label>
+                    <select
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="rounded border px-4 py-2 text-sm"
+                    >
+                        <option value="">Tous</option>
+                        <option value="confirmed">Paid</option>
+                        <option value="pending">UnPaid</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
 
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Type de transaction</label>
@@ -156,9 +170,9 @@ const ViewBookingHelico = () => {
                         className="rounded border px-4 py-2 text-sm"
                     >
                         <option value="">Tous</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Card">Carte</option>
-                        <option value="Chèque">Chèque</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Carte</option>
+                        <option value="cheque">Chèque</option>
                     </select>
                 </div>
 

@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 interface Flight {
     id: number;
     flight_number: string;
+    flightNumber?: string;
     type: string;
 
     airline: string;
@@ -627,7 +628,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                                 type="text"
                                                 name="flight_number"
                                                 placeholder="Flight number"
-                                                defaultValue={flightNumber}
+                                                defaultValue={editingFlight?.flightNumber || flightNumber}
                                                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required
                                             />
@@ -644,7 +645,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                             <input
                                                 type="text"
                                                 name="airline"
-                                                placeholder="Airline"
+                                                placeholder="Tail Number"
                                                 defaultValue={editingFlight?.airline || ""}
                                                 className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 required

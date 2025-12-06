@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 interface Flight {
     id: number;
     flight_number: string;
+    flightNumber?: string;
     type: string;
     airline: string;
     from?: string;
@@ -53,6 +54,19 @@ const FlightTableHelico = () => {
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
+
+       const generateFlightNumber = () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Lettres possibles
+  const prefix = "TR"; // Préfixe fixe
+  const number = Math.floor(1000 + Math.random() * 9000); // Nombre à 4 chiffres aléatoire
+  return `${prefix}${number}`;
+};
+
+const [flightNumber, setFlightNumber] = useState("");
+
+  const handleGenerate = () => {
+    setFlightNumber(generateFlightNumber());
+  };
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -371,6 +385,7 @@ const FlightTableHelico = () => {
                             setSelectedDeparture("");
                             setSelectedDestination("");
                             setShowModal(true);
+                            handleGenerate();
                         }}
                         className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
                     >
@@ -629,7 +644,7 @@ const FlightTableHelico = () => {
                                                     type="text"
                                                     name="flight_number"
                                                     placeholder="Flight number"
-                                                    defaultValue={editingFlight?.flight_number || ""}
+                                                    defaultValue={editingFlight?.flightNumber || flightNumber}
                                                     className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                     required
                                                 />
