@@ -92,7 +92,7 @@ const ViewBookingPlane = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-plane-export?" +
-            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}&status=${status}`;
+            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}`;
 
         window.open(url, "_blank");
     };
@@ -172,9 +172,12 @@ const ViewBookingPlane = () => {
                         className="rounded border px-4 py-2 text-sm"
                     >
                         <option value="">Tous</option>
+                        <option value="">Tous</option>
                         <option value="cash">Cash</option>
                         <option value="card">Carte</option>
                         <option value="cheque">Chèque</option>
+                        <option value="virement">Virement</option>
+                        <option value="transfert">Transfert</option>
                     </select>
                 </div>
 

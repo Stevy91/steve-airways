@@ -92,7 +92,7 @@ const ViewBookingHelico = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-helico-export?" +
-            `startDate=${startDate}&endDate=${endDate}&payment_method=${transactionType}&status=${status}`;
+            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}`;
 
         window.open(url, "_blank");
     };
@@ -173,6 +173,10 @@ const ViewBookingHelico = () => {
                         <option value="cash">Cash</option>
                         <option value="card">Carte</option>
                         <option value="cheque">Chèque</option>
+                        <option value="virement">Virement</option>
+                        <option value="transfert">Transfert</option>
+
+                        
                     </select>
                 </div>
 
@@ -317,6 +321,7 @@ const ViewBookingHelico = () => {
                     onClose={() => setOpen(false)}
                     onSave={() => {}}
                     bookingModify={fetchDashboardData}
+                  
                 />
             </div>
         </div>

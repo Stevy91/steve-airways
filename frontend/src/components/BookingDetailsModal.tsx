@@ -57,6 +57,7 @@ export type BookingDetails = {
 
 type BookingDetailsModalProps = {
     open: boolean;
+    onTicketCreated?: () => void;
     bookingModify?: () => void;
     data?: BookingDetails;
     onClose: () => void;
@@ -69,7 +70,7 @@ const badgeStyles: Record<string, string> = {
     cancelled: "bg-red-100 text-red-800 ring-1 ring-red-200",
 };
 
-const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, onClose, onSave, bookingModify }) => {
+const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, onClose, onSave, bookingModify, onTicketCreated }) => {
     const [booking, setBooking] = useState<BookingDetails | undefined>(data);
     const [loading, setLoading] = useState(true);
     const [paymentStatus, setPaymentStatus] = useState<string>(data?.paymentStatus || "pending");
@@ -312,7 +313,10 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             
 
             onSave && onSave({ ...booking, paymentStatus: data.newStatus });
-           
+             if (bookingModify) {
+                bookingModify();
+            }
+           onClose();
         } catch (err) {
             console.error("❌ Failed to update payment status", err);
             alert("Impossible de mettre à jour le paiement.");

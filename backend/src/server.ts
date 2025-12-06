@@ -637,8 +637,8 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
                         booking_id, first_name, middle_name, last_name,
                         date_of_birth, gender, title, address, type,
                         type_vol, type_v, country, nationality,
-                        phone, email, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        phone, email, nom_urgence, email_urgence, tel_urgence created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         bookingResult.insertId,
                         passenger.firstName,
@@ -655,6 +655,9 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
                         passenger.nationality || null,
                         passenger.phone || contactInfo.phone,
                         passenger.email || contactInfo.email,
+                        passenger.nom_urgence ||  null,
+                        passenger.email_urgence ||  null,
+                        passenger.tel_urgence ||  null,
                         now,
                         now,
                     ],
@@ -833,8 +836,8 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
                         booking_id, first_name, middle_name, last_name,
                         date_of_birth, gender, title, address, type,
                         type_vol, type_v, country, nationality,
-                        phone, email, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         bookingResult.insertId,
                         passenger.firstName,
@@ -851,6 +854,9 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
                         passenger.nationality || null,
                         passenger.phone || contactInfo.phone,
                         passenger.email || contactInfo.email,
+                        passenger.nom_urgence ||  null,
+                        passenger.email_urgence ||  null,
+                        passenger.tel_urgence ||  null,
                         now,
                         now,
                     ],
@@ -2295,72 +2301,7 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
     }
 });
 
-app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
-    try {
-        const { startDate, endDate, transactionType, status } = req.query;
 
-        // Conditions dynamiques
-        let conditions = " WHERE b.type_vol = 'helicopter' ";
-        const params: any[] = [];
-
-        // 🔹 Aucun filtre → date du jour
-        if (!startDate && !endDate && !transactionType && !status) {
-            conditions += " AND DATE(b.created_at) = CURDATE() ";
-        }
-
-        // 🔹 Avec Date Début
-        if (startDate) {
-            conditions += " AND DATE(b.created_at) >= ? ";
-            params.push(startDate);
-        }
-
-        // 🔹 Avec Date Fin
-        if (endDate) {
-            conditions += " AND DATE(b.created_at) <= ? ";
-            params.push(endDate);
-        }
-
-        // 🔹 Avec type de transaction
-        if (transactionType) {
-            conditions += " AND b.payment_method = ? ";
-            params.push(transactionType);
-        }
-
-         // 🔹 Avec type de status
-        if (status) {
-            conditions += " AND b.status = ? ";
-            params.push(status);
-        }
-
-        const [rows] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT 
-                b.id, 
-                b.booking_reference, 
-                b.payment_intent_id, 
-                b.total_price, 
-                b.status, 
-                b.created_at, 
-                b.passenger_count, 
-                b.payment_method, 
-                b.contact_email, 
-                b.type_vol, 
-                b.type_v,
-                u.name AS created_by_name,
-                u.email AS created_by_email
-            FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id
-            ${conditions}
-            ORDER BY b.created_at DESC`,
-            params
-        );
-
-        res.json({ bookings: rows });
-
-    } catch (error) {
-        console.error("Erreur recherche booking:", error);
-        res.status(500).json({ error: "Erreur lors de la recherche" });
-    }
-});
 
 app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     try {
@@ -2509,7 +2450,72 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 });
 
 
+app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
+    try {
+        const { startDate, endDate, transactionType, status } = req.query;
 
+        // Conditions dynamiques
+        let conditions = " WHERE b.type_vol = 'helicopter' ";
+        const params: any[] = [];
+
+        // 🔹 Aucun filtre → date du jour
+        if (!startDate && !endDate && !transactionType && !status) {
+            conditions += " AND DATE(b.created_at) = CURDATE() ";
+        }
+
+        // 🔹 Avec Date Début
+        if (startDate) {
+            conditions += " AND DATE(b.created_at) >= ? ";
+            params.push(startDate);
+        }
+
+        // 🔹 Avec Date Fin
+        if (endDate) {
+            conditions += " AND DATE(b.created_at) <= ? ";
+            params.push(endDate);
+        }
+
+        // 🔹 Avec type de transaction
+        if (transactionType) {
+            conditions += " AND b.payment_method = ? ";
+            params.push(transactionType);
+        }
+
+         // 🔹 Avec type de status
+        if (status) {
+            conditions += " AND b.status = ? ";
+            params.push(status);
+        }
+
+        const [rows] = await pool.query<mysql.RowDataPacket[]>(
+            `SELECT 
+                b.id, 
+                b.booking_reference, 
+                b.payment_intent_id, 
+                b.total_price, 
+                b.status, 
+                b.created_at, 
+                b.passenger_count, 
+                b.payment_method, 
+                b.contact_email, 
+                b.type_vol, 
+                b.type_v,
+                u.name AS created_by_name,
+                u.email AS created_by_email
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id
+            ${conditions}
+            ORDER BY b.created_at DESC`,
+            params
+        );
+
+        res.json({ bookings: rows });
+
+    } catch (error) {
+        console.error("Erreur recherche booking:", error);
+        res.status(500).json({ error: "Erreur lors de la recherche" });
+    }
+});
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     try {
         const { startDate, endDate, transactionType, status } = req.query;
