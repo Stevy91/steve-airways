@@ -72,7 +72,7 @@ const ViewBookingPlane = () => {
         const url = new URL("https://steve-airways.onrender.com/api/booking-plane-search");
         if (startDate) url.searchParams.append("startDate", startDate);
         if (endDate) url.searchParams.append("endDate", endDate);
-        if (transactionType) url.searchParams.append("type", transactionType);
+        if (transactionType) url.searchParams.append("transactionType", transactionType);
         if (status) url.searchParams.append("status", status);
 
         const res = await fetch(url.toString());
@@ -151,7 +151,7 @@ const ViewBookingPlane = () => {
                     />
                 </div>
                 <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Status Paiement</label>
+                    <label className="mb-1 font-medium text-gray-700">Status</label>
                     <select
                        onChange={(e) => setStatus(e.target.value)}
                         className="rounded border px-4 py-2 text-sm"
@@ -172,9 +172,9 @@ const ViewBookingPlane = () => {
                         className="rounded border px-4 py-2 text-sm"
                     >
                         <option value="">Tous</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Card">Carte</option>
-                        <option value="Chèque">Chèque</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Carte</option>
+                        <option value="cheque">Chèque</option>
                     </select>
                 </div>
 

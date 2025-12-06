@@ -2229,14 +2229,14 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
 // 🔍 Recherche avancée sur les bookings avion
 app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type, status } = req.query;
+        const { startDate, endDate, transactionType, status } = req.query;
 
         // Conditions dynamiques
         let conditions = " WHERE b.type_vol = 'plane' ";
         const params: any[] = [];
 
         // 🔹 Aucun filtre → date du jour
-        if (!startDate && !endDate && !type) {
+        if (!startDate && !endDate && !transactionType && !status) {
             conditions += " AND DATE(b.created_at) = CURDATE() ";
         }
 
@@ -2253,9 +2253,9 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
         }
 
         // 🔹 Avec type de transaction
-        if (type) {
+        if (transactionType) {
             conditions += " AND b.payment_method = ? ";
-            params.push(type);
+            params.push(transactionType);
         }
 
         // 🔹 Avec type de status
@@ -2296,14 +2296,14 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type, status } = req.query;
+        const { startDate, endDate, transactionType, status } = req.query;
 
         // Conditions dynamiques
         let conditions = " WHERE b.type_vol = 'helicopter' ";
         const params: any[] = [];
 
         // 🔹 Aucun filtre → date du jour
-        if (!startDate && !endDate && !type) {
+        if (!startDate && !endDate && !transactionType && !status) {
             conditions += " AND DATE(b.created_at) = CURDATE() ";
         }
 
@@ -2320,9 +2320,9 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
         }
 
         // 🔹 Avec type de transaction
-        if (type) {
+        if (transactionType) {
             conditions += " AND b.payment_method = ? ";
-            params.push(type);
+            params.push(transactionType);
         }
 
          // 🔹 Avec type de status
@@ -2367,7 +2367,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
 
 app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type, status } = req.query;
+        const { startDate, endDate, transactionType, status } = req.query;
 
         let conditions = " WHERE b.type_vol = 'plane' ";
         const params: any[] = [];
@@ -2382,9 +2382,9 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
             params.push(endDate);
         }
 
-        if (type) {
+        if (transactionType) {
             conditions += " AND b.payment_method = ? ";
-            params.push(type);
+            params.push(transactionType);
         }
 
         if (status) {
@@ -2508,7 +2508,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     try {
-        const { startDate, endDate, type, status } = req.query;
+        const { startDate, endDate, transactionType, status } = req.query;
 
         let conditions = " WHERE b.type_vol = 'helicopter' ";
         const params: any[] = [];
@@ -2523,9 +2523,9 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
             params.push(endDate);
         }
 
-        if (type) {
+        if (transactionType) {
             conditions += " AND b.payment_method = ? ";
-            params.push(type);
+            params.push(transactionType);
         }
 
         if (status) {

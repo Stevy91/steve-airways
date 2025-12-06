@@ -291,7 +291,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         email: "",
         phone: "",
         passengerCount: 1,
-        paymentMethod: "Cash",
+        paymentMethod: "card",
         returnDate: "",
     });
 
@@ -672,9 +672,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     >
-                                        <option value="Cash">Cash</option>
-                                        <option value="Card">Carte</option>
-                                        <option value="Chèque">Chèque</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="card">Carte</option>
+                                        <option value="cheque">Chèque</option>
                                     </select>
                                     {/* Nombre de passagers */}
                                     <input
