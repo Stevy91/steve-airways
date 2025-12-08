@@ -431,6 +431,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         middleName: "",
         lastName: "",
         reference: "",
+        unpaid: "",
         nom_urgence: "",
         email_urgence: "",
         tel_urgence: "",
@@ -449,16 +450,34 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
     if (!open || !flight) return null;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+      const handleChange = (
+      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+      const { name, value } = e.target;
+    
+      // Si c’est un checkbox → on cast pour accéder à checked
+      if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+        setFormData({
+          ...formData,
+          [name]: e.target.checked ? value : "",
+        });
+        return;
+      }
+    
+      // Sinon → input, select…
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
     };
+    
 
     const handleSubmit = async () => {
         // 1️⃣ Validation des champs obligatoires
         if (
             !formData.firstName ||
             !formData.lastName ||
-            !formData.reference ||
+         
             !formData.email ||
             !formData.phone ||
             !formData.nationality ||
@@ -506,6 +525,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             flightId: flight.id,
             passengers,
             referenceNumber: formData.reference,
+            unpaid: formData.unpaid,
             contactInfo: { email: formData.email, phone: formData.phone },
             totalPrice: flight.price * passengerCount,
             departureDate: flight.departure.split("T")[0],
@@ -828,6 +848,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         <option value="cheque">Chèque</option>
                                         <option value="virement">Virement</option>
                                         <option value="transfert">Transfert</option>
+                                        <option value="aucun">Aucune</option>
                                     </select>
                                     {/* Nombre de passagers */}
                                     <input
@@ -840,6 +861,30 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
+                                </div>
+                                <div className="flex w-28 flex-col">
+                                    <label
+                                        htmlFor="unpaid"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Non rémunéré
+                                    </label>
+
+                                    <label className="relative inline-flex cursor-pointer items-center">
+                                        <input
+                                            type="checkbox"
+                                            id="unpaid"
+                                            name="unpaid"
+                                            value="pending"
+                                            required
+                                            onChange={handleChange}
+                                            className="peer sr-only"
+                                        />
+
+                                        <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
+
+                                        <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
+                                    </label>
                                 </div>
                                 <div className="flex flex-col">
                                     <label
