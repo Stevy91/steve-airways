@@ -837,7 +837,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         <option value="cheque">Chèque</option>
                                         <option value="virement">Virement</option>
                                         <option value="transfert">Transfert</option>
-                                        <option value="aucun">Aucune</option>
+                                        <option value="contrat">Contrat</option>
                                     </select>
                                     {/* Nombre de passagers */}
                                     <input

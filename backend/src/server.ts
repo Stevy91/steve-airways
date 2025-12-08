@@ -1857,7 +1857,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
         }));
         
 
-        const recentBookings = bookings.slice(0, 6);
+        const recentBookings = bookings.slice(0, 10);
 
         // 8. Construction de la réponse
         const response: DashboardStats = {
@@ -2218,7 +2218,7 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
             created_by_email: row.created_by_email // AJOUT DU CHAMP (optionnel)
         }));
 
-         const recentBookings = bookings.slice(0, 6);
+         const recentBookings = bookings.slice(0, 10);
 
         // 8. Construction de la réponse
         const response: BookingStats = {
@@ -2993,7 +2993,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
             created_by_email: row.created_by_email // AJOUT DU CHAMP (optionnel)
         }));
 
-        const recentBookings = bookings.slice(0, 6);
+        const recentBookings = bookings.slice(0, 10);
 
         // 8. Construction de la réponse
         const response: BookingStats = {

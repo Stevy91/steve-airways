@@ -122,12 +122,13 @@ const [flightNumber, setFlightNumber] = useState("");
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; // nombre de vols par page
+    const itemsPerPage = 10; // nombre de vols par page
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(flights.length / itemsPerPage);
+
     const [menuOpen, setMenuOpen] = useState(false);
     // Fetch flights
     const fetchFlights = async () => {
