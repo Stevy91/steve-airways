@@ -429,6 +429,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         firstName: "",
         middleName: "",
         lastName: "",
+        unpaid: "",
         reference: "",
         nom_urgence: "",
         email_urgence: "",
@@ -504,6 +505,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         const body = {
             flightId: flight.id,
             passengers,
+            status: formData.unpaid,
             referenceNumber: formData.reference,
             contactInfo: { email: formData.email, phone: formData.phone },
             totalPrice: flight.price * passengerCount,
@@ -828,6 +830,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         <option value="cheque">Chèque</option>
                                         <option value="virement">Virement</option>
                                         <option value="transfert">Transfert</option>
+                                        <option value="aucun">Aucune</option>
                                     </select>
                                     {/* Nombre de passagers */}
                                     <input
@@ -841,6 +844,33 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
+                                <div className="flex flex-col">
+                                  <label
+                                    htmlFor="unpaid"
+                                    className="mb-1 font-medium text-gray-700"
+                                  >
+                                    Non rémunéré
+                                  </label>
+
+                                  <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      id="unpaid"
+                                      name="unpaid"
+                                      value="pending"
+                                      required
+                                      onChange={handleChange}
+                                      className="peer sr-only"
+                                    />
+
+                                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-focus:ring-2 peer-focus:ring-amber-500
+                                        peer-checked:bg-amber-500 transition-all"></div>
+
+                                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all
+                                        peer-checked:translate-x-5"></div>
+                                  </label>
+                                </div>
+
                                 {/* Téléphone */}
                                 <div className="flex flex-col">
                                     <label

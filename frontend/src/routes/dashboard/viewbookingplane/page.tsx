@@ -172,7 +172,6 @@ const ViewBookingPlane = () => {
                         className="rounded border px-4 py-2 text-sm"
                     >
                         <option value="">Tous</option>
-                        <option value="">Tous</option>
                         <option value="cash">Cash</option>
                         <option value="card">Carte</option>
                         <option value="cheque">Chèque</option>
