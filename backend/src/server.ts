@@ -2175,12 +2175,68 @@ app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
 });
 
 // Endpoint pour les données du dashboard
-app.get("/api/booking-plane", async (req: Request, res: Response) => {
-    let connection;
-    try {
+// app.get("/api/booking-plane", async (req: Request, res: Response) => {
+//     let connection;
+//     try {
        
-        // 1. Récupérer les réservations avec un typage explicite
-   const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+//         // 1. Récupérer les réservations avec un typage explicite
+//    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+//             `SELECT 
+//                 b.id, 
+//                 b.booking_reference, 
+//                 b.payment_intent_id, 
+//                 b.total_price, 
+//                 b.status, 
+//                 b.created_at, 
+//                 b.passenger_count, 
+//                 b.payment_method, 
+//                 b.contact_email, 
+//                 b.type_vol, 
+//                 b.type_v,
+//                 u.name as created_by_name,  
+//                 u.email as created_by_email 
+//             FROM bookings b
+//             LEFT JOIN users u ON b.user_created_booking = u.id  
+//             WHERE b.type_vol = ?
+//             ORDER BY b.created_at DESC`,
+//             ["plane"]
+//         );
+//         // Convertir en type Booking[]
+//         const bookings: Booking[] = bookingRows.map((row) => ({
+//             id: row.id,
+//             booking_reference: row.booking_reference,
+//             payment_intent_id: row.payment_intent_id,
+//             total_price: Number(row.total_price),
+//             status: row.status,
+//             created_at: new Date(row.created_at).toISOString(),
+//             passenger_count: row.passenger_count,
+//             payment_method: row.payment_method,
+//             contact_email: row.contact_email,
+//             type_vol: row.type_vol,
+//             type_v: row.type_v,
+//             created_by_name: row.created_by_name,  // AJOUT DU CHAMP
+//             created_by_email: row.created_by_email // AJOUT DU CHAMP (optionnel)
+//         }));
+
+//          const recentBookings = bookings.slice(0, 10);
+
+//         // 8. Construction de la réponse
+//         const response: BookingStats = {
+//             recentBookings,
+//         };
+
+//         res.json(response);
+//     } catch (error) {
+//         console.error("Dashboard error:", error);
+//         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+//     } 
+// });
+
+
+// Endpoint pour les données du dashboard
+app.get("/api/booking-plane", async (req: Request, res: Response) => {
+    try {
+        const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
             `SELECT 
                 b.id, 
                 b.booking_reference, 
@@ -2201,34 +2257,29 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
             ORDER BY b.created_at DESC`,
             ["plane"]
         );
-        // Convertir en type Booking[]
+
         const bookings: Booking[] = bookingRows.map((row) => ({
             id: row.id,
             booking_reference: row.booking_reference,
             payment_intent_id: row.payment_intent_id,
             total_price: Number(row.total_price),
             status: row.status,
-            created_at: new Date(row.created_at).toISOString(),
+            created_at: row.created_at,
             passenger_count: row.passenger_count,
             payment_method: row.payment_method,
             contact_email: row.contact_email,
             type_vol: row.type_vol,
             type_v: row.type_v,
-            created_by_name: row.created_by_name,  // AJOUT DU CHAMP
-            created_by_email: row.created_by_email // AJOUT DU CHAMP (optionnel)
+            created_by_name: row.created_by_name,
+            created_by_email: row.created_by_email
         }));
 
-         const recentBookings = bookings.slice(0, 10);
+        // 👉 IMPORTANT : envoyer TOUTES les réservations
+        res.json({ recentBookings: bookings });
 
-        // 8. Construction de la réponse
-        const response: BookingStats = {
-            recentBookings,
-        };
-
-        res.json(response);
     } catch (error) {
         console.error("Dashboard error:", error);
-        res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+        res.status(500).json({ error: "Erreur lors de la récupération" });
     } 
 });
 
