@@ -302,7 +302,7 @@ const ViewBookingPlane = () => {
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                                 disabled={currentPage === 1}
-                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200 hover:bg-orange-400"
+                                className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
                             >
                                 Previous
                             </button>
@@ -310,7 +310,7 @@ const ViewBookingPlane = () => {
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                                 disabled={currentPage === totalPages}
-                                className="rounded bg-blue-700 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200 hover:bg-orange-400"
+                                className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
                             >
                                 Next
                             </button>

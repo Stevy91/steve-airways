@@ -2463,7 +2463,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
                 row.contact_email,
                 row.total_price,
                 row.passenger_count,
-                row.status,
+                row.status === "confirmed" ? "Paid" : row.status === "pending"  ? "Unpaid" : "Cancelled",
                 row.payment_method,
                 row.created_by_name,
                 row.created_at
@@ -2676,7 +2676,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
                 row.contact_email,
                 row.total_price,
                 row.passenger_count,
-                row.status,
+                row.status === "confirmed" ? "Paid" : row.status === "pending"  ? "Unpaid" : "Cancelled",
                 row.payment_method,
                 row.created_by_name,
                 row.created_at
