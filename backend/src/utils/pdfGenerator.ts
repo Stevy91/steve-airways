@@ -82,7 +82,7 @@ export async function generatePDF(bookingData: any, pdfPath: string, paymentMeth
           <p>Votre réservation est confirmée</p>
         </div>
         <div>
-          <p>Cher ${bookingData.passengersData?.adults?.map(p => `${p.firstName} ${p.lastName}`).join(", ")}</p>
+          <p>Cher ${bookingData.passengersData?.adults?.map((p: any) => `${p.firstName} ${p.lastName}`).join(", ")}</p>
           <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique.</p>
         </div>
         <div>
