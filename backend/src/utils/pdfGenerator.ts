@@ -31,7 +31,7 @@ export async function generatePDF(bookingData: any, pdfPath: string, paymentMeth
           <p>Your Booking is Confirmed</p>
         </div>
         <div>
-          <p>Dear ${bookingData.passengersData?.adults?.map(p => `${p.firstName} ${p.lastName}`).join(", ")}</p>
+          <p>Dear ${bookingData.passengersData?.adults?.map((p: any) => `${p.firstName} ${p.lastName}`).join(", ")}</p>
           <p>Thank you for choosing Trogon Airways. Please find your e-ticket below.</p>
         </div>
         <div>
