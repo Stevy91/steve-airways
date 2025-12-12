@@ -1469,7 +1469,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
             WHERE 
                 f.type = 'plane'    
             ORDER BY 
-                f.id DESC
+                f.departure_time ASC
         `;
 
         console.log("Exécution de la requête SQL...");
@@ -1509,6 +1509,26 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
     }
 });
 
+
+import path from "path";
+import { generatePDF } from './utils/pdfGenerator';
+
+const router = express.Router();
+
+router.post("/api/generate", async (req, res) => {
+  try {
+    const bookingData = req.body;
+    const pdfPath = path.join(process.cwd(), "billet.pdf");
+
+    await generatePDF(bookingData, pdfPath, bookingData.paymentMethod, bookingData.returnFlight);
+
+    res.download(pdfPath, "billet.pdf");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+  }
+});
+
  app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
     let connection;
     try {
@@ -1539,7 +1559,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
             WHERE 
                 f.type = 'helicopter'    
             ORDER BY 
-                f.id DESC
+                f.departure_time ASC
         `;
 
         console.log("Exécution de la requête SQL...");

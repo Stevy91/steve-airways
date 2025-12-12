@@ -109,6 +109,31 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         setIsEditing(!isEditing);
     };
 
+    const handlePrint = async () => {
+  try {
+    const response = await fetch("https://steve-airways.onrender.com/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingData: booking }),
+    });
+
+    if (!response.ok) throw new Error("Erreur lors de la génération du PDF");
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "billet.pdf";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    alert("Impossible de générer le PDF");
+  }
+};
+
+
     const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
         if (!editedBooking) return;
 
@@ -384,6 +409,15 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                     >
                                         Booking Details: <span className="text-blue-900">{booking.reference}</span>
                                     </h2>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handlePrint}
+                                            className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-600"
+                                        >
+                                            Imprimer le Billet
+                                        </button>
+                                       
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={handleEditToggle}
