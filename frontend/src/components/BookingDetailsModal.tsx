@@ -445,7 +445,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
                                 {/* add Flights important*/}
 
-                                {/* <section className="space-y-4">
+                                <section className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-lg font-bold text-amber-500">Flights</h3>
                                         {isEditing && (
@@ -532,7 +532,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                             </li>
                                         ))}
                                     </ul>
-                                </section> */}
+                                </section>
 
                                 {/* Passengers */}
                                 <section className="space-y-4">
@@ -770,6 +770,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                         value={s}
                                                     >
                                                         {s === "confirmed" ? "Paid" : s === "pending" ? "Unpaid" : "Cancelled"}
+                                                        
                                                     </option>
                                                 ))}
                                             </select>
