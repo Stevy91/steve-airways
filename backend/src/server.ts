@@ -2328,7 +2328,7 @@ Le client est responsable de ses propres dispositions (heure d'arrivée à l'aé
 
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
-    const options = { format: 'A2', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
+    const options = { format: 'A4', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
 
     const pdfBuffer = await pdf.generatePdf(file, options);
 
