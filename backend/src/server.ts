@@ -1955,7 +1955,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
   <div style="padding: 8px">
     <p>
-      Cher(e) ${passengers.map((p: any) => p.first_name + " " +
+      Dear ${passengers.map((p: any) => p.first_name + " " +
       p.last_name).join(", ")}
     </p>
     <p>
