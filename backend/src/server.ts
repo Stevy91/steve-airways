@@ -1683,10 +1683,8 @@ const router = express.Router();
 //   }
 // });
 
+   import fetch from "node-fetch";
 
-
-import fs from "fs";
-import path from "path";
 
 
 app.get("/api/generate/:reference", async (req: Request, res: Response) => {
@@ -1700,7 +1698,6 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     );
     if (!bookingRows.length)
       return res.status(404).json({ error: "Réservation introuvable" });
-
     const booking = bookingRows[0];
 
     // 2️⃣ PASSAGERS
@@ -1724,10 +1721,16 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       [flightIds]
     );
 
-    // 4️⃣ QR Code
+    // 4️⃣ QR Code en buffer
     const qrCodeDataUrl = await QRCode.toDataURL(reference);
+    const qrBuffer = Buffer.from(qrCodeDataUrl.split(",")[1], "base64");
 
-    // 5️⃣ PDF
+    // 5️⃣ Logo en buffer
+    const logoUrl = "https://trogonairways.com/logo-trogonpng.png";
+    const response = await fetch(logoUrl);
+    const logoBuffer = await response.buffer();
+
+    // 6️⃣ PDF
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -1740,15 +1743,9 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     // =========================
     // HEADER
     // =========================
-    doc
-      .rect(0, 0, doc.page.width, 100)
-      .fill("#1A237E");
-    doc
-      .fillColor("#fff")
-      .fontSize(20)
-      .text("Trogon Airways", 40, 35, { align: "left" });
-    doc.image("https://trogonairways.com/logo-trogonpng.png", doc.page.width - 120, 25, { width: 80 });
-
+    doc.rect(0, 0, doc.page.width, 100).fill("#1A237E");
+    doc.fillColor("#fff").fontSize(20).text("Trogon Airways", 40, 35, { align: "left" });
+    doc.image(logoBuffer, doc.page.width - 120, 25, { width: 80 });
     doc.moveDown(4);
 
     // =========================
@@ -1756,12 +1753,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     // =========================
     doc.fillColor("#1A237E").fontSize(16).text("Passagers", { underline: true });
     passengers.forEach((p: any, i: number) => {
-      doc
-        .fillColor("#000")
-        .fontSize(12)
-        .text(`${i + 1}. ${p.first_name} ${p.last_name} | ${p.email}`);
+      doc.fillColor("#000").fontSize(12).text(`${i + 1}. ${p.first_name} ${p.last_name} | ${p.email}`);
     });
-
     doc.moveDown(1);
 
     // =========================
@@ -1779,11 +1772,10 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       doc.text(`Prix: $${f.price}`);
       doc.moveDown(0.5);
     });
-
     doc.moveDown(1);
 
     // =========================
-    // BOOKING DETAILS
+    // DÉTAILS DE RÉSERVATION
     // =========================
     doc.fillColor("#1A237E").fontSize(16).text("Détails de la réservation", { underline: true });
     doc.fillColor("#000").fontSize(12).text(`Référence: ${booking.booking_reference}`);
@@ -1796,22 +1788,16 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         ? "Carte bancaire"
         : booking.payment_method
     }`);
-
     doc.moveDown(1);
 
     // =========================
     // QR CODE
     // =========================
-    const qrImgPath = path.join(__dirname, `tmp-${reference}.png`);
-    const qrData = qrCodeDataUrl.replace(/^data:image\/png;base64,/, "");
-    fs.writeFileSync(qrImgPath, qrData, "base64");
-    doc.image(qrImgPath, doc.page.width - 150, doc.y - 80, { width: 100 });
-    fs.unlinkSync(qrImgPath); // cleanup
-
+    doc.image(qrBuffer, doc.page.width - 150, doc.y - 80, { width: 100 });
     doc.moveDown(4);
 
     // =========================
-    // FOOTER / REMARQUES
+    // FOOTER
     // =========================
     doc.fontSize(10).fillColor("#555");
     doc.text("Important: Veuillez arriver 1h avant le départ. Tous les passagers doivent présenter une pièce d'identité valide.");
@@ -1826,6 +1812,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la génération du billet" });
   }
 });
+
 
 
 
