@@ -1510,8 +1510,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
 });
 
 
-import path from "path";
-import { generatePDF } from './utils/pdfGenerator';
+
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 const router = express.Router();
@@ -1531,13 +1530,17 @@ const router = express.Router();
 // });
 
 
+
+
 app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 
   try {
-    // 1️⃣ Booking
+    // =========================
+    // 1️⃣ BOOKING
+    // =========================
     const [bookingRows]: any = await pool.query(
-      "SELECT * FROM bookings WHERE reference = ?",
+      "SELECT * FROM bookings WHERE booking_reference = ?",
       [reference]
     );
 
@@ -1547,41 +1550,43 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     const booking = bookingRows[0];
 
-    // 2️⃣ Passagers
+    // =========================
+    // 2️⃣ PASSAGERS
+    // =========================
     const [passengers]: any = await pool.query(
-      "SELECT * FROM passengers WHERE booking_reference = ?",
-      [reference]
+      "SELECT * FROM passengers WHERE booking_id = ?",
+      [booking.id]
     );
 
-    // 3️⃣ Vols (sécurisé)
-    const flightIds = booking.flights_ids
-      .split(",")
-      .map((id: string) => Number(id))
-      .filter((id: number) => !isNaN(id));
-
-    if (!flightIds.length) {
-      return res.status(400).json({ error: "Aucun vol trouvé" });
-    }
-
-    const placeholders = flightIds.map(() => "?").join(",");
+    // =========================
+    // 3️⃣ VOLS + LOCATIONS
+    // =========================
+    const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
 
     const [flights]: any = await pool.query(
       `
-      SELECT f.*,
-             dep.name AS dep_name, dep.code AS dep_code,
-             arr.name AS arr_name, arr.code AS arr_code
+      SELECT 
+        f.*,
+        dep.name   AS dep_name,
+        dep.code   AS dep_code,
+        arr.name   AS arr_name,
+        arr.code   AS arr_code
       FROM flights f
-      JOIN locations dep ON f.departure_location_id = dep.id
-      JOIN locations arr ON f.arrival_location_id = arr.id
-      WHERE f.id IN (${placeholders})
+      JOIN locations dep ON dep.id = f.departure_location_id
+      JOIN locations arr ON arr.id = f.arrival_location_id
+      WHERE f.id IN (?)
       `,
-      flightIds
+      [flightIds]
     );
 
-    // 4️⃣ QR Code
-    const qr = await QRCode.toDataURL(reference);
+    // =========================
+    // 4️⃣ QR CODE
+    // =========================
+    const qrCode = await QRCode.toDataURL(reference);
 
-    // 5️⃣ PDF
+    // =========================
+    // 5️⃣ HEADERS PDF
+    // =========================
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -1591,50 +1596,93 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     doc.pipe(res);
 
+    // =========================
+    // ✈️ HEADER
+    // =========================
     doc
-      .fillColor("#0066CC")
       .fontSize(26)
+      .fillColor("#0057B7")
       .text("STEVE AIRWAYS", { align: "center" });
 
-    doc.moveDown()
-      .fontSize(16)
+    doc.moveDown(0.5);
+    doc
+      .fontSize(14)
       .fillColor("#000")
-      .text(`Billet électronique – Référence : ${reference}`, { align: "center" });
+      .text(`E-Ticket | Référence : ${reference}`, { align: "center" });
 
-    doc.image(qr, 440, 60, { width: 120 });
+    doc.image(qrCode, 440, 60, { width: 100 });
+
     doc.moveDown(2);
 
-    doc.fontSize(20).fillColor("#0066CC").text("Passagers");
+    // =========================
+    // 👤 PASSAGERS
+    // =========================
+    doc.fontSize(18).fillColor("#0057B7").text("Passagers");
+
     passengers.forEach((p: any, i: number) => {
-      doc.fontSize(14).fillColor("#000")
-        .text(`${i + 1}. ${p.firstName || p.firstname} ${p.lastName || p.lastname}`);
+      doc
+        .fontSize(13)
+        .fillColor("#000")
+        .text(`${i + 1}. ${p.first_name} ${p.last_name}`);
     });
 
     doc.moveDown(2);
-    doc.fontSize(20).fillColor("#0066CC").text("Détails du Vol");
+
+    // =========================
+    // ✈️ DÉTAILS DES VOLS
+    // =========================
+    doc.fontSize(18).fillColor("#0057B7").text("Détails du Vol");
 
     flights.forEach((f: any) => {
-      doc.moveDown()
-        .fontSize(16).fillColor("#000")
-        .text(`Vol ${f.flight_number} – ${f.airline}`);
+      doc.moveDown(1);
 
-      doc.fontSize(14)
-        .text(`Départ : ${f.dep_name} (${f.dep_code})`)
-        .text(`Arrivée : ${f.arr_name} (${f.arr_code})`)
-        .text(`Heure départ : ${f.departure_time}`)
-        .text(`Heure arrivée : ${f.arrival_time}`)
-        .text(`Prix : $${f.price}`);
+      doc
+        .fontSize(15)
+        .fillColor("#000")
+        .text(`Vol ${f.flight_number} — ${f.airline}`);
+
+      doc
+        .fontSize(13)
+        .text(
+          `${f.dep_name} (${f.dep_code})  ➜  ${f.arr_name} (${f.arr_code})`
+        );
+
+      doc.text(`Départ : ${f.departure_time}`);
+      doc.text(`Arrivée : ${f.arrival_time}`);
+      doc.text(`Prix : $${f.price}`);
     });
 
-    doc.fontSize(12).fillColor("#555")
-      .text("Merci d'avoir choisi Steve Airways ✈️", 0, 780, { align: "center" });
+    doc.moveDown(2);
+
+    // =========================
+    // 💳 TOTAL
+    // =========================
+    doc
+      .fontSize(16)
+      .text(`Total payé : $${booking.total_price}`, {
+        align: "right"
+      });
+
+    // =========================
+    // FOOTER
+    // =========================
+    doc
+      .fontSize(10)
+      .fillColor("#555")
+      .text(
+        "Merci d'avoir choisi Steve Airways • Bon voyage ✈️",
+        0,
+        780,
+        { align: "center" }
+      );
 
     doc.end();
-  } catch (err) {
-    console.error("Erreur PDF :", err);
-    res.status(500).json({ error: "Erreur génération billet" });
+  } catch (error) {
+    console.error("❌ ERREUR PDF :", error);
+    res.status(500).json({ error: "Erreur lors de la génération du billet" });
   }
 });
+
 
 
 
