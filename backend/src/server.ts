@@ -1972,7 +1972,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         <strong>Payment Method:</strong>
 
         ${booking.payment_method === "cash" ? "Cash" : booking.payment_method
-        === "Card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
+        === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
         "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
           booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
       </p>
@@ -2080,7 +2080,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Status: </strong>
                     ${booking.payment_method === "cash" ? "Paid" :
-        booking.payment_method === "Card" ? "Paid" :
+        booking.payment_method === "card" ? "Paid" :
           booking.payment_method === "cheque" ? "Paid" :
             booking.payment_method === "virement" ? "Paid" :
               booking.payment_method === "transfert" ? "Paid" : "UnPaid"}
@@ -2183,7 +2183,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
         <strong>Mode de paiement:</strong>
 
-           ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "Card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
+           ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
       </p>
       
       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Avion"
@@ -2289,7 +2289,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Status: </strong>
                    
-              ${booking.payment_method === "cash" ? "Payé" : booking.payment_method === "Card" ? "Payé" : booking.payment_method === "cheque" ? "Payé" : booking.payment_method === "virement" ? "Payé" : booking.payment_method === "transfert" ? "Payé" : "Non rémunéré"}
+              ${booking.payment_method === "cash" ? "Payé" : booking.payment_method === "card" ? "Payé" : booking.payment_method === "cheque" ? "Payé" : booking.payment_method === "virement" ? "Payé" : booking.payment_method === "transfert" ? "Payé" : "Non rémunéré"}
                   </p>
                 </td>
               </tr>
