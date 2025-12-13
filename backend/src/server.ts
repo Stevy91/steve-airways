@@ -1983,7 +1983,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     <div
       style="
-        background: #5d5792;
+        background: rgba(0, 28, 150, 0.3);
         border: 1px solid #eee;
         padding: 8px;
         border-radius: 8px;
