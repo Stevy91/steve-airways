@@ -1858,7 +1858,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       return format(now, "EEE, dd MMM");
     };
 
-  
+
 
 
 
@@ -1870,58 +1870,58 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     </head>
     <body>
       <style>
-  body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-  }
-  .container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  .header {
-    background-color: #f0f7ff;
-    padding: 20px;
-    text-align: center;
-    border-radius: 5px;
-  }
-  .flight-card {
- 
-    padding: 15px;
-    margin-bottom: 20px;
-  }
-  .flight-header {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  .flight-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .passenger-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  .passenger-table th,
-  .passenger-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  .passenger-table th {
-    background-color: #f2f2f2;
-  }
-  .footer {
-    margin-top: 30px;
-    font-size: 12px;
-    color: #777;
-    text-align: center;
-  }
-</style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background-color: #f0f7ff;
+          padding: 20px;
+          text-align: center;
+          border-radius: 5px;
+        }
+        .flight-card {
+      
+          padding: 15px;
+          margin-bottom: 20px;
+        }
+        .flight-header {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 10px;
+        }
+        .flight-details {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .passenger-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        .passenger-table th,
+        .passenger-table td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: left;
+        }
+        .passenger-table th {
+          background-color: #f2f2f2;
+        }
+        .footer {
+          margin-top: 30px;
+          font-size: 12px;
+          color: #777;
+          text-align: center;
+        }
+      </style>
 <div
   style="
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
@@ -1977,9 +1977,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
       </p>
       
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
-              booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
-          }</p>
+      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
+      }</p>
     </div>
 
     <div
@@ -2124,6 +2123,212 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   </div>
 </div>
 
+
+<!--->
+
+
+<div
+  style="
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+  "
+>
+  <div
+  style="
+    display: block;
+    width: 100%;
+    background-color: #1A237E; /* ou 'blue' */
+    color: white;
+    padding: 20px;
+    text-align: center;
+  "
+>
+    <img
+      src="https://trogonairways.com/logo-trogonpng.png"
+      alt=""
+      style="height: 55px; vertical-align: middle"
+    />
+    <p style="margin: 5px 0 0; font-size: 1.2em">Your Booking is Confirmed</p>
+  </div>
+
+  <div style="padding: 8px">
+    <p>
+      Cher(e) ${passengers.map((p: any) => p.first_name + " " +
+      p.last_name).join(", ")}
+    </p>
+    <p>
+      Thank you for choosing Trogon Airways. Please find your e-ticket below. We
+      recommend printing this section or having it available on your mobile
+      device at the airport.
+    </p>
+  </div>
+
+  <!-- E-Ticket Section -->
+  <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+    <div style="padding: 8px; text-align: center">
+      <p style="margin: 0; color: #1a237e; font-size: 0.9em">
+        <strong>Payment Method:</strong>
+
+        ${booking.payment_method === "cash" ? "Cash" : booking.payment_method
+        === "Card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
+        "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
+          booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
+      </p>
+      
+      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
+      }</p>
+    </div>
+
+    <div
+      style="
+        background: rgba(0, 28, 150, 0.3);
+        border: 1px solid #eee;
+        padding: 8px;
+        border-radius: 8px;
+      "
+    >
+      <table width="100%" style="border-collapse: collapse">
+        <tr>
+          <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
+            
+            <span
+              style="
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #1a237e;
+                vertical-align: middle;
+                margin-left: 10px;
+              "
+              >Boarding Pass</span
+            >
+          </td>
+          <td
+            style="
+              padding-bottom: 20px;
+              border-bottom: 1px solid #eee;
+              text-align: right;
+            "
+          >
+            <img
+              src="${qrCodeDataUrl}"
+              alt="Booking Barcode"
+              style="height: 50px"
+            />
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="2" style="padding-top: 8px">
+            <div style="padding: 20px; text-align: center">
+              <h3 style="color: #1a237e; margin: 0">One Way</h3>
+            </div>
+            <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
+
+            <table width="100%">
+              <tr>
+                <td>
+                  <div class="flight-card">
+                    <div class="flight-header">Outbound Flight</div>
+                    ${flights.map((f: any, idx: number) => `
+                    <div class="flight-details">
+                      <div>
+                    
+                        <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
+                        <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
+                        <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
+                        <strong>Departure:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
+                        <strong>Arrival:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
+                        <strong>Flight Number:</strong> ${f.flight_number}
+                    </div>
+                    `).join("")}
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+            <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
+            <p style="margin: 0">
+              ${passengers.map((p: any) => `<strong>Adult:</strong>
+              ${p.first_name} ${p.last_name}<br />
+              <strong>Email:</strong> ${p.email}`).join("<br />")}
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+            <table width="100%">
+              <tr>
+                <td>
+                  <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
+                  <p style="margin: 0; font-size: 0.9em">
+                    <strong>Booking ID:</strong> ${booking.booking_reference}
+                  </p>
+                  
+                </td>
+                <td style="text-align: right">
+                  <h3 style="color: #1a237e; margin: 0">Payment</h3>
+                  <p style="margin: 0; font-size: 1.1em">
+                    <strong>Total:</strong> $${booking.total_price}
+                  </p>
+                  <p style="margin: 0; font-size: 0.9em">
+                    <strong>Status: </strong>
+                    ${booking.payment_method === "cash" ? "Paid" :
+        booking.payment_method === "Card" ? "Paid" :
+          booking.payment_method === "cheque" ? "Paid" :
+            booking.payment_method === "virement" ? "Paid" :
+              booking.payment_method === "transfert" ? "Paid" : "UnPaid"}
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <!-- End E-Ticket Section -->
+
+  <div style="padding: 8px; font-size: 0.9em; color: #555">
+    <p>
+      <strong>Important:</strong> Please arrive at the airport at least 1 hour
+      before your departure time. All passengers must present a valid ID at
+      check-in.
+    </p>
+    <p>
+      <strong>Baggage Limitation: **</strong> The maximum allowance for
+      passenger baggage is 30 lb.
+    </p>
+    <p>
+      <strong>Remarks: **</strong> The company declines all responsibility for
+      flight delays, cancellations, or changes resulting from circumstances
+      beyond its control, such as, technical problems, strikes, or any other
+      problems. The customer is responsible for their own personal arrangements
+      (airport arrival time, travel formalities, etc.). No refund or
+      compensation can be claimed in the event of a missed flight
+      for these reasons.
+    </p>
+    <p>
+      <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
+      before your trip will result in a 50% cancellation fee being charged..
+    </p>
+    <p>We look forward to welcoming you on board.</p>
+    <p>Sincerely,<br />The Trogon Airways Team</p>
+  </div>
+</div>
+
+
     </body>
     </html>
     `;
@@ -2131,7 +2336,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
     const options = { format: 'A0', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
-    
+
     const pdfBuffer = await pdf.generatePdf(file, options);
 
     res.setHeader("Content-Type", "application/pdf");
