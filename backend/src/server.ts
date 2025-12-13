@@ -60,138 +60,138 @@ const pool = mysql.createPool({
 
 // Interface pour typage des locations
 interface Flight extends mysql.RowDataPacket {
-    id: number | string;
-    departure_location_id: number;
-    arrival_location_id: number;
-    departure_time: Date;
-    arrival_time: Date;
-    price: number;
-    type: string;
-    flight_number?: string;
+  id: number | string;
+  departure_location_id: number;
+  arrival_location_id: number;
+  departure_time: Date;
+  arrival_time: Date;
+  price: number;
+  type: string;
+  flight_number?: string;
 
-    airline: string;
-    from: string;
-    to: string;
-    departure: string;
-    arrival: string;
+  airline: string;
+  from: string;
+  to: string;
+  departure: string;
+  arrival: string;
 
-    seats_available: string;
+  seats_available: string;
 }
 
 
 
 // types/dashboard.ts
 export interface Booking {
-    id: number;
-    booking_reference: string;
-    total_price: number;
-    status: string;
-    created_at: string;
-    passenger_count: number;
-    contact_email: string;
-    type_vol: "plane" | "helicopter";
-    type_v: "onway" | "roundtrip";
-    created_by_name?: string;  // NOUVEAU CHAMP
-    created_by_email?: string; // NOUVEAU CHAMP
+  id: number;
+  booking_reference: string;
+  total_price: number;
+  status: string;
+  created_at: string;
+  passenger_count: number;
+  contact_email: string;
+  type_vol: "plane" | "helicopter";
+  type_v: "onway" | "roundtrip";
+  created_by_name?: string;  // NOUVEAU CHAMP
+  created_by_email?: string; // NOUVEAU CHAMP
 }
 
 export interface Flights {
-    id: number;
-    type: "plane" | "helicopter";
-    departure_time: string;
-    price: number;
-    seats_available: number;
+  id: number;
+  type: "plane" | "helicopter";
+  departure_time: string;
+  price: number;
+  seats_available: number;
 }
 
 export interface DashboardStats {
-    totalRevenue: number;
-    totalBookings: number;
-    flightsAvailable: number;
-    averageBookingValue: number;
-    bookingsByStatus: { name: string; value: number }[];
-    revenueByMonth: { name: string; total: number }[];
-    bookingsByFlightType: { name: string; value: number }[];
-    recentBookings: Booking[];
+  totalRevenue: number;
+  totalBookings: number;
+  flightsAvailable: number;
+  averageBookingValue: number;
+  bookingsByStatus: { name: string; value: number }[];
+  revenueByMonth: { name: string; total: number }[];
+  bookingsByFlightType: { name: string; value: number }[];
+  recentBookings: Booking[];
 }
 
-export interface BookingStats{
-     recentBookings: Booking[];
+export interface BookingStats {
+  recentBookings: Booking[];
 }
 interface Location extends mysql.RowDataPacket {
-    id: number;
-    name: string;
-    city: string;
-    code: string;
-    country: string;
+  id: number;
+  name: string;
+  city: string;
+  code: string;
+  country: string;
 }
 
 interface Passenger extends mysql.RowDataPacket {
-    id: number;
-    booking_id: number;
-    first_name: string;
-    middle_name: string | null;
-    last_name: string;
-    date_of_birth: Date;
+  id: number;
+  booking_id: number;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  date_of_birth: Date;
 
-    created_at: Date;
-    typeVol: "plane" | "helicopter";
-    typeVolV: "oneway" | "roundtrip";
+  created_at: Date;
+  typeVol: "plane" | "helicopter";
+  typeVolV: "oneway" | "roundtrip";
 }
 
 interface Payment extends mysql.RowDataPacket {
-    id: number;
-    booking_id: number;
-    amount: number;
-    currency: string;
-    payment_method: string;
-    status: string;
-    created_at: Date;
+  id: number;
+  booking_id: number;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: string;
+  created_at: Date;
 }
 
 interface Flight {
-    id: number | string;
-    price: number;
-    seat: number;
+  id: number | string;
+  price: number;
+  seat: number;
 }
 
 interface Passenger {
-    firstName: string;
-    lastName: string;
-    dateOfBirth: string; // Préférez un nom de champ cohérent (soit dob soit dateOfBirth)
-    type: "adult" | "child" | "infant";
-    typeVol: "plane" | "helicopter";
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string; // Préférez un nom de champ cohérent (soit dob soit dateOfBirth)
+  type: "adult" | "child" | "infant";
+  typeVol: "plane" | "helicopter";
 
-    // Champs optionnels regroupés
-    personalDetails?: {
-        middleName?: string;
-        gender?: "male" | "female" | "other";
-        title?: "mr" | "mrs" | "ms" | "dr";
-    };
+  // Champs optionnels regroupés
+  personalDetails?: {
+    middleName?: string;
+    gender?: "male" | "female" | "other";
+    title?: "mr" | "mrs" | "ms" | "dr";
+  };
 
-    contactDetails?: {
-        email?: string;
-        phone?: string;
-        address?: string;
-    };
+  contactDetails?: {
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
 
-    nationalityDetails?: {
-        country?: string;
-        nationality?: string;
-    };
+  nationalityDetails?: {
+    country?: string;
+    nationality?: string;
+  };
 
-    flightDetails?: {
-        typeVol?: "plane" | "helicopter"; // Plus explicite que typeVol seul
-    };
+  flightDetails?: {
+    typeVol?: "plane" | "helicopter"; // Plus explicite que typeVol seul
+  };
 }
 
 interface ContactInfo {
-    email: string;
-    phone: string;
-    // Ajout possible :
-    notificationPreferences?: {
-        sms?: boolean;
-        email?: boolean;
-    };
+  email: string;
+  phone: string;
+  // Ajout possible :
+  notificationPreferences?: {
+    sms?: boolean;
+    email?: boolean;
+  };
 }
 
 
@@ -201,20 +201,20 @@ app.get('/api/hello', (req: Request, res: Response) => {
 });
 
 function getCountryName(code: string): string | null {
-    const country = COUNTRIES.find((c) => c.code === code.toLowerCase());
-    return country ? country.name : null;
+  const country = COUNTRIES.find((c) => c.code === code.toLowerCase());
+  return country ? country.name : null;
 }
 // Routes pour les vols
 app.get("/api/flightall", async (req: Request, res: Response) => {
-    try {
-      
-        const [rows] = await pool.query<Flight[]>("SELECT * FROM flights");
-      
-        res.json(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erreur serveur" });
-    }
+  try {
+
+    const [rows] = await pool.query<Flight[]>("SELECT * FROM flights");
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 app.get("/api/flights", async (req: Request, res: Response) => {
@@ -327,115 +327,115 @@ app.get('/api/locations', async (req: Request, res: Response) => {
 
 
 export function getErrorDetails(error: unknown): {
-    message: string;
-    details?: string;
-    stack?: string;
- } {
-    if (error instanceof Error) {
-        return {
-            message: error.message,
-            stack: error.stack,
-        };
-    }
+  message: string;
+  details?: string;
+  stack?: string;
+} {
+  if (error instanceof Error) {
     return {
-        message: typeof error === "string" ? error : "Erreur inconnue",
+      message: error.message,
+      stack: error.stack,
     };
+  }
+  return {
+    message: typeof error === "string" ? error : "Erreur inconnue",
+  };
 }
 function generateBookingRef(): string {
-    return `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
+  return `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
 }
 
 
 app.post("/api/create-payment-intent", async (req: Request, res: Response) => {
 
-    try {
-        // 1. Validation renforcée
-        const { flightId, returnFlightId, passengerCount, email } = req.body;
+  try {
+    // 1. Validation renforcée
+    const { flightId, returnFlightId, passengerCount, email } = req.body;
 
-        if (!flightId || !passengerCount || !email) {
-            return res.status(400).json({
-                error: "Paramètres manquants",
-                details: {
-                    received: req.body,
-                    required: ["flightId", "passengerCount", "email"],
-                },
-            });
-        }
+    if (!flightId || !passengerCount || !email) {
+      return res.status(400).json({
+        error: "Paramètres manquants",
+        details: {
+          received: req.body,
+          required: ["flightId", "passengerCount", "email"],
+        },
+      });
+    }
 
-        // 2. Préparation des IDs pour la requête
-        const flightIds = [flightId];
-        if (returnFlightId) flightIds.push(returnFlightId);
+    // 2. Préparation des IDs pour la requête
+    const flightIds = [flightId];
+    if (returnFlightId) flightIds.push(returnFlightId);
 
-        // ✅ CORRECTION IMPORTANTE ICI : pour éviter [ [1, 2] ] au lieu de [1, 2]
-        const placeholders = flightIds.map(() => "?").join(",");
-        const [flights] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT id, price, seats_available FROM flights WHERE id IN (${placeholders})`,
-            flightIds,
-        );
+    // ✅ CORRECTION IMPORTANTE ICI : pour éviter [ [1, 2] ] au lieu de [1, 2]
+    const placeholders = flightIds.map(() => "?").join(",");
+    const [flights] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT id, price, seats_available FROM flights WHERE id IN (${placeholders})`,
+      flightIds,
+    );
 
-        // 3. Récupération des vols
-        const outboundFlight = flights.find((f) => f.id === flightId);
-        if (!outboundFlight) {
-            return res.status(404).json({ error: "Outbound flight not found", flightId });
-        }
+    // 3. Récupération des vols
+    const outboundFlight = flights.find((f) => f.id === flightId);
+    if (!outboundFlight) {
+      return res.status(404).json({ error: "Outbound flight not found", flightId });
+    }
 
-        let returnFlight = null;
-        if (returnFlightId) {
-            returnFlight = flights.find((f) => f.id === returnFlightId);
-            if (!returnFlight) {
-                return res.status(404).json({ error: "Return flight not found", returnFlightId });
-            }
-        }
+    let returnFlight = null;
+    if (returnFlightId) {
+      returnFlight = flights.find((f) => f.id === returnFlightId);
+      if (!returnFlight) {
+        return res.status(404).json({ error: "Return flight not found", returnFlightId });
+      }
+    }
 
-        // 4. Vérification de la capacité
-        if (outboundFlight.seats_available < passengerCount) {
-            return res.status(400).json({
-                error: "Insufficient capacity for the outbound flight",
-                available: outboundFlight.seats_available,
-                requested: passengerCount,
-            });
-        }
+    // 4. Vérification de la capacité
+    if (outboundFlight.seats_available < passengerCount) {
+      return res.status(400).json({
+        error: "Insufficient capacity for the outbound flight",
+        available: outboundFlight.seats_available,
+        requested: passengerCount,
+      });
+    }
 
-        if (returnFlight && returnFlight.seats_available < passengerCount) {
-            return res.status(400).json({
-                error: "Insufficient capacity for return flight",
-                available: returnFlight.seats_available,
-                requested: passengerCount,
-            });
-        }
+    if (returnFlight && returnFlight.seats_available < passengerCount) {
+      return res.status(400).json({
+        error: "Insufficient capacity for return flight",
+        available: returnFlight.seats_available,
+        requested: passengerCount,
+      });
+    }
 
-        // 5. Calcul du montant total pour Stripe
-        const totalAmount = outboundFlight.price * passengerCount + (returnFlight ? returnFlight.price * passengerCount : 0);
+    // 5. Calcul du montant total pour Stripe
+    const totalAmount = outboundFlight.price * passengerCount + (returnFlight ? returnFlight.price * passengerCount : 0);
 
-        // 6. Création du PaymentIntent Stripe
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(totalAmount * 100), // en centimes
-            currency: "usd",
-            metadata: {
-                flightId: flightId.toString(),
-                returnFlightId: returnFlightId?.toString() || "none",
-                passengerCount: passengerCount.toString(),
-            },
-            receipt_email: email,
-        });
+    // 6. Création du PaymentIntent Stripe
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(totalAmount * 100), // en centimes
+      currency: "usd",
+      metadata: {
+        flightId: flightId.toString(),
+        returnFlightId: returnFlightId?.toString() || "none",
+        passengerCount: passengerCount.toString(),
+      },
+      receipt_email: email,
+    });
 
-        res.json({
-            clientSecret: paymentIntent.client_secret,
-            amount: totalAmount,
-            currency: "usd",
-        });
-    } catch (error) {
-        console.error("Erreur détaillée:", {
-            error,
-            requestBody: req.body,
-        });
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      amount: totalAmount,
+      currency: "usd",
+    });
+  } catch (error) {
+    console.error("Erreur détaillée:", {
+      error,
+      requestBody: req.body,
+    });
 
-        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-        res.status(500).json({
-            error: "Payment creation failed",
-            details: errorMessage,
-        });
-    } 
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    res.status(500).json({
+      error: "Payment creation failed",
+      details: errorMessage,
+    });
+  }
 });
 function formatDateToSQL(date?: string | Date | null): string | null {
   if (!date) return null;
@@ -522,501 +522,501 @@ app.get("/api/flights-debug", async (req: Request, res: Response) => {
 });
 
 app.post("/api/confirm-booking", async (req: Request, res: Response) => {
- 
-    const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  const connection = await pool.getConnection();
 
-        // 1. Validation complète des données
-        const requiredFields = ["paymentIntentId", "passengers", "contactInfo", "flightId", "totalPrice"];
+  try {
+    await connection.beginTransaction();
 
-        for (const field of requiredFields) {
-            if (!req.body[field]) {
-                throw new Error(`Missing required field: ${field}`);
-            }
-        }
+    // 1. Validation complète des données
+    const requiredFields = ["paymentIntentId", "passengers", "contactInfo", "flightId", "totalPrice"];
 
-        const { paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate, paymentMethod = "card", } = req.body;
-        const typeVol = passengers[0]?.typeVol || "plane";
-        const typeVolV = passengers[0]?.typeVolV || "onway";
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
 
-        // 2. Vérification Stripe
-        if (!paymentIntentId.startsWith("pi_")) {
-            throw new Error("Format PaymentIntent ID invalide");
-        }
+    const { paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate, paymentMethod = "card", } = req.body;
+    const typeVol = passengers[0]?.typeVol || "plane";
+    const typeVolV = passengers[0]?.typeVolV || "onway";
 
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        if (paymentIntent.status !== "succeeded") {
-            throw new Error("Payment not confirmed");
-        }
+    // 2. Vérification Stripe
+    if (!paymentIntentId.startsWith("pi_")) {
+      throw new Error("Format PaymentIntent ID invalide");
+    }
 
-        // 3. Validation des passagers
-        if (!Array.isArray(passengers) || passengers.length === 0) {
-            throw new Error("Invalid passenger list");
-        }
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (paymentIntent.status !== "succeeded") {
+      throw new Error("Payment not confirmed");
+    }
 
-        passengers.forEach((passenger, index) => {
-            if (!passenger.firstName || !passenger.lastName) {
-                throw new Error(`Passager ${index + 1}: Full name required`);
-            }
-            if (!passenger.type) {
-                throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
-            }
-        });
+    // 3. Validation des passagers
+    if (!Array.isArray(passengers) || passengers.length === 0) {
+      throw new Error("Invalid passenger list");
+    }
 
-        // 4. Vérification des vols
-        const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-        const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
-            flightIds,
-        ]);
+    passengers.forEach((passenger, index) => {
+      if (!passenger.firstName || !passenger.lastName) {
+        throw new Error(`Passager ${index + 1}: Full name required`);
+      }
+      if (!passenger.type) {
+        throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
+      }
+    });
 
-
-            if (flights.length !== flightIds.length) {
-                throw new Error("One or more flights missing");
-            }
-
-            for (const flight of flights) {
-                if (flight.seats_available < passengers.length) {
-                    throw new Error(`Not enough seats available for the flight ${flight.id}`);
-                }
-            }
+    // 4. Vérification des vols
+    const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+    const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
+      flightIds,
+    ]);
 
 
-        if (flights.length !== flightIds.length) {
-            throw new Error("One or more flights missing");
-        }
+    if (flights.length !== flightIds.length) {
+      throw new Error("One or more flights missing");
+    }
 
-        
+    for (const flight of flights) {
+      if (flight.seats_available < passengers.length) {
+        throw new Error(`Not enough seats available for the flight ${flight.id}`);
+      }
+    }
 
-        // 5. Création de la réservation
-        const now = new Date();
-        const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
 
-        const [bookingResult] = await connection.query<mysql.OkPacket>(
-            `INSERT INTO bookings (
+    if (flights.length !== flightIds.length) {
+      throw new Error("One or more flights missing");
+    }
+
+
+
+    // 5. Création de la réservation
+    const now = new Date();
+    const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const [bookingResult] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO bookings (
                 flight_id, payment_intent_id,
                 total_price, contact_email, contact_phone,
                 status, type_vol, type_v, guest_user, guest_email,
                 created_at, updated_at, departure_date,
                 return_date, passenger_count, booking_reference, return_flight_id, payment_method
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                flightId,
-                paymentIntentId,
-                totalPrice,
-                contactInfo.email,
-                contactInfo.phone,
-                "confirmed",
-                typeVol,
-                typeVolV,
-                1,
-                contactInfo.email,
-                now,
-                now,
-                departureDate || null,
-                returnDate || null,
-                passengers.length,
-                bookingReference,
-                returnFlightId || null,
-                paymentMethod,
-            ],
-        );
+      [
+        flightId,
+        paymentIntentId,
+        totalPrice,
+        contactInfo.email,
+        contactInfo.phone,
+        "confirmed",
+        typeVol,
+        typeVolV,
+        1,
+        contactInfo.email,
+        now,
+        now,
+        departureDate || null,
+        returnDate || null,
+        passengers.length,
+        bookingReference,
+        returnFlightId || null,
+        paymentMethod,
+      ],
+    );
 
-        // 6. Insertion des passagers avec gestion d'erreur
-        for (const passenger of passengers) {
-            console.log("Inserting passenger:", {
-                firstName: passenger.firstName,
-                lastName: passenger.lastName,
-                type: passenger.type,
-                // Ajoutez d'autres champs pertinents
-            });
-            try {
-                await connection.query(
-                    `INSERT INTO passengers (
+    // 6. Insertion des passagers avec gestion d'erreur
+    for (const passenger of passengers) {
+      console.log("Inserting passenger:", {
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        type: passenger.type,
+        // Ajoutez d'autres champs pertinents
+      });
+      try {
+        await connection.query(
+          `INSERT INTO passengers (
                         booking_id, first_name, middle_name, last_name,
                         date_of_birth, gender, title, address, type,
                         type_vol, type_v, country, nationality,
                         phone, email, nom_urgence, email_urgence, tel_urgence created_at, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        bookingResult.insertId,
-                        passenger.firstName,
-                        passenger.middleName || null,
-                        passenger.lastName,
-                        passenger.dateOfBirth || null,
-                        passenger.gender || "other",
-                        passenger.title || "Mr",
-                        passenger.address || null,
-                        passenger.type,
-                        passenger.typeVol || "plane",
-                        passenger.typeVolV || "onway",
-                        getCountryName(passenger.country) || passenger.country,
-                        passenger.nationality || null,
-                        passenger.phone || contactInfo.phone,
-                        passenger.email || contactInfo.email,
-                        passenger.nom_urgence ||  null,
-                        passenger.email_urgence ||  null,
-                        passenger.tel_urgence ||  null,
-                        now,
-                        now,
-                    ],
-                );
-            } catch (passengerError) {
-                console.error("Erreur insertion passager:", passengerError);
-                throw new Error(`Échec création passager: ${passenger.firstName} ${passenger.lastName}`);
-            }
-        }
-
-        // 5. Mise à jour des sièges pour tous les vols concernés
-        for (const flight of flights) {
-            await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
-        }
-
-                await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-        VALUES (?, ?, ?, ?, ?)`,
-        [
-            "booking",
-            ` ${bookingReference} avec ${passengers.length} passager(s).`,
+          [
             bookingResult.insertId,
-            false,
+            passenger.firstName,
+            passenger.middleName || null,
+            passenger.lastName,
+            passenger.dateOfBirth || null,
+            passenger.gender || "other",
+            passenger.title || "Mr",
+            passenger.address || null,
+            passenger.type,
+            passenger.typeVol || "plane",
+            passenger.typeVolV || "onway",
+            getCountryName(passenger.country) || passenger.country,
+            passenger.nationality || null,
+            passenger.phone || contactInfo.phone,
+            passenger.email || contactInfo.email,
+            passenger.nom_urgence || null,
+            passenger.email_urgence || null,
+            passenger.tel_urgence || null,
             now,
-        ]
+            now,
+          ],
         );
-        // Envoyer la notif au front
-        io.emit("new-notification", {
-        message: ` ${bookingReference} avec ${passengers.length} passager(s).`,
-        bookingId: bookingResult.insertId,
-        createdAt: now,
-        });
-
-        await connection.commit();
-
-
-        res.json({
-            success: true,
-            bookingId: bookingResult.insertId,
-            bookingReference,
-            passengerCount: passengers.length,
-        });
-    } catch (error: unknown) {
-        try {
-            await connection.rollback();
-        } catch (rollbackError) {
-            console.error("Échec rollback:", rollbackError);
-        }
-
-        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-        console.error("Erreur réservation:", {
-            message: errorMessage,
-            stack: error instanceof Error ? error.stack : undefined,
-            body: req.body,
-        });
-
-        res.status(500).json({
-            error: "Reservation failed",
-            details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
-            reference: Date.now().toString(36),
-        });
-    } finally {
-        try {
-            connection.release();
-        } catch (releaseError) {
-            console.error("Échec libération connexion:", releaseError);
-        }
+      } catch (passengerError) {
+        console.error("Erreur insertion passager:", passengerError);
+        throw new Error(`Échec création passager: ${passenger.firstName} ${passenger.lastName}`);
+      }
     }
+
+    // 5. Mise à jour des sièges pour tous les vols concernés
+    for (const flight of flights) {
+      await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
+    }
+
+    await connection.query(
+      `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      [
+        "booking",
+        ` ${bookingReference} avec ${passengers.length} passager(s).`,
+        bookingResult.insertId,
+        false,
+        now,
+      ]
+    );
+    // Envoyer la notif au front
+    io.emit("new-notification", {
+      message: ` ${bookingReference} avec ${passengers.length} passager(s).`,
+      bookingId: bookingResult.insertId,
+      createdAt: now,
+    });
+
+    await connection.commit();
+
+
+    res.json({
+      success: true,
+      bookingId: bookingResult.insertId,
+      bookingReference,
+      passengerCount: passengers.length,
+    });
+  } catch (error: unknown) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error("Échec rollback:", rollbackError);
+    }
+
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    console.error("Erreur réservation:", {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      body: req.body,
+    });
+
+    res.status(500).json({
+      error: "Reservation failed",
+      details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+      reference: Date.now().toString(36),
+    });
+  } finally {
+    try {
+      connection.release();
+    } catch (releaseError) {
+      console.error("Échec libération connexion:", releaseError);
+    }
+  }
 });
 
 app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
- 
-    const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  const connection = await pool.getConnection();
 
-    
-
-        const {paymentMethod, paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
-        const typeVol = passengers[0]?.typeVol || "plane";
-        const typeVolV = passengers[0]?.typeVolV || "onway";
-        const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
-        if (paymentMethod !== "paylater") {
-            requiredFields.push("paymentIntentId");
-        }
-
-        for (const field of requiredFields) {
-            if (!req.body[field]) {
-                throw new Error(`Missing required field: ${field}`);
-            }
-        }
-
-        // 3. Validation des passagers
-        if (!Array.isArray(passengers) || passengers.length === 0) {
-            throw new Error("Invalid passenger list");
-        }
-
-        passengers.forEach((passenger, index) => {
-            if (!passenger.firstName || !passenger.lastName) {
-                throw new Error(`Passager ${index + 1}: Full name required`);
-            }
-            if (!passenger.type) {
-                throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
-            }
-        });
-
-        // 4. Vérification des vols
-    
-
-          const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-        const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
-            flightIds,
-        ]);
+  try {
+    await connection.beginTransaction();
 
 
-            if (flights.length !== flightIds.length) {
-                throw new Error("One or more flights missing");
-            }
 
-            for (const flight of flights) {
-                if (flight.seats_available < passengers.length) {
-                    throw new Error(`Not enough seats available for the flight ${flight.id}`);
-                }
-            }
+    const { paymentMethod, paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+    const typeVol = passengers[0]?.typeVol || "plane";
+    const typeVolV = passengers[0]?.typeVolV || "onway";
+    const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
+    if (paymentMethod !== "paylater") {
+      requiredFields.push("paymentIntentId");
+    }
+
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    // 3. Validation des passagers
+    if (!Array.isArray(passengers) || passengers.length === 0) {
+      throw new Error("Invalid passenger list");
+    }
+
+    passengers.forEach((passenger, index) => {
+      if (!passenger.firstName || !passenger.lastName) {
+        throw new Error(`Passager ${index + 1}: Full name required`);
+      }
+      if (!passenger.type) {
+        throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
+      }
+    });
+
+    // 4. Vérification des vols
 
 
-        if (flights.length !== flightIds.length) {
-            throw new Error("One or more flights missing");
-        }
+    const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+    const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
+      flightIds,
+    ]);
 
-        // 5. Création de la réservation
-        const now = new Date();
-        const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
 
-        const [bookingResult] = await connection.query<mysql.OkPacket>(
-            `INSERT INTO bookings (
+    if (flights.length !== flightIds.length) {
+      throw new Error("One or more flights missing");
+    }
+
+    for (const flight of flights) {
+      if (flight.seats_available < passengers.length) {
+        throw new Error(`Not enough seats available for the flight ${flight.id}`);
+      }
+    }
+
+
+    if (flights.length !== flightIds.length) {
+      throw new Error("One or more flights missing");
+    }
+
+    // 5. Création de la réservation
+    const now = new Date();
+    const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const [bookingResult] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO bookings (
                 flight_id, payment_intent_id,
                 total_price, contact_email, contact_phone,
                 status, type_vol, type_v, guest_user, guest_email,
                 created_at, updated_at, departure_date,
                 return_date, passenger_count, booking_reference, return_flight_id
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                flightId,
-                paymentIntentId,
-                totalPrice,
-                contactInfo.email,
-                contactInfo.phone,
-                "pending",
-                typeVol,
-                typeVolV,
-                1,
-                contactInfo.email,
-                now,
-                now,
-                departureDate || null,
-                returnDate || null,
-                passengers.length,
-                bookingReference,
-                returnFlightId || null,
-            ],
-        );
+      [
+        flightId,
+        paymentIntentId,
+        totalPrice,
+        contactInfo.email,
+        contactInfo.phone,
+        "pending",
+        typeVol,
+        typeVolV,
+        1,
+        contactInfo.email,
+        now,
+        now,
+        departureDate || null,
+        returnDate || null,
+        passengers.length,
+        bookingReference,
+        returnFlightId || null,
+      ],
+    );
 
-        // 6. Insertion des passagers avec gestion d'erreur
-        for (const passenger of passengers) {
-            console.log("Inserting passenger:", {
-                firstName: passenger.firstName,
-                lastName: passenger.lastName,
-                type: passenger.type,
-                // Ajoutez d'autres champs pertinents
-            });
-            try {
-                await connection.query(
-                    `INSERT INTO passengers (
+    // 6. Insertion des passagers avec gestion d'erreur
+    for (const passenger of passengers) {
+      console.log("Inserting passenger:", {
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        type: passenger.type,
+        // Ajoutez d'autres champs pertinents
+      });
+      try {
+        await connection.query(
+          `INSERT INTO passengers (
                         booking_id, first_name, middle_name, last_name,
                         date_of_birth, gender, title, address, type,
                         type_vol, type_v, country, nationality,
                         phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        bookingResult.insertId,
-                        passenger.firstName,
-                        passenger.middleName || null,
-                        passenger.lastName,
-                        passenger.dateOfBirth || null,
-                        passenger.gender || "other",
-                        passenger.title || "Mr",
-                        passenger.address || null,
-                        passenger.type,
-                        passenger.typeVol || "plane",
-                        passenger.typeVolV || "onway",
-                        getCountryName(passenger.country) || passenger.country,
-                        passenger.nationality || null,
-                        passenger.phone || contactInfo.phone,
-                        passenger.email || contactInfo.email,
-                        passenger.nom_urgence ||  null,
-                        passenger.email_urgence ||  null,
-                        passenger.tel_urgence ||  null,
-                        now,
-                        now,
-                    ],
-                );
-            } catch (passengerError) {
-                console.error("Erreur insertion passager:", passengerError);
-                throw new Error(`Failed temporary creation: ${passenger.firstName} ${passenger.lastName}`);
-            }
-        }
-
-        // 5. Mise à jour des sièges pour tous les vols concernés
-        for (const flight of flights) {
-            await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
-        }
-               await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-        VALUES (?, ?, ?, ?, ?)`,
-        [
-            "booking",
-            ` ${bookingReference} avec ${passengers.length} passager(s).`,
+          [
             bookingResult.insertId,
-            false,
+            passenger.firstName,
+            passenger.middleName || null,
+            passenger.lastName,
+            passenger.dateOfBirth || null,
+            passenger.gender || "other",
+            passenger.title || "Mr",
+            passenger.address || null,
+            passenger.type,
+            passenger.typeVol || "plane",
+            passenger.typeVolV || "onway",
+            getCountryName(passenger.country) || passenger.country,
+            passenger.nationality || null,
+            passenger.phone || contactInfo.phone,
+            passenger.email || contactInfo.email,
+            passenger.nom_urgence || null,
+            passenger.email_urgence || null,
+            passenger.tel_urgence || null,
             now,
-        ]
+            now,
+          ],
         );
-                // Envoyer la notif au front
-        io.emit("new-notification", {
-        message: `${bookingReference} avec ${passengers.length} passager(s).`,
-        bookingId: bookingResult.insertId,
-        createdAt: now,
-        });
-
-        await connection.commit();
-
-        res.json({
-            success: true,
-            bookingId: bookingResult.insertId,
-            bookingReference,
-            passengerCount: passengers.length,
-        });
-    } catch (error: unknown) {
-        try {
-            await connection.rollback();
-        } catch (rollbackError) {
-            console.error("Échec rollback:", rollbackError);
-        }
-
-        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-        console.error("Erreur réservation:", {
-            message: errorMessage,
-            stack: error instanceof Error ? error.stack : undefined,
-            body: req.body,
-        });
-
-        res.status(500).json({
-            error: "Reservation failed",
-            details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
-            reference: Date.now().toString(36),
-        });
-    } finally {
-        try {
-            connection.release();
-        } catch (releaseError) {
-            console.error("Échec libération connexion:", releaseError);
-        }
+      } catch (passengerError) {
+        console.error("Erreur insertion passager:", passengerError);
+        throw new Error(`Failed temporary creation: ${passenger.firstName} ${passenger.lastName}`);
+      }
     }
+
+    // 5. Mise à jour des sièges pour tous les vols concernés
+    for (const flight of flights) {
+      await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
+    }
+    await connection.query(
+      `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      [
+        "booking",
+        ` ${bookingReference} avec ${passengers.length} passager(s).`,
+        bookingResult.insertId,
+        false,
+        now,
+      ]
+    );
+    // Envoyer la notif au front
+    io.emit("new-notification", {
+      message: `${bookingReference} avec ${passengers.length} passager(s).`,
+      bookingId: bookingResult.insertId,
+      createdAt: now,
+    });
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      bookingId: bookingResult.insertId,
+      bookingReference,
+      passengerCount: passengers.length,
+    });
+  } catch (error: unknown) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error("Échec rollback:", rollbackError);
+    }
+
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    console.error("Erreur réservation:", {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      body: req.body,
+    });
+
+    res.status(500).json({
+      error: "Reservation failed",
+      details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+      reference: Date.now().toString(36),
+    });
+  } finally {
+    try {
+      connection.release();
+    } catch (releaseError) {
+      console.error("Échec libération connexion:", releaseError);
+    }
+  }
 });
 // POST /api/verify-flight
 app.post("/api/verify-flight", async (req: Request, res: Response) => {
-        const connection = await pool.getConnection();
-    try {
-        const { flightId, returnFlightId } = req.body as { flightId: number; returnFlightId?: number };
+  const connection = await pool.getConnection();
+  try {
+    const { flightId, returnFlightId } = req.body as { flightId: number; returnFlightId?: number };
 
-        if (!flightId) return res.status(400).json({ error: "flightId manquant" });
+    if (!flightId) return res.status(400).json({ error: "flightId manquant" });
 
-        // Vérifie le vol aller
-        const [outboundFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [flightId]);
-        if (!outboundFlights.length) return res.status(404).json({ error: "Outbound flight not found" });
-        if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the outbound flight" });
+    // Vérifie le vol aller
+    const [outboundFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [flightId]);
+    if (!outboundFlights.length) return res.status(404).json({ error: "Outbound flight not found" });
+    if (outboundFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the outbound flight" });
 
-        // Vérifie le vol retour si nécessaire
-        if (returnFlightId) {
-            const [returnFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [returnFlightId]);
-            if (!returnFlights.length) return res.status(404).json({ error: "Return flight not found" });
-            if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the return flight" });
-        }
-
-        res.json({ valid: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erreur serveur" });
+    // Vérifie le vol retour si nécessaire
+    if (returnFlightId) {
+      const [returnFlights] = await connection.query<mysql.RowDataPacket[]>("SELECT seats_available FROM flights WHERE id = ?", [returnFlightId]);
+      if (!returnFlights.length) return res.status(404).json({ error: "Return flight not found" });
+      if (returnFlights[0].seats_available <= 0) return res.status(400).json({ error: "No seat available on the return flight" });
     }
+
+    res.json({ valid: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 
 app.get("/api/notifications", async (req: Request, res: Response) => {
-    try {
-        const [rows] = await pool.query<mysql.RowDataPacket[]>(
-            "SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20"
-        );
-        res.json({ success: true, notifications: rows });
-    } catch (error) {
-        console.error("Erreur récupération notifications:", error);
-        res.status(500).json({ success: false, error: "Impossible de récupérer les notifications" });
-    }
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      "SELECT * FROM notifications ORDER BY created_at DESC LIMIT 20"
+    );
+    res.json({ success: true, notifications: rows });
+  } catch (error) {
+    console.error("Erreur récupération notifications:", error);
+    res.status(500).json({ success: false, error: "Impossible de récupérer les notifications" });
+  }
 });
 
 
 
 app.patch("/api/notifications/:id/seen", async (req: Request, res: Response) => {
-    const { id } = req.params;
-    try {
-        await pool.query(
-            "UPDATE notifications SET seen = TRUE, read_at = NOW() WHERE id = ?", 
-            [id]
-        );
-        res.json({ success: true });
-    } catch (error) {
-        console.error("Erreur mise à jour notification:", error);
-        res.status(500).json({ success: false, error: "Impossible de mettre à jour la notification" });
-    }
+  const { id } = req.params;
+  try {
+    await pool.query(
+      "UPDATE notifications SET seen = TRUE, read_at = NOW() WHERE id = ?",
+      [id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Erreur mise à jour notification:", error);
+    res.status(500).json({ success: false, error: "Impossible de mettre à jour la notification" });
+  }
 });
 
 app.delete("/api/notifications/cleanup", async (req: Request, res: Response) => {
-    try {
-        await pool.query(
-            "DELETE FROM notifications WHERE seen = TRUE AND read_at < DATE_SUB(NOW(), INTERVAL 2 DAY)"
-        );
-        res.json({ success: true, message: "Notifications nettoyées" });
-    } catch (error) {
-        console.error("Erreur nettoyage notifications:", error);
-        res.status(500).json({ success: false, error: "Impossible de nettoyer les notifications" });
-    }
+  try {
+    await pool.query(
+      "DELETE FROM notifications WHERE seen = TRUE AND read_at < DATE_SUB(NOW(), INTERVAL 2 DAY)"
+    );
+    res.json({ success: true, message: "Notifications nettoyées" });
+  } catch (error) {
+    console.error("Erreur nettoyage notifications:", error);
+    res.status(500).json({ success: false, error: "Impossible de nettoyer les notifications" });
+  }
 });
 
 
 //--------------------------------------------------dashboard-----------------------------------------
 
 interface FlightWithAirports extends mysql.RowDataPacket {
-    id: number;
-    flight_number: string;
-    type: "plane" | "helicopter";
-    airline: string;
-    departure_time: Date;
-    arrival_time: Date;
-    price: number;
-    seats_available: number;
-    departure_airport_name: string;
-    departure_city: string;
-    departure_code: string;
-    arrival_airport_name: string;
-    arrival_city: string;
-    arrival_code: string;
+  id: number;
+  flight_number: string;
+  type: "plane" | "helicopter";
+  airline: string;
+  departure_time: Date;
+  arrival_time: Date;
+  price: number;
+  seats_available: number;
+  departure_airport_name: string;
+  departure_city: string;
+  departure_code: string;
+  arrival_airport_name: string;
+  arrival_city: string;
+  arrival_code: string;
 }
 interface User extends mysql.RowDataPacket {
   id: number;
   name: string;
   email: string;
   password_hash: string;
-   phone?: string | null;
+  phone?: string | null;
   created_at: Date;
 }
 
@@ -1063,7 +1063,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     );
 
     const flights = flightsRows as mysql.RowDataPacket[];
-    
+
     if (flights.length !== flightIds.length) {
       throw new Error("One or more flights not found");
     }
@@ -1077,10 +1077,10 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     // Création réservation - AJOUT du champ user_created_booking
     const now = new Date();
     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
-    
+
     const depDate = formatDateToSQL(departureDate);
     const retDate = formatDateToSQL(returnDate);
-    
+
     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
       `INSERT INTO bookings (
           flight_id, payment_intent_id, total_price,
@@ -1109,7 +1109,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
         bookingReference,
         returnFlightId || null,
         paymentMethod,
-        userId, 
+        userId,
       ],
     );
 
@@ -1140,9 +1140,9 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           passenger.nationality || null,
           passenger.phone || contactInfo.phone,
           passenger.email || contactInfo.email,
-          passenger.nom_urgence  || null,
-          passenger.email_urgence  || null,
-          passenger.tel_urgence  || null,
+          passenger.nom_urgence || null,
+          passenger.email_urgence || null,
+          passenger.tel_urgence || null,
           now,
           now,
         ],
@@ -1305,7 +1305,7 @@ app.post("/api/login", async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-         role: user.role, 
+        role: user.role,
       },
     });
   } catch (err) {
@@ -1413,38 +1413,38 @@ app.post("/api/logout", authMiddleware, (req: any, res: Response) => {
 //--------------------------fin user----------------------------
 
 app.get("/api/locationstables", async (req: Request, res: Response) => {
-    try {
-       
-        const [locations] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM locations");
-  
-        res.json(locations);
-    } catch (err) {
-        console.error("Erreur lors de la récupération des aéroports:", err);
-        res.status(500).json({
-            error: "Erreur serveur",
-            details: err instanceof Error ? err.message : "Erreur inconnue",
-        });
-    }
+  try {
+
+    const [locations] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM locations");
+
+    res.json(locations);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des aéroports:", err);
+    res.status(500).json({
+      error: "Erreur serveur",
+      details: err instanceof Error ? err.message : "Erreur inconnue",
+    });
+  }
 });
 
 function formatDate(date: Date): string {
-    const d = new Date(date);
-    return d.toLocaleString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+  const d = new Date(date);
+  return d.toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 // Route pour ajouter un nouveau vol
 
 app.get("/api/flighttableplane", async (req: Request, res: Response) => {
-    let connection;
-    try {
-    
+  let connection;
+  try {
 
-        const query = `
+
+    const query = `
             SELECT 
                 f.id,
                 f.flight_number,
@@ -1472,41 +1472,41 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
                 f.departure_time ASC
         `;
 
-        console.log("Exécution de la requête SQL...");
-        const [flights] = await pool.query<FlightWithAirports[]>(query);
-        console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
+    console.log("Exécution de la requête SQL...");
+    const [flights] = await pool.query<FlightWithAirports[]>(query);
+    console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
 
-        // Formater les données
-        const formattedFlights = flights.map((flight) => ({
-            id: flight.id,
-            flight_number: flight.flight_number,
-            type: flight.type,
-            airline: flight.airline,
-            from: `${flight.departure_airport_name} (${flight.departure_code})`,
-            to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
-            departure: flight.departure_time,
-            arrival: flight.arrival_time,
-            price: flight.price,
-            seats_available: flight.seats_available.toString(),
-            departure_city: flight.departure_city,
-            arrival_city: flight.arrival_city,
-        }));
+    // Formater les données
+    const formattedFlights = flights.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
 
-       
-        res.json(formattedFlights);
-    } catch (err) {
-        console.error("ERREUR DÉTAILLÉE:", {
-            message: err instanceof Error ? err.message : "Erreur inconnue",
-            stack: err instanceof Error ? err.stack : undefined,
-           
-        });
 
-        if (connection)
-        res.status(500).json({
-            error: "Erreur serveur",
-            details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
-        });
-    }
+    res.json(formattedFlights);
+  } catch (err) {
+    console.error("ERREUR DÉTAILLÉE:", {
+      message: err instanceof Error ? err.message : "Erreur inconnue",
+      stack: err instanceof Error ? err.stack : undefined,
+
+    });
+
+    if (connection)
+      res.status(500).json({
+        error: "Erreur serveur",
+        details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
+      });
+  }
 });
 
 
@@ -1683,7 +1683,7 @@ const router = express.Router();
 //   }
 // });
 
-   import fetch from "node-fetch";
+import fetch from "node-fetch";
 
 
 
@@ -1848,14 +1848,14 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       [flightIds]
     );
 
-// 2️⃣ QR Code
+    // 2️⃣ QR Code
 
     const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
     // Use configured timezone if provided, otherwise default to Port-au-Prince
     const timeZone = process.env.TIMEZONE || "America/Port-au-Prince";
     const formatDateToday = () => {
-        const now = toZonedTime(new Date(), timeZone);
-        return format(now, "EEE, dd MMM");
+      const now = toZonedTime(new Date(), timeZone);
+      return format(now, "EEE, dd MMM");
     };
     // 3️⃣ HTML Template
     const htmlContent = `
@@ -1882,8 +1882,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     border-radius: 5px;
   }
   .flight-card {
-    border: 1px solid #ddd;
-    border-radius: 5px;
+ 
     padding: 15px;
     margin-bottom: 20px;
   }
@@ -1933,7 +1932,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 >
   <div
     style="
-      background-color: #1a237e;
+      background: #1a237e;
       color: white;
       padding: 20px;
       text-align: center;
@@ -1947,7 +1946,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     <p style="margin: 5px 0 0; font-size: 1.2em">Your Booking is Confirmed</p>
   </div>
 
-  <div style="padding: 20px">
+  <div style="padding: 8px">
     <p>
       Cher(e) ${passengers.map((p: any) => p.first_name + " " +
       p.last_name).join(", ")}
@@ -1960,8 +1959,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   </div>
 
   <!-- E-Ticket Section -->
-  <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px">
-    <div style="padding: 20px; text-align: center">
+  <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+    <div style="padding: 8px; text-align: center">
       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
         <strong>Payment Method:</strong>
 
@@ -1977,20 +1976,16 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     <div
       style="
-        background: #f9f9f9;
+        background: #5d5792;
         border: 1px solid #eee;
-        padding: 20px;
+        padding: 8px;
         border-radius: 8px;
       "
     >
       <table width="100%" style="border-collapse: collapse">
         <tr>
           <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
-            <img
-              src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png"
-              alt=""
-              style="height: 40px; vertical-align: middle"
-            />
+            
             <span
               style="
                 font-size: 1.5em;
@@ -2018,9 +2013,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         </tr>
 
         <tr>
-          <td colspan="2" style="padding-top: 20px">
+          <td colspan="2" style="padding-top: 8px">
             <div style="padding: 20px; text-align: center">
-             
               <h3 style="color: #1a237e; margin: 0">One Way</h3>
             </div>
             <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
@@ -2030,18 +2024,14 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                 <td>
                   <div class="flight-card">
                     <div class="flight-header">Outbound Flight</div>
-                    ${flights.map((f:any, idx:number) => `
+                    ${flights.map((f: any, idx: number) => `
                     <div class="flight-details">
                       <div>
                         <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
                         <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
-                       
-                      </div>
-                      <div>
                         <strong>Departure:</strong> ${f.departure_time}<br />
                         <strong>Arrival:</strong> ${f.arrival_time}<br />
                         <strong>Flight Number:</strong> ${f.flight_number}
-                      </div>
                     </div>
                     `).join("")}
                   </div>
@@ -2052,7 +2042,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         </tr>
 
         <tr>
-          <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee">
+          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
             <p style="margin: 0">
               ${passengers.map((p: any) => `<strong>Adult:</strong>
@@ -2063,7 +2053,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         </tr>
 
         <tr>
-          <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee">
+          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
             <table width="100%">
               <tr>
                 <td>
@@ -2098,7 +2088,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   </div>
   <!-- End E-Ticket Section -->
 
-  <div style="padding: 20px; font-size: 0.9em; color: #555">
+  <div style="padding: 8px; font-size: 0.9em; color: #555">
     <p>
       <strong>Important:</strong> Please arrive at the airport at least 1 hour
       before your departure time. All passengers must present a valid ID at
@@ -2132,11 +2122,11 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
-    const options = { format: 'A4', margin: { top: '10px', right: '10px', bottom: '10px', left: '10px' } };
+    const options = { format: 'A4', margin: { top: '2px', right: '2px', bottom: '2px', left: '2px' } };
     const pdfBuffer = await pdf.generatePdf(file, options);
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=ticket-${reference}.pdf`);
+    res.setHeader("Content-Disposition", `attachment; filename=${reference}.pdf`);
     res.send(pdfBuffer);
 
   } catch (err) {
@@ -2149,11 +2139,11 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
 
 app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
-    let connection;
-    try {
-    
+  let connection;
+  try {
 
-        const query = `
+
+    const query = `
             SELECT 
                 f.id,
                 f.flight_number,
@@ -2181,101 +2171,101 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
                 f.departure_time ASC
         `;
 
-        console.log("Exécution de la requête SQL...");
-        const [flights] = await pool.query<FlightWithAirports[]>(query);
-        console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
+    console.log("Exécution de la requête SQL...");
+    const [flights] = await pool.query<FlightWithAirports[]>(query);
+    console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
 
-        // Formater les données
-        const formattedFlights = flights.map((flight) => ({
-            id: flight.id,
-            flight_number: flight.flight_number,
-            type: flight.type,
-            airline: flight.airline,
-            from: `${flight.departure_airport_name} (${flight.departure_code})`,
-            to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
-            departure: flight.departure_time,
-            arrival: flight.arrival_time,
-            price: flight.price,
-            seats_available: flight.seats_available.toString(),
-            departure_city: flight.departure_city,
-            arrival_city: flight.arrival_city,
-        }));
+    // Formater les données
+    const formattedFlights = flights.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
 
-       
-        res.json(formattedFlights);
-    } catch (err) {
-        console.error("ERREUR DÉTAILLÉE:", {
-            message: err instanceof Error ? err.message : "Erreur inconnue",
-            stack: err instanceof Error ? err.stack : undefined,
-           
-        });
 
-        if (connection)
-        res.status(500).json({
-            error: "Erreur serveur",
-            details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
-        });
-    }
+    res.json(formattedFlights);
+  } catch (err) {
+    console.error("ERREUR DÉTAILLÉE:", {
+      message: err instanceof Error ? err.message : "Erreur inconnue",
+      stack: err instanceof Error ? err.stack : undefined,
+
+    });
+
+    if (connection)
+      res.status(500).json({
+        error: "Erreur serveur",
+        details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
+      });
+  }
 });
 
 
 
 app.post("/api/addflighttable", async (req: Request, res: Response) => {
-    console.log("Données reçues:", req.body); // Ajouté pour le debug
-    // Vérifier que toutes les valeurs requises sont présentes
-    const requiredFields = ["flight_number", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
+  console.log("Données reçues:", req.body); // Ajouté pour le debug
+  // Vérifier que toutes les valeurs requises sont présentes
+  const requiredFields = ["flight_number", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
 
-    for (const field of requiredFields) {
-        if (req.body[field] === undefined) {
-            return res.status(400).json({
-                error: `Le champ ${field} est requis`,
-                details: `Received: ${req.body[field]}`,
-            });
-        }
+  for (const field of requiredFields) {
+    if (req.body[field] === undefined) {
+      return res.status(400).json({
+        error: `Le champ ${field} est requis`,
+        details: `Received: ${req.body[field]}`,
+      });
     }
+  }
 
-    try {
-          // Convertir created_at en heure Haïti
-          const now = new Date();
- 
+  try {
+    // Convertir created_at en heure Haïti
+    const now = new Date();
 
-        const [result] = await pool.execute<ResultSetHeader>(
-            `INSERT INTO flights 
+
+    const [result] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO flights 
              (flight_number, type, airline, departure_location_id, arrival_location_id, 
               departure_time, arrival_time, price, seats_available, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                req.body.flight_number ?? null,
-                req.body.type ?? null,
-                req.body.airline ?? null,
-                req.body.departure_location_id ?? null,
-                req.body.arrival_location_id ?? null,
-                req.body.departure_time ?? null,
-                req.body.arrival_time ?? null,
-                req.body.price ?? null,
-                req.body.seats_available ?? null,
-                now,
-            ],
-        );
-        console.log("Résultat INSERT:", result); // Ajouté pour le debug
+      [
+        req.body.flight_number ?? null,
+        req.body.type ?? null,
+        req.body.airline ?? null,
+        req.body.departure_location_id ?? null,
+        req.body.arrival_location_id ?? null,
+        req.body.departure_time ?? null,
+        req.body.arrival_time ?? null,
+        req.body.price ?? null,
+        req.body.seats_available ?? null,
+        now,
+      ],
+    );
+    console.log("Résultat INSERT:", result); // Ajouté pour le debug
 
-        const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [result.insertId]);
+    const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [result.insertId]);
 
-        res.status(201).json(rows[0]);
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error("Erreur MySQL:", error);
-            res.status(500).json({
-                error: "Erreur lors de l'ajout du vol",
-                details: error.message,
-            });
-        } else {
-            console.error("Erreur inconnue:", error);
-            res.status(500).json({
-                error: "Erreur inconnue lors de l'ajout du vol",
-            });
-        }
+    res.status(201).json(rows[0]);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Erreur MySQL:", error);
+      res.status(500).json({
+        error: "Erreur lors de l'ajout du vol",
+        details: error.message,
+      });
+    } else {
+      console.error("Erreur inconnue:", error);
+      res.status(500).json({
+        error: "Erreur inconnue lors de l'ajout du vol",
+      });
     }
+  }
 });
 
 
@@ -2283,7 +2273,7 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
 // app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
 //     let connection;
 //     try {
-       
+
 
 //         // 1. Récupérer les réservations avec un typage explicite
 //         const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
@@ -2371,7 +2361,7 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
 //             total,
 //         }));
 
-       
+
 //         const recentBookings = bookings.slice(0, 6);
 
 //         // 8. Construction de la réponse
@@ -2395,21 +2385,21 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
 
 
 app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
-    let connection;
-    try {
-        const { startDate, endDate } = req.query;
+  let connection;
+  try {
+    const { startDate, endDate } = req.query;
 
-        // Construire la clause WHERE pour les dates
-        let dateWhereClause = "";
-        let dateParams: any[] = [];
+    // Construire la clause WHERE pour les dates
+    let dateWhereClause = "";
+    let dateParams: any[] = [];
 
-        if (startDate && endDate) {
-            dateWhereClause = "WHERE DATE(created_at) BETWEEN ? AND ?";
-            dateParams = [startDate, endDate];
-        }
+    if (startDate && endDate) {
+      dateWhereClause = "WHERE DATE(created_at) BETWEEN ? AND ?";
+      dateParams = [startDate, endDate];
+    }
 
-        // 1. Récupérer les réservations avec un typage explicite
-        const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
+    // 1. Récupérer les réservations avec un typage explicite
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
       SELECT 
         id, 
         booking_reference, 
@@ -2425,96 +2415,96 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
       ORDER BY created_at DESC
     `, dateParams);
 
-        // Convertir en type Booking[]
-        const bookings: Booking[] = bookingRows.map((row) => ({
-            id: row.id,
-            booking_reference: row.booking_reference,
-            total_price: Number(row.total_price),
-            status: row.status,
-            created_at: new Date(row.created_at).toISOString(),
-            passenger_count: row.passenger_count,
-            contact_email: row.contact_email,
-            type_vol: row.type_vol,
-            type_v: row.type_v,
-        }));
+    // Convertir en type Booking[]
+    const bookings: Booking[] = bookingRows.map((row) => ({
+      id: row.id,
+      booking_reference: row.booking_reference,
+      total_price: Number(row.total_price),
+      status: row.status,
+      created_at: new Date(row.created_at).toISOString(),
+      passenger_count: row.passenger_count,
+      contact_email: row.contact_email,
+      type_vol: row.type_vol,
+      type_v: row.type_v,
+    }));
 
-        // 2. Récupérer les vols avec un typage explicite
-        const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
+    // 2. Récupérer les vols avec un typage explicite
+    const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
       SELECT id, type, departure_time, price, seats_available 
       FROM flights
     `);
 
-        // Convertir en type Flight[]
-        const flights: Flights[] = flightRows.map((row) => ({
-            id: row.id,
-            type: row.type,
-            departure_time: new Date(row.departure_time).toISOString(),
-            price: Number(row.price),
-            seats_available: row.seats_available,
-        }));
+    // Convertir en type Flight[]
+    const flights: Flights[] = flightRows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      departure_time: new Date(row.departure_time).toISOString(),
+      price: Number(row.price),
+      seats_available: row.seats_available,
+    }));
 
-        // 3. Calcul des statistiques avec typage fort
-        const totalRevenue = bookings.reduce((sum, booking) => sum + booking.total_price, 0);
-        const totalBookings = bookings.length;
-        const flightsAvailable = flights.length;
-        const averageBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
+    // 3. Calcul des statistiques avec typage fort
+    const totalRevenue = bookings.reduce((sum, booking) => sum + booking.total_price, 0);
+    const totalBookings = bookings.length;
+    const flightsAvailable = flights.length;
+    const averageBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
 
-        // 4. Statistiques par statut
-        const statusCounts = bookings.reduce((acc: Record<string, number>, booking) => {
-            acc[booking.status] = (acc[booking.status] || 0) + 1;
-            return acc;
-        }, {});
+    // 4. Statistiques par statut
+    const statusCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+      acc[booking.status] = (acc[booking.status] || 0) + 1;
+      return acc;
+    }, {});
 
-        const bookingsByStatus = Object.entries(statusCounts).map(([name, value]) => ({
-            name,
-            value,
-        }));
+    const bookingsByStatus = Object.entries(statusCounts).map(([name, value]) => ({
+      name,
+      value,
+    }));
 
-        // 5. Statistiques par type de vol
-        const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
-            const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
-            acc[type] = (acc[type] || 0) + 1;
-            return acc;
-        }, {});
+    // 5. Statistiques par type de vol
+    const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+      const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
 
-        const bookingsByFlightType = Object.entries(flightTypeCounts).map(([name, value]) => ({
-            name,
-            value,
-        }));
+    const bookingsByFlightType = Object.entries(flightTypeCounts).map(([name, value]) => ({
+      name,
+      value,
+    }));
 
-        // 6. Revenu par mois
-        const monthlyRevenue = bookings.reduce((acc: Record<string, number>, booking) => {
-            const date = new Date(booking.created_at);
-            const month = date.toLocaleString("fr-FR", { month: "short" });
-            acc[month] = (acc[month] || 0) + booking.total_price;
-            return acc;
-        }, {});
+    // 6. Revenu par mois
+    const monthlyRevenue = bookings.reduce((acc: Record<string, number>, booking) => {
+      const date = new Date(booking.created_at);
+      const month = date.toLocaleString("fr-FR", { month: "short" });
+      acc[month] = (acc[month] || 0) + booking.total_price;
+      return acc;
+    }, {});
 
-        const revenueByMonth = Object.entries(monthlyRevenue).map(([name, total]) => ({
-            name,
-            total,
-        }));
-        
+    const revenueByMonth = Object.entries(monthlyRevenue).map(([name, total]) => ({
+      name,
+      total,
+    }));
 
-        const recentBookings = bookings.slice(0, 10);
 
-        // 8. Construction de la réponse
-        const response: DashboardStats = {
-            totalRevenue,
-            totalBookings,
-            flightsAvailable,
-            averageBookingValue,
-            bookingsByStatus,
-            revenueByMonth,
-            bookingsByFlightType,
-            recentBookings,
-        };
+    const recentBookings = bookings.slice(0, 10);
 
-        res.json(response);
-    } catch (error) {
-        console.error("Dashboard error:", error);
-        res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
-    } 
+    // 8. Construction de la réponse
+    const response: DashboardStats = {
+      totalRevenue,
+      totalBookings,
+      flightsAvailable,
+      averageBookingValue,
+      bookingsByStatus,
+      revenueByMonth,
+      bookingsByFlightType,
+      recentBookings,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+  }
 });
 
 
@@ -2550,9 +2540,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
     if (bookings.length === 0) {
       await connection.rollback();
-      return res.status(404).json({ 
-        success: false, 
-        error: "Réservation non trouvée" 
+      return res.status(404).json({
+        success: false,
+        error: "Réservation non trouvée"
       });
     }
 
@@ -2598,10 +2588,10 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     // 3. GESTION DES SIÈGES - AVANT la modification des passagers
     const oldPassengerCount = booking.passenger_count;
     const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
-    
+
     if (newPassengerCount !== oldPassengerCount) {
       console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
-      
+
       // Récupérer les vols de la réservation
       const flightIds = [booking.flight_id];
       if (booking.return_flight_id) {
@@ -2610,7 +2600,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
       // Calculer la différence
       const seatDifference = newPassengerCount - oldPassengerCount;
-      
+
       if (seatDifference !== 0) {
         for (const flightId of flightIds) {
           if (flightId) {
@@ -2627,7 +2617,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     // 4. Mettre à jour les passagers
     if (passengers && Array.isArray(passengers)) {
       console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
-      
+
       // Supprimer les anciens passagers
       await connection.query(
         `DELETE FROM passengers WHERE booking_id = ?`,
@@ -2758,9 +2748,9 @@ app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
     );
 
     if (bookings.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "Réservation non trouvée" 
+      return res.status(404).json({
+        success: false,
+        error: "Réservation non trouvée"
       });
     }
 
@@ -2817,7 +2807,7 @@ app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
 // app.get("/api/booking-plane", async (req: Request, res: Response) => {
 //     let connection;
 //     try {
-       
+
 //         // 1. Récupérer les réservations avec un typage explicite
 //    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
 //             `SELECT 
@@ -2874,9 +2864,9 @@ app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
 
 // Endpoint pour les données du dashboard
 app.get("/api/booking-plane", async (req: Request, res: Response) => {
-    try {
-        const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT 
+  try {
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
                 b.id, 
                 b.booking_reference, 
                 b.payment_intent_id, 
@@ -2894,76 +2884,76 @@ app.get("/api/booking-plane", async (req: Request, res: Response) => {
             LEFT JOIN users u ON b.user_created_booking = u.id  
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
-            ["plane"]
-        );
+      ["plane"]
+    );
 
-        const bookings: Booking[] = bookingRows.map((row) => ({
-            id: row.id,
-            booking_reference: row.booking_reference,
-            payment_intent_id: row.payment_intent_id,
-            total_price: Number(row.total_price),
-            status: row.status,
-            created_at: row.created_at,
-            passenger_count: row.passenger_count,
-            payment_method: row.payment_method,
-            contact_email: row.contact_email,
-            type_vol: row.type_vol,
-            type_v: row.type_v,
-            created_by_name: row.created_by_name,
-            created_by_email: row.created_by_email
-        }));
+    const bookings: Booking[] = bookingRows.map((row) => ({
+      id: row.id,
+      booking_reference: row.booking_reference,
+      payment_intent_id: row.payment_intent_id,
+      total_price: Number(row.total_price),
+      status: row.status,
+      created_at: row.created_at,
+      passenger_count: row.passenger_count,
+      payment_method: row.payment_method,
+      contact_email: row.contact_email,
+      type_vol: row.type_vol,
+      type_v: row.type_v,
+      created_by_name: row.created_by_name,
+      created_by_email: row.created_by_email
+    }));
 
-        // 👉 IMPORTANT : envoyer TOUTES les réservations
-        res.json({ recentBookings: bookings });
+    // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ recentBookings: bookings });
 
-    } catch (error) {
-        console.error("Dashboard error:", error);
-        res.status(500).json({ error: "Erreur lors de la récupération" });
-    } 
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération" });
+  }
 });
 
 
 
 // 🔍 Recherche avancée sur les bookings avion
 app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
-    try {
-        const { startDate, endDate, transactionType, status } = req.query;
+  try {
+    const { startDate, endDate, transactionType, status } = req.query;
 
-        // Conditions dynamiques
-        let conditions = " WHERE b.type_vol = 'plane' ";
-        const params: any[] = [];
+    // Conditions dynamiques
+    let conditions = " WHERE b.type_vol = 'plane' ";
+    const params: any[] = [];
 
-        // 🔹 Aucun filtre → date du jour
-        if (!startDate && !endDate && !transactionType && !status) {
-            conditions += " AND DATE(b.created_at) = CURDATE() ";
-        }
+    // 🔹 Aucun filtre → date du jour
+    if (!startDate && !endDate && !transactionType && !status) {
+      conditions += " AND DATE(b.created_at) = CURDATE() ";
+    }
 
-        // 🔹 Avec Date Début
-        if (startDate) {
-            conditions += " AND DATE(b.created_at) >= ? ";
-            params.push(startDate);
-        }
+    // 🔹 Avec Date Début
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
 
-        // 🔹 Avec Date Fin
-        if (endDate) {
-            conditions += " AND DATE(b.created_at) <= ? ";
-            params.push(endDate);
-        }
+    // 🔹 Avec Date Fin
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
 
-        // 🔹 Avec type de transaction
-        if (transactionType) {
-            conditions += " AND b.payment_method = ? ";
-            params.push(transactionType);
-        }
+    // 🔹 Avec type de transaction
+    if (transactionType) {
+      conditions += " AND b.payment_method = ? ";
+      params.push(transactionType);
+    }
 
-        // 🔹 Avec type de status
-        if (status) {
-            conditions += " AND b.status = ? ";
-            params.push(status);
-        }
+    // 🔹 Avec type de status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
 
-        const [rows] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT 
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
                 b.id, 
                 b.booking_reference, 
                 b.payment_intent_id, 
@@ -2981,51 +2971,51 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
             LEFT JOIN users u ON b.user_created_booking = u.id
             ${conditions}
             ORDER BY b.created_at DESC`,
-            params
-        );
+      params
+    );
 
-        res.json({ bookings: rows });
+    res.json({ bookings: rows });
 
-    } catch (error) {
-        console.error("Erreur recherche booking:", error);
-        res.status(500).json({ error: "Erreur lors de la recherche" });
-    }
+  } catch (error) {
+    console.error("Erreur recherche booking:", error);
+    res.status(500).json({ error: "Erreur lors de la recherche" });
+  }
 });
 
 
 
 app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
-    try {
-        const { startDate, endDate, transactionType, status } = req.query;
+  try {
+    const { startDate, endDate, transactionType, status } = req.query;
 
-        let conditions = " WHERE b.type_vol = 'plane' ";
-        const params: any[] = [];
+    let conditions = " WHERE b.type_vol = 'plane' ";
+    const params: any[] = [];
 
-        // Filtre dates
-        if (startDate) {
-            conditions += " AND DATE(b.created_at) >= ? ";
-            params.push(startDate);
-        }
+    // Filtre dates
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
 
-        if (endDate) {
-            conditions += " AND DATE(b.created_at) <= ? ";
-            params.push(endDate);
-        }
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
 
-        // Filtre payment_method (insensible à la casse + espaces)
-        if (transactionType) {
-            conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
-            params.push(transactionType);
-        }
+    // Filtre payment_method (insensible à la casse + espaces)
+    if (transactionType) {
+      conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
+      params.push(transactionType);
+    }
 
-        // Filtre status
-        if (status) {
-            conditions += " AND b.status = ? ";
-            params.push(status);
-        }
+    // Filtre status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
 
-        // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
-        const [rowsUntyped] = await pool.query(`
+    // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
+    const [rowsUntyped] = await pool.query(`
             SELECT 
                 b.booking_reference,
                 b.payment_intent_id,
@@ -3044,142 +3034,142 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
             ORDER BY b.created_at DESC
         `, params);
 
-        const rows = rowsUntyped as mysql.RowDataPacket[];
+    const rows = rowsUntyped as mysql.RowDataPacket[];
 
-        // 🟩 Génération Excel
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet("Bookings");
+    // 🟩 Génération Excel
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Bookings");
 
-        // 1️⃣ Titre fusionné
-        sheet.mergeCells('A1:K1');
-        const headerRow = sheet.getRow(1);
-        headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
-        headerRow.getCell(1).font = { bold: true, size: 14 };
-        headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    // 1️⃣ Titre fusionné
+    sheet.mergeCells('A1:K1');
+    const headerRow = sheet.getRow(1);
+    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
+    headerRow.getCell(1).font = { bold: true, size: 14 };
+    headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        // 2️⃣ En-têtes
-        const headers = [
-            "Booking Reference",
-            "Payment Ref",
-            "Type",
-            "Trajet",
-            "Email",
-            "Total",
-            "Passagers",
-            "Status",
-            "Méthode",
-            "Créé par",
-            "Date"
-        ];
+    // 2️⃣ En-têtes
+    const headers = [
+      "Booking Reference",
+      "Payment Ref",
+      "Type",
+      "Trajet",
+      "Email",
+      "Total",
+      "Passagers",
+      "Status",
+      "Méthode",
+      "Créé par",
+      "Date"
+    ];
 
-        const titleRow = sheet.addRow(headers);
-        titleRow.eachCell((cell) => {
-            cell.font = { bold: true };
+    const titleRow = sheet.addRow(headers);
+    titleRow.eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+
+    // 3️⃣ Définition des colonnes
+    sheet.columns = [
+      { key: "booking_reference" },
+      { key: "payment_intent_id" },
+      { key: "type_vol" },
+      { key: "type_v" },
+      { key: "contact_email" },
+      { key: "total_price" },
+      { key: "passenger_count" },
+      { key: "status" },
+      { key: "payment_method" },
+      { key: "created_by_name" },
+      { key: "created_at" }
+    ];
+
+    // 4️⃣ Ajout des données
+    rows.forEach((row) => {
+      sheet.addRow([
+        row.booking_reference,
+        row.payment_intent_id,
+        row.type_vol,
+        row.type_v,
+        row.contact_email,
+        row.total_price,
+        row.passenger_count,
+        row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
+        row.payment_method,
+        row.created_by_name,
+        row.created_at
+      ]);
+    });
+
+    // 5️⃣ Auto-size colonnes
+    sheet.columns.forEach((column) => {
+      if (column && column.eachCell) {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const len = cell.value ? cell.value.toString().length : 10;
+          if (len > maxLength) maxLength = len;
         });
+        column.width = maxLength + 2;
+      }
+    });
 
-        // 3️⃣ Définition des colonnes
-        sheet.columns = [
-            { key: "booking_reference" },
-            { key: "payment_intent_id" },
-            { key: "type_vol" },
-            { key: "type_v" },
-            { key: "contact_email" },
-            { key: "total_price" },
-            { key: "passenger_count" },
-            { key: "status" },
-            { key: "payment_method" },
-            { key: "created_by_name" },
-            { key: "created_at" }
-        ];
+    // 6️⃣ Headers HTTP
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Trogon Transactions Avion.xlsx"
+    );
 
-        // 4️⃣ Ajout des données
-        rows.forEach((row) => {
-            sheet.addRow([
-                row.booking_reference,
-                row.payment_intent_id,
-                row.type_vol,
-                row.type_v,
-                row.contact_email,
-                row.total_price,
-                row.passenger_count,
-                row.status === "confirmed" ? "Paid" : row.status === "pending"  ? "Unpaid" : "Cancelled",
-                row.payment_method,
-                row.created_by_name,
-                row.created_at
-            ]);
-        });
+    await workbook.xlsx.write(res);
+    res.end();
 
-        // 5️⃣ Auto-size colonnes
-        sheet.columns.forEach((column) => {
-            if (column && column.eachCell) {
-                let maxLength = 0;
-                column.eachCell({ includeEmpty: true }, (cell) => {
-                    const len = cell.value ? cell.value.toString().length : 10;
-                    if (len > maxLength) maxLength = len;
-                });
-                column.width = maxLength + 2;
-            }
-        });
-
-        // 6️⃣ Headers HTTP
-        res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
-        res.setHeader(
-            "Content-Disposition",
-            "attachment; filename=Trogon Transactions Avion.xlsx"
-        );
-
-        await workbook.xlsx.write(res);
-        res.end();
-
-    } catch (error) {
-        console.error("Erreur Excel:", error);
-        res.status(500).json({ error: "Erreur export Excel" });
-    }
+  } catch (error) {
+    console.error("Erreur Excel:", error);
+    res.status(500).json({ error: "Erreur export Excel" });
+  }
 });
 
 
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
-    try {
-        const { startDate, endDate, transactionType, status } = req.query;
+  try {
+    const { startDate, endDate, transactionType, status } = req.query;
 
-        // Conditions dynamiques
-        let conditions = " WHERE b.type_vol = 'helicopter' ";
-        const params: any[] = [];
+    // Conditions dynamiques
+    let conditions = " WHERE b.type_vol = 'helicopter' ";
+    const params: any[] = [];
 
-        // 🔹 Aucun filtre → date du jour
-        if (!startDate && !endDate && !transactionType && !status) {
-            conditions += " AND DATE(b.created_at) = CURDATE() ";
-        }
+    // 🔹 Aucun filtre → date du jour
+    if (!startDate && !endDate && !transactionType && !status) {
+      conditions += " AND DATE(b.created_at) = CURDATE() ";
+    }
 
-        // 🔹 Avec Date Début
-        if (startDate) {
-            conditions += " AND DATE(b.created_at) >= ? ";
-            params.push(startDate);
-        }
+    // 🔹 Avec Date Début
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
 
-        // 🔹 Avec Date Fin
-        if (endDate) {
-            conditions += " AND DATE(b.created_at) <= ? ";
-            params.push(endDate);
-        }
+    // 🔹 Avec Date Fin
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
 
-        // 🔹 Avec type de transaction
-        if (transactionType) {
-            conditions += " AND b.payment_method = ? ";
-            params.push(transactionType);
-        }
+    // 🔹 Avec type de transaction
+    if (transactionType) {
+      conditions += " AND b.payment_method = ? ";
+      params.push(transactionType);
+    }
 
-         // 🔹 Avec type de status
-        if (status) {
-            conditions += " AND b.status = ? ";
-            params.push(status);
-        }
+    // 🔹 Avec type de status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
 
-        const [rows] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT 
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
                 b.id, 
                 b.booking_reference, 
                 b.payment_intent_id, 
@@ -3197,48 +3187,48 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
             LEFT JOIN users u ON b.user_created_booking = u.id
             ${conditions}
             ORDER BY b.created_at DESC`,
-            params
-        );
+      params
+    );
 
-        res.json({ bookings: rows });
+    res.json({ bookings: rows });
 
-    } catch (error) {
-        console.error("Erreur recherche booking:", error);
-        res.status(500).json({ error: "Erreur lors de la recherche" });
-    }
+  } catch (error) {
+    console.error("Erreur recherche booking:", error);
+    res.status(500).json({ error: "Erreur lors de la recherche" });
+  }
 });
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
-    try {
-        const { startDate, endDate, transactionType, status } = req.query;
+  try {
+    const { startDate, endDate, transactionType, status } = req.query;
 
-        let conditions = " WHERE b.type_vol = 'helicopter' ";
-        const params: any[] = [];
+    let conditions = " WHERE b.type_vol = 'helicopter' ";
+    const params: any[] = [];
 
-        // Filtre dates
-        if (startDate) {
-            conditions += " AND DATE(b.created_at) >= ? ";
-            params.push(startDate);
-        }
+    // Filtre dates
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
 
-        if (endDate) {
-            conditions += " AND DATE(b.created_at) <= ? ";
-            params.push(endDate);
-        }
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
 
-        // Filtre payment_method (insensible à la casse + espaces)
-        if (transactionType) {
-            conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
-            params.push(transactionType);
-        }
+    // Filtre payment_method (insensible à la casse + espaces)
+    if (transactionType) {
+      conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
+      params.push(transactionType);
+    }
 
-        // Filtre status
-        if (status) {
-            conditions += " AND b.status = ? ";
-            params.push(status);
-        }
+    // Filtre status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
 
-        // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
-        const [rowsUntyped] = await pool.query(`
+    // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
+    const [rowsUntyped] = await pool.query(`
             SELECT 
                 b.booking_reference,
                 b.payment_intent_id,
@@ -3257,100 +3247,100 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
             ORDER BY b.created_at DESC
         `, params);
 
-        const rows = rowsUntyped as mysql.RowDataPacket[];
+    const rows = rowsUntyped as mysql.RowDataPacket[];
 
-        // 🟩 Génération Excel
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet("Bookings");
+    // 🟩 Génération Excel
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Bookings");
 
-        // 1️⃣ Titre fusionné
-        sheet.mergeCells('A1:K1');
-        const headerRow = sheet.getRow(1);
-        headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
-        headerRow.getCell(1).font = { bold: true, size: 14 };
-        headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    // 1️⃣ Titre fusionné
+    sheet.mergeCells('A1:K1');
+    const headerRow = sheet.getRow(1);
+    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
+    headerRow.getCell(1).font = { bold: true, size: 14 };
+    headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        // 2️⃣ En-têtes
-        const headers = [
-            "Booking Reference",
-            "Payment Ref",
-            "Type",
-            "Trajet",
-            "Email",
-            "Total",
-            "Passagers",
-            "Status",
-            "Méthode",
-            "Créé par",
-            "Date"
-        ];
+    // 2️⃣ En-têtes
+    const headers = [
+      "Booking Reference",
+      "Payment Ref",
+      "Type",
+      "Trajet",
+      "Email",
+      "Total",
+      "Passagers",
+      "Status",
+      "Méthode",
+      "Créé par",
+      "Date"
+    ];
 
-        const titleRow = sheet.addRow(headers);
-        titleRow.eachCell((cell) => {
-            cell.font = { bold: true };
+    const titleRow = sheet.addRow(headers);
+    titleRow.eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+
+    // 3️⃣ Définition des colonnes
+    sheet.columns = [
+      { key: "booking_reference" },
+      { key: "payment_intent_id" },
+      { key: "type_vol" },
+      { key: "type_v" },
+      { key: "contact_email" },
+      { key: "total_price" },
+      { key: "passenger_count" },
+      { key: "status" },
+      { key: "payment_method" },
+      { key: "created_by_name" },
+      { key: "created_at" }
+    ];
+
+    // 4️⃣ Ajout des données
+    rows.forEach((row) => {
+      sheet.addRow([
+        row.booking_reference,
+        row.payment_intent_id,
+        row.type_vol,
+        row.type_v,
+        row.contact_email,
+        row.total_price,
+        row.passenger_count,
+        row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
+        row.payment_method,
+        row.created_by_name,
+        row.created_at
+      ]);
+    });
+
+    // 5️⃣ Auto-size colonnes
+    sheet.columns.forEach((column) => {
+      if (column && column.eachCell) {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const len = cell.value ? cell.value.toString().length : 10;
+          if (len > maxLength) maxLength = len;
         });
+        column.width = maxLength + 2;
+      }
+    });
 
-        // 3️⃣ Définition des colonnes
-        sheet.columns = [
-            { key: "booking_reference" },
-            { key: "payment_intent_id" },
-            { key: "type_vol" },
-            { key: "type_v" },
-            { key: "contact_email" },
-            { key: "total_price" },
-            { key: "passenger_count" },
-            { key: "status" },
-            { key: "payment_method" },
-            { key: "created_by_name" },
-            { key: "created_at" }
-        ];
+    // 6️⃣ Headers HTTP
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Trogon Transactions Helico.xlsx"
+    );
 
-        // 4️⃣ Ajout des données
-        rows.forEach((row) => {
-            sheet.addRow([
-                row.booking_reference,
-                row.payment_intent_id,
-                row.type_vol,
-                row.type_v,
-                row.contact_email,
-                row.total_price,
-                row.passenger_count,
-                row.status === "confirmed" ? "Paid" : row.status === "pending"  ? "Unpaid" : "Cancelled",
-                row.payment_method,
-                row.created_by_name,
-                row.created_at
-            ]);
-        });
+    await workbook.xlsx.write(res);
+    res.end();
 
-        // 5️⃣ Auto-size colonnes
-        sheet.columns.forEach((column) => {
-            if (column && column.eachCell) {
-                let maxLength = 0;
-                column.eachCell({ includeEmpty: true }, (cell) => {
-                    const len = cell.value ? cell.value.toString().length : 10;
-                    if (len > maxLength) maxLength = len;
-                });
-                column.width = maxLength + 2;
-            }
-        });
-
-        // 6️⃣ Headers HTTP
-        res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
-        res.setHeader(
-            "Content-Disposition",
-            "attachment; filename=Trogon Transactions Helico.xlsx"
-        );
-
-        await workbook.xlsx.write(res);
-        res.end();
-
-    } catch (error) {
-        console.error("Erreur Excel:", error);
-        res.status(500).json({ error: "Erreur export Excel" });
-    }
+  } catch (error) {
+    console.error("Erreur Excel:", error);
+    res.status(500).json({ error: "Erreur export Excel" });
+  }
 });
 
 
@@ -3543,7 +3533,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 //         `, params);
 
 //         // Génération Excel
-  
+
 //         const workbook = new ExcelJS.Workbook();
 //         const sheet = workbook.addWorksheet("Bookings");
 
@@ -3699,9 +3689,9 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 
 
 app.get("/api/booking-helico", async (req: Request, res: Response) => {
-    try {
-        const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-            `SELECT 
+  try {
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
                 b.id, 
                 b.booking_reference, 
                 b.payment_intent_id, 
@@ -3719,32 +3709,32 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
             LEFT JOIN users u ON b.user_created_booking = u.id  
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
-            ["helicopter"]
-        );
+      ["helicopter"]
+    );
 
-        const bookings: Booking[] = bookingRows.map((row) => ({
-            id: row.id,
-            booking_reference: row.booking_reference,
-            payment_intent_id: row.payment_intent_id,
-            total_price: Number(row.total_price),
-            status: row.status,
-            created_at: row.created_at,
-            passenger_count: row.passenger_count,
-            payment_method: row.payment_method,
-            contact_email: row.contact_email,
-            type_vol: row.type_vol,
-            type_v: row.type_v,
-            created_by_name: row.created_by_name,
-            created_by_email: row.created_by_email
-        }));
+    const bookings: Booking[] = bookingRows.map((row) => ({
+      id: row.id,
+      booking_reference: row.booking_reference,
+      payment_intent_id: row.payment_intent_id,
+      total_price: Number(row.total_price),
+      status: row.status,
+      created_at: row.created_at,
+      passenger_count: row.passenger_count,
+      payment_method: row.payment_method,
+      contact_email: row.contact_email,
+      type_vol: row.type_vol,
+      type_v: row.type_v,
+      created_by_name: row.created_by_name,
+      created_by_email: row.created_by_email
+    }));
 
-        // 👉 IMPORTANT : envoyer TOUTES les réservations
-        res.json({ recentBookings: bookings });
+    // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ recentBookings: bookings });
 
-    } catch (error) {
-        console.error("Dashboard error:", error);
-        res.status(500).json({ error: "Erreur lors de la récupération" });
-    } 
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération" });
+  }
 });
 
 
@@ -3775,10 +3765,10 @@ async function sendEmail(to: string, subject: string, html: string) {
 
   try {
     console.log("🔄 Envoi de la requête à SMTP2GO...");
-    
+
     const response = await fetch("https://api.smtp2go.com/v3/email/send", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
@@ -3842,7 +3832,7 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
     );
 
     console.log(`📊 DEBUG - Résultats recherche: ${bookings.length} booking(s) trouvé(s)`);
-    
+
     if (bookings.length === 0) {
       console.log(`❌ DEBUG - Booking non trouvé: ${reference}`);
       await connection.rollback();
@@ -3922,10 +3912,10 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
       // ✉️ Envoyer un email à chaque passager
       console.log(`📨 DEBUG - Début envoi des emails à ${passengersBeforeDelete.length} passager(s)`);
       const emailResults = [];
-      
+
       for (const [index, passenger] of passengersBeforeDelete.entries()) {
         console.log(`\n📧 DEBUG - Envoi email ${index + 1}/${passengersBeforeDelete.length} à: ${passenger.email}`);
-        
+
         const emailHtml = `
           
     <style>
@@ -3973,12 +3963,12 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
           "Trogon Airways, Flight cancellation",
           emailHtml
         );
-        
+
         console.log(`📊 DEBUG - Résultat email ${passenger.email}:`, emailResult.success ? 'SUCCÈS' : 'ÉCHEC');
         if (!emailResult.success) {
           console.log(`❌ DEBUG - Erreur email:`, emailResult.error);
         }
-        
+
         emailResults.push({
           passenger: passenger.email,
           success: emailResult.success,
@@ -4128,100 +4118,100 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
 
 
 app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
-    const flightId = req.params.id;
+  const flightId = req.params.id;
 
-    const allowedFields = [
-        "flight_number",
-        "type",
-        "airline",
-        "departure_location_id",
-        "arrival_location_id",
-        "departure_time",
-        "arrival_time",
-        "price",
-        "seats_available",
-    ];
+  const allowedFields = [
+    "flight_number",
+    "type",
+    "airline",
+    "departure_location_id",
+    "arrival_location_id",
+    "departure_time",
+    "arrival_time",
+    "price",
+    "seats_available",
+  ];
 
-    const setFields: string[] = [];
-    const values: any[] = [];
+  const setFields: string[] = [];
+  const values: any[] = [];
 
-    for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-            setFields.push(`${field} = ?`);
-            values.push(req.body[field]);
-        }
+  for (const field of allowedFields) {
+    if (req.body[field] !== undefined) {
+      setFields.push(`${field} = ?`);
+      values.push(req.body[field]);
+    }
+  }
+
+  if (setFields.length === 0) {
+    return res.status(400).json({ error: "Aucun champ à mettre à jour" });
+  }
+
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
+      [...values, flightId]
+    );
+
+    // Récupérer le vol mis à jour
+    const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [flightId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Vol non trouvé" });
     }
 
-    if (setFields.length === 0) {
-        return res.status(400).json({ error: "Aucun champ à mettre à jour" });
+    res.status(200).json(rows[0]);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(error);
+      res.status(500).json({ error: "Erreur MySQL", details: error.message });
+    } else {
+      res.status(500).json({ error: "Erreur inconnue" });
     }
-
-    try {
-        const [result] = await pool.execute<ResultSetHeader>(
-            `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
-            [...values, flightId]
-        );
-
-        // Récupérer le vol mis à jour
-        const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [flightId]);
-
-        if (rows.length === 0) {
-            return res.status(404).json({ error: "Vol non trouvé" });
-        }
-
-        res.status(200).json(rows[0]);
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error(error);
-            res.status(500).json({ error: "Erreur MySQL", details: error.message });
-        } else {
-            res.status(500).json({ error: "Erreur inconnue" });
-        }
-    }
+  }
 });
 
 // Route pour supprimer un vol
 app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
-    const flightId = Number(req.params.id);
+  const flightId = Number(req.params.id);
 
-    if (isNaN(flightId)) {
-        return res.status(400).json({ error: "ID de vol invalide" });
+  if (isNaN(flightId)) {
+    return res.status(400).json({ error: "ID de vol invalide" });
+  }
+
+  try {
+    // Vérification de l'existence du vol
+    const [checkResult] = await pool.query<mysql.RowDataPacket[]>(
+      "SELECT id FROM flights WHERE id = ?",
+      [flightId]
+    );
+
+    if (Array.isArray(checkResult) && checkResult.length === 0) {
+      return res.status(404).json({ error: "Vol non trouvé" });
     }
 
-    try {
-        // Vérification de l'existence du vol
-        const [checkResult] = await pool.query<mysql.RowDataPacket[]>(
-            "SELECT id FROM flights WHERE id = ?",
-            [flightId]
-        );
+    // Suppression du vol
+    const [deleteResult] = await pool.execute<mysql.OkPacket>(
+      "DELETE FROM flights WHERE id = ?",
+      [flightId]
+    );
 
-        if (Array.isArray(checkResult) && checkResult.length === 0) {
-            return res.status(404).json({ error: "Vol non trouvé" });
-        }
-
-        // Suppression du vol
-        const [deleteResult] = await pool.execute<mysql.OkPacket>(
-            "DELETE FROM flights WHERE id = ?",
-            [flightId]
-        );
-
-        if ("affectedRows" in deleteResult && deleteResult.affectedRows === 0) {
-            return res.status(404).json({ error: "Aucun vol supprimé" });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: `Vol ${flightId} supprimé avec succès`,
-            affectedRows: deleteResult.affectedRows,
-        });
-    } catch (error) {
-        console.error("Erreur MySQL:", error);
-        res.status(500).json({
-            error: "Erreur lors de la suppression",
-            details: error instanceof Error ? error.message : "Erreur inconnue",
-        });
+    if ("affectedRows" in deleteResult && deleteResult.affectedRows === 0) {
+      return res.status(404).json({ error: "Aucun vol supprimé" });
     }
-    // ❌ Ne fais PAS pool.end() ici
+
+    res.status(200).json({
+      success: true,
+      message: `Vol ${flightId} supprimé avec succès`,
+      affectedRows: deleteResult.affectedRows,
+    });
+  } catch (error) {
+    console.error("Erreur MySQL:", error);
+    res.status(500).json({
+      error: "Erreur lors de la suppression",
+      details: error instanceof Error ? error.message : "Erreur inconnue",
+    });
+  }
+  // ❌ Ne fais PAS pool.end() ici
 });
 
 
