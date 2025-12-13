@@ -1691,22 +1691,23 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 
   try {
-    // BOOKING
-    const [bookings]: any = await pool.query(
+    const [bookingRows]: any = await pool.query(
       "SELECT * FROM bookings WHERE booking_reference = ?",
       [reference]
     );
-    if (!bookings.length) return res.status(404).json({ error: "Not found" });
-    const booking = bookings[0];
+    if (!bookingRows.length) return res.status(404).json({ error: "Not found" });
+    const booking = bookingRows[0];
 
-    // PASSAGERS
     const [passengers]: any = await pool.query(
       "SELECT * FROM passengers WHERE booking_id = ?",
       [booking.id]
     );
 
-    // FLIGHTS
     const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
+    if (!flightIds.length) return res.status(404).json({ error: "Flights not found" });
+
+    // Correct IN (?) usage
+    const placeholders = flightIds.map(() => '?').join(',');
     const [flights]: any = await pool.query(
       `
       SELECT f.*, 
@@ -1715,46 +1716,33 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       FROM flights f
       JOIN locations dep ON dep.id = f.departure_location_id
       JOIN locations arr ON arr.id = f.arrival_location_id
-      WHERE f.id IN (?)
+      WHERE f.id IN (${placeholders})
       `,
-      [flightIds]
+      flightIds
     );
+
+    console.log({ flightIds, flights }); // debug
 
     const qrCode = await QRCode.toDataURL(reference);
 
-    const html = generateTicketHTML({
-      booking,
-      passengers,
-      flights,
-      qrCode
-    });
+    const html = generateTicketHTML({ booking, passengers, flights, qrCode });
 
-    const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
-
+    const browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true
-    });
-
+    const pdf = await page.pdf({ format: "A4", printBackground: true });
     await browser.close();
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=ticket-${reference}.pdf`
-    );
-
+    res.setHeader("Content-Disposition", `attachment; filename=ticket-${reference}.pdf`);
     res.end(pdf);
   } catch (err) {
-    console.error(err);
+    console.error("❌ ERREUR PDF :", err);
     res.status(500).json({ error: "PDF generation failed" });
   }
 });
+
 
 
 
