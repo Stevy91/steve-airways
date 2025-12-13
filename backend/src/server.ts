@@ -1976,9 +1976,10 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
           booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
       </p>
-      <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-        <strong>Flight Type:Air Plane</strong> 
-      </p>
+      
+      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
+              booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
+          }</p>
     </div>
 
     <div
