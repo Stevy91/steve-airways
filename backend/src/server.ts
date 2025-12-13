@@ -1512,24 +1512,135 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
 
 import path from "path";
 import { generatePDF } from './utils/pdfGenerator';
-
+import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
 const router = express.Router();
 
-router.post("/api/generate", async (req, res) => {
+// router.post("/api/generate", async (req, res) => {
+//   try {
+//     const bookingData = req.body;
+//     const pdfPath = path.join(process.cwd(), "billet.pdf");
+
+//     await generatePDF(bookingData, pdfPath, bookingData.paymentMethod, bookingData.returnFlight);
+
+//     res.download(pdfPath, "billet.pdf");
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+//   }
+// });
+
+
+app.get("/api/generate/:reference", async (req: Request, res: Response) => {
+  const { reference } = req.params;
+
   try {
-    const bookingData = req.body;
-    const pdfPath = path.join(process.cwd(), "billet.pdf");
+    // 1️⃣ Booking
+    const [bookingRows]: any = await pool.query(
+      "SELECT * FROM bookings WHERE reference = ?",
+      [reference]
+    );
 
-    await generatePDF(bookingData, pdfPath, bookingData.paymentMethod, bookingData.returnFlight);
+    if (!bookingRows.length) {
+      return res.status(404).json({ error: "Réservation introuvable" });
+    }
 
-    res.download(pdfPath, "billet.pdf");
+    const booking = bookingRows[0];
+
+    // 2️⃣ Passagers
+    const [passengers]: any = await pool.query(
+      "SELECT * FROM passengers WHERE booking_reference = ?",
+      [reference]
+    );
+
+    // 3️⃣ Vols (sécurisé)
+    const flightIds = booking.flights_ids
+      .split(",")
+      .map((id: string) => Number(id))
+      .filter((id: number) => !isNaN(id));
+
+    if (!flightIds.length) {
+      return res.status(400).json({ error: "Aucun vol trouvé" });
+    }
+
+    const placeholders = flightIds.map(() => "?").join(",");
+
+    const [flights]: any = await pool.query(
+      `
+      SELECT f.*,
+             dep.name AS dep_name, dep.code AS dep_code,
+             arr.name AS arr_name, arr.code AS arr_code
+      FROM flights f
+      JOIN locations dep ON f.departure_location_id = dep.id
+      JOIN locations arr ON f.arrival_location_id = arr.id
+      WHERE f.id IN (${placeholders})
+      `,
+      flightIds
+    );
+
+    // 4️⃣ QR Code
+    const qr = await QRCode.toDataURL(reference);
+
+    // 5️⃣ PDF
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=ticket-${reference}.pdf`
+    );
+
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    doc.pipe(res);
+
+    doc
+      .fillColor("#0066CC")
+      .fontSize(26)
+      .text("STEVE AIRWAYS", { align: "center" });
+
+    doc.moveDown()
+      .fontSize(16)
+      .fillColor("#000")
+      .text(`Billet électronique – Référence : ${reference}`, { align: "center" });
+
+    doc.image(qr, 440, 60, { width: 120 });
+    doc.moveDown(2);
+
+    doc.fontSize(20).fillColor("#0066CC").text("Passagers");
+    passengers.forEach((p: any, i: number) => {
+      doc.fontSize(14).fillColor("#000")
+        .text(`${i + 1}. ${p.firstName || p.firstname} ${p.lastName || p.lastname}`);
+    });
+
+    doc.moveDown(2);
+    doc.fontSize(20).fillColor("#0066CC").text("Détails du Vol");
+
+    flights.forEach((f: any) => {
+      doc.moveDown()
+        .fontSize(16).fillColor("#000")
+        .text(`Vol ${f.flight_number} – ${f.airline}`);
+
+      doc.fontSize(14)
+        .text(`Départ : ${f.dep_name} (${f.dep_code})`)
+        .text(`Arrivée : ${f.arr_name} (${f.arr_code})`)
+        .text(`Heure départ : ${f.departure_time}`)
+        .text(`Heure arrivée : ${f.arrival_time}`)
+        .text(`Prix : $${f.price}`);
+    });
+
+    doc.fontSize(12).fillColor("#555")
+      .text("Merci d'avoir choisi Steve Airways ✈️", 0, 780, { align: "center" });
+
+    doc.end();
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Erreur lors de la génération du PDF" });
+    console.error("Erreur PDF :", err);
+    res.status(500).json({ error: "Erreur génération billet" });
   }
 });
 
- app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
+
+
+
+
+app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
     let connection;
     try {
     
