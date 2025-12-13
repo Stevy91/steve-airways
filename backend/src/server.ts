@@ -1684,30 +1684,33 @@ const router = express.Router();
 // });
 
 
-import { generateTicketHTML } from "./utils/ticketTemplate";
-import puppeteer from 'puppeteer';
+
+import fs from "fs";
+import path from "path";
+
 
 app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 
   try {
+    // 1️⃣ BOOKING
     const [bookingRows]: any = await pool.query(
       "SELECT * FROM bookings WHERE booking_reference = ?",
       [reference]
     );
-    if (!bookingRows.length) return res.status(404).json({ error: "Not found" });
+    if (!bookingRows.length)
+      return res.status(404).json({ error: "Réservation introuvable" });
+
     const booking = bookingRows[0];
 
+    // 2️⃣ PASSAGERS
     const [passengers]: any = await pool.query(
       "SELECT * FROM passengers WHERE booking_id = ?",
       [booking.id]
     );
 
+    // 3️⃣ FLIGHTS
     const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
-    if (!flightIds.length) return res.status(404).json({ error: "Flights not found" });
-
-    // Correct IN (?) usage
-    const placeholders = flightIds.map(() => '?').join(',');
     const [flights]: any = await pool.query(
       `
       SELECT f.*, 
@@ -1716,32 +1719,114 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       FROM flights f
       JOIN locations dep ON dep.id = f.departure_location_id
       JOIN locations arr ON arr.id = f.arrival_location_id
-      WHERE f.id IN (${placeholders})
+      WHERE f.id IN (?)
       `,
-      flightIds
+      [flightIds]
     );
 
-    console.log({ flightIds, flights }); // debug
+    // 4️⃣ QR Code
+    const qrCodeDataUrl = await QRCode.toDataURL(reference);
 
-    const qrCode = await QRCode.toDataURL(reference);
-
-    const html = generateTicketHTML({ booking, passengers, flights, qrCode });
-
-    const browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
-
-    const pdf = await page.pdf({ format: "A4", printBackground: true });
-    await browser.close();
-
+    // 5️⃣ PDF
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=ticket-${reference}.pdf`);
-    res.end(pdf);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=ticket-${reference}.pdf`
+    );
+
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+    doc.pipe(res);
+
+    // =========================
+    // HEADER
+    // =========================
+    doc
+      .rect(0, 0, doc.page.width, 100)
+      .fill("#1A237E");
+    doc
+      .fillColor("#fff")
+      .fontSize(20)
+      .text("Trogon Airways", 40, 35, { align: "left" });
+    doc.image("https://trogonairways.com/logo-trogonpng.png", doc.page.width - 120, 25, { width: 80 });
+
+    doc.moveDown(4);
+
+    // =========================
+    // PASSAGERS
+    // =========================
+    doc.fillColor("#1A237E").fontSize(16).text("Passagers", { underline: true });
+    passengers.forEach((p: any, i: number) => {
+      doc
+        .fillColor("#000")
+        .fontSize(12)
+        .text(`${i + 1}. ${p.first_name} ${p.last_name} | ${p.email}`);
+    });
+
+    doc.moveDown(1);
+
+    // =========================
+    // ITINERAIRE
+    // =========================
+    doc.fillColor("#1A237E").fontSize(16).text("Itinéraire", { underline: true });
+    flights.forEach((f: any, idx: number) => {
+      doc.moveDown(0.5);
+      doc.fillColor("#000").fontSize(13).text(
+        `${idx === 0 ? "Aller" : "Retour"}: ${f.dep_name} (${f.dep_code}) → ${f.arr_name} (${f.arr_code})`
+      );
+      doc.text(`Départ: ${f.departure_time}`);
+      doc.text(`Arrivée: ${f.arrival_time}`);
+      doc.text(`Vol: ${f.flight_number} | Compagnie: ${f.airline}`);
+      doc.text(`Prix: $${f.price}`);
+      doc.moveDown(0.5);
+    });
+
+    doc.moveDown(1);
+
+    // =========================
+    // BOOKING DETAILS
+    // =========================
+    doc.fillColor("#1A237E").fontSize(16).text("Détails de la réservation", { underline: true });
+    doc.fillColor("#000").fontSize(12).text(`Référence: ${booking.booking_reference}`);
+    doc.text(`Date de réservation: ${new Date(booking.created_at).toLocaleDateString()}`);
+    doc.text(`Total payé: $${booking.total_price}`);
+    doc.text(`Méthode de paiement: ${
+      booking.payment_method === "cash"
+        ? "Cash"
+        : booking.payment_method === "Card"
+        ? "Carte bancaire"
+        : booking.payment_method
+    }`);
+
+    doc.moveDown(1);
+
+    // =========================
+    // QR CODE
+    // =========================
+    const qrImgPath = path.join(__dirname, `tmp-${reference}.png`);
+    const qrData = qrCodeDataUrl.replace(/^data:image\/png;base64,/, "");
+    fs.writeFileSync(qrImgPath, qrData, "base64");
+    doc.image(qrImgPath, doc.page.width - 150, doc.y - 80, { width: 100 });
+    fs.unlinkSync(qrImgPath); // cleanup
+
+    doc.moveDown(4);
+
+    // =========================
+    // FOOTER / REMARQUES
+    // =========================
+    doc.fontSize(10).fillColor("#555");
+    doc.text("Important: Veuillez arriver 1h avant le départ. Tous les passagers doivent présenter une pièce d'identité valide.");
+    doc.text("Bagages: franchise maximale 30 lb.");
+    doc.text("Remarques: La compagnie décline toute responsabilité en cas de retard, annulation ou modification due à des circonstances indépendantes.");
+    doc.text("Annulation: Toute annulation le jour même ou la veille entraîne une retenue de 50% du montant total.");
+    doc.text("Nous vous souhaitons un bon voyage.", { align: "center" });
+
+    doc.end();
   } catch (err) {
     console.error("❌ ERREUR PDF :", err);
-    res.status(500).json({ error: "PDF generation failed" });
+    res.status(500).json({ error: "Erreur lors de la génération du billet" });
   }
 });
+
 
 
 
