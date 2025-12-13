@@ -1936,13 +1936,15 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   "
 >
   <div
-    style="
-      background: blue;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    "
-  >
+  style="
+    display: block;
+    width: 100%;
+    background-color: #1A237E; /* ou 'blue' */
+    color: white;
+    padding: 20px;
+    text-align: center;
+  "
+>
     <img
       src="https://trogonairways.com/logo-trogonpng.png"
       alt=""
