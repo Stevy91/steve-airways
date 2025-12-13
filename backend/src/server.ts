@@ -2326,7 +2326,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
-    const options = { format: 'A0', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
+    const options = { format: 'A1', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
 
     const pdfBuffer = await pdf.generatePdf(file, options);
 
