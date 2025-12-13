@@ -1858,10 +1858,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       return format(now, "EEE, dd MMM");
     };
 
-    const [departureDateStr] = outboundFlight.departure_time.split(" ");
-    const parsedDepartureDate = parse(departureDateStr, "yyyy-MM-dd", new Date());
-    const zonedDepartureDate = toZonedTime(parsedDepartureDate, timeZone);
-    const formattedDepartureDate = format(zonedDepartureDate, "EEE, dd MMM");
+
     // 3️⃣ HTML Template
     const htmlContent = `
     <html>
