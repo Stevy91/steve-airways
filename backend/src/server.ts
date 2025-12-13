@@ -2122,7 +2122,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
-    const options = { format: 'A4', margin: { top: '2px', right: '2px', bottom: '2px', left: '2px' } };
+    const options = { format: 'A2', margin: { top: '2px', right: '2px', bottom: '2px', left: '2px' } };
     const pdfBuffer = await pdf.generatePdf(file, options);
 
     res.setHeader("Content-Type", "application/pdf");
