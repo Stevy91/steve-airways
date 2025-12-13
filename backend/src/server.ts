@@ -2125,7 +2125,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
 
 <!--->
-
+<!-- Forcer une nouvelle page -->
+<div style="page-break-after: always;"></div>
 
 <div
   style="
@@ -2155,34 +2156,27 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       alt=""
       style="height: 55px; vertical-align: middle"
     />
-    <p style="margin: 5px 0 0; font-size: 1.2em">Your Booking is Confirmed</p>
+    <p style="margin: 5px 0 0; font-size: 1.2em">Votre réservation est confirmée.</p>
   </div>
 
   <div style="padding: 8px">
     <p>
       Cher(e) ${passengers.map((p: any) => p.first_name + " " +
-      p.last_name).join(", ")}
+                p.last_name).join(", ")}
     </p>
-    <p>
-      Thank you for choosing Trogon Airways. Please find your e-ticket below. We
-      recommend printing this section or having it available on your mobile
-      device at the airport.
-    </p>
+    <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
   </div>
 
   <!-- E-Ticket Section -->
   <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
     <div style="padding: 8px; text-align: center">
       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-        <strong>Payment Method:</strong>
+        <strong>Mode de paiement:</strong>
 
-        ${booking.payment_method === "cash" ? "Cash" : booking.payment_method
-        === "Card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
-        "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
-          booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
+           ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "Card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
       </p>
       
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
+      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Avion"
       }</p>
     </div>
 
@@ -2206,7 +2200,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                 vertical-align: middle;
                 margin-left: 10px;
               "
-              >Boarding Pass</span
+              >Carte d'embarquement</span
             >
           </td>
           <td
@@ -2227,25 +2221,25 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         <tr>
           <td colspan="2" style="padding-top: 8px">
             <div style="padding: 20px; text-align: center">
-              <h3 style="color: #1a237e; margin: 0">One Way</h3>
+              <h3 style="color: #1a237e; margin: 0">Vol Simple</h3>
             </div>
-            <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
+            <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
 
             <table width="100%">
               <tr>
                 <td>
                   <div class="flight-card">
-                    <div class="flight-header">Outbound Flight</div>
+                    <div class="flight-header">Vol aller</div>
                     ${flights.map((f: any, idx: number) => `
                     <div class="flight-details">
                       <div>
                     
-                        <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
-                        <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
+                        <strong>De:</strong> ${f.dep_name} (${f.dep_code})<br />
+                        <strong>A:</strong> ${f.arr_name} (${f.arr_code})<br />
                         <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Departure:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
-                        <strong>Arrival:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
-                        <strong>Flight Number:</strong> ${f.flight_number}
+                        <strong>Départ:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
+                        <strong>Arrivée:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
+                        <strong>Numéro du vol:</strong> ${f.flight_number}
                     </div>
                     `).join("")}
                   </div>
@@ -2257,7 +2251,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
         <tr>
           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
+            <h3 style="color: #1a237e; margin: 0 0 10px 0">Passager</h3>
             <p style="margin: 0">
               ${passengers.map((p: any) => `<strong>Adult:</strong>
               ${p.first_name} ${p.last_name}<br />
@@ -2271,24 +2265,21 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
             <table width="100%">
               <tr>
                 <td>
-                  <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
+                  <h3 style="color: #1a237e; margin: 0">Détails de la réservation</h3>
                   <p style="margin: 0; font-size: 0.9em">
-                    <strong>Booking ID:</strong> ${booking.booking_reference}
+                    <strong>Réservation ID:</strong> ${booking.booking_reference}
                   </p>
                   
                 </td>
                 <td style="text-align: right">
-                  <h3 style="color: #1a237e; margin: 0">Payment</h3>
+                  <h3 style="color: #1a237e; margin: 0">Paiement</h3>
                   <p style="margin: 0; font-size: 1.1em">
                     <strong>Total:</strong> $${booking.total_price}
                   </p>
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Status: </strong>
-                    ${booking.payment_method === "cash" ? "Paid" :
-        booking.payment_method === "Card" ? "Paid" :
-          booking.payment_method === "cheque" ? "Paid" :
-            booking.payment_method === "virement" ? "Paid" :
-              booking.payment_method === "transfert" ? "Paid" : "UnPaid"}
+                   
+              ${booking.payment_method === "cash" ? "Payé" : booking.payment_method === "Card" ? "Payé" : booking.payment_method === "cheque" ? "Payé" : booking.payment_method === "virement" ? "Payé" : booking.payment_method === "transfert" ? "Payé" : "Non rémunéré"}
                   </p>
                 </td>
               </tr>
