@@ -1858,6 +1858,9 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       return format(now, "EEE, dd MMM");
     };
 
+  
+
+
 
     // 3️⃣ HTML Template
     const htmlContent = `
@@ -2032,9 +2035,9 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                     
                         <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
                         <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
-                        <strong>Date:</strong> ${format(toZonedTime(parse(f.departure_time.split(" "), "yyyy-MM-dd", new Date()), timeZone), "EEE, dd MMM")}<br />
-                        <strong>Departure:</strong> ${f.departure_time.split(" ")}<br />
-                        <strong>Arrival:</strong> ${f.arrival_time.split(" ")}<br />
+                        <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
+                        <strong>Departure:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
+                        <strong>Arrival:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
                         <strong>Flight Number:</strong> ${f.flight_number}
                     </div>
                     `).join("")}
