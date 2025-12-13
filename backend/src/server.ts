@@ -1857,6 +1857,11 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       const now = toZonedTime(new Date(), timeZone);
       return format(now, "EEE, dd MMM");
     };
+
+    const [departureDateStr] = outboundFlight.departure_time.split(" ");
+    const parsedDepartureDate = parse(departureDateStr, "yyyy-MM-dd", new Date());
+    const zonedDepartureDate = toZonedTime(parsedDepartureDate, timeZone);
+    const formattedDepartureDate = format(zonedDepartureDate, "EEE, dd MMM");
     // 3️⃣ HTML Template
     const htmlContent = `
     <html>
@@ -2027,10 +2032,12 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                     ${flights.map((f: any, idx: number) => `
                     <div class="flight-details">
                       <div>
+                    
                         <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
                         <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
-                        <strong>Departure:</strong> ${f.departure_time}<br />
-                        <strong>Arrival:</strong> ${f.arrival_time}<br />
+                        <strong>Date:</strong> ${format(toZonedTime(parse(f.departure_time.split(" "), "yyyy-MM-dd", new Date()), timeZone), "EEE, dd MMM")}<br />
+                        <strong>Departure:</strong> ${f.departure_time.split(" ")}<br />
+                        <strong>Arrival:</strong> ${f.arrival_time.split(" ")}<br />
                         <strong>Flight Number:</strong> ${f.flight_number}
                     </div>
                     `).join("")}
@@ -2061,9 +2068,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Booking ID:</strong> ${booking.booking_reference}
                   </p>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Booking Date:</strong> ${formatDateToday()}
-                  </p>
+                  
                 </td>
                 <td style="text-align: right">
                   <h3 style="color: #1a237e; margin: 0">Payment</h3>
