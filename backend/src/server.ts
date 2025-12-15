@@ -2592,7 +2592,52 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         }
       }
     }
- const emailHtml = `
+ 
+    // 4. Mettre à jour les passagers
+    if (passengers && Array.isArray(passengers)) {
+      console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
+
+      // Supprimer les anciens passagers
+      await connection.query(
+        `DELETE FROM passengers WHERE booking_id = ?`,
+        [booking.id]
+      );
+      console.log(`🗑️ Anciens passagers supprimés`);
+     const emailResults = [];
+      // Insérer les nouveaux passagers
+      for (const passenger of passengers) {
+        await connection.query(
+          `INSERT INTO passengers (
+            booking_id, first_name, middle_name, last_name,
+            date_of_birth, gender, title, address, type,
+            type_vol, type_v, country, nationality,
+            phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            booking.id,
+            passenger.firstName || passenger.name || '',
+            passenger.middleName || null,
+            passenger.lastName || '',
+            passenger.dateOfBirth || passenger.dob || null,
+            passenger.gender || "other",
+            passenger.title || "Mr",
+            passenger.address || null,
+            passenger.type || "adult",
+            passenger.typeVol || "plane",
+            passenger.typeVolV || "onway",
+            passenger.country || null,
+            passenger.nationality || null,
+            passenger.phone || null,
+            passenger.email || null,
+            passenger.nom_urgence || null,
+            passenger.email_urgence || null,
+            passenger.tel_urgence || null,
+            new Date(),
+            new Date()
+          ]
+        );
+
+         const emailHtml = `
     <html>
     <head>
       
@@ -2684,8 +2729,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
   <div style="padding: 8px">
     <p>
-      Dear ${passengers.map((p: any) => p.first_name + " " +
-      p.last_name).join(", ")}
+      Dear ${passenger.firstName} ${passenger.lastName},
     </p>
     <p>
       Thank you for choosing Trogon Airways. Please find your e-ticket below. We
@@ -2700,13 +2744,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
         <strong>Payment Method:</strong>
 
-        ${booking.payment_method === "cash" ? "Cash" : booking.payment_method
-        === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
-        "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
-          booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
       </p>
       
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
+      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${passenger.typeVol === "helicopter" ? "Helicopter" : "Air Plane"
       }</p>
     </div>
 
@@ -2756,18 +2796,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                 <td>
                   <div class="flight-card">
                     <div class="flight-header">Outbound Flight</div>
-                    ${flights.map((f: any, idx: number) => `
-                    <div class="flight-details">
-                      <div>
-                    
-                        <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
-                        <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Departure:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
-                        <strong>Arrival:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
-                        <strong>Flight Number:</strong> ${f.flight_number}
-                    </div>
-                    `).join("")}
+                  
                   </div>
                 </td>
               </tr>
@@ -2779,9 +2808,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
             <p style="margin: 0">
-              ${passengers.map((p: any) => `<strong>Adult:</strong>
-              ${p.first_name} ${p.last_name}<br />
-              <strong>Email:</strong> ${p.email}`).join("<br />")}
+              <strong>Adult:</strong>${passenger.firstName} ${passenger.lastName}<br />
+              <strong>Email:</strong> ${passenger.email}
             </p>
           </td>
         </tr>
@@ -2793,22 +2821,18 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                 <td>
                   <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
                   <p style="margin: 0; font-size: 0.9em">
-                    <strong>Booking ID:</strong> ${booking.booking_reference}
+                    <strong>Booking ID:</strong> ${reference}
                   </p>
                   
                 </td>
                 <td style="text-align: right">
                   <h3 style="color: #1a237e; margin: 0">Payment</h3>
                   <p style="margin: 0; font-size: 1.1em">
-                    <strong>Total:</strong> $${booking.total_price}
+                    <strong>Total:</strong> $${totalPrice}
                   </p>
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Status: </strong>
-                    ${booking.payment_method === "cash" ? "Paid" :
-        booking.payment_method === "card" ? "Paid" :
-          booking.payment_method === "cheque" ? "Paid" :
-            booking.payment_method === "virement" ? "Paid" :
-              booking.payment_method === "transfert" ? "Paid" : "UnPaid"}
+                  
                   </p>
                 </td>
               </tr>
@@ -2820,7 +2844,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
   </div>
   <!-- End E-Ticket Section -->
 
-  ${booking.type_vol === "plane" ? `
+  ${passenger.typeVol === "plane" ? `
       <div style="padding: 8px; font-size: 0.9em; color: #555">
     <p>
       <strong>Important:</strong> Please arrive at the airport at least 1 hour
@@ -2857,243 +2881,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
  
 </div>
-
-
-<!--->
-<!-- Forcer une nouvelle page -->
-<div style="page-break-after: always;"></div>
-
-<div
-  style="
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 800px;
-    margin: 0 auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-  "
->
-  <div
-  style="
-    display: block;
-    width: 100%;
-    background-color: #1A237E; /* ou 'blue' */
-    color: white;
-    padding: 20px;
-    text-align: center;
-  "
->
-    <img
-      src="https://trogonairways.com/logo-trogonpng.png"
-      alt=""
-      style="height: 55px; vertical-align: middle"
-    />
-    <p style="margin: 5px 0 0; font-size: 1.2em">Votre réservation est confirmée.</p>
-  </div>
-
-  <div style="padding: 8px">
-    <p>
-      Cher(e) ${passengers.map((p: any) => p.first_name + " " +
-                p.last_name).join(", ")}
-    </p>
-    <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
-  </div>
-
-  <!-- E-Ticket Section -->
-  <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
-    <div style="padding: 8px; text-align: center">
-      <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-        <strong>Mode de paiement:</strong>
-
-           ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
-      </p>
-      
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Avion"
-      }</p>
-    </div>
-
-    <div
-      style="
-        background: rgba(0, 28, 150, 0.3);
-        border: 1px solid #eee;
-        padding: 8px;
-        border-radius: 8px;
-      "
-    >
-      <table width="100%" style="border-collapse: collapse">
-        <tr>
-          <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
-            
-            <span
-              style="
-                font-size: 1.5em;
-                font-weight: bold;
-                color: #1a237e;
-                vertical-align: middle;
-                margin-left: 10px;
-              "
-              >Carte d'embarquement</span
-            >
-          </td>
-          <td
-            style="
-              padding-bottom: 20px;
-              border-bottom: 1px solid #eee;
-              text-align: right;
-            "
-          >
-          </td>
-        </tr>
-
-        <tr>
-          <td colspan="2" style="padding-top: 8px">
-            <div style="padding: 20px; text-align: center">
-              <h3 style="color: #1a237e; margin: 0">Vol Simple</h3>
-            </div>
-            <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-
-            <table width="100%">
-              <tr>
-                <td>
-                  <div class="flight-card">
-                    <div class="flight-header">Vol aller</div>
-                    ${flights.map((f: any, idx: number) => `
-                    <div class="flight-details">
-                      <div>
-                    
-                        <strong>De:</strong> ${f.dep_name} (${f.dep_code})<br />
-                        <strong>A:</strong> ${f.arr_name} (${f.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${f.flight_number}
-                    </div>
-                    `).join("")}
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <tr>
-          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <h3 style="color: #1a237e; margin: 0 0 10px 0">Passager</h3>
-            <p style="margin: 0">
-              ${passengers.map((p: any) => `<strong>Adult:</strong>
-              ${p.first_name} ${p.last_name}<br />
-              <strong>Email:</strong> ${p.email}`).join("<br />")}
-            </p>
-          </td>
-        </tr>
-
-        <tr>
-          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <table width="100%">
-              <tr>
-                <td>
-                  <h3 style="color: #1a237e; margin: 0">Détails de la réservation</h3>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Réservation ID:</strong> ${booking.booking_reference}
-                  </p>
-                  
-                </td>
-                <td style="text-align: right">
-                  <h3 style="color: #1a237e; margin: 0">Paiement</h3>
-                  <p style="margin: 0; font-size: 1.1em">
-                    <strong>Total:</strong> $${booking.total_price}
-                  </p>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Status: </strong>
-                   
-              ${booking.payment_method === "cash" ? "Payé" : booking.payment_method === "card" ? "Payé" : booking.payment_method === "cheque" ? "Payé" : booking.payment_method === "virement" ? "Payé" : booking.payment_method === "transfert" ? "Payé" : "Non rémunéré"}
-                  </p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-  <!-- End E-Ticket Section -->
-  ${booking.type_vol === "plane" ? `
-    <div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.</p>
-        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
-Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
-</p>
-        <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
-        <p>Nous nous réjouissons de vous accueillir à bord.</p>
-        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-      </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.</p> 
-        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol
-imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
-incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à
-l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué
-pour ces raisons.</p>
-        <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
-        <p>Nous nous réjouissons de vous accueillir à bord.</p>
-        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-      </div>`}
-
-  
-</div>
-
-
     </body>
     </html>
     `;
-
-    // 4. Mettre à jour les passagers
-    if (passengers && Array.isArray(passengers)) {
-      console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
-
-      // Supprimer les anciens passagers
-      await connection.query(
-        `DELETE FROM passengers WHERE booking_id = ?`,
-        [booking.id]
-      );
-      console.log(`🗑️ Anciens passagers supprimés`);
-     const emailResults = [];
-      // Insérer les nouveaux passagers
-      for (const passenger of passengers) {
-        await connection.query(
-          `INSERT INTO passengers (
-            booking_id, first_name, middle_name, last_name,
-            date_of_birth, gender, title, address, type,
-            type_vol, type_v, country, nationality,
-            phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            booking.id,
-            passenger.firstName || passenger.name || '',
-            passenger.middleName || null,
-            passenger.lastName || '',
-            passenger.dateOfBirth || passenger.dob || null,
-            passenger.gender || "other",
-            passenger.title || "Mr",
-            passenger.address || null,
-            passenger.type || "adult",
-            passenger.typeVol || "plane",
-            passenger.typeVolV || "onway",
-            passenger.country || null,
-            passenger.nationality || null,
-            passenger.phone || null,
-            passenger.email || null,
-            passenger.nom_urgence || null,
-            passenger.email_urgence || null,
-            passenger.tel_urgence || null,
-            new Date(),
-            new Date()
-          ]
-        );
 
           const emailResult = await sendEmail(
           passenger.email,
