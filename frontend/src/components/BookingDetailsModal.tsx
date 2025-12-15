@@ -44,7 +44,7 @@ export type BookingDetails = {
     contactPhone?: string;
     bookedOn: string;
     paymentStatus: string;
-    payment_method: string;
+    payment_method?: string;
     flights: Flight[];
     passengers: Passenger[];
     totalPrice: string;

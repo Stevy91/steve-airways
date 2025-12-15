@@ -4345,6 +4345,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
       booking_reference: booking.booking_reference,
       total_price: Number(booking.total_price),
       status: booking.status,
+      payment_method: booking.payment_method,
       created_at: new Date(booking.created_at).toISOString(),
       passenger_count: booking.passenger_count,
       contact_email: booking.contact_email,
