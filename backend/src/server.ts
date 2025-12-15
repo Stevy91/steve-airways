@@ -2499,7 +2499,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     contactPhone,
     totalPrice,
     adminNotes,
-    paymentStatus
+    paymentStatus,
+    bookingReference,
+    typeVol,
   } = req.body;
 
   console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
@@ -2746,7 +2748,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
       </p>
       
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${passenger.typeVol === "helicopter" ? "Helicopter" : "Air Plane"
+      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter" ? "Helicopter" : "Air Plane"
       }</p>
     </div>
 

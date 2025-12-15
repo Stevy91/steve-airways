@@ -345,6 +345,8 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                     totalPrice: totalPriceForAPI, // Utiliser la valeur directement depuis l'input
                     paymentStatus: paymentStatus,
                     adminNotes: editedBooking.adminNotes,
+                    bookingReference:booking.reference,
+                    typeVol:booking.typeVol,
                 }),
             });
 
