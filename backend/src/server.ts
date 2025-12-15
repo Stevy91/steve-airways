@@ -4319,7 +4319,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
           f.type,
           f.airline,
           f.departure_time AS date,
-          f.arrival_time,
+          f.arrival_time AS arrival_date,
           f.price,
           f.seats_available,
           dep.name AS departure_airport_name,

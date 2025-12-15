@@ -7,6 +7,7 @@ export type Flight = {
     code: string;
     from: string;
     to: string;
+    arrival_date: string;
     date: string;
     id?: number;
     flight_number?: string;
@@ -299,7 +300,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             from: "",
             to: "",
             date: "",
-            arrival: "",
+            arrival_date: "",
         };
 
         setEditedBooking({
