@@ -2803,7 +2803,16 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                 <td>
                   <div class="flight-card">
                     <div class="flight-header">Outbound Flight</div>
-                  
+                    ${flights.map((f: any, idx: number) => `
+                    <div class="flight-details">
+                      <div>
+                    
+                        <strong>From:</strong> ${f.from}<br />
+                        <strong>To:</strong> ${f.to} <br />
+                       
+                        <strong>Flight Number:</strong> ${f.code}
+                    </div>
+                    `).join("")}
                   </div>
                 </td>
               </tr>
@@ -2815,7 +2824,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
             <p style="margin: 0">
-              <strong>Adult:</strong>${passenger.firstName} ${passenger.lastName}<br />
+              <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
               <strong>Email:</strong> ${passenger.email}
             </p>
           </td>
