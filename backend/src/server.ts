@@ -2822,8 +2822,34 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                         <strong>From:</strong> ${f.from}<br />
                         <strong>To:</strong> ${f.to}  <br />
                         <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
+                        <strong>Departure:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
+                        <strong>Arrival:</strong> ${(() => {
+                                                                    try {
+                                                                        const date = new Date(f.date);
+                                                                        return isNaN(date.getTime())
+                                                                            ? "Invalid time"
+                                                                            : date.toLocaleTimeString("fr-FR", {
+                                                                                  hour: "2-digit",
+                                                                                  minute: "2-digit",
+                                                                              });
+                                                                    } catch (error) {
+                                                                        return "Invalid time";
+                                                                    }
+                                                                })()} <br />
                        
-                        <strong>Flight Number:</strong> ${f.code}
+                        <strong>Flight Number:</strong> ${(() => {
+                                                                    try {
+                                                                        const date = new Date(f.arrival);
+                                                                        return isNaN(date.getTime())
+                                                                            ? "Invalid time"
+                                                                            : date.toLocaleTimeString("fr-FR", {
+                                                                                  hour: "2-digit",
+                                                                                  minute: "2-digit",
+                                                                              });
+                                                                    } catch (error) {
+                                                                        return "Invalid time";
+                                                                    }
+                                                                })()}
                     </div>
                     `).join("")}
                   </div>
