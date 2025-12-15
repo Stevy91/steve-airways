@@ -2595,6 +2595,18 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         }
       }
     }
+
+        const formatDateSafely = (dateString: string, formatString: string) => {
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return "Invalid date";
+            }
+            return format(date, formatString);
+        } catch (error) {
+            return "Invalid date";
+        }
+    };
  
     // 4. Mettre à jour les passagers
     if (passengers && Array.isArray(passengers)) {
@@ -2809,6 +2821,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                     
                         <strong>From:</strong> ${f.from}<br />
                         <strong>To:</strong> ${f.to} <br />
+                        <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
                        
                         <strong>Flight Number:</strong> ${f.code}
                     </div>
