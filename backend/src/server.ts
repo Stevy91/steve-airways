@@ -2502,6 +2502,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     paymentStatus,
     bookingReference,
     typeVol,
+    payment_method
   } = req.body;
 
   console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
@@ -2746,6 +2747,10 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
         <strong>Payment Method:</strong>
 
+        ${payment_method === "cash" ? "Cash" : payment_method
+        === "card" ? "Credit/Debit Card" : payment_method === "cheque" ?
+        "Bank Check" : payment_method === "virement" ? "Bank transfer" :
+          payment_method === "transfert" ? "Transfer" : "Contrat"}
       </p>
       
       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter" ? "Helicopter" : "Air Plane"
@@ -2834,7 +2839,11 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                   </p>
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Status: </strong>
-                  
+                    ${payment_method === "cash" ? "Paid" :
+        payment_method === "card" ? "Paid" :
+          payment_method === "cheque" ? "Paid" :
+            payment_method === "virement" ? "Paid" :
+              payment_method === "transfert" ? "Paid" : "UnPaid"}
                   </p>
                 </td>
               </tr>

@@ -43,6 +43,7 @@ export type BookingDetails = {
     contactPhone?: string;
     bookedOn: string;
     paymentStatus: string;
+    payment_method: string;
     flights: Flight[];
     passengers: Passenger[];
     totalPrice: string;
@@ -347,6 +348,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                     adminNotes: editedBooking.adminNotes,
                     bookingReference:booking.reference,
                     typeVol:booking.typeVol,
+                    payment_method:booking.payment_method,
                 }),
             });
 
