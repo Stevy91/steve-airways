@@ -31,7 +31,7 @@ export default defineConfig({
         },
     },
     preview: {
-        port: 3000,
+        port: 3001,
         strictPort: true,
     },
 });
