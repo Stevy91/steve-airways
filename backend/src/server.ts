@@ -2837,7 +2837,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                                                                 })()} <br />
                         <strong>Arrival:</strong> ${(() => {
                                                                     try {
-                                                                        const date = new Date(f.arrival);
+                                                                        const date = new Date(f.arrival_date);
                                                                         return isNaN(date.getTime())
                                                                             ? "Invalid time"
                                                                             : date.toLocaleTimeString("fr-FR", {
