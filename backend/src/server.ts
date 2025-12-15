@@ -1346,6 +1346,68 @@ app.get("/api/users/:id", authMiddleware, async (req: Request, res: Response) =>
   }
 });
 
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B";
+  const sender = "Booking Trogon Airways <booking@trogonairways.com>";
+
+  console.log("🔍 DEBUG sendEmail appelé avec:");
+  console.log("  - to:", to);
+  console.log("  - subject:", subject);
+  console.log("  - sender:", sender);
+  console.log("  - apiKey présente:", !!apiKey);
+
+  if (!apiKey || !sender) {
+    console.error("❌ Configuration manquante");
+    return { success: false, error: "Configuration manquante" };
+  }
+
+  const payload = {
+    api_key: apiKey,
+    sender,
+    to: [to],
+    subject,
+    html_body: html,
+  };
+
+  console.log("📦 Payload envoyé à SMTP2GO:", JSON.stringify(payload));
+
+  try {
+    console.log("🔄 Envoi de la requête à SMTP2GO...");
+
+    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log("📊 Status HTTP reçu:", response.status);
+    console.log("📊 Headers reçus:", response.headers);
+
+    const data = await response.json();
+    console.log("📨 Réponse COMPLÈTE SMTP2GO:", JSON.stringify(data, null, 2));
+
+    if (data.data && data.data.succeeded === 1) {
+      console.log("✅ SUCCÈS - Email accepté par SMTP2GO");
+      return { success: true, data };
+    } else {
+      console.error("❌ ÉCHEC - SMTP2GO a refusé l'email");
+      console.error("   Erreur:", data.data?.error);
+      console.error("   Code:", data.data?.error_code);
+      return { success: false, error: data };
+    }
+  } catch (err) {
+    console.error("💥 ERREUR RÉSEAU/FETCH:", err);
+    if (err instanceof Error) {
+      console.error("   Message:", err.message);
+      console.error("   Stack:", err.stack);
+    }
+    return { success: false, error: err };
+  }
+}
+
 //  Modifier un utilisateur (protégé)
 app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
   const { name, email, password, phone } = req.body;
@@ -2825,7 +2887,46 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         }
       }
     }
+const emailHtml = `
+                  
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
+                .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+                .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+                .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .passenger-table th { background-color: #f2f2f2; }
+                .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+            </style>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+                <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
+              
+                <p style="margin: 5px 0 0; font-size: 1.2em;">Flight cancellation</p>
+              </div>
 
+              <div style="padding: 20px;">
+                <p></p>Dear, steve,</p>
+              
+              <p>We are sorry to inform you that your reservation has been <b>cancelled</b>.</p>
+              
+                
+                <p>Booking reference : <b>${reference}</b></p>
+              </div>
+
+
+              <div style="padding: 20px; font-size: 0.9em; color: #555;">
+              <p>Thank you for choosing Trogon Airways.</p>
+              
+            
+                <p>Sincerely,<br>The Trogon Airways Team</p>
+              </div>
+            </div>
+
+        `;
     // 4. Mettre à jour les passagers
     if (passengers && Array.isArray(passengers)) {
       console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
@@ -2836,7 +2937,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         [booking.id]
       );
       console.log(`🗑️ Anciens passagers supprimés`);
-
+const emailResults = [];
       // Insérer les nouveaux passagers
       for (const passenger of passengers) {
         await connection.query(
@@ -2869,6 +2970,23 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             new Date()
           ]
         );
+
+          const emailResult = await sendEmail(
+          passenger.email,
+          "Trogon Airways, Flight cancellation",
+          emailHtml
+        );
+
+        console.log(`📊 DEBUG - Résultat email ${passenger.email}:`, emailResult.success ? 'SUCCÈS' : 'ÉCHEC');
+        if (!emailResult.success) {
+          console.log(`❌ DEBUG - Erreur email:`, emailResult.error);
+        }
+
+        emailResults.push({
+          passenger: passenger.email,
+          success: emailResult.success,
+          error: emailResult.error
+        })
       }
       console.log(`✅ ${passengers.length} passager(s) insérés`);
 
@@ -2881,6 +2999,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         console.log(`✅ Nombre de passagers mis à jour: ${newPassengerCount}`);
       }
     }
+
+
+    
 
     // 5. Créer une notification pour la modification
     await connection.query(
@@ -2942,6 +3063,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     console.log(`🏁 Fin modification réservation: ${reference}`);
   }
 });
+
+
+
 // API pour récupérer les détails d'une réservation par référence
 app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
@@ -3950,66 +4074,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 });
 
 
-async function sendEmail(to: string, subject: string, html: string) {
-  const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B";
-  const sender = "Booking Trogon Airways <booking@trogonairways.com>";
 
-  console.log("🔍 DEBUG sendEmail appelé avec:");
-  console.log("  - to:", to);
-  console.log("  - subject:", subject);
-  console.log("  - sender:", sender);
-  console.log("  - apiKey présente:", !!apiKey);
-
-  if (!apiKey || !sender) {
-    console.error("❌ Configuration manquante");
-    return { success: false, error: "Configuration manquante" };
-  }
-
-  const payload = {
-    api_key: apiKey,
-    sender,
-    to: [to],
-    subject,
-    html_body: html,
-  };
-
-  console.log("📦 Payload envoyé à SMTP2GO:", JSON.stringify(payload));
-
-  try {
-    console.log("🔄 Envoi de la requête à SMTP2GO...");
-
-    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    console.log("📊 Status HTTP reçu:", response.status);
-    console.log("📊 Headers reçus:", response.headers);
-
-    const data = await response.json();
-    console.log("📨 Réponse COMPLÈTE SMTP2GO:", JSON.stringify(data, null, 2));
-
-    if (data.data && data.data.succeeded === 1) {
-      console.log("✅ SUCCÈS - Email accepté par SMTP2GO");
-      return { success: true, data };
-    } else {
-      console.error("❌ ÉCHEC - SMTP2GO a refusé l'email");
-      console.error("   Erreur:", data.data?.error);
-      console.error("   Code:", data.data?.error_code);
-      return { success: false, error: data };
-    }
-  } catch (err) {
-    console.error("💥 ERREUR RÉSEAU/FETCH:", err);
-    if (err instanceof Error) {
-      console.error("   Message:", err.message);
-      console.error("   Stack:", err.stack);
-    }
-    return { success: false, error: err };
-  }
-}
 
 
 
@@ -4129,45 +4194,45 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
         console.log(`\n📧 DEBUG - Envoi email ${index + 1}/${passengersBeforeDelete.length} à: ${passenger.email}`);
 
         const emailHtml = `
-          
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
-        .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
-        .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-        .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .passenger-table th { background-color: #f2f2f2; }
-        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
-      </style>
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-      <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
-        <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
-       
-        <p style="margin: 5px 0 0; font-size: 1.2em;">Flight cancellation</p>
-      </div>
+                  
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
+                .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+                .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+                .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .passenger-table th { background-color: #f2f2f2; }
+                .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+            </style>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+                <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
+              
+                <p style="margin: 5px 0 0; font-size: 1.2em;">Flight cancellation</p>
+              </div>
 
-      <div style="padding: 20px;">
-        <p></p>Dear, ${passenger.first_name} ${passenger.last_name},</p>
-       
-       <p>We are sorry to inform you that your reservation has been <b>cancelled</b>.</p>
-       
-        
-         <p>Booking reference : <b>${reference}</b></p>
-      </div>
+              <div style="padding: 20px;">
+                <p></p>Dear, ${passenger.first_name} ${passenger.last_name},</p>
+              
+              <p>We are sorry to inform you that your reservation has been <b>cancelled</b>.</p>
+              
+                
+                <p>Booking reference : <b>${reference}</b></p>
+              </div>
 
 
-      <div style="padding: 20px; font-size: 0.9em; color: #555;">
-       <p>Thank you for choosing Trogon Airways.</p>
-       
-    
-        <p>Sincerely,<br>The Trogon Airways Team</p>
-      </div>
-    </div>
+              <div style="padding: 20px; font-size: 0.9em; color: #555;">
+              <p>Thank you for choosing Trogon Airways.</p>
+              
+            
+                <p>Sincerely,<br>The Trogon Airways Team</p>
+              </div>
+            </div>
 
-`;
+        `;
 
         console.log(`📝 DEBUG - HTML email généré pour ${passenger.email}`);
         const emailResult = await sendEmail(
