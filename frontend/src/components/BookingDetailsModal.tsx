@@ -53,6 +53,7 @@ export type BookingDetails = {
     created_by_email?: string;
     user_created_booking?: number;
     adminNotes?: string;
+    booking?: string;
 };
 
 type BookingDetailsModalProps = {
@@ -109,29 +110,92 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         setIsEditing(!isEditing);
     };
 
-    const handlePrint = async () => {
-  try {
-    const response = await fetch("https://steve-airways.onrender.com/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingData: booking }),
-    });
+//     const handlePrint = async () => {
+//   try {
+//     const response = await fetch("https://steve-airways.onrender.com/api/generate", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ bookingData: booking }),
+//     });
 
-    if (!response.ok) throw new Error("Erreur lors de la génération du PDF");
+//     if (!response.ok) throw new Error("Erreur lors de la génération du PDF");
+
+//     const blob = await response.blob();
+//     const url = window.URL.createObjectURL(blob);
+
+//     const a = document.createElement("a");
+//     a.href = url;
+//     a.download = "billet.pdf";
+//     a.click();
+//     window.URL.revokeObjectURL(url);
+//   } catch (err) {
+//     console.error(err);
+//     alert("Impossible de générer le PDF");
+//   }
+// };
+
+
+// const generateTicketPDF = async (pdfPath: string): Promise<void> => {
+//   if (!booking) {
+//     console.error("Booking is undefined, impossible de générer le PDF.");
+//     return;
+//   }
+
+//   try {
+//     const response = await fetch(
+//       `https://steve-airways.onrender.com/api/generate/${booking.reference}`
+//     );
+
+//     if (!response.ok) {
+//       throw new Error(`Erreur serveur : ${response.statusText}`);
+//     }
+
+//     const blob = await response.blob();
+
+//     const url = window.URL.createObjectURL(blob);
+//     const a = document.createElement("a");
+//     a.href = url;
+//     a.download = pdfPath || "billet.pdf";
+//     a.click();
+
+//     window.URL.revokeObjectURL(url);
+//   } catch (error) {
+//     console.error("Erreur lors du téléchargement du billet :", error);
+//   }
+// };
+
+
+  if (!booking) return null;
+
+  const generateTicketPDF = async (): Promise<void> => {
+  try {
+    const response = await fetch(
+      `https://steve-airways.onrender.com/api/generate/${booking.reference}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Erreur serveur lors de la génération du billet");
+    }
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "billet.pdf";
+    a.download = `ticket-${booking.reference}.pdf`;
     a.click();
+
     window.URL.revokeObjectURL(url);
+
+    onTicketCreated?.();
   } catch (err) {
-    console.error(err);
-    alert("Impossible de générer le PDF");
+    console.error("Erreur génération billet", err);
   }
 };
+
+
+
+
 
 
     const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
@@ -411,17 +475,18 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                     </h2>
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={handlePrint}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-600"
-                                        >
-                                            Imprimer le Billet
+                                        className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-900"
+                                            onClick={() => generateTicketPDF()}
+                                            >
+                                            Imprimer le billet
                                         </button>
+
                                        
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={handleEditToggle}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-white hover:bg-blue-600"
+                                            className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-900"
                                         >
                                             {isEditing ? <X size={16} /> : <Edit size={16} />}
                                             {isEditing ? "Cancel" : "Edit"}

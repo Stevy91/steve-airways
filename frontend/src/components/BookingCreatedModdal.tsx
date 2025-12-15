@@ -136,7 +136,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <div style="padding: 20px; text-align: center;">
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> 
           
-          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "Card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Transfer" : "Contrat"}
+          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Transfer" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Air Plane"
@@ -233,7 +233,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
                       <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
-                      ${paymentMethod === "cash" ? "Paid" : paymentMethod === "Card" ? "Paid" : paymentMethod === "cheque" ? "Paid" : paymentMethod === "virement" ? "Paid" : paymentMethod === "transfert" ? "Paid" : "UnPaid"}
+                      ${paymentMethod === "cash" ? "Paid" : paymentMethod === "card" ? "Paid" : paymentMethod === "cheque" ? "Paid" : paymentMethod === "virement" ? "Paid" : paymentMethod === "transfert" ? "Paid" : "UnPaid"}
                       </p>
                     </td>
                   </tr>
@@ -266,7 +266,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       </div>
 
       <div style="padding: 20px;">
-        <p>Cher, ${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`).join(", ")}</p>
+        <p>Cher(e), ${bookingData.passengersData?.adults?.map((passenger: Passenger) => `${passenger.firstName} ${passenger.lastName}`).join(", ")}</p>
         <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
       </div>
 
@@ -275,7 +275,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <div style="padding: 20px; text-align: center;">
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
           
-          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "Card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
+          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Avion"
@@ -372,7 +372,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                       <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
                       <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
-                      ${paymentMethod === "cash" ? "Payé" : paymentMethod === "Card" ? "Payé" : paymentMethod === "cheque" ? "Payé" : paymentMethod === "virement" ? "Payé" : paymentMethod === "transfert" ? "Payé" : "Non rémunéré"}
+                      ${paymentMethod === "cash" ? "Payé" : paymentMethod === "card" ? "Payé" : paymentMethod === "cheque" ? "Payé" : paymentMethod === "virement" ? "Payé" : paymentMethod === "transfert" ? "Payé" : "Non rémunéré"}
                       </p>
                     </td>
                   </tr>
