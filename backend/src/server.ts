@@ -2820,7 +2820,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                       <div>
                     
                         <strong>From:</strong> ${f.from}<br />
-                        <strong>To:</strong> ${f.to} <br />
+                        <strong>To:</strong> ${f.to}  <br />
                         <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
                        
                         <strong>Flight Number:</strong> ${f.code}
