@@ -2486,11 +2486,12 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
   }
 });
 
+
 app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
   const {
     passengers,
-    flights: updatedFlights, // Nouveaux vols envoyés depuis le frontend
+    flights: updatedFlights,
     contactEmail,
     contactPhone,
     totalPrice,
@@ -2498,9 +2499,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     paymentStatus,
     bookingReference,
     typeVol,
-    payment_method,
-    flightId, // Nouveau paramètre pour le nouvel ID de vol si changement
-    returnFlightId // Nouveau paramètre pour le nouvel ID de vol retour si changement
+    payment_method
   } = req.body;
 
   console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
@@ -2512,21 +2511,22 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     await connection.beginTransaction();
     console.log(`✅ Transaction démarrée`);
 
-    // 1. Vérifier que la réservation existe avec les détails des vols actuels
+    // 1. Vérifier que la réservation existe
     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
       `SELECT 
-          b.id, 
-          b.status, 
-          b.flight_id, 
-          b.return_flight_id, 
-          b.passenger_count,
-          b.booking_reference,
-          f1.code as current_flight_code,
-          f2.code as current_return_flight_code
-       FROM bookings b
-       LEFT JOIN flights f1 ON b.flight_id = f1.id
-       LEFT JOIN flights f2 ON b.return_flight_id = f2.id
-       WHERE b.booking_reference = ? FOR UPDATE`,
+          id, 
+          status, 
+          flight_id, 
+          return_flight_id, 
+          passenger_count,
+          booking_reference,
+          total_price,
+          contact_email,
+          contact_phone,
+          type_vol,
+          payment_method
+       FROM bookings 
+       WHERE booking_reference = ? FOR UPDATE`,
       [reference]
     );
 
@@ -2539,192 +2539,181 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     }
 
     const booking = bookings[0];
-    console.log(`📋 Réservation trouvée:`, booking);
+    console.log(`📋 Réservation trouvée: ID ${booking.id}, Flight ID: ${booking.flight_id}`);
 
-    // 2. VÉRIFICATION DU CHANGEMENT DE VOL
-    const hasFlightChanged = flightId && flightId !== booking.flight_id;
-    const hasReturnFlightChanged = returnFlightId && returnFlightId !== booking.return_flight_id;
+    // 2. VÉRIFIER SI LE NUMÉRO DE VOL A CHANGÉ
+    let flightChanged = false;
+    let flightChangeError = null;
+    let newFlightId = booking.flight_id;
+    let newReturnFlightId = booking.return_flight_id;
 
-    // Si le numéro de vol a changé, vérifier si le nouveau vol existe
-    if (hasFlightChanged || hasReturnFlightChanged) {
-      const flightIdsToCheck = [];
-      if (hasFlightChanged) flightIdsToCheck.push(flightId);
-      if (hasReturnFlightChanged && returnFlightId) flightIdsToCheck.push(returnFlightId);
+    if (updatedFlights && updatedFlights.length > 0 && updatedFlights[0].code) {
+      try {
+        // Récupérer le vol actuel de la réservation
+        let currentFlightNumber = null;
+        if (booking.flight_id) {
+          const [currentFlights] = await connection.query<mysql.RowDataPacket[]>(
+            "SELECT flight_number FROM flights WHERE id = ?",
+            [booking.flight_id]
+          );
+          
+          if (currentFlights.length > 0) {
+            currentFlightNumber = currentFlights[0].flight_number;
+            console.log(`Numéro du vol actuel: ${currentFlightNumber}`);
+          }
+        }
 
-      // Vérifier si les nouveaux vols existent
-      const [newFlights] = await connection.query<mysql.RowDataPacket[]>(
-        "SELECT id, code, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
-        [flightIdsToCheck]
-      );
+        // Vérifier si le numéro de vol a changé
+        if (currentFlightNumber !== updatedFlights[0].code) {
+          console.log(`🔄 Changement de vol détecté: ${currentFlightNumber || 'N/A'} -> ${updatedFlights[0].code}`);
+          
+          // Rechercher le nouveau vol par son numéro (flight_number)
+          const [newFlight] = await connection.query<mysql.RowDataPacket[]>(
+            `SELECT f.id, f.flight_number, f.seats_available, f.type,
+                    l1.code as departure_code, l1.name as departure_name,
+                    l2.code as arrival_code, l2.name as arrival_name
+             FROM flights f
+             JOIN locations l1 ON f.departure_location_id = l1.id
+             JOIN locations l2 ON f.arrival_location_id = l2.id
+             WHERE f.flight_number = ?
+             LIMIT 1 FOR UPDATE`,
+            [updatedFlights[0].code]
+          );
 
-      if (newFlights.length !== flightIdsToCheck.length) {
+          if (newFlight.length === 0) {
+            flightChangeError = `Aucun vol trouvé avec le numéro: ${updatedFlights[0].code}`;
+            console.log(`❌ ${flightChangeError}`);
+            await connection.rollback();
+            return res.status(400).json({
+              success: false,
+              error: "Le vol n'existe pas",
+              details: flightChangeError
+            });
+          }
+
+          console.log(`✅ Nouveau vol trouvé: ID ${newFlight[0].id}, Numéro: ${newFlight[0].flight_number}`);
+
+          // Vérifier les sièges disponibles
+          const passengerCount = passengers ? passengers.length : booking.passenger_count;
+          if (newFlight[0].seats_available < passengerCount) {
+            flightChangeError = `Pas assez de sièges disponibles. Vol ${newFlight[0].flight_number}: ${newFlight[0].seats_available} sièges disponibles, besoin de ${passengerCount}`;
+            console.log(`❌ ${flightChangeError}`);
+            await connection.rollback();
+            return res.status(400).json({
+              success: false,
+              error: "Pas assez de sièges disponibles",
+              details: flightChangeError,
+              seatsAvailable: newFlight[0].seats_available,
+              passengersNeeded: passengerCount
+            });
+          }
+
+          // Libérer les sièges de l'ancien vol
+          if (booking.flight_id) {
+            await connection.execute(
+              "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
+              [booking.passenger_count, booking.flight_id]
+            );
+            console.log(`🔄 Sièges libérés pour l'ancien vol ID ${booking.flight_id}`);
+          }
+
+          // Réserver les sièges du nouveau vol
+          await connection.execute(
+            "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+            [passengerCount, newFlight[0].id]
+          );
+          console.log(`✅ Sièges réservés pour le nouveau vol ID ${newFlight[0].id}`);
+
+          newFlightId = newFlight[0].id;
+          flightChanged = true;
+          
+          // Mettre à jour l'ID du vol dans la réservation
+          await connection.query(
+            "UPDATE bookings SET flight_id = ?, updated_at = NOW() WHERE id = ?",
+            [newFlightId, booking.id]
+          );
+          console.log(`✅ ID du vol mis à jour dans la réservation`);
+        }
+      } catch (error: any) {
+        console.error("❌ Erreur lors de la vérification du vol:", error);
         await connection.rollback();
-        return res.status(400).json({
+        return res.status(500).json({
           success: false,
-          error: "Un ou plusieurs vols n'existent pas",
-          missingFlights: flightIdsToCheck.filter(id => 
-            !newFlights.find((f: any) => f.id === id)
-          )
+          error: "Erreur lors de la vérification du vol",
+          details: error.message
         });
       }
-
-      // Vérifier si les nouveaux vols ont assez de sièges
-      const passengerCount = passengers ? passengers.length : booking.passenger_count;
-      for (const flight of newFlights) {
-        if (flight.seats_available < passengerCount) {
-          await connection.rollback();
-          return res.status(400).json({
-            success: false,
-            error: `Pas assez de sièges disponibles pour le vol ${flight.code}`,
-            flightCode: flight.code,
-            seatsAvailable: flight.seats_available,
-            passengersNeeded: passengerCount
-          });
-        }
-      }
-
-      // LIBÉRER LES SIÈGES DES ANCIENS VOLS
-      const oldFlightIds = [];
-      if (hasFlightChanged && booking.flight_id) oldFlightIds.push(booking.flight_id);
-      if (hasReturnFlightChanged && booking.return_flight_id) oldFlightIds.push(booking.return_flight_id);
-
-      if (oldFlightIds.length > 0) {
-        await connection.execute(
-          "UPDATE flights SET seats_available = seats_available + ? WHERE id IN (?)",
-          [booking.passenger_count, oldFlightIds]
-        );
-        console.log(`🔄 Sièges libérés pour les anciens vols:`, oldFlightIds);
-      }
-
-      // RÉSERVER LES SIÈGES DES NOUVEAUX VOLS
-      for (const flight of newFlights) {
-        await connection.execute(
-          "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-          [passengerCount, flight.id]
-        );
-        console.log(`✅ Sièges réservés pour le nouveau vol ${flight.code}`);
-      }
-
-      // Mettre à jour les IDs de vol dans la réservation
-      const updateFields = [];
-      const updateValues = [];
-
-      if (hasFlightChanged) {
-        updateFields.push("flight_id = ?");
-        updateValues.push(flightId);
-      }
-      if (hasReturnFlightChanged) {
-        updateFields.push("return_flight_id = ?");
-        updateValues.push(returnFlightId);
-      }
-
-      if (updateFields.length > 0) {
-        updateValues.push(reference);
-        await connection.query(
-          `UPDATE bookings SET ${updateFields.join(", ")}, updated_at = NOW() WHERE booking_reference = ?`,
-          updateValues
-        );
-        console.log(`✅ IDs de vol mis à jour dans la réservation`);
-      }
-
-      // Créer une notification pour le changement de vol
-      await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          "flight_change",
-          `Changement de vol pour la réservation ${reference}. Nouveau(s) vol(s) assigné(s).`,
-          booking.id,
-          false,
-          new Date()
-        ]
-      );
     }
 
     // 3. Mettre à jour les informations générales de la réservation
-    const updateGeneralFields = [];
-    const updateGeneralValues = [];
+    const updateFields = [];
+    const updateValues = [];
 
-    if (contactEmail) {
-      updateGeneralFields.push("contact_email = ?");
-      updateGeneralValues.push(contactEmail);
+    if (contactEmail !== undefined) {
+      updateFields.push("contact_email = ?");
+      updateValues.push(contactEmail);
     }
-    if (contactPhone) {
-      updateGeneralFields.push("contact_phone = ?");
-      updateGeneralValues.push(contactPhone);
+    if (contactPhone !== undefined) {
+      updateFields.push("contact_phone = ?");
+      updateValues.push(contactPhone);
     }
-    if (totalPrice) {
-      updateGeneralFields.push("total_price = ?");
-      updateGeneralValues.push(totalPrice);
+    if (totalPrice !== undefined) {
+      updateFields.push("total_price = ?");
+      updateValues.push(totalPrice);
     }
-    if (adminNotes) {
-      updateGeneralFields.push("adminNotes = ?");
-      updateGeneralValues.push(adminNotes);
+    if (adminNotes !== undefined) {
+      updateFields.push("adminNotes = ?");
+      updateValues.push(adminNotes);
     }
-    if (paymentStatus) {
-      updateGeneralFields.push("status = ?");
-      updateGeneralValues.push(paymentStatus);
+    if (paymentStatus !== undefined) {
+      updateFields.push("status = ?");
+      updateValues.push(paymentStatus);
     }
-    if (typeVol) {
-      updateGeneralFields.push("type_vol = ?");
-      updateGeneralValues.push(typeVol);
+    if (typeVol !== undefined) {
+      updateFields.push("type_vol = ?");
+      updateValues.push(typeVol);
     }
-    if (payment_method) {
-      updateGeneralFields.push("payment_method = ?");
-      updateGeneralValues.push(payment_method);
+    if (payment_method !== undefined) {
+      updateFields.push("payment_method = ?");
+      updateValues.push(payment_method);
     }
 
-    if (updateGeneralFields.length > 0) {
-      updateGeneralValues.push(reference);
+    if (updateFields.length > 0) {
+      updateValues.push(booking.id);
       await connection.query(
-        `UPDATE bookings SET ${updateGeneralFields.join(", ")}, updated_at = NOW() WHERE booking_reference = ?`,
-        updateGeneralValues
+        `UPDATE bookings SET ${updateFields.join(", ")}, updated_at = NOW() WHERE id = ?`,
+        updateValues
       );
       console.log(`✅ Informations générales mises à jour`);
     }
 
-    // 4. GESTION DES SIÈGES - AVANT la modification des passagers (si pas de changement de vol)
-    if (!hasFlightChanged && !hasReturnFlightChanged) {
-      const oldPassengerCount = booking.passenger_count;
-      const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
+    // 4. GESTION DES SIÈGES - ajustement si nombre de passagers change
+    const oldPassengerCount = booking.passenger_count;
+    const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
 
-      if (newPassengerCount !== oldPassengerCount) {
-        console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
+    if (newPassengerCount !== oldPassengerCount && !flightChanged) {
+      console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
 
-        // Récupérer les vols de la réservation
-        const flightIds = [booking.flight_id];
-        if (booking.return_flight_id) {
-          flightIds.push(booking.return_flight_id);
-        }
-
-        // Calculer la différence
-        const seatDifference = newPassengerCount - oldPassengerCount;
-
-        if (seatDifference !== 0) {
-          for (const flightId of flightIds) {
-            if (flightId) {
-              await connection.execute(
-                "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-                [seatDifference, flightId]
-              );
-              console.log(`✅ Sièges ajustés pour le vol ${flightId}: ${seatDifference}`);
-            }
-          }
-        }
+      const seatDifference = newPassengerCount - oldPassengerCount;
+      
+      // Mettre à jour le vol actuel
+      if (booking.flight_id) {
+        await connection.execute(
+          "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+          [seatDifference, booking.flight_id]
+        );
+        console.log(`✅ Sièges ajustés pour le vol ${booking.flight_id}: ${seatDifference}`);
+      }
+      
+      // Mettre à jour le vol retour si existe
+      if (booking.return_flight_id) {
+        await connection.execute(
+          "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+          [seatDifference, booking.return_flight_id]
+        );
+        console.log(`✅ Sièges ajustés pour le vol retour ${booking.return_flight_id}: ${seatDifference}`);
       }
     }
-
-    const formatDateSafely = (dateString: string, formatString: string) => {
-      try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) {
-          return "Invalid date";
-        }
-        return format(date, formatString);
-      } catch (error) {
-        return "Invalid date";
-      }
-    };
 
     // 5. Mettre à jour les passagers
     if (passengers && Array.isArray(passengers)) {
@@ -2736,8 +2725,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         [booking.id]
       );
       console.log(`🗑️ Anciens passagers supprimés`);
-
-      const emailResults = [];
+const emailResults = [];
       // Insérer les nouveaux passagers
       for (const passenger of passengers) {
         await connection.query(
@@ -2770,6 +2758,19 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             new Date()
           ]
         );
+
+         const formatDateSafely = (dateString: string, formatString: string) => {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return "Invalid date";
+        }
+        return format(date, formatString);
+      } catch (error) {
+        return "Invalid date";
+      }
+    };
+
 
          const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
 
@@ -3259,43 +3260,43 @@ const emailHtml = `
           error: emailResult.error
         })
       }
+      console.log(`✅ ${passengers.length} passager(s) insérés`);
 
       // Mettre à jour le nombre de passagers dans la réservation
-      if (passengers.length !== booking.passenger_count && (!hasFlightChanged && !hasReturnFlightChanged)) {
-        await connection.query(
-          "UPDATE bookings SET passenger_count = ? WHERE id = ?",
-          [passengers.length, booking.id]
-        );
-        console.log(`✅ Nombre de passagers mis à jour: ${passengers.length}`);
-      }
+      await connection.query(
+        "UPDATE bookings SET passenger_count = ? WHERE id = ?",
+        [passengers.length, booking.id]
+      );
+      console.log(`✅ Nombre de passagers mis à jour: ${passengers.length}`);
     }
 
-    // 6. Créer une notification pour la modification
+    // 6. Créer une notification
     await connection.query(
       `INSERT INTO notifications (type, message, booking_id, seen, created_at)
        VALUES (?, ?, ?, ?, ?)`,
       [
-        "update",
-        `Réservation ${reference} modifiée.${hasFlightChanged || hasReturnFlightChanged ? ' Changement de vol effectué.' : ''}`,
+        flightChanged ? "flight_change" : "update",
+        `Réservation ${reference} modifiée.${flightChanged ? ' Changement de vol effectué.' : ''}`,
         booking.id,
         false,
         new Date()
       ]
     );
-    console.log(`🔔 Notification de modification créée`);
 
-    // 7. Récupérer la réservation mise à jour pour la réponse
+    // ✅ COMMIT
+    await connection.commit();
+    console.log(`💾 Transaction commitée`);
+
+    // Récupérer la réservation mise à jour avec les détails du vol
     const [updatedBooking] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT 
-          b.*,
-          u.name as created_by_name,
-          u.email as created_by_email,
-          f1.code as flight_code,
-          f2.code as return_flight_code
+      `SELECT b.*, 
+              f.flight_number as flight_code,
+              l1.name as departure_city,
+              l2.name as arrival_city
        FROM bookings b
-       LEFT JOIN users u ON b.user_created_booking = u.id
-       LEFT JOIN flights f1 ON b.flight_id = f1.id
-       LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+       LEFT JOIN flights f ON b.flight_id = f.id
+       LEFT JOIN locations l1 ON f.departure_location_id = l1.id
+       LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
        WHERE b.booking_reference = ?`,
       [reference]
     );
@@ -3305,20 +3306,16 @@ const emailHtml = `
       [booking.id]
     );
 
-    // ✅ COMMIT APRÈS toutes les opérations
-    await connection.commit();
-    console.log(`💾 Transaction commitée`);
-
     res.json({
       success: true,
       message: "Réservation mise à jour avec succès",
-      flightChanged: hasFlightChanged || hasReturnFlightChanged,
+      flightChanged: flightChanged,
       booking: updatedBooking[0],
       passengers: updatedPassengers,
       updatedAt: new Date()
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Erreur modification réservation:", error);
     if (connection) {
       await connection.rollback();
@@ -3326,7 +3323,8 @@ const emailHtml = `
     res.status(500).json({
       success: false,
       error: "Échec de la modification de la réservation",
-      details: error instanceof Error ? error.message : "Erreur inconnue"
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+      sqlMessage: process.env.NODE_ENV !== "production" ? error.sqlMessage : undefined
     });
   } finally {
     if (connection) {
@@ -3335,6 +3333,860 @@ const emailHtml = `
     console.log(`🏁 Fin modification réservation: ${reference}`);
   }
 });
+
+
+
+// app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
+//   const { reference } = req.params;
+//   const {
+//     passengers,
+//     flights: updatedFlights, // Nouveaux vols envoyés depuis le frontend
+//     contactEmail,
+//     contactPhone,
+//     totalPrice,
+//     adminNotes,
+//     paymentStatus,
+//     bookingReference,
+//     typeVol,
+//     payment_method,
+//     flightId, // Nouveau paramètre pour le nouvel ID de vol si changement
+//     returnFlightId // Nouveau paramètre pour le nouvel ID de vol retour si changement
+//   } = req.body;
+
+//   console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
+//   console.log(`📦 Données reçues:`, JSON.stringify(req.body, null, 2));
+
+//   let connection;
+//   try {
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+//     console.log(`✅ Transaction démarrée`);
+
+//     // 1. Vérifier que la réservation existe avec les détails des vols actuels
+//     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT 
+//           b.id, 
+//           b.status, 
+//           b.flight_id, 
+//           b.return_flight_id, 
+//           b.passenger_count,
+//           b.booking_reference,
+//           f1.code as current_flight_code,
+//           f2.code as current_return_flight_code
+//        FROM bookings b
+//        LEFT JOIN flights f1 ON b.flight_id = f1.id
+//        LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+//        WHERE b.booking_reference = ? FOR UPDATE`,
+//       [reference]
+//     );
+
+//     if (bookings.length === 0) {
+//       await connection.rollback();
+//       return res.status(404).json({
+//         success: false,
+//         error: "Réservation non trouvée"
+//       });
+//     }
+
+//     const booking = bookings[0];
+//     console.log(`📋 Réservation trouvée:`, booking);
+
+//     // 2. VÉRIFICATION DU CHANGEMENT DE VOL
+//     const hasFlightChanged = flightId && flightId !== booking.flight_id;
+//     const hasReturnFlightChanged = returnFlightId && returnFlightId !== booking.return_flight_id;
+
+//     // Si le numéro de vol a changé, vérifier si le nouveau vol existe
+//     if (hasFlightChanged || hasReturnFlightChanged) {
+//       const flightIdsToCheck = [];
+//       if (hasFlightChanged) flightIdsToCheck.push(flightId);
+//       if (hasReturnFlightChanged && returnFlightId) flightIdsToCheck.push(returnFlightId);
+
+//       // Vérifier si les nouveaux vols existent
+//       const [newFlights] = await connection.query<mysql.RowDataPacket[]>(
+//         "SELECT id, code, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+//         [flightIdsToCheck]
+//       );
+
+//       if (newFlights.length !== flightIdsToCheck.length) {
+//         await connection.rollback();
+//         return res.status(400).json({
+//           success: false,
+//           error: "Un ou plusieurs vols n'existent pas",
+//           missingFlights: flightIdsToCheck.filter(id => 
+//             !newFlights.find((f: any) => f.id === id)
+//           )
+//         });
+//       }
+
+//       // Vérifier si les nouveaux vols ont assez de sièges
+//       const passengerCount = passengers ? passengers.length : booking.passenger_count;
+//       for (const flight of newFlights) {
+//         if (flight.seats_available < passengerCount) {
+//           await connection.rollback();
+//           return res.status(400).json({
+//             success: false,
+//             error: `Pas assez de sièges disponibles pour le vol ${flight.code}`,
+//             flightCode: flight.code,
+//             seatsAvailable: flight.seats_available,
+//             passengersNeeded: passengerCount
+//           });
+//         }
+//       }
+
+//       // LIBÉRER LES SIÈGES DES ANCIENS VOLS
+//       const oldFlightIds = [];
+//       if (hasFlightChanged && booking.flight_id) oldFlightIds.push(booking.flight_id);
+//       if (hasReturnFlightChanged && booking.return_flight_id) oldFlightIds.push(booking.return_flight_id);
+
+//       if (oldFlightIds.length > 0) {
+//         await connection.execute(
+//           "UPDATE flights SET seats_available = seats_available + ? WHERE id IN (?)",
+//           [booking.passenger_count, oldFlightIds]
+//         );
+//         console.log(`🔄 Sièges libérés pour les anciens vols:`, oldFlightIds);
+//       }
+
+//       // RÉSERVER LES SIÈGES DES NOUVEAUX VOLS
+//       for (const flight of newFlights) {
+//         await connection.execute(
+//           "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//           [passengerCount, flight.id]
+//         );
+//         console.log(`✅ Sièges réservés pour le nouveau vol ${flight.code}`);
+//       }
+
+//       // Mettre à jour les IDs de vol dans la réservation
+//       const updateFields = [];
+//       const updateValues = [];
+
+//       if (hasFlightChanged) {
+//         updateFields.push("flight_id = ?");
+//         updateValues.push(flightId);
+//       }
+//       if (hasReturnFlightChanged) {
+//         updateFields.push("return_flight_id = ?");
+//         updateValues.push(returnFlightId);
+//       }
+
+//       if (updateFields.length > 0) {
+//         updateValues.push(reference);
+//         await connection.query(
+//           `UPDATE bookings SET ${updateFields.join(", ")}, updated_at = NOW() WHERE booking_reference = ?`,
+//           updateValues
+//         );
+//         console.log(`✅ IDs de vol mis à jour dans la réservation`);
+//       }
+
+//       // Créer une notification pour le changement de vol
+//       await connection.query(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           "flight_change",
+//           `Changement de vol pour la réservation ${reference}. Nouveau(s) vol(s) assigné(s).`,
+//           booking.id,
+//           false,
+//           new Date()
+//         ]
+//       );
+//     }
+
+//     // 3. Mettre à jour les informations générales de la réservation
+//     const updateGeneralFields = [];
+//     const updateGeneralValues = [];
+
+//     if (contactEmail) {
+//       updateGeneralFields.push("contact_email = ?");
+//       updateGeneralValues.push(contactEmail);
+//     }
+//     if (contactPhone) {
+//       updateGeneralFields.push("contact_phone = ?");
+//       updateGeneralValues.push(contactPhone);
+//     }
+//     if (totalPrice) {
+//       updateGeneralFields.push("total_price = ?");
+//       updateGeneralValues.push(totalPrice);
+//     }
+//     if (adminNotes) {
+//       updateGeneralFields.push("adminNotes = ?");
+//       updateGeneralValues.push(adminNotes);
+//     }
+//     if (paymentStatus) {
+//       updateGeneralFields.push("status = ?");
+//       updateGeneralValues.push(paymentStatus);
+//     }
+//     if (typeVol) {
+//       updateGeneralFields.push("type_vol = ?");
+//       updateGeneralValues.push(typeVol);
+//     }
+//     if (payment_method) {
+//       updateGeneralFields.push("payment_method = ?");
+//       updateGeneralValues.push(payment_method);
+//     }
+
+//     if (updateGeneralFields.length > 0) {
+//       updateGeneralValues.push(reference);
+//       await connection.query(
+//         `UPDATE bookings SET ${updateGeneralFields.join(", ")}, updated_at = NOW() WHERE booking_reference = ?`,
+//         updateGeneralValues
+//       );
+//       console.log(`✅ Informations générales mises à jour`);
+//     }
+
+//     // 4. GESTION DES SIÈGES - AVANT la modification des passagers (si pas de changement de vol)
+//     if (!hasFlightChanged && !hasReturnFlightChanged) {
+//       const oldPassengerCount = booking.passenger_count;
+//       const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
+
+//       if (newPassengerCount !== oldPassengerCount) {
+//         console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
+
+//         // Récupérer les vols de la réservation
+//         const flightIds = [booking.flight_id];
+//         if (booking.return_flight_id) {
+//           flightIds.push(booking.return_flight_id);
+//         }
+
+//         // Calculer la différence
+//         const seatDifference = newPassengerCount - oldPassengerCount;
+
+//         if (seatDifference !== 0) {
+//           for (const flightId of flightIds) {
+//             if (flightId) {
+//               await connection.execute(
+//                 "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//                 [seatDifference, flightId]
+//               );
+//               console.log(`✅ Sièges ajustés pour le vol ${flightId}: ${seatDifference}`);
+//             }
+//           }
+//         }
+//       }
+//     }
+
+  
+//     // 5. Mettre à jour les passagers
+//     if (passengers && Array.isArray(passengers)) {
+//       console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
+
+//       // Supprimer les anciens passagers
+//       await connection.query(
+//         `DELETE FROM passengers WHERE booking_id = ?`,
+//         [booking.id]
+//       );
+//       console.log(`🗑️ Anciens passagers supprimés`);
+
+//       const emailResults = [];
+//       // Insérer les nouveaux passagers
+//       for (const passenger of passengers) {
+//         await connection.query(
+//           `INSERT INTO passengers (
+//             booking_id, first_name, middle_name, last_name,
+//             date_of_birth, gender, title, address, type,
+//             type_vol, type_v, country, nationality,
+//             phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+//           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//           [
+//             booking.id,
+//             passenger.firstName || passenger.name || '',
+//             passenger.middleName || null,
+//             passenger.lastName || '',
+//             passenger.dateOfBirth || passenger.dob || null,
+//             passenger.gender || "other",
+//             passenger.title || "Mr",
+//             passenger.address || null,
+//             passenger.type || "adult",
+//             passenger.typeVol || "plane",
+//             passenger.typeVolV || "onway",
+//             passenger.country || null,
+//             passenger.nationality || null,
+//             passenger.phone || null,
+//             passenger.email || null,
+//             passenger.nom_urgence || null,
+//             passenger.email_urgence || null,
+//             passenger.tel_urgence || null,
+//             new Date(),
+//             new Date()
+//           ]
+//         );
+
+//           const formatDateSafely = (dateString: string, formatString: string) => {
+//       try {
+//         const date = new Date(dateString);
+//         if (isNaN(date.getTime())) {
+//           return "Invalid date";
+//         }
+//         return format(date, formatString);
+//       } catch (error) {
+//         return "Invalid date";
+//       }
+//     };
+
+
+//          const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+
+// const emailHtml = `
+//   <html>
+//     <head>  
+//     </head>
+//     <body>
+//       <style>
+//         body {
+//           font-family: Arial, sans-serif;
+//           line-height: 1.6;
+//           color: #333;
+//         }
+//         .container {
+//           max-width: 600px;
+//           margin: 0 auto;
+//           padding: 20px;
+//         }
+//         .header {
+//           background-color: #f0f7ff;
+//           padding: 20px;
+//           text-align: center;
+//           border-radius: 5px;
+//         }
+//         .flight-card {
+      
+//           padding: 15px;
+//           margin-bottom: 20px;
+//         }
+//         .flight-header {
+//           font-size: 18px;
+//           font-weight: bold;
+//           margin-bottom: 10px;
+//         }
+//         .flight-details {
+//           display: grid;
+//           grid-template-columns: 1fr 1fr;
+//           gap: 10px;
+//         }
+//         .passenger-table {
+//           width: 100%;
+//           border-collapse: collapse;
+//           margin-top: 20px;
+//         }
+//         .passenger-table th,
+//         .passenger-table td {
+//           border: 1px solid #ddd;
+//           padding: 8px;
+//           text-align: left;
+//         }
+//         .passenger-table th {
+//           background-color: #f2f2f2;
+//         }
+//         .footer {
+//           margin-top: 30px;
+//           font-size: 12px;
+//           color: #777;
+//           text-align: center;
+//         }
+//       </style>
+//       <div
+//         style="
+//           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+//             'Helvetica Neue', Arial, sans-serif;
+//           line-height: 1.6;
+//           color: #333;
+//           max-width: 800px;
+//           margin: 0 auto;
+//           border: 1px solid #ddd;
+//           border-radius: 8px;
+//           overflow: hidden;
+//         "
+//       >
+//         <div
+//           style="
+//             display: block;
+//             width: 100%;
+//             background-color: #1A237E; /* ou 'blue' */
+//             color: white;
+//             padding: 20px;
+//             text-align: center;
+//           "
+//           >
+//           <img
+//             src="https://trogonairways.com/logo-trogonpng.png"
+//             alt=""
+//             style="height: 55px; vertical-align: middle"
+//           />
+//           <p style="margin: 5px 0 0; font-size: 1.2em">Your Booking is Confirmed</p>
+//         </div>
+
+//         <div style="padding: 8px">
+//           <p>
+//             Dear ${passenger.firstName} ${passenger.lastName},
+//           </p>
+//           <p>
+//             Thank you for choosing Trogon Airways. Please find your e-ticket below. We
+//             recommend printing this section or having it available on your mobile
+//             device at the airport.
+//           </p>
+//         </div>
+
+//         <!-- E-Ticket Section -->
+//         <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+//             <div style="padding: 8px; text-align: center">
+//               <p style="margin: 0; color: #1a237e; font-size: 0.9em">
+//                 <strong>Payment Method:</strong>
+
+//                 ${payment_method === "cash" ? "Cash" : payment_method
+//                     === "card" ? "Credit/Debit Card" : payment_method === "cheque" ?
+//                     "Bank Check" : payment_method === "virement" ? "Bank transfer" :
+//                       payment_method === "transfert" ? "Transfer" : "Contrat"}
+//               </p>
+              
+//               <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter" ? "Helicopter" : "Air Plane"
+//                   }</p>
+//             </div>
+
+//           <div
+//             style="
+//               background: rgba(0, 28, 150, 0.3);
+//               border: 1px solid #eee;
+//               padding: 8px;
+//               border-radius: 8px;
+//             "
+//           >
+//             <table width="100%" style="border-collapse: collapse">
+//               <tr>
+//                 <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
+                  
+//                   <span
+//                     style="
+//                       font-size: 1.5em;
+//                       font-weight: bold;
+//                       color: #1a237e;
+//                       vertical-align: middle;
+//                       margin-left: 10px;
+//                     "
+//                     >Boarding Pass</span
+//                   >
+//                 </td>
+//                 <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+//                 <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
+//               </td>
+             
+//               </tr>
+
+//               <tr>
+//                 <td colspan="2" style="padding-top: 8px">
+//                   <div style="padding: 20px; text-align: center">
+//                     <h3 style="color: #1a237e; margin: 0">One Way</h3>
+//                   </div>
+//                   <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
+
+//                   <table width="100%">
+//                     <tr>
+//                       <td>
+//                         <div class="flight-card">
+//                           <div class="flight-header">Outbound Flight</div>
+//                           ${updatedFlights.map((f: any, idx: number) => `
+//                           <div class="flight-details">
+//                             <div>
+                          
+//                               <strong>From:</strong> ${f.from}<br />
+//                               <strong>To:</strong> ${f.to}  <br />
+//                               <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
+//                               <strong>Departure:</strong> ${(() => {
+//                     try {
+//                       const date = new Date(f.date);
+//                       return isNaN(date.getTime())
+//                         ? "Invalid time"
+//                         : date.toLocaleTimeString("fr-FR", {
+//                           hour: "2-digit",
+//                           minute: "2-digit",
+//                         });
+//                     } catch (error) {
+//                       return "Invalid time";
+//                     }
+//                   })()} <br />
+//                               <strong>Arrival:</strong> ${(() => {
+//                     try {
+//                       const date = new Date(f.arrival_date);
+//                       return isNaN(date.getTime())
+//                         ? "Invalid time"
+//                         : date.toLocaleTimeString("fr-FR", {
+//                           hour: "2-digit",
+//                           minute: "2-digit",
+//                         });
+//                     } catch (error) {
+//                       return "Invalid time";
+//                     }
+//                   })()} <br />
+                            
+//                               <strong>Flight Number:</strong> ${f.code}
+//                           </div>
+//                           `).join("")}
+//                         </div>
+//                       </td>
+//                     </tr>
+//                   </table>
+//                 </td>
+//               </tr>
+
+//               <tr>
+//                 <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//                   <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
+            
+//                   <p style="margin: 0">
+//                     <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
+//                     <strong>Email:</strong> ${passenger.email}
+//                   </p>
+                
+//                 </td>
+//               </tr>
+
+//               <tr>
+//                 <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//                   <table width="100%">
+//                     <tr>
+//                       <td>
+//                         <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
+//                         <p style="margin: 0; font-size: 0.9em">
+//                           <strong>Booking ID:</strong> ${reference}
+//                         </p>
+                        
+//                       </td>
+//                       <td style="text-align: right">
+//                         <h3 style="color: #1a237e; margin: 0">Payment</h3>
+//                         <p style="margin: 0; font-size: 1.1em">
+//                           <strong>Total:</strong> $${totalPrice}
+//                         </p>
+//                         <p style="margin: 0; font-size: 0.9em">
+//                           <strong>Status: </strong>
+//                           ${payment_method === "cash" ? "Paid" :
+//                   payment_method === "card" ? "Paid" :
+//                     payment_method === "cheque" ? "Paid" :
+//                       payment_method === "virement" ? "Paid" :
+//                         payment_method === "transfert" ? "Paid" : "UnPaid"}
+//                         </p>
+//                       </td>
+//                     </tr>
+//                   </table>
+//                 </td>
+//               </tr>
+//             </table>
+//           </div>
+//         </div>
+//         <!-- End E-Ticket Section -->
+
+//         ${passenger.typeVol === "plane" ? `
+//           <div style="padding: 8px; font-size: 0.9em; color: #555">
+//             <p>
+//               <strong>Important:</strong> Please arrive at the airport at least 1 hour
+//               before your departure time. All passengers must present a valid ID at
+//               check-in.
+//             </p>
+//             <p>
+//               <strong>Baggage Limitation: **</strong> The maximum allowance for
+//               passenger baggage is 30 lb.
+//             </p>
+//             <p>
+//               <strong>Remarks: **</strong> The company declines all responsibility for
+//               flight delays, cancellations, or changes resulting from circumstances
+//               beyond its control, such as, technical problems, strikes, or any other
+//               problems. The customer is responsible for their own personal arrangements
+//               (airport arrival time, travel formalities, etc.). No refund or
+//               compensation can be claimed in the event of a missed flight
+//               for these reasons.
+//             </p>
+//             <p>
+//               <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
+//               before your trip will result in a 50% cancellation fee being charged..
+//             </p>
+//             <p>We look forward to welcoming you on board.</p>
+//             <p>Sincerely,<br />The Trogon Airways Team</p>
+//           </div>` :
+//           `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//               <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+//               <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb.</p>
+//               <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+//               <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
+//               <p>We look forward to welcoming you on board.</p>
+//               <p>Sincerely,<br>The Trogon Airways Team</p>
+//             </div>
+//         `}
+//       </div>
+//       <br /><br /><br />
+
+//       <div
+//   style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+//   <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+//     <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
+//     <p style="margin: 5px 0 0; font-size: 1.2em;">Votre réservation est confirmée.</p>
+//   </div>
+
+//   <div style="padding: 20px;">
+//     <p>Cher(e), ${passenger.firstName} ${passenger.lastName},</p>
+//     <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous
+//       recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
+//   </div>
+
+//   <!-- E-Ticket Section -->
+//   <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
+//     <div style="padding: 20px; text-align: center;">
+//       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong>
+
+
+//         ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Carte bancaire" : payment_method ===
+//         "cheque" ? "chèque bancaire" : payment_method === "virement" ? "Virement bancaire" : payment_method ===
+//         "transfert" ? "Transfert" : "Contrat"}
+//       </p>
+//       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${typeVol === "helicopter" ?
+//         "Helicopter" : "Avion"}</p>
+//     </div>
+
+//     <div style=" background: rgba(0, 28, 150, 0.3);
+//               border: 1px solid #eee;
+//               padding: 8px;
+//               border-radius: 8px;">
+//       <table width="100%" style="border-collapse: collapse;">
+//         <tr>
+//           <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
+            
+//             <span
+//               style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Carte
+//               d'embarquement</span>
+//           </td>
+//          <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+//                 <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
+//               </td>
+//         </tr>
+
+//         <tr>
+//           <td colspan="2" style="padding-top: 20px;">
+//             <div style="padding: 20px; text-align: center;">
+//               <h3 style="color: #1A237E; margin: 0;"> Vol Simple</h3>
+//             </div>
+//             <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
+
+
+//             <table width="100%">
+//               <tr>
+//                 <td>
+//                   <div class="flight-card">
+//                     <div class="flight-header">Vol aller</div>
+
+
+//                     ${updatedFlights.map((f: any, idx: number) => `
+//                     <div class="flight-details">
+//                       <div>
+
+//                         <strong>De:</strong> ${f.from}<br />
+//                         <strong>A:</strong> ${f.to} <br />
+//                         <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
+//                         <strong>Départ:</strong> ${(() => {
+//                         try {
+//                         const date = new Date(f.date);
+//                         return isNaN(date.getTime())
+//                         ? "Invalid time"
+//                         : date.toLocaleTimeString("fr-FR", {
+//                         hour: "2-digit",
+//                         minute: "2-digit",
+//                         });
+//                         } catch (error) {
+//                         return "Invalid time";
+//                         }
+//                         })()} <br />
+//                         <strong>Arrivée:</strong> ${(() => {
+//                         try {
+//                         const date = new Date(f.arrival_date);
+//                         return isNaN(date.getTime())
+//                         ? "Invalid time"
+//                         : date.toLocaleTimeString("fr-FR", {
+//                         hour: "2-digit",
+//                         minute: "2-digit",
+//                         });
+//                         } catch (error) {
+//                         return "Invalid time";
+//                         }
+//                         })()} <br />
+
+//                         <strong>Numéro du vol:</strong> ${f.code}
+//                       </div>
+//                       `).join("")}
+//                     </div>
+//                 </td>
+
+//               </tr>
+//             </table>
+//           </td>
+//         </tr>
+
+//         <tr>
+//           <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+//             <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
+
+//             <p style="margin: 0">
+//               <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
+//               <strong>Email:</strong> ${passenger.email}
+//             </p>
+
+
+
+//           </td>
+//         </tr>
+
+//         <tr>
+//           <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+//             <table width="100%">
+//               <tr>
+//                 <td>
+//                   <h3 style="color: #1A237E; margin: 0;">Détails de la réservation</h3>
+//                   <p style="margin: 0; font-size: 0.9em;"><strong>Réservation ID:</strong> ${reference}</p>
+
+//                 </td>
+//                 <td style="text-align: right;">
+//                   <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
+//                   <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${totalPrice}</p>
+//                   <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
+
+//                     ${payment_method === "cash" ? "Payé" : payment_method === "card" ? "Payé" : payment_method ===
+//                     "cheque" ? "Payé" : payment_method === "virement" ? "Payé" : payment_method === "transfert" ? "Payé"
+//                     : "Non rémunéré"}
+//                   </p>
+//                 </td>
+//               </tr>
+//             </table>
+//           </td>
+//         </tr>
+//       </table>
+//     </div>
+//   </div>
+//   <!-- End E-Ticket Section -->
+
+//   ${passenger.typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//     <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
+//       les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+//     <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.
+//     </p>
+//     <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
+//       modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques,
+//       grèves ou tout autre incident ne relevant pas de sa responsabilité.
+//       Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.).
+//       Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
+//     </p>
+//     <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue
+//       de 50% du montant total à titre de frais d'annulation.</p>
+//     <p>Nous nous réjouissons de vous accueillir à bord.</p>
+//     <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+//   </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//     <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
+//       les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+//     <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.
+//     </p>
+//     <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
+//       modification de vol
+//       imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
+//       incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure
+//       d'arrivée à
+//       l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué
+//       pour ces raisons.</p>
+//     <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une
+//       retenue de 50% du montant total à titre de frais d'annulation.</p>
+//     <p>Nous nous réjouissons de vous accueillir à bord.</p>
+//     <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+//   </div>`}
+// </div>
+//     </body>
+//   </html>
+//     `;
+
+//         const emailResult = await sendEmail(
+//           passenger.email,
+//           "Trogon Airways, New Ticket",
+//           emailHtml
+//         );
+
+//         console.log(`📊 DEBUG - Résultat email ${passenger.email}:`, emailResult.success ? 'SUCCÈS' : 'ÉCHEC');
+//         if (!emailResult.success) {
+//           console.log(`❌ DEBUG - Erreur email:`, emailResult.error);
+//         }
+
+//         emailResults.push({
+//           passenger: passenger.email,
+//           success: emailResult.success,
+//           error: emailResult.error
+//         })
+//       }
+
+//       // Mettre à jour le nombre de passagers dans la réservation
+//       if (passengers.length !== booking.passenger_count && (!hasFlightChanged && !hasReturnFlightChanged)) {
+//         await connection.query(
+//           "UPDATE bookings SET passenger_count = ? WHERE id = ?",
+//           [passengers.length, booking.id]
+//         );
+//         console.log(`✅ Nombre de passagers mis à jour: ${passengers.length}`);
+//       }
+//     }
+
+//     // 6. Créer une notification pour la modification
+//     await connection.query(
+//       `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//        VALUES (?, ?, ?, ?, ?)`,
+//       [
+//         "update",
+//         `Réservation ${reference} modifiée.${hasFlightChanged || hasReturnFlightChanged ? ' Changement de vol effectué.' : ''}`,
+//         booking.id,
+//         false,
+//         new Date()
+//       ]
+//     );
+//     console.log(`🔔 Notification de modification créée`);
+
+//     // 7. Récupérer la réservation mise à jour pour la réponse
+//     const [updatedBooking] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT 
+//           b.*,
+//           u.name as created_by_name,
+//           u.email as created_by_email,
+//           f1.code as flight_code,
+//           f2.code as return_flight_code
+//        FROM bookings b
+//        LEFT JOIN users u ON b.user_created_booking = u.id
+//        LEFT JOIN flights f1 ON b.flight_id = f1.id
+//        LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+//        WHERE b.booking_reference = ?`,
+//       [reference]
+//     );
+
+//     const [updatedPassengers] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT * FROM passengers WHERE booking_id = ?`,
+//       [booking.id]
+//     );
+
+//     // ✅ COMMIT APRÈS toutes les opérations
+//     await connection.commit();
+//     console.log(`💾 Transaction commitée`);
+
+//     res.json({
+//       success: true,
+//       message: "Réservation mise à jour avec succès",
+//       flightChanged: hasFlightChanged || hasReturnFlightChanged,
+//       booking: updatedBooking[0],
+//       passengers: updatedPassengers,
+//       updatedAt: new Date()
+//     });
+
+//   } catch (error) {
+//     console.error("❌ Erreur modification réservation:", error);
+//     if (connection) {
+//       await connection.rollback();
+//     }
+//     res.status(500).json({
+//       success: false,
+//       error: "Échec de la modification de la réservation",
+//       details: error instanceof Error ? error.message : "Erreur inconnue"
+//     });
+//   } finally {
+//     if (connection) {
+//       connection.release();
+//     }
+//     console.log(`🏁 Fin modification réservation: ${reference}`);
+//   }
+// });
 
 
 // API pour rechercher un vol par son code
