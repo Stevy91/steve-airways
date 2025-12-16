@@ -402,8 +402,8 @@ const [flightNumber, setFlightNumber] = useState("");
             )}
 
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
-                <div className="card-body overflow-visible p-0">
-                    <div className="relative w-full flex-shrink-0 overflow-visible rounded-none [scrollbar-width:_thin]">
+                <div className="card-body overflow-auto p-0">
+                    <div className="relative w-full flex-shrink-0 overflow-auto">
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plane, Calendar, Mail, Edit, Save, Plus, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useAuth } from "../hooks/useAuth";
 
 export type Flight = {
     code: string;
@@ -80,6 +81,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
     const [isEditing, setIsEditing] = useState(false);
     const [editedBooking, setEditedBooking] = useState<BookingDetails | null>(null);
     const [saving, setSaving] = useState(false);
+    const { isAdmin, isOperateur } = useAuth();
 
     const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -490,13 +492,16 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                        
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button
+                                         {(isAdmin || isOperateur) && (
+                                               <button
                                             onClick={handleEditToggle}
                                             className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-900"
                                         >
                                             {isEditing ? <X size={16} /> : <Edit size={16} />}
                                             {isEditing ? "Cancel" : "Edit"}
                                         </button>
+                                            )} 
+                                        
                                         <button
                                             onClick={onClose}
                                             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -551,7 +556,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                 {/* add Flights important*/}
 
                                 <section className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    {/* <div className="flex items-center justify-between">
                                         <h3 className="text-lg font-bold text-amber-500">Flights</h3>
                                         {isEditing && (
                                             <button
@@ -561,7 +566,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                 <Plus size={16} /> Add Flight
                                             </button>
                                         )}
-                                    </div>
+                                    </div> */}
                                     <ul className="space-y-3">
                                         {editedBooking.flights.map((flight, idx) => (
                                             <li
@@ -572,13 +577,17 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                 <div className="grid flex-1 grid-cols-1 gap-2 md:grid-cols-2">
                                                     {isEditing ? (
                                                         <>
+                                                        
+                                                                <span className="font-semibold text-slate-700">Flight Number: </span>
+                                                                
+                                                            
                                                             <input
                                                                 value={flight.code}
                                                                 onChange={(e) => handleFlightChange(idx, "code", e.target.value)}
                                                                 placeholder="Flight code"
                                                                 className="rounded border px-2 py-1 text-sm"
                                                             />
-                                                            <input
+                                                            {/* <input
                                                                 value={flight.from}
                                                                 onChange={(e) => handleFlightChange(idx, "from", e.target.value)}
                                                                 placeholder="From"
@@ -595,7 +604,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                                 value={flight.date}
                                                                 onChange={(e) => handleFlightChange(idx, "date", e.target.value)}
                                                                 className="rounded border px-2 py-1 text-sm"
-                                                            />
+                                                            /> */}
                                                         </>
                                                     ) : (
                                                         <div className="text-sm text-slate-600">
@@ -641,7 +650,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
                                 {/* Passengers */}
                                 <section className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    {/* <div className="flex items-center justify-between">
                                         <h3 className="text-lg font-bold text-amber-500">Passengers ({editedBooking.passengers.length})</h3>
                                         {isEditing && (
                                             <button
@@ -651,7 +660,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                 <Plus size={16} /> Add Passenger
                                             </button>
                                         )}
-                                    </div>
+                                    </div> */}
                                     <ul className="space-y-3">
                                         {editedBooking.passengers.map((passenger, idx) => (
                                             <li

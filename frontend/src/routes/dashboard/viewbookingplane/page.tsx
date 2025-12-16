@@ -279,14 +279,20 @@ const ViewBookingPlane = () => {
                                         </td>
 
                                         <td className="table-cell text-center">
-                                            {(isAdmin || isOperateur) && (
+                                            {/* {(isAdmin || isOperateur) && (
                                                 <button
                                                     className="flex w-full gap-2 rounded-lg p-2 hover:bg-amber-500"
                                                     onClick={() => handleViewDetails(booking.id)}
                                                 >
                                                     <Eye className="h-6 w-4" /> View Details
                                                 </button>
-                                            )}
+                                            )} */}
+                                            <button
+                                                    className="flex w-full gap-2 rounded-lg p-2 hover:bg-amber-500"
+                                                    onClick={() => handleViewDetails(booking.id)}
+                                                >
+                                                    <Eye className="h-6 w-4" /> View Details
+                                                </button>
                                         </td>
                                     </tr>
                                 ))}

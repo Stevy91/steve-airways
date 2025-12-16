@@ -2596,18 +2596,18 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
       }
     }
 
-        const formatDateSafely = (dateString: string, formatString: string) => {
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                return "Invalid date";
-            }
-            return format(date, formatString);
-        } catch (error) {
-            return "Invalid date";
+    const formatDateSafely = (dateString: string, formatString: string) => {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return "Invalid date";
         }
+        return format(date, formatString);
+      } catch (error) {
+        return "Invalid date";
+      }
     };
- 
+
     // 4. Mettre à jour les passagers
     if (passengers && Array.isArray(passengers)) {
       console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
@@ -2618,7 +2618,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         [booking.id]
       );
       console.log(`🗑️ Anciens passagers supprimés`);
-     const emailResults = [];
+      const emailResults = [];
       // Insérer les nouveaux passagers
       for (const passenger of passengers) {
         await connection.query(
@@ -2652,7 +2652,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           ]
         );
 
-         const emailHtml = `
+        const emailHtml = `
     <html>
     <head>
       
@@ -2760,13 +2760,13 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <strong>Payment Method:</strong>
 
         ${payment_method === "cash" ? "Cash" : payment_method
-        === "card" ? "Credit/Debit Card" : payment_method === "cheque" ?
-        "Bank Check" : payment_method === "virement" ? "Bank transfer" :
-          payment_method === "transfert" ? "Transfer" : "Contrat"}
+            === "card" ? "Credit/Debit Card" : payment_method === "cheque" ?
+            "Bank Check" : payment_method === "virement" ? "Bank transfer" :
+              payment_method === "transfert" ? "Transfer" : "Contrat"}
       </p>
       
       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter" ? "Helicopter" : "Air Plane"
-      }</p>
+          }</p>
     </div>
 
     <div
@@ -2823,31 +2823,31 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                         <strong>To:</strong> ${f.to}  <br />
                         <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
                         <strong>Departure:</strong> ${(() => {
-                                                                    try {
-                                                                        const date = new Date(f.date);
-                                                                        return isNaN(date.getTime())
-                                                                            ? "Invalid time"
-                                                                            : date.toLocaleTimeString("fr-FR", {
-                                                                                  hour: "2-digit",
-                                                                                  minute: "2-digit",
-                                                                              });
-                                                                    } catch (error) {
-                                                                        return "Invalid time";
-                                                                    }
-                                                                })()} <br />
+              try {
+                const date = new Date(f.date);
+                return isNaN(date.getTime())
+                  ? "Invalid time"
+                  : date.toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+              } catch (error) {
+                return "Invalid time";
+              }
+            })()} <br />
                         <strong>Arrival:</strong> ${(() => {
-                                                                    try {
-                                                                        const date = new Date(f.arrival_date);
-                                                                        return isNaN(date.getTime())
-                                                                            ? "Invalid time"
-                                                                            : date.toLocaleTimeString("fr-FR", {
-                                                                                  hour: "2-digit",
-                                                                                  minute: "2-digit",
-                                                                              });
-                                                                    } catch (error) {
-                                                                        return "Invalid time";
-                                                                    }
-                                                                })()} <br />
+              try {
+                const date = new Date(f.arrival_date);
+                return isNaN(date.getTime())
+                  ? "Invalid time"
+                  : date.toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+              } catch (error) {
+                return "Invalid time";
+              }
+            })()} <br />
                        
                         <strong>Flight Number:</strong> ${f.code}
                     </div>
@@ -2862,10 +2862,12 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <tr>
           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
+            ${passenger.map((p: any, idx: number) => `
             <p style="margin: 0">
-              <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
-              <strong>Email:</strong> ${passenger.email}
+              <strong>Adult:</strong> ${p.firstName} ${p.lastName}<br />
+              <strong>Email:</strong> ${p.email}
             </p>
+            `).join("")}
           </td>
         </tr>
 
@@ -2888,10 +2890,10 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                   <p style="margin: 0; font-size: 0.9em">
                     <strong>Status: </strong>
                     ${payment_method === "cash" ? "Paid" :
-        payment_method === "card" ? "Paid" :
-          payment_method === "cheque" ? "Paid" :
-            payment_method === "virement" ? "Paid" :
-              payment_method === "transfert" ? "Paid" : "UnPaid"}
+            payment_method === "card" ? "Paid" :
+              payment_method === "cheque" ? "Paid" :
+                payment_method === "virement" ? "Paid" :
+                  payment_method === "transfert" ? "Paid" : "UnPaid"}
                   </p>
                 </td>
               </tr>
@@ -2938,13 +2940,178 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>`}
 
+      <br><br><br>
+
+
+
+
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+        <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
+        <p style="margin: 5px 0 0; font-size: 1.2em;">Votre réservation est confirmée.</p>
+      </div>
+
+      <div style="padding: 20px;">
+        <p>Cher(e), ${passenger.firstName} ${passenger.lastName},</p>
+        <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
+      </div>
+
+      <!-- E-Ticket Section -->
+      <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
+        <div style="padding: 20px; text-align: center;">
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
+          
+          
+          ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Carte bancaire" : payment_method === "cheque" ? "chèque bancaire" : payment_method === "virement" ? "Virement bancaire" : payment_method === "transfert" ? "Transfert" : "Contrat"}
+          </p>
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${typeVol === "helicopter" ? "Helicopter" : "Avion"
+          }</p>
+        </div>
+
+        <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+          <table width="100%" style="border-collapse: collapse;">
+            <tr> 
+              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
+                <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Carte d'embarquement</span>
+              </td>
+              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+                
+              </td>
+            </tr>
+           
+            <tr>
+              <td colspan="2" style="padding-top: 20px;">
+               <div style="padding: 20px; text-align: center;">
+                    <h3 style="color: #1A237E; margin: 0;"> Vol Simple</h3>
+                    </div>
+                <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
+                
+               
+                <table width="100%">
+                  <tr>
+                    <td>
+                      <div class="flight-card">
+                        <div class="flight-header">Vol aller</div>
+
+
+                        ${flights.map((f: any, idx: number) => `
+                    <div class="flight-details">
+                      <div>
+                    
+                        <strong>De:</strong> ${f.from}<br />
+                        <strong>A:</strong> ${f.to}  <br />
+                        <strong>Date:</strong> ${formatDateSafely(f.date, "EEE, dd MMM yy")} <br />
+                        <strong>Départ:</strong> ${(() => {
+              try {
+                const date = new Date(f.date);
+                return isNaN(date.getTime())
+                  ? "Invalid time"
+                  : date.toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+              } catch (error) {
+                return "Invalid time";
+              }
+            })()} <br />
+                        <strong>Arrivée:</strong> ${(() => {
+              try {
+                const date = new Date(f.arrival_date);
+                return isNaN(date.getTime())
+                  ? "Invalid time"
+                  : date.toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+              } catch (error) {
+                return "Invalid time";
+              }
+            })()} <br />
+                       
+                        <strong>Numéro du vol:</strong> ${f.code}
+                    </div>
+                    `).join("")}
+                      </div>
+                    </td>
+                    
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
+                 ${passenger.map((p: any, idx: number) => `
+            <p style="margin: 0">
+              <strong>Adult:</strong> ${p.firstName} ${p.lastName}<br />
+              <strong>Email:</strong> ${p.email}
+            </p>
+            `).join("")}
+                   
+               
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
+                <table width="100%">
+                  <tr>
+                    <td>
+                      <h3 style="color: #1A237E; margin: 0;">Détails de la réservation</h3>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Réservation ID:</strong> ${reference}</p>
+                    
+                    </td>
+                    <td style="text-align: right;">
+                      <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${totalPrice}</p>
+                      <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
+                      
+                      ${payment_method === "cash" ? "Payé" : payment_method === "card" ? "Payé" : payment_method === "cheque" ? "Payé" : payment_method === "virement" ? "Payé" : payment_method === "transfert" ? "Payé" : "Non rémunéré"}
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <!-- End E-Ticket Section -->
+
+      ${passenger.typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.</p>
+        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
+Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
+</p>
+        <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+        <p>Nous nous réjouissons de vous accueillir à bord.</p>
+        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.</p> 
+         <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol
+imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
+incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à
+l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué
+pour ces raisons.</p>
+        <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+        <p>Nous nous réjouissons de vous accueillir à bord.</p>
+        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      </div>`}
+
+      
+    </div>
+
  
 </div>
     </body>
     </html>
     `;
 
-          const emailResult = await sendEmail(
+        const emailResult = await sendEmail(
           passenger.email,
           "Trogon Airways, Flight cancellation",
           emailHtml
@@ -2974,7 +3141,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     }
 
 
-    
+
 
     // 5. Créer une notification pour la modification
     await connection.query(
