@@ -2970,7 +2970,10 @@ const emailHtml = `
         "Helicopter" : "Avion"}</p>
     </div>
 
-    <div style="background: #f9f9f9; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+    <div style=" background: rgba(0, 28, 150, 0.3);
+              border: 1px solid #eee;
+              padding: 8px;
+              border-radius: 8px;">
       <table width="100%" style="border-collapse: collapse;">
         <tr>
           <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
@@ -3125,7 +3128,7 @@ const emailHtml = `
 
         const emailResult = await sendEmail(
           passenger.email,
-          "Trogon Airways, Flight cancellation",
+          "Trogon Airways, New Ticket",
           emailHtml
         );
 
