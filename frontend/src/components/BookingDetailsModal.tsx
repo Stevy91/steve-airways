@@ -514,13 +514,10 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                 <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
                                     <Mail className="h-4 w-4" />
                                     <span>Contact:</span>
+                                    
                                     {isEditing ? (
-                                        <input
-                                            type="email"
-                                            value={editedBooking.contactEmail}
-                                            onChange={(e) => handleGeneralInfoChange("contactEmail", e.target.value)}
-                                            className="rounded border px-2 py-1 text-sm"
-                                        />
+                                        <span>{editedBooking.contactEmail}</span>
+                                       
                                     ) : (
                                         <a
                                             className="text-blue-900 hover:underline"
