@@ -93,6 +93,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         return format(now, "EEE, dd MMM");
     };
 
+    
+
     // Exemple pour ton vol
     const [departureDateStr] = outboundFlight.departure_time.split(" ");
     const parsedDepartureDate = parse(departureDateStr, "yyyy-MM-dd", new Date());
