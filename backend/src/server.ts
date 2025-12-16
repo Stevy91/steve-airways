@@ -2652,6 +2652,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           ]
         );
 
+        const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+
 const emailHtml = `
   <html>
     <head>  
@@ -2791,15 +2793,10 @@ const emailHtml = `
                     >Boarding Pass</span
                   >
                 </td>
-                <td
-                  style="
-                    padding-bottom: 20px;
-                    border-bottom: 1px solid #eee;
-                    text-align: right;
-                  "
-                >
-                  
-                </td>
+                <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+                <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
+              </td>
+             
               </tr>
 
               <tr>
@@ -2982,9 +2979,9 @@ const emailHtml = `
               style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Carte
               d'embarquement</span>
           </td>
-          <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
-
-          </td>
+         <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+                <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
+              </td>
         </tr>
 
         <tr>
