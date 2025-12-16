@@ -3337,6 +3337,28 @@ const emailHtml = `
 });
 
 
+// API pour rechercher un vol par son code
+app.get("/api/flights/search", async (req: Request, res: Response) => {
+    const { code } = req.query;
+    
+    if (!code) {
+        return res.status(400).json({ error: "Le code du vol est requis" });
+    }
+
+    try {
+        const [flights] = await pool.query<mysql.RowDataPacket[]>(
+            "SELECT id, code, seats_available, departure, arrival FROM flights WHERE code = ?",
+            [code]
+        );
+
+        res.json(flights);
+    } catch (error) {
+        console.error("Erreur recherche vol:", error);
+        res.status(500).json({ error: "Erreur lors de la recherche du vol" });
+    }
+});
+
+
 // API pour modifier une réservation (passagers, vols, etc.)
 
 

@@ -330,61 +330,167 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         });
     };
 
-    const handleSaveChanges = async () => {
-        if (!editedBooking) return;
+    // const handleSaveChanges = async () => {
+    //     if (!editedBooking) return;
 
-        setSaving(true);
-        try {
-            // Utiliser directement le prix total depuis editedBooking au lieu de le recalculer
-            const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
+    //     setSaving(true);
+    //     try {
+    //         // Utiliser directement le prix total depuis editedBooking au lieu de le recalculer
+    //         const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
 
-            // Sauvegarder les modifications via API
-            const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    passengers: editedBooking.passengers,
-                    flights: editedBooking.flights,
-                    contactEmail: editedBooking.contactEmail,
-                    contactPhone: editedBooking.contactPhone,
-                    totalPrice: totalPriceForAPI, // Utiliser la valeur directement depuis l'input
-                    paymentStatus: paymentStatus,
-                    adminNotes: editedBooking.adminNotes,
-                    bookingReference:booking.reference,
-                    typeVol:booking.typeVol,
-                    payment_method:booking.payment_method,
-                }),
+    //         // Sauvegarder les modifications via API
+    //         const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
+    //             method: "PUT",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({
+    //                 passengers: editedBooking.passengers,
+    //                 flights: editedBooking.flights,
+    //                 contactEmail: editedBooking.contactEmail,
+    //                 contactPhone: editedBooking.contactPhone,
+    //                 totalPrice: totalPriceForAPI, // Utiliser la valeur directement depuis l'input
+    //                 paymentStatus: paymentStatus,
+    //                 adminNotes: editedBooking.adminNotes,
+    //                 bookingReference:booking.reference,
+    //                 typeVol:booking.typeVol,
+    //                 payment_method:booking.payment_method,
+    //             }),
+    //         });
+
+    //         if (!res.ok) {
+    //             const errorData = await res.json();
+    //             throw new Error(errorData.error || "Erreur lors de la mise à jour");
+    //         }
+
+    //         const updatedData = await res.json();
+
+    //         // Mettre à jour le state local avec le prix formaté ($)
+    //         const updatedBookingWithFormattedPrice = {
+    //             ...editedBooking,
+    //             totalPrice: `$${totalPriceForAPI}`,
+    //         };
+
+    //         setBooking(updatedBookingWithFormattedPrice);
+    //         setIsEditing(false);
+
+    //         // Callback pour le parent
+    //         onSave && onSave(updatedBookingWithFormattedPrice);
+    //          if (bookingModify) {
+    //             bookingModify();
+    //         }
+    //     } catch (err) {
+    //         console.error("❌ Failed to update booking", err);
+    //         alert("Impossible de mettre à jour la réservation.");
+    //     } finally {
+    //         setSaving(false);
+    //     }
+    // };
+
+   // Dans le composant BookingDetailsModal, modifier la fonction handleSaveChanges :
+
+const handleSaveChanges = async () => {
+    if (!editedBooking) return;
+
+    setSaving(true);
+    try {
+        // Vérifier si le numéro de vol a changé
+        const hasFlightChanged = editedBooking.flights.some((flight, index) => {
+            const originalFlight = booking?.flights[index];
+            return originalFlight && flight.code !== originalFlight.code;
+        });
+
+        // Si le vol a changé, rechercher l'ID du nouveau vol
+        let flightIdToUpdate = undefined;
+        let returnFlightIdToUpdate = undefined;
+
+        if (hasFlightChanged && editedBooking.flights.length > 0) {
+            // Rechercher l'ID du vol par son code
+            const flightSearchPromises = editedBooking.flights.map(async (flight) => {
+                try {
+                    const res = await fetch(`https://steve-airways.onrender.com/api/flights/search?code=${flight.code}`);
+                    if (res.ok) {
+                        const flightData = await res.json();
+                        return flightData.length > 0 ? flightData[0].id : null;
+                    }
+                    return null;
+                } catch (err) {
+                    console.error("Erreur recherche vol", err);
+                    return null;
+                }
             });
 
-            if (!res.ok) {
-                const errorData = await res.json();
+            const flightIds = await Promise.all(flightSearchPromises);
+            
+            if (flightIds[0]) flightIdToUpdate = flightIds[0];
+            if (flightIds[1]) returnFlightIdToUpdate = flightIds[1];
+        }
+
+        // Utiliser directement le prix total depuis editedBooking
+        const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
+
+        // Sauvegarder les modifications via API
+        const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                passengers: editedBooking.passengers,
+                flights: editedBooking.flights,
+                contactEmail: editedBooking.contactEmail,
+                contactPhone: editedBooking.contactPhone,
+                totalPrice: totalPriceForAPI,
+                paymentStatus: paymentStatus,
+                adminNotes: editedBooking.adminNotes,
+                bookingReference: booking.reference,
+                typeVol: booking.typeVol,
+                payment_method: booking.payment_method,
+                flightId: flightIdToUpdate, // Envoyer le nouvel ID de vol si changement
+                returnFlightId: returnFlightIdToUpdate // Envoyer le nouvel ID de vol retour si changement
+            }),
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            if (errorData.error === "Un ou plusieurs vols n'existent pas") {
+                alert(`Le vol ${errorData.missingFlights?.join(", ")} n'existe pas. Veuillez vérifier le numéro de vol.`);
+            } else if (errorData.error?.includes("Pas assez de sièges disponibles")) {
+                alert(`Erreur: ${errorData.error}. Sièges disponibles: ${errorData.seatsAvailable}`);
+            } else {
                 throw new Error(errorData.error || "Erreur lors de la mise à jour");
             }
-
-            const updatedData = await res.json();
-
-            // Mettre à jour le state local avec le prix formaté ($)
-            const updatedBookingWithFormattedPrice = {
-                ...editedBooking,
-                totalPrice: `$${totalPriceForAPI}`,
-            };
-
-            setBooking(updatedBookingWithFormattedPrice);
-            setIsEditing(false);
-
-            // Callback pour le parent
-            onSave && onSave(updatedBookingWithFormattedPrice);
-             if (bookingModify) {
-                bookingModify();
-            }
-        } catch (err) {
-            console.error("❌ Failed to update booking", err);
-            alert("Impossible de mettre à jour la réservation.");
-        } finally {
-            setSaving(false);
+            return;
         }
-    };
 
+        const updatedData = await res.json();
+
+        // Mettre à jour le state local
+        const updatedBookingWithFormattedPrice = {
+            ...editedBooking,
+            totalPrice: `$${totalPriceForAPI}`,
+        };
+
+        setBooking(updatedBookingWithFormattedPrice);
+        setIsEditing(false);
+
+        // Afficher un message si le vol a changé
+        if (updatedData.flightChanged) {
+            alert("Le vol a été changé avec succès ! Un nouveau ticket a été créé.");
+        }
+
+        // Callback pour le parent
+        onSave && onSave(updatedBookingWithFormattedPrice);
+        if (bookingModify) {
+            bookingModify();
+        }
+    } catch (err) {
+        console.error("❌ Failed to update booking", err);
+        alert("Impossible de mettre à jour la réservation.");
+    } finally {
+        setSaving(false);
+    }
+};
+   
+   
+   
+   
     const handleSavePaymentStatus = async (newStatus: "pending" | "confirmed" | "cancelled") => {
         if (!booking) return;
 
