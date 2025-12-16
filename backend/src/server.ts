@@ -2862,12 +2862,12 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <tr>
           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
-            ${passenger.map((p: any, idx: number) => `
+      
             <p style="margin: 0">
-              <strong>Adult:</strong> ${p.firstName} ${p.lastName}<br />
-              <strong>Email:</strong> ${p.email}
+              <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
+              <strong>Email:</strong> ${passenger.email}
             </p>
-            `).join("")}
+          
           </td>
         </tr>
 
@@ -3043,12 +3043,12 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             <tr>
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
-                 ${passenger.map((p: any, idx: number) => `
+              
             <p style="margin: 0">
-              <strong>Adult:</strong> ${p.firstName} ${p.lastName}<br />
-              <strong>Email:</strong> ${p.email}
+              <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
+              <strong>Email:</strong> ${passenger.email}
             </p>
-            `).join("")}
+            
                    
                
               </td>
