@@ -3584,55 +3584,69 @@ if (passengers && Array.isArray(passengers)) {
   console.log(`🗑️ Anciens passagers supprimés`);
 
   // Récupérer les informations du vol pour l'email - CORRECTION ICI
-  let flightInfoForEmail = null;
-  if (flightChanged && newFlightDetails) {
-    // Utiliser les informations du nouveau vol
-    flightInfoForEmail = {
-      code: newFlightDetails.flight_number,
-      from: newFlightDetails.departure_name,
-      to: newFlightDetails.arrival_name,
-      date: newFlightDetails.departure_time,
-      arrival_date: newFlightDetails.arrival_time
-    };
-    console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
-  } else {
-    // Récupérer les informations du vol actuel
-    if (booking.flight_id) {
-      const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
-        `SELECT f.flight_number as code, 
-        f.departure_time as date, 
-        f.departure_time as arrival_date,
-        l1.name as departure_city,
-        l2.name as arrival_city
- FROM flights f
- JOIN locations l1 ON f.departure_location_id = l1.id
- JOIN locations l2 ON f.arrival_location_id = l2.id
- WHERE f.id = ?`,
-        [booking.flight_id]
-      );
+  // Récupérer les informations du vol pour l'email - CORRECTION ICI
+let flightInfoForEmail: {
+  code: string;
+  from: string;
+  to: string;
+  date: string;
+  arrival_date: string;
+} | null = null;
 
-      if (currentFlightInfo.length > 0) {
-        flightInfoForEmail = currentFlightInfo[0];
-        console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
-      } else {
-        console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
-        
-        // Alternative: utiliser les données envoyées depuis le frontend
-        if (updatedFlights && updatedFlights.length > 0) {
-          flightInfoForEmail = {
-            code: updatedFlights[0].code,
-            from: updatedFlights[0].from,
-            to: updatedFlights[0].to,
-            date: updatedFlights[0].date,
-            arrival_date: updatedFlights[0].arrival_date
-          };
-          console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
-        }
-      }
+if (flightChanged && newFlightDetails) {
+  // Utiliser les informations du nouveau vol
+  flightInfoForEmail = {
+    code: newFlightDetails.flight_number,
+    from: newFlightDetails.departure_name,
+    to: newFlightDetails.arrival_name,
+    date: newFlightDetails.departure_time,
+    arrival_date: newFlightDetails.arrival_time
+  };
+  console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
+} else {
+  // Récupérer les informations du vol actuel
+  if (booking.flight_id) {
+    const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
+      `SELECT f.flight_number as code, 
+              f.departure_time as date, 
+              f.arrival_time as arrival_date,
+              l1.name as departure_city,
+              l2.name as arrival_city
+       FROM flights f
+       JOIN locations l1 ON f.departure_location_id = l1.id
+       JOIN locations l2 ON f.arrival_location_id = l2.id
+       WHERE f.id = ?`,
+      [booking.flight_id]
+    );
+
+    if (currentFlightInfo.length > 0) {
+      flightInfoForEmail = {
+        code: currentFlightInfo[0].code,
+        from: currentFlightInfo[0].departure_city,
+        to: currentFlightInfo[0].arrival_city,
+        date: currentFlightInfo[0].date,
+        arrival_date: currentFlightInfo[0].arrival_date
+      };
+      console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
     } else {
-      console.log(`⚠️ Aucun flight_id dans la réservation`);
+      console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
+      
+      // Alternative: utiliser les données envoyées depuis le frontend
+      if (updatedFlights && updatedFlights.length > 0) {
+        flightInfoForEmail = {
+          code: updatedFlights[0].code || 'N/A',
+          from: updatedFlights[0].from || 'N/A',
+          to: updatedFlights[0].to || 'N/A',
+          date: updatedFlights[0].date || 'N/A',
+          arrival_date: updatedFlights[0].arrival_date || 'N/A'
+        };
+        console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
+      }
     }
+  } else {
+    console.log(`⚠️ Aucun flight_id dans la réservation`);
   }
+}
 
   // Fonction pour formater les dates
   const formatDateSafely = (dateString: string, formatString: string) => {
@@ -3699,50 +3713,53 @@ if (passengers && Array.isArray(passengers)) {
     // Générer le QR Code
     const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
 
-        // Vérifier si on a des informations de vol pour l'email
-    const hasFlightInfo = flightInfoForEmail && flightInfoForEmail.from && flightInfoForEmail.to;
+    
     
     // Section HTML pour les détails du vol (à insérer dans vos emails)
-    const flightDetailsHtml = hasFlightInfo && flightInfoForEmail ? `
-      <div class="flight-details">
-        <div>
-          <strong>From:</strong> ${flightInfoForEmail.from}<br />
-          <strong>To:</strong> ${flightInfoForEmail.to}<br />
-          <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail.date, "EEE, dd MMM yy")}<br />
-          <strong>Departure:</strong> ${formatTimeSafely(flightInfoForEmail.date)}<br />
-          <strong>Arrival:</strong> ${formatTimeSafely(flightInfoForEmail.arrival_date)}<br />
-          <strong>Flight Number:</strong> ${flightInfoForEmail.code}
-        </div>
-      </div>
-    ` : `
-      <div class="flight-details">
-        <div>
-          <strong>Flight Information:</strong> Not available<br />
-          <strong>Please contact customer service for flight details.</strong>
-        </div>
-      </div>
-    `;
+    // Vérifier si on a des informations de vol pour l'email
+const hasFlightInfo = flightInfoForEmail !== null;
 
-    // Section HTML pour les détails du vol en français
-    const flightDetailsHtmlFr = hasFlightInfo && flightInfoForEmail ? `
-      <div class="flight-details">
-        <div>
-          <strong>De:</strong> ${flightInfoForEmail.from}<br />
-          <strong>À:</strong> ${flightInfoForEmail.to}<br />
-          <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail.date, "EEE, dd MMM yy")}<br />
-          <strong>Départ:</strong> ${formatTimeSafely(flightInfoForEmail.date)}<br />
-          <strong>Arrivée:</strong> ${formatTimeSafely(flightInfoForEmail.arrival_date)}<br />
-          <strong>Numéro du vol:</strong> ${flightInfoForEmail.code}
-        </div>
-      </div>
-    ` : `
-      <div class="flight-details">
-        <div>
-          <strong>Informations du vol:</strong> Non disponibles<br />
-          <strong>Veuillez contacter le service client pour les détails du vol.</strong>
-        </div>
-      </div>
-    `;
+// Section HTML pour les détails du vol (à insérer dans vos emails)
+const flightDetailsHtml = hasFlightInfo ? `
+  <div class="flight-details">
+    <div>
+      <strong>From:</strong> ${flightInfoForEmail!.from}<br />
+      <strong>To:</strong> ${flightInfoForEmail!.to}<br />
+      <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail!.date, "EEE, dd MMM yy")}<br />
+      <strong>Departure:</strong> ${formatTimeSafely(flightInfoForEmail!.date)}<br />
+      <strong>Arrival:</strong> ${formatTimeSafely(flightInfoForEmail!.arrival_date)}<br />
+      <strong>Flight Number:</strong> ${flightInfoForEmail!.code}
+    </div>
+  </div>
+` : `
+  <div class="flight-details">
+    <div> 
+      <strong>Flight Information:</strong> Not available<br />
+      <strong>Please contact customer service for flight details.</strong>
+    </div>
+  </div>
+`;
+
+// Section HTML pour les détails du vol en français
+const flightDetailsHtmlFr = hasFlightInfo ? `
+  <div class="flight-details">
+    <div>
+      <strong>De:</strong> ${flightInfoForEmail!.from}<br />
+      <strong>À:</strong> ${flightInfoForEmail!.to}<br />
+      <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail!.date, "EEE, dd MMM yy")}<br />
+      <strong>Départ:</strong> ${formatTimeSafely(flightInfoForEmail!.date)}<br />
+      <strong>Arrivée:</strong> ${formatTimeSafely(flightInfoForEmail!.arrival_date)}<br />
+      <strong>Numéro du vol:</strong> ${flightInfoForEmail!.code}
+    </div>
+  </div>
+` : `
+  <div class="flight-details">
+    <div>
+      <strong>Informations du vol:</strong> Non disponibles<br />
+      <strong>Veuillez contacter le service client pour les détails du vol.</strong>
+    </div>
+  </div>
+`;
 
 
 
