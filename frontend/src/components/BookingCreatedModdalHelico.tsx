@@ -613,7 +613,15 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 onClose();
             } else {
                 console.error("Erreur création ticket:", data);
-                toast.error(`❌ Erreur: ${data.error || data.message || "inconnue"}`);
+                toast.error(`${data.message || "inconnue"}`, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+            });
+                
             }
         } catch (err) {
             console.error("Erreur réseau:", err);

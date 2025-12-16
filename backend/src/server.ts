@@ -1433,7 +1433,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
         error: "Duplicate booking detected",
         details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
         duplicatePassengers: duplicatePassengers,
-        message: `Impossible de créer le ticket. Les passagers suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
+        message: `Impossible de créer le ticket. Le passager suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
       });
     }
 
