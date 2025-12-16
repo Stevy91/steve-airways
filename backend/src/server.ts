@@ -3600,14 +3600,14 @@ if (passengers && Array.isArray(passengers)) {
     if (booking.flight_id) {
       const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
         `SELECT f.flight_number as code, 
-                f.departure_time as date, 
-                f.arrival_time as arrival_date,
-                l1.name as \`from\`,  // Utiliser \`from\` car c'est un mot réservé SQL
-                l2.name as \`to\`     // Utiliser \`to\` car c'est un mot réservé SQL
-         FROM flights f
-         JOIN locations l1 ON f.departure_location_id = l1.id
-         JOIN locations l2 ON f.arrival_location_id = l2.id
-         WHERE f.id = ?`,
+        f.departure_time as date, 
+        f.departure_time as arrival_date,
+        l1.name as departure_city,
+        l2.name as arrival_city
+ FROM flights f
+ JOIN locations l1 ON f.departure_location_id = l1.id
+ JOIN locations l2 ON f.arrival_location_id = l2.id
+ WHERE f.id = ?`,
         [booking.flight_id]
       );
 
