@@ -482,7 +482,7 @@ const handleSaveChanges = async () => {
         }
     } catch (err) {
         console.error("❌ Failed to update booking", err);
-        alert("Impossible de mettre à jour la réservation.");
+        alert("Ce vol n'existe pas Impossible de mettre à jour la réservation.");
     } finally {
         setSaving(false);
     }

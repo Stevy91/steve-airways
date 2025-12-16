@@ -1023,6 +1023,194 @@ interface User extends mysql.RowDataPacket {
 
 //-------------------------user------------------------------------------------------
 
+// app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
+//   const connection = await pool.getConnection();
+//   const userId = req.user.id; // Récupérer l'ID de l'utilisateur connecté
+
+//   try {
+//     await connection.beginTransaction();
+//     console.log("✅ Transaction started");
+
+//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+//     for (const field of requiredFields) {
+//       if (!req.body[field]) {
+//         console.error(`Missing field: ${field}`);
+//         throw new Error(`Missing required field: ${field}`);
+//       }
+//     }
+
+//     const {
+//       flightId,
+//       passengers,
+//       contactInfo,
+//       totalPrice,
+//       referenceNumber,
+//       unpaid,
+//       returnFlightId,
+//       departureDate,
+//       returnDate,
+//       paymentMethod = "card",
+//     } = req.body;
+
+//     const typeVol = passengers[0]?.typeVol || "plane";
+//     const typeVolV = passengers[0]?.typeVolV || "onway";
+
+//     // Vérifier les vols
+//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+//     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+//       [flightIds],
+//     );
+
+//     const flights = flightsRows as mysql.RowDataPacket[];
+
+//     if (flights.length !== flightIds.length) {
+//       throw new Error("One or more flights not found");
+//     }
+
+//     for (const flight of flights) {
+//       if (flight.seats_available < passengers.length) {
+//         throw new Error(`Not enough seats available for flight ${flight.id}`);
+//       }
+//     }
+
+//     // Création réservation - AJOUT du champ user_created_booking
+//     const now = new Date();
+//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+
+//     const depDate = formatDateToSQL(departureDate);
+//     const retDate = formatDateToSQL(returnDate);
+
+//     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+//       `INSERT INTO bookings (
+//           flight_id, payment_intent_id, total_price,
+//           contact_email, contact_phone, status,
+//           type_vol, type_v, guest_user, guest_email,
+//           created_at, updated_at, departure_date,
+//           return_date, passenger_count, booking_reference, return_flight_id,
+//           payment_method, user_created_booking
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Ajout d'un ? supplémentaire
+//       [
+//         flightId,
+//         referenceNumber,
+//         totalPrice,
+//         contactInfo.email,
+//         contactInfo.phone,
+//         unpaid || "confirmed",
+//         typeVol,
+//         typeVolV,
+//         1,
+//         contactInfo.email,
+//         now,
+//         now,
+//         depDate,
+//         retDate,
+//         passengers.length,
+//         bookingReference,
+//         returnFlightId || null,
+//         paymentMethod,
+//         userId,
+//       ],
+//     );
+
+//     const bookingResult = bookingResultRows as mysql.OkPacket;
+
+//     // Enregistrer les passagers (reste identique)
+//     for (const passenger of passengers) {
+//       await connection.query(
+//         `INSERT INTO passengers (
+//           booking_id, first_name, middle_name, last_name,
+//           date_of_birth, gender, title, address, type,
+//           type_vol, type_v, country, nationality,
+//           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//         [
+//           bookingResult.insertId,
+//           passenger.firstName,
+//           passenger.middleName || null,
+//           passenger.lastName,
+//           passenger.dateOfBirth || null,
+//           passenger.gender || "other",
+//           passenger.title || "Mr",
+//           passenger.address || null,
+//           passenger.type,
+//           passenger.typeVol || "plane",
+//           passenger.typeVolV || "onway",
+//           passenger.country,
+//           passenger.nationality || null,
+//           passenger.phone || contactInfo.phone,
+//           passenger.email || contactInfo.email,
+//           passenger.nom_urgence || null,
+//           passenger.email_urgence || null,
+//           passenger.tel_urgence || null,
+//           now,
+//           now,
+//         ],
+//       );
+//     }
+
+//     // Mise à jour des sièges (reste identique)
+//     for (const flight of flights) {
+//       await connection.execute(
+//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//         [passengers.length, flight.id],
+//       );
+//     }
+
+//     // Notification (reste identique)
+//     try {
+//       await connection.query(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           "ticket",
+//           `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//           bookingResult.insertId,
+//           false,
+//           now,
+//         ],
+//       );
+
+//       io.emit("new-notification", {
+//         message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//         bookingId: bookingResult.insertId,
+//         createdAt: now,
+//       });
+//     } catch (notifyErr) {
+//       console.error("⚠️ Notification error (non bloquant):", notifyErr);
+//     }
+
+//     // Commit final
+//     await connection.commit();
+
+//     // ✅ Réponse succès
+//     res.status(200).json({
+//       success: true,
+//       bookingId: bookingResult.insertId,
+//       bookingReference,
+//       passengerCount: passengers.length,
+//       paymentMethod,
+//       createdBy: userId, // Optionnel: retourner l'ID de l'utilisateur
+//     });
+
+//   } catch (error: any) {
+//     await connection.rollback();
+//     console.error("❌ ERREUR DÉTAILLÉE:", {
+//       message: error.message,
+//       stack: error.stack,
+//       sqlMessage: error.sqlMessage,
+//       code: error.code,
+//       sql: error.sql
+//     });
+
+//     res.status(500).json({
+//       error: "Ticket creation failed",
+//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+//     });
+//   } finally {
+//     connection.release();
+//   }
+// });
 app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
   const userId = req.user.id; // Récupérer l'ID de l'utilisateur connecté
@@ -1211,7 +1399,6 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     connection.release();
   }
 });
-
 
 // Middleware général pour vérifier le token
 function authMiddleware(req: any, res: Response, next: any) {
