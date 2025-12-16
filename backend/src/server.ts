@@ -1023,197 +1023,9 @@ interface User extends mysql.RowDataPacket {
 
 //-------------------------user------------------------------------------------------
 
-// app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
-//   const connection = await pool.getConnection();
-//   const userId = req.user.id; // Récupérer l'ID de l'utilisateur connecté
-
-//   try {
-//     await connection.beginTransaction();
-//     console.log("✅ Transaction started");
-
-//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-//     for (const field of requiredFields) {
-//       if (!req.body[field]) {
-//         console.error(`Missing field: ${field}`);
-//         throw new Error(`Missing required field: ${field}`);
-//       }
-//     }
-
-//     const {
-//       flightId,
-//       passengers,
-//       contactInfo,
-//       totalPrice,
-//       referenceNumber,
-//       unpaid,
-//       returnFlightId,
-//       departureDate,
-//       returnDate,
-//       paymentMethod = "card",
-//     } = req.body;
-
-//     const typeVol = passengers[0]?.typeVol || "plane";
-//     const typeVolV = passengers[0]?.typeVolV || "onway";
-
-//     // Vérifier les vols
-//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-//     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
-//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
-//       [flightIds],
-//     );
-
-//     const flights = flightsRows as mysql.RowDataPacket[];
-
-//     if (flights.length !== flightIds.length) {
-//       throw new Error("One or more flights not found");
-//     }
-
-//     for (const flight of flights) {
-//       if (flight.seats_available < passengers.length) {
-//         throw new Error(`Not enough seats available for flight ${flight.id}`);
-//       }
-//     }
-
-//     // Création réservation - AJOUT du champ user_created_booking
-//     const now = new Date();
-//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
-
-//     const depDate = formatDateToSQL(departureDate);
-//     const retDate = formatDateToSQL(returnDate);
-
-//     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
-//       `INSERT INTO bookings (
-//           flight_id, payment_intent_id, total_price,
-//           contact_email, contact_phone, status,
-//           type_vol, type_v, guest_user, guest_email,
-//           created_at, updated_at, departure_date,
-//           return_date, passenger_count, booking_reference, return_flight_id,
-//           payment_method, user_created_booking
-//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Ajout d'un ? supplémentaire
-//       [
-//         flightId,
-//         referenceNumber,
-//         totalPrice,
-//         contactInfo.email,
-//         contactInfo.phone,
-//         unpaid || "confirmed",
-//         typeVol,
-//         typeVolV,
-//         1,
-//         contactInfo.email,
-//         now,
-//         now,
-//         depDate,
-//         retDate,
-//         passengers.length,
-//         bookingReference,
-//         returnFlightId || null,
-//         paymentMethod,
-//         userId,
-//       ],
-//     );
-
-//     const bookingResult = bookingResultRows as mysql.OkPacket;
-
-//     // Enregistrer les passagers (reste identique)
-//     for (const passenger of passengers) {
-//       await connection.query(
-//         `INSERT INTO passengers (
-//           booking_id, first_name, middle_name, last_name,
-//           date_of_birth, gender, title, address, type,
-//           type_vol, type_v, country, nationality,
-//           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           bookingResult.insertId,
-//           passenger.firstName,
-//           passenger.middleName || null,
-//           passenger.lastName,
-//           passenger.dateOfBirth || null,
-//           passenger.gender || "other",
-//           passenger.title || "Mr",
-//           passenger.address || null,
-//           passenger.type,
-//           passenger.typeVol || "plane",
-//           passenger.typeVolV || "onway",
-//           passenger.country,
-//           passenger.nationality || null,
-//           passenger.phone || contactInfo.phone,
-//           passenger.email || contactInfo.email,
-//           passenger.nom_urgence || null,
-//           passenger.email_urgence || null,
-//           passenger.tel_urgence || null,
-//           now,
-//           now,
-//         ],
-//       );
-//     }
-
-//     // Mise à jour des sièges (reste identique)
-//     for (const flight of flights) {
-//       await connection.execute(
-//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-//         [passengers.length, flight.id],
-//       );
-//     }
-
-//     // Notification (reste identique)
-//     try {
-//       await connection.query(
-//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-//          VALUES (?, ?, ?, ?, ?)`,
-//         [
-//           "ticket",
-//           `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-//           bookingResult.insertId,
-//           false,
-//           now,
-//         ],
-//       );
-
-//       io.emit("new-notification", {
-//         message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-//         bookingId: bookingResult.insertId,
-//         createdAt: now,
-//       });
-//     } catch (notifyErr) {
-//       console.error("⚠️ Notification error (non bloquant):", notifyErr);
-//     }
-
-//     // Commit final
-//     await connection.commit();
-
-//     // ✅ Réponse succès
-//     res.status(200).json({
-//       success: true,
-//       bookingId: bookingResult.insertId,
-//       bookingReference,
-//       passengerCount: passengers.length,
-//       paymentMethod,
-//       createdBy: userId, // Optionnel: retourner l'ID de l'utilisateur
-//     });
-
-//   } catch (error: any) {
-//     await connection.rollback();
-//     console.error("❌ ERREUR DÉTAILLÉE:", {
-//       message: error.message,
-//       stack: error.stack,
-//       sqlMessage: error.sqlMessage,
-//       code: error.code,
-//       sql: error.sql
-//     });
-
-//     res.status(500).json({
-//       error: "Ticket creation failed",
-//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
-//     });
-//   } finally {
-//     connection.release();
-//   }
-// });
 app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
-  const userId = req.user.id;
+  const userId = req.user.id; // Récupérer l'ID de l'utilisateur connecté
 
   try {
     await connection.beginTransaction();
@@ -1243,15 +1055,6 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     const typeVol = passengers[0]?.typeVol || "plane";
     const typeVolV = passengers[0]?.typeVolV || "onway";
 
-    // VÉRIFICATION : S'assurer qu'il y a au moins un passager
-    if (!passengers || passengers.length === 0) {
-      await connection.rollback();
-      return res.status(400).json({
-        error: "Au moins un passager est requis pour créer un ticket",
-        details: "La liste des passagers est vide"
-      });
-    }
-
     // Vérifier les vols
     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
@@ -1262,184 +1065,17 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     const flights = flightsRows as mysql.RowDataPacket[];
 
     if (flights.length !== flightIds.length) {
-      await connection.rollback();
       throw new Error("One or more flights not found");
     }
 
     for (const flight of flights) {
       if (flight.seats_available < passengers.length) {
-        await connection.rollback();
-        return res.status(400).json({
-          error: "Not enough seats available",
-          details: `Not enough seats available for flight ${flight.id}`,
-          flightId: flight.id,
-          seatsAvailable: flight.seats_available,
-          passengersNeeded: passengers.length
-        });
+        throw new Error(`Not enough seats available for flight ${flight.id}`);
       }
     }
 
-    // VÉRIFICATION DES DOUBLONS : Version améliorée
-    console.log("🔍 Vérification des doublons de réservation...");
-    
-    const duplicatePassengers = [];
+    // Création réservation - AJOUT du champ user_created_booking
     const now = new Date();
-    
-    for (const passenger of passengers) {
-      if (!passenger.firstName || !passenger.lastName) {
-        await connection.rollback();
-        return res.status(400).json({
-          error: "Informations passager incomplètes",
-          details: `Le passager doit avoir un prénom et un nom de famille`
-        });
-      }
-
-      // Normaliser le nom pour la comparaison
-      const normalizedFirstName = passenger.firstName.trim().toLowerCase();
-      const normalizedLastName = passenger.lastName.trim().toLowerCase();
-      
-      // OPTION 1: Vérification stricte avec date de naissance si disponible
-      if (passenger.dateOfBirth) {
-        const [existingWithDOB] = await connection.query<mysql.RowDataPacket[]>(
-          `SELECT 
-              p.first_name, 
-              p.last_name,
-              p.date_of_birth,
-              b.booking_reference,
-              b.status,
-              b.departure_date,
-              f.flight_number
-           FROM passengers p
-           JOIN bookings b ON p.booking_id = b.id
-           JOIN flights f ON b.flight_id = f.id
-           WHERE LOWER(p.first_name) = ? 
-             AND LOWER(p.last_name) = ?
-             AND p.date_of_birth = ?
-             AND b.flight_id = ?
-             AND b.status NOT IN ('cancelled', 'refunded')
-             AND DATE(b.departure_date) = DATE(?)`,
-          [
-            normalizedFirstName, 
-            normalizedLastName, 
-            passenger.dateOfBirth,
-            flightId,
-            departureDate
-          ]
-        );
-
-        if (existingWithDOB.length > 0) {
-          duplicatePassengers.push({
-            passenger: `${passenger.firstName} ${passenger.lastName}`,
-            reason: "Même passager avec même date de naissance sur même vol et même date",
-            existingBookings: existingWithDOB.map(b => ({
-              bookingReference: b.booking_reference,
-              status: b.status,
-              flightNumber: b.flight_number,
-              departureDate: b.departure_date
-            }))
-          });
-          continue; // Passer au passager suivant
-        }
-      }
-
-      // OPTION 2: Vérification avec email si disponible
-      if (passenger.email) {
-        const [existingWithEmail] = await connection.query<mysql.RowDataPacket[]>(
-          `SELECT 
-              p.first_name, 
-              p.last_name,
-              p.email,
-              b.booking_reference,
-              b.status,
-              b.departure_date,
-              f.flight_number
-           FROM passengers p
-           JOIN bookings b ON p.booking_id = b.id
-           JOIN flights f ON b.flight_id = f.id
-           WHERE LOWER(p.email) = LOWER(?)
-             AND b.flight_id = ?
-             AND b.status NOT IN ('cancelled', 'refunded')
-             AND DATE(b.departure_date) = DATE(?)`,
-          [
-            passenger.email,
-            flightId,
-            departureDate
-          ]
-        );
-
-        if (existingWithEmail.length > 0) {
-          duplicatePassengers.push({
-            passenger: `${passenger.firstName} ${passenger.lastName}`,
-            reason: "Même email sur même vol et même date",
-            existingBookings: existingWithEmail.map(b => ({
-              bookingReference: b.booking_reference,
-              status: b.status,
-              flightNumber: b.flight_number,
-              departureDate: b.departure_date
-            }))
-          });
-          continue; // Passer au passager suivant
-        }
-      }
-
-      // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
-      const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
-        `SELECT 
-            p.first_name, 
-            p.last_name,
-            b.booking_reference,
-            b.status,
-            b.departure_date,
-            f.flight_number
-         FROM passengers p
-         JOIN bookings b ON p.booking_id = b.id
-         JOIN flights f ON b.flight_id = f.id
-         WHERE LOWER(p.first_name) = ? 
-           AND LOWER(p.last_name) = ?
-           AND b.flight_id = ?
-           AND b.status NOT IN ('cancelled', 'refunded')
-           AND DATE(b.departure_date) = DATE(?)`,
-        [
-          normalizedFirstName, 
-          normalizedLastName,
-          flightId,
-          departureDate
-        ]
-      );
-
-      if (existingBasic.length > 0) {
-        duplicatePassengers.push({
-          passenger: `${passenger.firstName} ${passenger.lastName}`,
-          reason: "Même nom et prénom sur même vol et même date",
-          existingBookings: existingBasic.map(b => ({
-            bookingReference: b.booking_reference,
-            status: b.status,
-            flightNumber: b.flight_number,
-            departureDate: b.departure_date
-          }))
-        });
-      }
-    }
-
-    // Si des doublons sont trouvés, annuler et retourner une erreur
-    if (duplicatePassengers.length > 0) {
-      await connection.rollback();
-      console.log("❌ Doublons détectés:", duplicatePassengers);
-      
-      const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
-      
-      return res.status(409).json({
-        success: false,
-        error: "Duplicate booking detected",
-        details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
-        duplicatePassengers: duplicatePassengers,
-        message: `Impossible de créer le ticket. Le passager suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
-      });
-    }
-
-    console.log("✅ Aucun doublon détecté, poursuite de la création du ticket");
-
-    // Création réservation
     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const depDate = formatDateToSQL(departureDate);
@@ -1453,7 +1089,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           created_at, updated_at, departure_date,
           return_date, passenger_count, booking_reference, return_flight_id,
           payment_method, user_created_booking
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Ajout d'un ? supplémentaire
       [
         flightId,
         referenceNumber,
@@ -1479,7 +1115,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 
     const bookingResult = bookingResultRows as mysql.OkPacket;
 
-    // Enregistrer les passagers
+    // Enregistrer les passagers (reste identique)
     for (const passenger of passengers) {
       await connection.query(
         `INSERT INTO passengers (
@@ -1513,7 +1149,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       );
     }
 
-    // Mise à jour des sièges
+    // Mise à jour des sièges (reste identique)
     for (const flight of flights) {
       await connection.execute(
         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
@@ -1521,7 +1157,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       );
     }
 
-    // Notification
+    // Notification (reste identique)
     try {
       await connection.query(
         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
@@ -1554,8 +1190,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       bookingReference,
       passengerCount: passengers.length,
       paymentMethod,
-      createdBy: userId,
-      message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
+      createdBy: userId, // Optionnel: retourner l'ID de l'utilisateur
     });
 
   } catch (error: any) {
@@ -1568,18 +1203,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       sql: error.sql
     });
 
-    // Vérifier si c'est une erreur de doublon SQL
-    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
-      return res.status(409).json({
-        success: false,
-        error: "Duplicate entry",
-        details: "Une réservation similaire existe déjà",
-        message: "Impossible de créer le ticket : une réservation similaire existe déjà"
-      });
-    }
-
     res.status(500).json({
-      success: false,
       error: "Ticket creation failed",
       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
     });
@@ -1588,7 +1212,387 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
   }
 });
 
+
+// app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
+//   const connection = await pool.getConnection();
+//   const userId = req.user.id;
+
+//   try {
+//     await connection.beginTransaction();
+//     console.log("✅ Transaction started");
+
+//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+//     for (const field of requiredFields) {
+//       if (!req.body[field]) {
+//         console.error(`Missing field: ${field}`);
+//         throw new Error(`Missing required field: ${field}`);
+//       }
+//     }
+
+//     const {
+//       flightId,
+//       passengers,
+//       contactInfo,
+//       totalPrice,
+//       referenceNumber,
+//       unpaid,
+//       returnFlightId,
+//       departureDate,
+//       returnDate,
+//       paymentMethod = "card",
+//     } = req.body;
+
+//     const typeVol = passengers[0]?.typeVol || "plane";
+//     const typeVolV = passengers[0]?.typeVolV || "onway";
+
+//     // VÉRIFICATION : S'assurer qu'il y a au moins un passager
+//     if (!passengers || passengers.length === 0) {
+//       await connection.rollback();
+//       return res.status(400).json({
+//         error: "Au moins un passager est requis pour créer un ticket",
+//         details: "La liste des passagers est vide"
+//       });
+//     }
+
+//     // Vérifier les vols
+//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+//     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+//       [flightIds],
+//     );
+
+//     const flights = flightsRows as mysql.RowDataPacket[];
+
+//     if (flights.length !== flightIds.length) {
+//       await connection.rollback();
+//       throw new Error("One or more flights not found");
+//     }
+
+//     for (const flight of flights) {
+//       if (flight.seats_available < passengers.length) {
+//         await connection.rollback();
+//         return res.status(400).json({
+//           error: "Not enough seats available",
+//           details: `Not enough seats available for flight ${flight.id}`,
+//           flightId: flight.id,
+//           seatsAvailable: flight.seats_available,
+//           passengersNeeded: passengers.length
+//         });
+//       }
+//     }
+
+//     // VÉRIFICATION DES DOUBLONS : Version améliorée
+//     console.log("🔍 Vérification des doublons de réservation...");
+    
+//     const duplicatePassengers = [];
+//     const now = new Date();
+    
+//     for (const passenger of passengers) {
+//       if (!passenger.firstName || !passenger.lastName) {
+//         await connection.rollback();
+//         return res.status(400).json({
+//           error: "Informations passager incomplètes",
+//           details: `Le passager doit avoir un prénom et un nom de famille`
+//         });
+//       }
+
+//       // Normaliser le nom pour la comparaison
+//       const normalizedFirstName = passenger.firstName.trim().toLowerCase();
+//       const normalizedLastName = passenger.lastName.trim().toLowerCase();
+      
+//       // OPTION 1: Vérification stricte avec date de naissance si disponible
+//       if (passenger.dateOfBirth) {
+//         const [existingWithDOB] = await connection.query<mysql.RowDataPacket[]>(
+//           `SELECT 
+//               p.first_name, 
+//               p.last_name,
+//               p.date_of_birth,
+//               b.booking_reference,
+//               b.status,
+//               b.departure_date,
+//               f.flight_number
+//            FROM passengers p
+//            JOIN bookings b ON p.booking_id = b.id
+//            JOIN flights f ON b.flight_id = f.id
+//            WHERE LOWER(p.first_name) = ? 
+//              AND LOWER(p.last_name) = ?
+//              AND p.date_of_birth = ?
+//              AND b.flight_id = ?
+//              AND b.status NOT IN ('cancelled', 'refunded')
+//              AND DATE(b.departure_date) = DATE(?)`,
+//           [
+//             normalizedFirstName, 
+//             normalizedLastName, 
+//             passenger.dateOfBirth,
+//             flightId,
+//             departureDate
+//           ]
+//         );
+
+//         if (existingWithDOB.length > 0) {
+//           duplicatePassengers.push({
+//             passenger: `${passenger.firstName} ${passenger.lastName}`,
+//             reason: "Même passager avec même date de naissance sur même vol et même date",
+//             existingBookings: existingWithDOB.map(b => ({
+//               bookingReference: b.booking_reference,
+//               status: b.status,
+//               flightNumber: b.flight_number,
+//               departureDate: b.departure_date
+//             }))
+//           });
+//           continue; // Passer au passager suivant
+//         }
+//       }
+
+//       // OPTION 2: Vérification avec email si disponible
+//       if (passenger.email) {
+//         const [existingWithEmail] = await connection.query<mysql.RowDataPacket[]>(
+//           `SELECT 
+//               p.first_name, 
+//               p.last_name,
+//               p.email,
+//               b.booking_reference,
+//               b.status,
+//               b.departure_date,
+//               f.flight_number
+//            FROM passengers p
+//            JOIN bookings b ON p.booking_id = b.id
+//            JOIN flights f ON b.flight_id = f.id
+//            WHERE LOWER(p.email) = LOWER(?)
+//              AND b.flight_id = ?
+//              AND b.status NOT IN ('cancelled', 'refunded')
+//              AND DATE(b.departure_date) = DATE(?)`,
+//           [
+//             passenger.email,
+//             flightId,
+//             departureDate
+//           ]
+//         );
+
+//         if (existingWithEmail.length > 0) {
+//           duplicatePassengers.push({
+//             passenger: `${passenger.firstName} ${passenger.lastName}`,
+//             reason: "Même email sur même vol et même date",
+//             existingBookings: existingWithEmail.map(b => ({
+//               bookingReference: b.booking_reference,
+//               status: b.status,
+//               flightNumber: b.flight_number,
+//               departureDate: b.departure_date
+//             }))
+//           });
+//           continue; // Passer au passager suivant
+//         }
+//       }
+
+//       // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
+//       const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
+//         `SELECT 
+//             p.first_name, 
+//             p.last_name,
+//             b.booking_reference,
+//             b.status,
+//             b.departure_date,
+//             f.flight_number
+//          FROM passengers p
+//          JOIN bookings b ON p.booking_id = b.id
+//          JOIN flights f ON b.flight_id = f.id
+//          WHERE LOWER(p.first_name) = ? 
+//            AND LOWER(p.last_name) = ?
+//            AND b.flight_id = ?
+//            AND b.status NOT IN ('cancelled', 'refunded')
+//            AND DATE(b.departure_date) = DATE(?)`,
+//         [
+//           normalizedFirstName, 
+//           normalizedLastName,
+//           flightId,
+//           departureDate
+//         ]
+//       );
+
+//       if (existingBasic.length > 0) {
+//         duplicatePassengers.push({
+//           passenger: `${passenger.firstName} ${passenger.lastName}`,
+//           reason: "Même nom et prénom sur même vol et même date",
+//           existingBookings: existingBasic.map(b => ({
+//             bookingReference: b.booking_reference,
+//             status: b.status,
+//             flightNumber: b.flight_number,
+//             departureDate: b.departure_date
+//           }))
+//         });
+//       }
+//     }
+
+//     // Si des doublons sont trouvés, annuler et retourner une erreur
+//     if (duplicatePassengers.length > 0) {
+//       await connection.rollback();
+//       console.log("❌ Doublons détectés:", duplicatePassengers);
+      
+//       const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
+      
+//       return res.status(409).json({
+//         success: false,
+//         error: "Duplicate booking detected",
+//         details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
+//         duplicatePassengers: duplicatePassengers,
+//         message: `Impossible de créer le ticket. Le passager suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
+//       });
+//     }
+
+//     console.log("✅ Aucun doublon détecté, poursuite de la création du ticket");
+
+//     // Création réservation
+//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+
+//     const depDate = formatDateToSQL(departureDate);
+//     const retDate = formatDateToSQL(returnDate);
+
+//     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+//       `INSERT INTO bookings (
+//           flight_id, payment_intent_id, total_price,
+//           contact_email, contact_phone, status,
+//           type_vol, type_v, guest_user, guest_email,
+//           created_at, updated_at, departure_date,
+//           return_date, passenger_count, booking_reference, return_flight_id,
+//           payment_method, user_created_booking
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//       [
+//         flightId,
+//         referenceNumber,
+//         totalPrice,
+//         contactInfo.email,
+//         contactInfo.phone,
+//         unpaid || "confirmed",
+//         typeVol,
+//         typeVolV,
+//         1,
+//         contactInfo.email,
+//         now,
+//         now,
+//         depDate,
+//         retDate,
+//         passengers.length,
+//         bookingReference,
+//         returnFlightId || null,
+//         paymentMethod,
+//         userId,
+//       ],
+//     );
+
+//     const bookingResult = bookingResultRows as mysql.OkPacket;
+
+//     // Enregistrer les passagers
+//     for (const passenger of passengers) {
+//       await connection.query(
+//         `INSERT INTO passengers (
+//           booking_id, first_name, middle_name, last_name,
+//           date_of_birth, gender, title, address, type,
+//           type_vol, type_v, country, nationality,
+//           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//         [
+//           bookingResult.insertId,
+//           passenger.firstName,
+//           passenger.middleName || null,
+//           passenger.lastName,
+//           passenger.dateOfBirth || null,
+//           passenger.gender || "other",
+//           passenger.title || "Mr",
+//           passenger.address || null,
+//           passenger.type,
+//           passenger.typeVol || "plane",
+//           passenger.typeVolV || "onway",
+//           passenger.country,
+//           passenger.nationality || null,
+//           passenger.phone || contactInfo.phone,
+//           passenger.email || contactInfo.email,
+//           passenger.nom_urgence || null,
+//           passenger.email_urgence || null,
+//           passenger.tel_urgence || null,
+//           now,
+//           now,
+//         ],
+//       );
+//     }
+
+//     // Mise à jour des sièges
+//     for (const flight of flights) {
+//       await connection.execute(
+//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//         [passengers.length, flight.id],
+//       );
+//     }
+
+//     // Notification
+//     try {
+//       await connection.query(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           "ticket",
+//           `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//           bookingResult.insertId,
+//           false,
+//           now,
+//         ],
+//       );
+
+//       io.emit("new-notification", {
+//         message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//         bookingId: bookingResult.insertId,
+//         createdAt: now,
+//       });
+//     } catch (notifyErr) {
+//       console.error("⚠️ Notification error (non bloquant):", notifyErr);
+//     }
+
+//     // Commit final
+//     await connection.commit();
+
+//     // ✅ Réponse succès
+//     res.status(200).json({
+//       success: true,
+//       bookingId: bookingResult.insertId,
+//       bookingReference,
+//       passengerCount: passengers.length,
+//       paymentMethod,
+//       createdBy: userId,
+//       message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
+//     });
+
+//   } catch (error: any) {
+//     await connection.rollback();
+//     console.error("❌ ERREUR DÉTAILLÉE:", {
+//       message: error.message,
+//       stack: error.stack,
+//       sqlMessage: error.sqlMessage,
+//       code: error.code,
+//       sql: error.sql
+//     });
+
+//     // Vérifier si c'est une erreur de doublon SQL
+//     if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+//       return res.status(409).json({
+//         success: false,
+//         error: "Duplicate entry",
+//         details: "Une réservation similaire existe déjà",
+//         message: "Impossible de créer le ticket : une réservation similaire existe déjà"
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       error: "Ticket creation failed",
+//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+//     });
+//   } finally {
+//     connection.release();
+//   }
+// });
+
 // Middleware général pour vérifier le token
+
+
 function authMiddleware(req: any, res: Response, next: any) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
