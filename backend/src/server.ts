@@ -3571,108 +3571,180 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
     // 5. Mettre à jour les passagers et envoyer les emails
     const emailResults = [];
-    if (passengers && Array.isArray(passengers)) {
-      console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
 
-      // Supprimer les anciens passagers
-      await connection.query(
-        `DELETE FROM passengers WHERE booking_id = ?`,
-        [booking.id]
+
+if (passengers && Array.isArray(passengers)) {
+  console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
+
+  // Supprimer les anciens passagers
+  await connection.query(
+    `DELETE FROM passengers WHERE booking_id = ?`,
+    [booking.id]
+  );
+  console.log(`🗑️ Anciens passagers supprimés`);
+
+  // Récupérer les informations du vol pour l'email - CORRECTION ICI
+  let flightInfoForEmail = null;
+  if (flightChanged && newFlightDetails) {
+    // Utiliser les informations du nouveau vol
+    flightInfoForEmail = {
+      code: newFlightDetails.flight_number,
+      from: newFlightDetails.departure_name,
+      to: newFlightDetails.arrival_name,
+      date: newFlightDetails.departure_time,
+      arrival_date: newFlightDetails.arrival_time
+    };
+    console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
+  } else {
+    // Récupérer les informations du vol actuel
+    if (booking.flight_id) {
+      const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
+        `SELECT f.flight_number as code, 
+                f.departure_time as date, 
+                f.arrival_time as arrival_date,
+                l1.name as \`from\`,  // Utiliser \`from\` car c'est un mot réservé SQL
+                l2.name as \`to\`     // Utiliser \`to\` car c'est un mot réservé SQL
+         FROM flights f
+         JOIN locations l1 ON f.departure_location_id = l1.id
+         JOIN locations l2 ON f.arrival_location_id = l2.id
+         WHERE f.id = ?`,
+        [booking.flight_id]
       );
-      console.log(`🗑️ Anciens passagers supprimés`);
 
-      // Récupérer les informations du vol pour l'email
-      let flightInfoForEmail = null;
-      if (flightChanged && newFlightDetails) {
-        // Utiliser les informations du nouveau vol
-        flightInfoForEmail = {
-          code: newFlightDetails.flight_number,
-          from: newFlightDetails.departure_name,
-          to: newFlightDetails.arrival_name,
-          date: newFlightDetails.departure_time,
-          arrival_date: newFlightDetails.arrival_time
-        };
+      if (currentFlightInfo.length > 0) {
+        flightInfoForEmail = currentFlightInfo[0];
+        console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
       } else {
-        // Récupérer les informations du vol actuel
-        const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
-          `SELECT f.flight_number as code, f.departure_time as date, f.arrival_time as arrival_date,
-                  l1.name as departure_name, l2.name as arrival_name
-           FROM flights f
-           JOIN locations l1 ON f.departure_location_id = l1.id
-           JOIN locations l2 ON f.arrival_location_id = l2.id
-           WHERE f.id = ?`,
-          [booking.flight_id]
-        );
-
-        if (currentFlightInfo.length > 0) {
-          flightInfoForEmail = currentFlightInfo[0];
+        console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
+        
+        // Alternative: utiliser les données envoyées depuis le frontend
+        if (updatedFlights && updatedFlights.length > 0) {
+          flightInfoForEmail = {
+            code: updatedFlights[0].code,
+            from: updatedFlights[0].from,
+            to: updatedFlights[0].to,
+            date: updatedFlights[0].date,
+            arrival_date: updatedFlights[0].arrival_date
+          };
+          console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
         }
       }
+    } else {
+      console.log(`⚠️ Aucun flight_id dans la réservation`);
+    }
+  }
 
-      // Fonction pour formater les dates
-      const formatDateSafely = (dateString: string, formatString: string) => {
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) {
-            return "Invalid date";
-          }
-          return format(date, formatString);
-        } catch (error) {
-          return "Invalid date";
-        }
-      };
+  // Fonction pour formater les dates
+  const formatDateSafely = (dateString: string, formatString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+      return format(date, formatString);
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
 
-      // Fonction pour formater l'heure
-      const formatTimeSafely = (dateString: string) => {
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) {
-            return "Invalid time";
-          }
-          return date.toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        } catch (error) {
-          return "Invalid time";
-        }
-      };
+  // Fonction pour formater l'heure
+  const formatTimeSafely = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Invalid time";
+      }
+      return date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "Invalid time";
+    }
+  };
 
-      // Insérer les nouveaux passagers et envoyer les emails
-      for (const passenger of passengers) {
-        await connection.query(
-          `INSERT INTO passengers (
-            booking_id, first_name, middle_name, last_name,
-            date_of_birth, gender, title, address, type,
-            type_vol, type_v, country, nationality,
-            phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            booking.id,
-            passenger.firstName || passenger.name || '',
-            passenger.middleName || null,
-            passenger.lastName || '',
-            passenger.dateOfBirth || passenger.dob || null,
-            passenger.gender || "other",
-            passenger.title || "Mr",
-            passenger.address || null,
-            passenger.type || "adult",
-            passenger.typeVol || "plane",
-            passenger.typeVolV || "onway",
-            passenger.country || null,
-            passenger.nationality || null,
-            passenger.phone || null,
-            passenger.email || null,
-            passenger.nom_urgence || null,
-            passenger.email_urgence || null,
-            passenger.tel_urgence || null,
-            new Date(),
-            new Date()
-          ]
-        );
+  // Insérer les nouveaux passagers et envoyer les emails
+  for (const passenger of passengers) {
+    await connection.query(
+      `INSERT INTO passengers (
+        booking_id, first_name, middle_name, last_name,
+        date_of_birth, gender, title, address, type,
+        type_vol, type_v, country, nationality,
+        phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        booking.id,
+        passenger.firstName || passenger.name || '',
+        passenger.middleName || null,
+        passenger.lastName || '',
+        passenger.dateOfBirth || passenger.dob || null,
+        passenger.gender || "other",
+        passenger.title || "Mr",
+        passenger.address || null,
+        passenger.type || "adult",
+        passenger.typeVol || "plane",
+        passenger.typeVolV || "onway",
+        passenger.country || null,
+        passenger.nationality || null,
+        passenger.phone || null,
+        passenger.email || null,
+        passenger.nom_urgence || null,
+        passenger.email_urgence || null,
+        passenger.tel_urgence || null,
+        new Date(),
+        new Date()
+      ]
+    );
 
-        // Générer le QR Code
-        const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+    // Générer le QR Code
+    const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+
+        // Vérifier si on a des informations de vol pour l'email
+    const hasFlightInfo = flightInfoForEmail && flightInfoForEmail.from && flightInfoForEmail.to;
+    
+    // Section HTML pour les détails du vol (à insérer dans vos emails)
+    const flightDetailsHtml = hasFlightInfo && flightInfoForEmail ? `
+      <div class="flight-details">
+        <div>
+          <strong>From:</strong> ${flightInfoForEmail.from}<br />
+          <strong>To:</strong> ${flightInfoForEmail.to}<br />
+          <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail.date, "EEE, dd MMM yy")}<br />
+          <strong>Departure:</strong> ${formatTimeSafely(flightInfoForEmail.date)}<br />
+          <strong>Arrival:</strong> ${formatTimeSafely(flightInfoForEmail.arrival_date)}<br />
+          <strong>Flight Number:</strong> ${flightInfoForEmail.code}
+        </div>
+      </div>
+    ` : `
+      <div class="flight-details">
+        <div>
+          <strong>Flight Information:</strong> Not available<br />
+          <strong>Please contact customer service for flight details.</strong>
+        </div>
+      </div>
+    `;
+
+    // Section HTML pour les détails du vol en français
+    const flightDetailsHtmlFr = hasFlightInfo && flightInfoForEmail ? `
+      <div class="flight-details">
+        <div>
+          <strong>De:</strong> ${flightInfoForEmail.from}<br />
+          <strong>À:</strong> ${flightInfoForEmail.to}<br />
+          <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail.date, "EEE, dd MMM yy")}<br />
+          <strong>Départ:</strong> ${formatTimeSafely(flightInfoForEmail.date)}<br />
+          <strong>Arrivée:</strong> ${formatTimeSafely(flightInfoForEmail.arrival_date)}<br />
+          <strong>Numéro du vol:</strong> ${flightInfoForEmail.code}
+        </div>
+      </div>
+    ` : `
+      <div class="flight-details">
+        <div>
+          <strong>Informations du vol:</strong> Non disponibles<br />
+          <strong>Veuillez contacter le service client pour les détails du vol.</strong>
+        </div>
+      </div>
+    `;
+
+
 
         // EMAIL EN ANGLAIS
         const englishHtml = `
@@ -3837,21 +3909,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                     <td>
                       <div class="flight-card">
                         <div class="flight-header">Outbound Flight</div>
-                        ${flightInfoForEmail ? `
-                        <div class="flight-details">
-                          <div>
-
-                            <strong>From:</strong> ${flightInfoForEmail.from}<br />
-                            <strong>To:</strong> ${flightInfoForEmail.to} <br />
-                            <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail.date, "EEE, dd MMM yy")} <br />
-                            <strong>Departure:</strong> ${formatTimeSafely(flightInfoForEmail.date)} <br />
-                            <strong>Arrival:</strong> ${formatTimeSafely(flightInfoForEmail.arrival_date)}<br />
-
-                            <strong>Flight Number:</strong> ${flightInfoForEmail.code}
-                          </div>
-
-                        </div>
-                        ` : ''}
+                        ${flightDetailsHtml}
                     </td>
                   </tr>
                 </table>
@@ -4111,21 +4169,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                   <td>
                     <div class="flight-card">
                       <div class="flight-header">Vol Aller</div>
-                      ${flightInfoForEmail ? `
-                      <div class="flight-details">
-                        <div>
-
-                          <strong>De:</strong> ${flightInfoForEmail.from}<br />
-                          <strong>À:</strong> ${flightInfoForEmail.to} <br />
-                          <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail.date, "EEE, dd MMM yy")} <br />
-                          <strong>Départ:</strong> ${formatTimeSafely(flightInfoForEmail.date)} <br />
-                          <strong>Arrivée:</strong> ${formatTimeSafely(flightInfoForEmail.arrival_date)}<br />
-
-                          <strong>Numéro du vol:</strong> ${flightInfoForEmail.code}
-                        </div>
-
-                      </div>
-                      ` : ''}
+                      ${flightDetailsHtmlFr}
                   </td>
                 </tr>
               </table>
@@ -5071,6 +5115,7 @@ app.get("/api/flights/search", async (req: Request, res: Response) => {
 
 
 // API pour récupérer les détails d'une réservation par référence
+
 app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 

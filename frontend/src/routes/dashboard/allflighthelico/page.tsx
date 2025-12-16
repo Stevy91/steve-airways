@@ -70,7 +70,7 @@ const [flightNumber, setFlightNumber] = useState("");
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 20;
+    const itemsPerPage = 10;
 
     const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
   

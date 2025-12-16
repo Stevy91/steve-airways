@@ -287,7 +287,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           }</p>
         </div>
 
-        <div style= background: rgba(0, 28, 150, 0.3);
+        <div style=" background: rgba(0, 28, 150, 0.3);
               border: 1px solid #eee;
               padding: 20px;
               border-radius: 8px;">
