@@ -2940,7 +2940,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>`}
 
-      <br><br><br>
+     
 
 
 
