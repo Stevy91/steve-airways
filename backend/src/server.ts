@@ -1799,7 +1799,7 @@ if (passengers[0]?.flightNumberReturn) {
         retDate,
         passengers.length,
         bookingReference,
-        returnFlightIdResolved,
+        returnFlightIdResolved || null,
         paymentMethod,
         userId,
       ],

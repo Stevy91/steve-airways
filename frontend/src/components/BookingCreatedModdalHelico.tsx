@@ -644,7 +644,7 @@ if (isRoundTrip && formData.flightNumberReturn) {
       departure_time: flight.departure,
       arrival_time: flight.arrival,
     },
-    return: returnFlight, // <--- vol retour créé
+    return: returnFlight || null, // <--- vol retour créé
     passengersData: { adults: passengers },
     totalPrice: body.totalPrice,
   },
