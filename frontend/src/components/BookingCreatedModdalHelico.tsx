@@ -242,7 +242,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${returnFlight ? bookingData.totalPrice * 2 : bookingData.totalPrice.toFixed(2)}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
                       ${paymentMethod === "cash" ? "Paid" : paymentMethod === "card" ? "Paid" : paymentMethod === "cheque" ? "Paid" : paymentMethod === "virement" ? "Paid" : paymentMethod === "transfert" ? "Paid" : "UnPaid"}
                       </p>
@@ -386,7 +386,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${returnFlight ? bookingData.totalPrice * 2 : bookingData.totalPrice.toFixed(2)}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
 
                       ${paymentMethod === "cash" ? "Payé" : paymentMethod === "card" ? "Payé" : paymentMethod === "cheque" ? "Payé" : paymentMethod === "virement" ? "Payé" : paymentMethod === "transfert" ? "Payé" : "Non rémunéré"}

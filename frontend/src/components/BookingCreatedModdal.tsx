@@ -27,6 +27,7 @@ type BookingCreatedModalProps = {
 };
 type Passenger = {
     firstName: string;
+    flightNumberReturn: string;
     middleName?: string;
     lastName: string;
     reference: string;
@@ -96,13 +97,17 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     
 
     // Exemple pour ton vol
-    const [departureDateStr] = outboundFlight.departure_time.split(" ");
+  
+
+     const [departureDateStr] = outboundFlight.departure_time.split(" ");
     const parsedDepartureDate = parse(departureDateStr, "yyyy-MM-dd", new Date());
     const zonedDepartureDate = toZonedTime(parsedDepartureDate, timeZone);
     const formattedDepartureDate = format(zonedDepartureDate, "EEE, dd MMM");
 
     const [departureDate, departureTime] = outboundFlight.departure_time.split(" ");
+    const [returnDepartureDate, returnDepartureTime] = returnFlight.departure_time.split(" ");
     const [arrivalDate, arrivalTime] = outboundFlight.arrival_time.split(" ");
+    const [returnArrivalDate, returnArrivalTime] = returnFlight.arrival_time.split(" ");
 
     const [arrivalDateStr] = outboundFlight.arrival_time.split(" ");
     const parsedArrivalDate = parse(arrivalDateStr, "yyyy-MM-dd", new Date());
@@ -192,17 +197,17 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                       ${
                           returnFlight
                               ? `
-                          <div class="flight-card">
+                           <div class="flight-card">
                             <div class="flight-header">Return Flight</div>
                             <div class="flight-details">
                               <div>
-                                <strong>From:</strong> ${bookingData.toCity} (${bookingData.to})<br>
-                                <strong>To:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
+                                <strong>From:</strong> ${bookingData.to}<br>
+                                <strong>To:</strong> ${bookingData.from}<br>
                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
                               </div>
                               <div>
-                                <strong>Departure:</strong> ${returnFlight.departure_time}<br>
-                                <strong>Arrival:</strong> ${returnFlight.arrival_time}<br>
+                                <strong>Departure:</strong> ${returnDepartureTime}<br>
+                                <strong>Arrival:</strong> ${returnArrivalTime}<br>
                                 <strong>Flight Number:</strong> ${returnFlight.noflight}
                               </div>
                             </div>
@@ -236,7 +241,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${returnFlight ? bookingData.totalPrice * 2 : bookingData.totalPrice.toFixed(2)}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
                       ${paymentMethod === "cash" ? "Paid" : paymentMethod === "card" ? "Paid" : paymentMethod === "cheque" ? "Paid" : paymentMethod === "virement" ? "Paid" : paymentMethod === "transfert" ? "Paid" : "UnPaid"}
                       </p>
@@ -342,8 +347,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
                               </div>
                               <div>
-                                <strong>Départ:</strong> ${returnFlight.departure_time}<br>
-                                <strong>Arrivée:</strong> ${returnFlight.arrival_time}<br>
+                               
+                                <strong>Départ:</strong> ${returnDepartureTime}<br>
+                                <strong>Arrivée:</strong> ${returnArrivalTime}<br>
                                 <strong>Numéro du vol:</strong> ${returnFlight.noflight}
                               </div>
                             </div>
@@ -378,7 +384,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${returnFlight ? bookingData.totalPrice * 2 : bookingData.totalPrice.toFixed(2)}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
                       ${paymentMethod === "cash" ? "Payé" : paymentMethod === "card" ? "Payé" : paymentMethod === "cheque" ? "Payé" : paymentMethod === "virement" ? "Payé" : paymentMethod === "transfert" ? "Payé" : "Non rémunéré"}
                       </p>
@@ -434,8 +440,10 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
 };
 
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
     const [formData, setFormData] = useState({
         firstName: "",
+        flightNumberReturn: "",
         middleName: "",
         lastName: "",
         reference: "",
@@ -508,6 +516,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         for (let i = 0; i < passengerCount; i++) {
             passengers.push({
                 firstName: formData.firstName,
+                flightNumberReturn: formData.flightNumberReturn || "",
                 middleName: formData.middleName,
                 lastName: formData.lastName,
                 reference: formData.reference,
@@ -552,7 +561,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -591,22 +600,62 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         email: formData.email,
                     });
 
+                                   let returnFlight = null;
+
+if (isRoundTrip && formData.flightNumberReturn) {
+    try {
+        const resReturn = await fetch(
+            `https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                },
+            }
+        );
+        const dataReturn = await resReturn.json();
+
+        if (resReturn.ok && dataReturn) {
+    // dataReturn contient déjà le vol
+    const flightData = dataReturn; 
+    returnFlight = {
+        date: flightData.departure_time,
+        noflight: flightData.flight_number,
+        departure_time: flightData.departure_time,
+        arrival_time: flightData.arrival_time,
+        from: flightData.from,
+        to: flightData.to,
+        fromCity: flightData.fromCity,
+        toCity: flightData.toCity,
+    };
+} else {
+    toast.error("Vol retour introuvable !");
+}
+
+    } catch (err) {
+        console.error("Erreur récupération vol retour:", err);
+        toast.error("Impossible de récupérer le vol retour.");
+    }
+}
+
+
+
                     await sendTicketByEmail(
-                        {
-                            from: flight.from || "",
-                            to: flight.to || "",
-                            outbound: {
-                                date: flight.departure,
-                                noflight: flight.flight_number,
-                                departure_time: flight.departure,
-                                arrival_time: flight.arrival,
-                            },
-                            passengersData: { adults: passengers },
-                            totalPrice: body.totalPrice,
-                        },
-                        data.bookingReference,
-                        formData.paymentMethod,
-                    );
+  {
+    from: flight.from || "",
+    to: flight.to || "",
+    outbound: {
+      date: flight.departure,
+      noflight: flight.flight_number,
+      departure_time: flight.departure,
+      arrival_time: flight.arrival,
+    },
+    return: returnFlight, // <--- vol retour créé
+    passengersData: { adults: passengers },
+    totalPrice: body.totalPrice,
+  },
+  data.bookingReference,
+  formData.paymentMethod
+);
 
                     console.log("✅ Email envoyé avec succès");
                 } catch (emailError) {
@@ -649,7 +698,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        className="absolute inset-0 mx-auto my-6 flex max-w-3xl items-start justify-center p-4 sm:my-12"
+                        className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
                         initial={{ opacity: 0, y: 20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -668,11 +717,44 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                 <p className="text-sm text-slate-500">
                                     {flight.from} → {flight.to} | Départ: {flight.departure}
                                 </p>
+                                <div className="my-4 h-px w-full bg-slate-100" />
+                                <div className="flex items-center gap-4 mt-1">
+                                    <span className="text-xl font-semibold text-amber-500">Round-Trip</span>
+
+                                    <label className="relative inline-flex cursor-pointer items-center">
+                                        <input
+                                        type="checkbox"
+                                        className="peer sr-only"
+                                        checked={isRoundTrip}
+                                        onChange={(e) => setIsRoundTrip(e.target.checked)}
+                                        />
+
+                                        <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
+                                        <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="flightNumberReturn"
+                                        name="flightNumberReturn"
+                                        placeholder="Numéro de vol retour"
+                                        disabled={!isRoundTrip}
+                                        required={isRoundTrip}
+                                        onChange={handleChange}
+                                        className={`w-full rounded-md border px-4 py-2 outline-none transition
+                                        ${
+                                            isRoundTrip
+                                            ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                            : "cursor-not-allowed bg-gray-100 border-gray-200 text-gray-400"
+                                        }
+                                        `}
+                                    />
+                                </div>
                             </div>
 
                             <div className="my-4 h-px w-full bg-slate-100" />
 
-                            <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
                                 {/* Prénom */}
                                 <div className="flex flex-col">
                                     <label
@@ -971,7 +1053,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                 </div>
 
                                 {/* Bouton */}
-                                <div className="md:col-span-2">
+                                <div className="md:col-span-3">
                                     <button
                                         onClick={handleSubmit}
                                         className="w-full rounded-md bg-amber-500 py-3 font-semibold text-white transition-colors hover:bg-amber-600"
