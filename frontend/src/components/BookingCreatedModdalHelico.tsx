@@ -17,6 +17,10 @@ type Flight = {
     arrival: string;
     price: number;
     type?: string;
+        totalPrice: number;
+    fromCity: string;
+    toCity: string;
+    
 };
 
 type BookingCreatedModalProps = {
@@ -549,7 +553,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -588,22 +592,57 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         email: formData.email,
                     });
 
+                let returnFlight = null;
+
+if (isRoundTrip && formData.flightNumberReturn) {
+    try {
+        const resReturn = await fetch(
+            `https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                },
+            }
+        );
+        const dataReturn = await resReturn.json();
+
+        if (resReturn.ok && dataReturn.flight) {
+            const flightData = dataReturn.flight;
+            returnFlight = {
+                date: flightData.departure,
+                noflight: flightData.flight_number,
+                departure_time: flightData.departure,
+                arrival_time: flightData.arrival,
+            };
+        } else {
+            toast.error("Vol retour introuvable !");
+        }
+    } catch (err) {
+        console.error("Erreur récupération vol retour:", err);
+        toast.error("Impossible de récupérer le vol retour.");
+    }
+}
+
+
+
                     await sendTicketByEmail(
-                        {
-                            from: flight.from || "",
-                            to: flight.to || "",
-                            outbound: {
-                                date: flight.departure,
-                                noflight: flight.flight_number,
-                                departure_time: flight.departure,
-                                arrival_time: flight.arrival,
-                            },
-                            passengersData: { adults: passengers },
-                            totalPrice: body.totalPrice,
-                        },
-                        data.bookingReference,
-                        formData.paymentMethod,
-                    );
+  {
+    from: flight.from || "",
+    to: flight.to || "",
+    outbound: {
+      date: flight.departure,
+      noflight: flight.flight_number,
+      departure_time: flight.departure,
+      arrival_time: flight.arrival,
+    },
+    return: returnFlight, // <--- vol retour créé
+    passengersData: { adults: passengers },
+    totalPrice: body.totalPrice,
+  },
+  data.bookingReference,
+  formData.paymentMethod
+);
+
 
                     console.log("✅ Email envoyé avec succès");
                 } catch (emailError) {

@@ -5075,6 +5075,61 @@ const flightDetailsHtmlFr = hasFlightInfo ? `
 });
 
 
+
+app.get("/api/flights/:flightNumber", async (req: Request, res: Response) => {
+  try {
+    const { flightNumber } = req.params;
+
+    if (!flightNumber) {
+      return res.status(400).json({
+        error: "Le numéro de vol est requis",
+      });
+    }
+
+    // Requête pour trouver le vol par numéro
+    const [flights] = await pool.query(
+      `SELECT f.*, dep.code AS departure_code, dep.name AS departure_name,
+              arr.code AS arrival_code, arr.name AS arrival_name
+       FROM flights f
+       JOIN locations dep ON f.departure_location_id = dep.id
+       JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE f.flight_number = ?`,
+      [flightNumber]
+    );
+
+    const flightArray = flights as any[];
+
+    if (flightArray.length === 0) {
+      return res.status(404).json({ error: "Vol non trouvé" });
+    }
+
+    // Retourne le vol trouvé
+    const flight = flightArray[0];
+
+    res.json({
+      flight_number: flight.flight_number,
+      type: flight.type,
+      departure_time: flight.departure_time,
+      arrival_time: flight.arrival_time,
+      fromCity: flight.departure_name,
+      from: flight.departure_code,
+      toCity: flight.arrival_name,
+      to: flight.arrival_code,
+      price: flight.price,
+    });
+  } catch (err) {
+    console.error("Erreur:", err);
+    res.status(500).json({
+      error: "Erreur serveur",
+      details: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+export default app;
+
+
+
 app.get("/api/flights/search", async (req: Request, res: Response) => {
   const { code } = req.query;
 
