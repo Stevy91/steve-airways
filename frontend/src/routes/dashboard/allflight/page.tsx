@@ -66,11 +66,23 @@ const FlightTable = () => {
     const [passengers, setPassengers] = useState<any[]>([]);
     const [loadingPassengers, setLoadingPassengers] = useState(false);
 
-        const generateFlightNumber = () => {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Lettres possibles
-  const prefix = "TR"; // Préfixe fixe
-  const number = Math.floor(1000 + Math.random() * 9000); // Nombre à 4 chiffres aléatoire
-  return `${prefix}${number}`;
+const generateFlightNumber = () => {
+  const prefix = "TR";
+
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const datePart = `${yyyy}${mm}${dd}`;
+
+  const key = `flight_seq_${datePart}`;
+  const last = Number(localStorage.getItem(key) || "0") + 1;
+
+  localStorage.setItem(key, String(last));
+
+  const sequence = String(last).padStart(4, "0");
+
+  return `${prefix}-${datePart}-${sequence}`;
 };
 
 const [flightNumber, setFlightNumber] = useState("");

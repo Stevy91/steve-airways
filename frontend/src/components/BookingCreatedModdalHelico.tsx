@@ -27,6 +27,7 @@ type BookingCreatedModalProps = {
 };
 type Passenger = {
     firstName: string;
+    flightNumberReturn?: string;
     middleName?: string;
     lastName: string;
     reference: string;
@@ -266,7 +267,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
         <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
-        <p style="margin: 5px 0 0; font-size: 1.2em;">Votre réservation est confirmée.</p>
+        <p style="margin: 5px 0 0; font-size: 1.2em;">Votre réservation est confirmée</p>
       </div>
 
       <div style="padding: 20px;">
@@ -283,7 +284,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
-              bookingData.tabType === "helicopter" ? "Helicopter" : "Helico"
+              bookingData.tabType === "helicopter" ? "Hélicoptère" : "Hélicoptère"
           }</p>
         </div>
 
@@ -437,8 +438,11 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
 };
 
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
+    const [isRoundTrip, setIsRoundTrip] = useState(false);
+
     const [formData, setFormData] = useState({
         firstName: "",
+        flightNumberReturn: "",
         middleName: "",
         lastName: "",
         unpaid: "",
@@ -500,6 +504,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         for (let i = 0; i < passengerCount; i++) {
             passengers.push({
                 firstName: formData.firstName,
+                flightNumberReturn: formData.flightNumberReturn || "",
                 middleName: formData.middleName,
                 lastName: formData.lastName,
                 reference: formData.reference,
@@ -614,7 +619,14 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             } else {
                 console.error("Erreur création ticket:", data);
                 
-                toast.error(`${data.message || "inconnue"}`);
+                 toast.error(`${data.message || "inconnue"}`, {
+                                style: {
+                                    background: "#fee2e2",
+                                    color: "#991b1b",
+                                    border: "1px solid #f87171",
+                                },
+                                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                            });
             }
         } catch (err) {
             console.error("Erreur réseau:", err);
@@ -636,12 +648,12 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        className="absolute inset-0 mx-auto my-6 flex max-w-3xl items-start justify-center p-4 sm:my-12"
+                        className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
                         initial={{ opacity: 0, y: 20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                     >
-                        <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                        <div className="relative w-full  overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                             <button
                                 onClick={onClose}
                                 className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -652,14 +664,49 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
                             <div className="px-6 pt-6">
                                 <h2 className="text-xl font-semibold text-slate-800">Créer un Ticket pour le vol {flight.flight_number}</h2>
+                                
+
                                 <p className="text-sm text-slate-500">
                                     {flight.from} → {flight.to} | Départ: {flight.departure}
                                 </p>
+                                <div className="my-4 h-px w-full bg-slate-100" />
+                                <div className="flex items-center gap-4 mt-1">
+                                    <span className="text-xl font-semibold text-amber-500">Round-Trip</span>
+
+                                    <label className="relative inline-flex cursor-pointer items-center">
+                                        <input
+                                        type="checkbox"
+                                        className="peer sr-only"
+                                        checked={isRoundTrip}
+                                        onChange={(e) => setIsRoundTrip(e.target.checked)}
+                                        />
+
+                                        <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
+                                        <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="flightNumberReturn"
+                                        name="flightNumberReturn"
+                                        placeholder="Numéro de vol retour"
+                                        disabled={!isRoundTrip}
+                                        required={isRoundTrip}
+                                        onChange={handleChange}
+                                        className={`w-full rounded-md border px-4 py-2 outline-none transition
+                                        ${
+                                            isRoundTrip
+                                            ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                            : "cursor-not-allowed bg-gray-100 border-gray-200 text-gray-400"
+                                        }
+                                        `}
+                                    />
+                                </div>
                             </div>
 
                             <div className="my-4 h-px w-full bg-slate-100" />
 
-                            <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
                                 {/* Prénom */}
                                 <div className="flex flex-col">
                                     <label
@@ -960,7 +1007,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                 </div>
 
                                 {/* Bouton */}
-                                <div className="md:col-span-2">
+                                <div className="md:col-span-3">
                                     <button
                                         onClick={handleSubmit}
                                         className="w-full rounded-md bg-amber-500 py-3 font-semibold text-white transition-colors hover:bg-amber-600"

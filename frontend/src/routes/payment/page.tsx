@@ -914,6 +914,8 @@ export default function Pay() {
                                         <h3 className="mb-4 text-lg font-medium text-gray-900">{t("Payment Method")}</h3>
 
                                         <div className="mb-6 flex space-x-4">
+
+                                            
                                             <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                                 <input
                                                     type="radio"
@@ -930,6 +932,8 @@ export default function Pay() {
                                                     />
                                                 </div>
                                             </label>
+
+
 
                                             {/* Option PayPal */}
                                             {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
@@ -949,7 +953,7 @@ export default function Pay() {
                                         </div>
                                     </label> */}
 
-                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
+                                            {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
@@ -960,7 +964,7 @@ export default function Pay() {
                                                 <div className="ml-3 flex items-center">
                                                     <h1>{t("Pay Later")}</h1>
                                                 </div>
-                                            </label>
+                                            </label> */}
                                         </div>
 
                                         {error && (
@@ -987,13 +991,17 @@ export default function Pay() {
                                         )}
 
                                         {paymentMethod === "stripe" ? (
-                                            <Elements stripe={stripePromise}>
-                                                <StripePaymentForm
-                                                    totalPrice={paymentData.totalPrice}
-                                                    onSuccess={handlePaymentSuccess}
-                                                    paymentData={paymentData}
-                                                />
-                                            </Elements>
+
+                                            <div className="ml-3">
+                                                        <p className=" text-red-700 text-2xl">Payment method under development.</p>
+                                            </div>
+                                            // <Elements stripe={stripePromise}>
+                                            //     <StripePaymentForm
+                                            //         totalPrice={paymentData.totalPrice}
+                                            //         onSuccess={handlePaymentSuccess}
+                                            //         paymentData={paymentData}
+                                            //     />
+                                            // </Elements>
                                         ) : paymentMethod === "paypal" ? (
                                             <PayPalScriptProvider
                                                 options={{
