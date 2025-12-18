@@ -106,7 +106,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     const formattedDepartureDate = format(zonedDepartureDate, "EEE, dd MMM");
 
     const [departureDate, departureTime] = outboundFlight.departure_time.split(" ");
+    const [returnDepartureDate, returnDepartureTime] = returnFlight.departure_time.split(" ");
     const [arrivalDate, arrivalTime] = outboundFlight.arrival_time.split(" ");
+    const [returnArrivalDate, returnArrivalTime] = returnFlight.arrival_time.split(" ");
 
     const [arrivalDateStr] = outboundFlight.arrival_time.split(" ");
     const parsedArrivalDate = parse(arrivalDateStr, "yyyy-MM-dd", new Date());
@@ -200,13 +202,13 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                             <div class="flight-header">Return Flight</div>
                             <div class="flight-details">
                               <div>
-                                <strong>From:</strong> ${bookingData.toCity} (${bookingData.to})<br>
-                                <strong>To:</strong> ${bookingData.fromCity} (${bookingData.from})<br>
+                                <strong>From:</strong> ${bookingData.to}<br>
+                                <strong>To:</strong> ${bookingData.from}<br>
                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
                               </div>
                               <div>
-                                <strong>Departure:</strong> ${returnFlight.departure_time}<br>
-                                <strong>Arrival:</strong> ${returnFlight.arrival_time}<br>
+                                <strong>Departure:</strong> ${returnDepartureTime}<br>
+                                <strong>Arrival:</strong> ${returnArrivalTime}<br>
                                 <strong>Flight Number:</strong> ${returnFlight.noflight}
                               </div>
                             </div>
@@ -347,8 +349,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
                               </div>
                               <div>
-                                <strong>Départ:</strong> ${returnFlight.departure_time}<br>
-                                <strong>Arrivée:</strong> ${returnFlight.arrival_time}<br>
+                               
+                                <strong>Départ:</strong> ${returnDepartureTime}<br>
+                                <strong>Arrivée:</strong> ${returnArrivalTime}<br>
                                 <strong>Numéro du vol:</strong> ${returnFlight.noflight}
                               </div>
                             </div>
@@ -606,17 +609,23 @@ if (isRoundTrip && formData.flightNumberReturn) {
         );
         const dataReturn = await resReturn.json();
 
-        if (resReturn.ok && dataReturn.flight) {
-            const flightData = dataReturn.flight;
-            returnFlight = {
-                date: flightData.departure,
-                noflight: flightData.flight_number,
-                departure_time: flightData.departure,
-                arrival_time: flightData.arrival,
-            };
-        } else {
-            toast.error("Vol retour introuvable !");
-        }
+        if (resReturn.ok && dataReturn) {
+    // dataReturn contient déjà le vol
+    const flightData = dataReturn; 
+    returnFlight = {
+        date: flightData.departure_time,
+        noflight: flightData.flight_number,
+        departure_time: flightData.departure_time,
+        arrival_time: flightData.arrival_time,
+        from: flightData.from,
+        to: flightData.to,
+        fromCity: flightData.fromCity,
+        toCity: flightData.toCity,
+    };
+} else {
+    toast.error("Vol retour introuvable !");
+}
+
     } catch (err) {
         console.error("Erreur récupération vol retour:", err);
         toast.error("Impossible de récupérer le vol retour.");

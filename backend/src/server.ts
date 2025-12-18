@@ -1658,6 +1658,7 @@ if (passengers[0]?.flightNumberReturn) {
 }
 
     // Vérifier les vols
+    const TotalPrice2 = returnFlightIdResolved ? totalPrice * 2 : totalPrice;
     const flightIds = returnFlightIdResolved ? [flightId, returnFlightIdResolved] : [flightId];
     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
@@ -1784,7 +1785,7 @@ if (passengers[0]?.flightNumberReturn) {
       [
         flightId,
         referenceNumber,
-        totalPrice,
+        TotalPrice2,
         contactInfo.email,
         contactInfo.phone,
         unpaid || "confirmed",
