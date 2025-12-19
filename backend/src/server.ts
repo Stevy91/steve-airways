@@ -2494,35 +2494,41 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
             <table width="100%">
               <tr>
-                <td>
+                                <td>
                   <div class="flight-card">
-                    <div class="flight-header">Outbound Flight</div>
-                   
-                    <div class="flight-details">
+                    
+                      ${flights.length > 0 ? `
+                      <div class="flight-header">Vol aller</div>
                       <div class="flight-details">
-  <div>
-    <strong>De:</strong> ${flights.dep_name} (${flights.dep_code})<br />
-    <strong>A:</strong> ${flights.arr_name} (${flights.arr_code})<br />
-    <strong>Date:</strong> ${format(parseISO(flights.departure_time), "EEE, dd MMM yyyy")}<br />
-    <strong>Départ:</strong> ${format(parseISO(flights.departure_time), "HH:mm")}<br />
-    <strong>Arrivée:</strong> ${format(parseISO(flights.arrival_time), "HH:mm")}<br />
-    <strong>Numéro du vol:</strong> ${flights.flight_number}
-  </div>
-</div>
-
-${booking.return_flight_id ? `
-<div class="flight-header">Vol retour</div>
-<div class="flight-details">
-  <div>
-    <strong>De:</strong> ${flights.dep_name} (${flights.dep_code})<br />
-    <strong>A:</strong> ${flights.arr_name} (${flights.arr_code})<br />
-    <strong>Date:</strong> ${format(parseISO(flights.departure_time), "EEE, dd MMM yyyy")}<br />
-    <strong>Départ:</strong> ${format(parseISO(flights.departure_time), "HH:mm")}<br />
-    <strong>Arrivée:</strong> ${format(parseISO(flights.return_arrival_time), "HH:mm")}<br />
-    <strong>Numéro du vol:</strong> ${flights.return_flight_number}
-  </div>
-</div>
-` : ""}
+                        <div>
+                          <strong>From:</strong> ${flights[0].dep_name} (${flights[0].dep_code})<br />
+                          <strong>To:</strong> ${flights[0].arr_name} (${flights[0].arr_code})<br />
+                          <strong>Date:</strong> ${format(parseISO(flights[0].departure_time), "EEE, dd MMM yyyy")}<br />
+                          <strong>DDeparture:</strong> ${format(parseISO(flights[0].departure_time), "HH:mm")}<br />
+                          <strong>Arrival:</strong> ${format(parseISO(flights[0].arrival_time), "HH:mm")}<br />
+                          <strong>Flight Number:</strong> ${flights[0].flight_number}
+                        </div>
+                      </div>
+                      ` : ''}
+                    
+                  </div>
+                </td>
+                <td style="text-align: right;">
+                  <div class="flight-card">
+                    ${flights.length > 1 ? `
+                    <div class="flight-header">Vol retour</div>
+                    <div class="flight-details">
+                      <div>
+                        <strong>From:</strong> ${flights[1].dep_name} (${flights[1].dep_code})<br />
+                        <strong>To:</strong> ${flights[1].arr_name} (${flights[1].arr_code})<br />
+                        <strong>Date:</strong> ${format(parseISO(flights[1].departure_time), "EEE, dd MMM yyyy")}<br />
+                        <strong>DDeparture:</strong> ${format(parseISO(flights[1].departure_time), "HH:mm")}<br />
+                        <strong>Arrival:</strong> ${format(parseISO(flights[1].arrival_time), "HH:mm")}<br />
+                        <strong>Flight Number:</strong> ${flights[1].flight_number}
+                      </div>
+                    </div>
+                    ` : ''}
+                    
                   </div>
                 </td>
               </tr>
@@ -2719,19 +2725,39 @@ ${booking.return_flight_id ? `
               <tr>
                 <td>
                   <div class="flight-card">
-                    <div class="flight-header">Vol aller</div>
-                    ${flights.map((f: any, idx: number) => `
+                    
+                      ${flights.length > 0 ? `
+                      <div class="flight-header">Vol aller</div>
+                      <div class="flight-details">
+                        <div>
+                          <strong>De:</strong> ${flights[0].dep_name} (${flights[0].dep_code})<br />
+                          <strong>A:</strong> ${flights[0].arr_name} (${flights[0].arr_code})<br />
+                          <strong>Date:</strong> ${format(parseISO(flights[0].departure_time), "EEE, dd MMM yyyy")}<br />
+                          <strong>Départ:</strong> ${format(parseISO(flights[0].departure_time), "HH:mm")}<br />
+                          <strong>Arrivée:</strong> ${format(parseISO(flights[0].arrival_time), "HH:mm")}<br />
+                          <strong>Numéro du vol:</strong> ${flights[0].flight_number}
+                        </div>
+                      </div>
+                      ` : ''}
+                    
+                  </div>
+                </td>
+                <td style="text-align: right;">
+                  <div class="flight-card">
+                    ${flights.length > 1 ? `
+                    <div class="flight-header">Vol retour</div>
                     <div class="flight-details">
                       <div>
-                    
-                        <strong>De:</strong> ${f.dep_name} (${flights.dep_code})<br />
-                        <strong>A:</strong> ${f.arr_name} (${flights.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(flights.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${format(parseISO(flights.departure_time), "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${format(parseISO(flights.arrival_time), "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${f.flight_number}
+                        <strong>De:</strong> ${flights[1].dep_name} (${flights[1].dep_code})<br />
+                        <strong>A:</strong> ${flights[1].arr_name} (${flights[1].arr_code})<br />
+                        <strong>Date:</strong> ${format(parseISO(flights[1].departure_time), "EEE, dd MMM yyyy")}<br />
+                        <strong>Départ:</strong> ${format(parseISO(flights[1].departure_time), "HH:mm")}<br />
+                        <strong>Arrivée:</strong> ${format(parseISO(flights[1].arrival_time), "HH:mm")}<br />
+                        <strong>Numéro du vol:</strong> ${flights[1].flight_number}
+                      </div>
                     </div>
-                    `).join("")}
+                    ` : ''}
+                    
                   </div>
                 </td>
               </tr>
