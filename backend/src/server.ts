@@ -3151,7 +3151,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                     <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Vol Simple"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-                  <table width="100%">
+                  <table width="100%" style="center">
                     <tr>
                       <td> 
                          ${outboundFlight ? `
