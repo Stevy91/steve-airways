@@ -2707,22 +2707,30 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                   <div class="flight-card">
                     <div class="flight-header">Vol aller</div>
                     
-                    <div class="flight-details">
-                      <div>
-                    
-                        <strong>De:</strong> ${flights.dep_name} (${flights.dep_code})<br />
-                        <strong>A:</strong> ${flights.arr_name} (${flights.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(flights.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${format(parseISO(flights.departure_time), "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${format(parseISO(flights.arrival_time), "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${flights.flight_number}
+                      <div class="flight-details">
+                        <div>
+                      
+                          <strong>De:</strong> ${flights.dep_name} (${flights.dep_code})<br />
+                          <strong>A:</strong> ${flights.arr_name} (${flights.arr_code})<br />
+                          <strong>Date:</strong> ${format(parseISO(flights.departure_time), "EEE, dd MMM yyyy")}<br />
+                          <strong>Départ:</strong> ${format(parseISO(flights.departure_time), "HH:mm")}<br />
+                          <strong>Arrivée:</strong> ${format(parseISO(flights.arrival_time), "HH:mm")}<br />
+                          <strong>Numéro du vol:</strong> ${flights.flight_number}
+                        </div>
+                      </div>
                     </div>
-                    ${booking.return_flight_id ? `<strong>De:</strong> ${flights.dep_name} (${flights.dep_code})<br />
-                        <strong>A:</strong> ${flights.arr_name} (${flights.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(flights.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${format(parseISO(flights.departure_time), "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${format(parseISO(flights.arrival_time), "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${flights.flight_number}` : ""}
+
+                    ${booking.return_flight_id ? `<div class="flight-header">Vol retour</div>
+                      <div class="flight-details">
+                        <div>
+                          <strong>De:</strong> ${flights.return_dep_name} (${flights.return_dep_code})<br />
+                          <strong>A:</strong> ${flights.return_arr_name} (${flights.return_arr_code})<br />
+                          <strong>Date:</strong> ${format(parseISO(flights.return_departure_time), "EEE, dd MMM yyyy")}<br />
+                          <strong>Départ:</strong> ${format(parseISO(flights.return_departure_time), "HH:mm")}<br />
+                          <strong>Arrivée:</strong> ${format(parseISO(flights.return_arrival_time), "HH:mm")}<br />
+                          <strong>Numéro du vol:</strong> ${flights.return_flight_number}
+                        </div>
+                      </div>` : ""}<br />
                   </div>
                 </td>
               </tr>
