@@ -2814,13 +2814,20 @@ import { toZonedTime } from "date-fns-tz";
 //     res.status(500).json({ error: "Erreur lors de la génération du billet" });
 //   }
 // });
+interface Flight {
 
+  dep_name: string;
+  dep_code: string;
+  arr_name: string;
+  arr_code: string;
+  // ... autres propriétés si nécessaire
+}
 
 app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 
   try {
-    // 1️⃣ Récupérer booking, passengers, flights depuis la base
+    // 1️⃣ Récupérer booking, passengers, flights
     const [bookingRows]: any = await pool.query(
       "SELECT * FROM bookings WHERE booking_reference = ?",
       [reference]
@@ -2835,18 +2842,53 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       [booking.id]
     );
 
-    const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
-    const [flights]: any = await pool.query(
-      `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
-       FROM flights f
-       JOIN locations dep ON dep.id = f.departure_location_id
-       JOIN locations arr ON arr.id = f.arrival_location_id
-       WHERE f.id IN (?)`,
-      [flightIds]
-    );
+    // Définir l'interface
+    interface Flight {
+      id: number;
+      flight_number: string;
+      departure_time: string | null;
+      arrival_time: string | null;
+      dep_name: string;
+      dep_code: string;
+      arr_name: string;
+      arr_code: string;
+      departure_location_id: number;
+      arrival_location_id: number;
+      // Ajoutez d'autres propriétés si nécessaire
+    }
 
-    // Fonction utilitaire pour formater les dates en toute sécurité
-    const formatDateSafe = (dateString: string | null, dateFormat: string) => {
+    interface Passenger {
+      id: number;
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone?: string;
+      booking_id: number;
+    }
+
+    // Récupérer les vols
+    const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
+    let flights: Flight[] = [];
+
+   if (flightIds.length > 0) {
+  const placeholders = flightIds.map(() => '?').join(',');
+  const [flightsResult]: any = await pool.query(
+    `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
+     FROM flights f
+     JOIN locations dep ON dep.id = f.departure_location_id
+     JOIN locations arr ON arr.id = f.arrival_location_id
+     WHERE f.id IN (${placeholders})`,
+    flightIds
+  );
+  flights = flightsResult as Flight[];
+}
+
+    // Identifier les vols aller et retour
+    const outboundFlight = flights.find((f: Flight) => f.id === booking.flight_id);
+    const returnFlight = flights.find((f: Flight) => f.id === booking.return_flight_id);
+
+    // Fonction utilitaire pour formater les dates
+    const formatDateSafe = (dateString: string | null, dateFormat: string): string => {
       if (!dateString) return 'Non spécifié';
       try {
         return format(parseISO(dateString), dateFormat);
@@ -2966,38 +3008,38 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                   <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
 
                   <!-- Outbound Flight -->
-                  ${flights.length > 0 && flights[0] ? `
-                  <div class="flight-card">
-                    <div class="flight-header">Outbound Flight</div>
-                    <div class="flight-details">
-                      <div>
-                        <strong>From:</strong> ${flights[0].dep_name || ''} (${flights[0].dep_code || ''})<br />
-                        <strong>To:</strong> ${flights[0].arr_name || ''} (${flights[0].arr_code || ''})<br />
-                        <strong>Date:</strong> ${formatDateSafe(flights[0].departure_time, "EEE, dd MMM yyyy")}<br />
-                        <strong>Departure:</strong> ${formatDateSafe(flights[0].departure_time, "HH:mm")}<br />
-                        <strong>Arrival:</strong> ${formatDateSafe(flights[0].arrival_time, "HH:mm")}<br />
-                        <strong>Flight Number:</strong> ${flights[0].flight_number || 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                  ` : '<div>No outbound flight information</div>'}
+                       ${outboundFlight ? `
+        <div class="flight-card">
+          <div class="flight-header">Outbound Flight</div>
+          <div class="flight-details">
+            <div>
+              <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
+              <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
+              <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+              <strong>Departure:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
+              <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
+              <strong>Flight Number:</strong> ${outboundFlight.flight_number}
+            </div>
+          </div>
+        </div>
+        ` : '<div>No outbound flight information</div>'}
 
-                  <!-- Return Flight -->
-                  ${flights.length > 1 && flights[1] ? `
-                  <div class="flight-card">
-                    <div class="flight-header">Return Flight</div>
-                    <div class="flight-details">
-                      <div>
-                        <strong>From:</strong> ${flights[1].dep_name || ''} (${flights[1].dep_code || ''})<br />
-                        <strong>To:</strong> ${flights[1].arr_name || ''} (${flights[1].arr_code || ''})<br />
-                        <strong>Date:</strong> ${formatDateSafe(flights[1].departure_time, "EEE, dd MMM yyyy")}<br />
-                        <strong>Departure:</strong> ${formatDateSafe(flights[1].departure_time, "HH:mm")}<br />
-                        <strong>Arrival:</strong> ${formatDateSafe(flights[1].arrival_time, "HH:mm")}<br />
-                        <strong>Flight Number:</strong> ${flights[1].flight_number || 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                  ` : ''}
+                          <!-- Vol retour -->
+        ${returnFlight ? `
+        <div class="flight-card">
+          <div class="flight-header">Return Flight</div>
+          <div class="flight-details">
+            <div>
+              <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+              <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+              <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+              <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+              <strong>Flight Number:</strong> ${returnFlight.flight_number}
+            </div>
+          </div>
+        </div>
+        ` : ''}
                 </td>
               </tr>
 
