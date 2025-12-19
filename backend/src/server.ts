@@ -2999,40 +2999,47 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                     <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Round Trip" : "One Way"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-
-                  <!-- Outbound Flight -->
-                       ${outboundFlight ? `
-        <div class="flight-card">
-          <div class="flight-header">Outbound Flight</div>
-          <div class="flight-details">
-            <div>
-              <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
-              <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
-              <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-              <strong>Departure:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
-              <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
-              <strong>Flight Number:</strong> ${outboundFlight.flight_number}
-            </div>
-          </div>
-        </div>
-        ` : '<div>No outbound flight information</div>'}
-
+                  <table width="100%">
+                    <tr>
+                      <td> 
+                         ${outboundFlight ? `
+                        <div class="flight-card">
+                          <div class="flight-header">Outbound Flight</div>
+                          <div class="flight-details">
+                            <div>
+                              <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
+                              <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
+                              <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                              <strong>Departure:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
+                              <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
+                              <strong>Flight Number:</strong> ${outboundFlight.flight_number}
+                            </div>
+                          </div>
+                        </div>
+                        ` : '<div>No outbound flight information</div>'}
+                      
+                      </td>
+                      <td style="text-align: right;"> 
+                             
                           <!-- Vol retour -->
-        ${returnFlight ? `
-        <div class="flight-card">
-          <div class="flight-header">Return Flight</div>
-          <div class="flight-details">
-            <div>
-              <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-              <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-              <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-              <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-              <strong>Flight Number:</strong> ${returnFlight.flight_number}
-            </div>
-          </div>
-        </div>
-        ` : ''}
+                        ${returnFlight ? `
+                        <div class="flight-card">
+                          <div class="flight-header">Return Flight</div>
+                          <div class="flight-details">
+                            <div>
+                              <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+                              <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+                              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                              <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+                              <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+                              <strong>Flight Number:</strong> ${returnFlight.flight_number}
+                            </div>
+                          </div>
+                        </div>
+                        ` : ''}
+                      </td>
+                    </tr>
+                  </table>               
                 </td>
               </tr>
 
@@ -3144,40 +3151,47 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                     <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Vol Simple"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-
-                  <!-- Vol aller -->
-                  ${flights.length > 0 && flights[0] ? `
-                  <div class="flight-card">
-                    <div class="flight-header">Vol aller</div>
-                    <div class="flight-details">
-                      <div>
-                        <strong>De:</strong> ${flights[0].dep_name || ''} (${flights[0].dep_code || ''})<br />
-                        <strong>À:</strong> ${flights[0].arr_name || ''} (${flights[0].arr_code || ''})<br />
-                        <strong>Date:</strong> ${formatDateSafe(flights[0].departure_time, "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${formatDateSafe(flights[0].departure_time, "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${formatDateSafe(flights[0].arrival_time, "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${flights[0].flight_number || 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                  ` : '<div>Informations du vol aller non disponibles</div>'}
-
-                  <!-- Vol retour -->
-                  ${flights.length > 1 && flights[1] ? `
-                  <div class="flight-card">
-                    <div class="flight-header">Vol retour</div>
-                    <div class="flight-details">
-                      <div>
-                        <strong>De:</strong> ${flights[1].dep_name || ''} (${flights[1].dep_code || ''})<br />
-                        <strong>À:</strong> ${flights[1].arr_name || ''} (${flights[1].arr_code || ''})<br />
-                        <strong>Date:</strong> ${formatDateSafe(flights[1].departure_time, "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${formatDateSafe(flights[1].departure_time, "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${formatDateSafe(flights[1].arrival_time, "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${flights[1].flight_number || 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                  ` : ''}
+                  <table width="100%">
+                    <tr>
+                      <td> 
+                         ${outboundFlight ? `
+                        <div class="flight-card">
+                          <div class="flight-header">Vol aller</div>
+                          <div class="flight-details">
+                            <div>
+                              <strong>De:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
+                              <strong>À:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
+                              <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                              <strong>Départ:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
+                              <strong>Arrivée:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
+                              <strong>Numéro du vol:</strong> ${outboundFlight.flight_number}
+                            </div>
+                          </div>
+                        </div>
+                        ` : '<div>No outbound flight information</div>'}
+                      
+                      </td>
+                      <td style="text-align: right;"> 
+                             
+                          <!-- Vol retour -->
+                        ${returnFlight ? `
+                        <div class="flight-card">
+                          <div class="flight-header">Vol de retour</div>
+                          <div class="flight-details">
+                            <div>
+                              <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+                              <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+                              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                              <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+                              <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+                              <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
+                            </div>
+                          </div>
+                        </div>
+                        ` : ''}
+                      </td>
+                    </tr>
+                  </table>               
                 </td>
               </tr>
 
@@ -3248,9 +3262,11 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
     </html>
     `;
 
+    
+
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
-    const options = { format: 'A4', printBackground: true, margin: { top: '10px', right: '10px', bottom: '10px', left: '10px' } };
+    const options = { format: 'A3', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
 
     const pdfBuffer = await pdf.generatePdf(file, options);
 
@@ -3269,237 +3285,6 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
 
 
 
-
-
-// app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
-//   const { reference } = req.params;
-
-//   try {
-//     // 1️⃣ Récupérer booking
-//     const [bookingRows]: any = await pool.query(
-//       "SELECT * FROM bookings WHERE booking_reference = ?",
-//       [reference]
-//     );
-//     if (!bookingRows.length)
-//       return res.status(404).json({ error: "Réservation introuvable" });
-
-//     const booking = bookingRows[0];
-
-//     // 2️⃣ Récupérer passengers
-//     const [passengerRows]: any = await pool.query(
-//       "SELECT * FROM passengers WHERE booking_id = ?",
-//       [booking.id]
-//     );
-//     const passengers = passengerRows;
-
-//     // 3️⃣ Interface Flight
-//     interface Flight {
-//       id: number;
-//       flight_number: string;
-//       departure_time: string | null;
-//       arrival_time: string | null;
-//       dep_name: string;
-//       dep_code: string;
-//       arr_name: string;
-//       arr_code: string;
-//       departure_location_id: number;
-//       arrival_location_id: number;
-//     }
-
-//     // 4️⃣ Récupérer les vols avec DEBUG
-//     console.log("=== DEBUG START ===");
-//     console.log("Booking ID:", booking.id);
-//     console.log("Flight ID (aller):", booking.flight_id);
-//     console.log("Return Flight ID (retour):", booking.return_flight_id);
-//     console.log("Return Flight ID type:", typeof booking.return_flight_id);
-//     console.log("Return Flight ID est null?", booking.return_flight_id === null);
-//     console.log("Return Flight ID est undefined?", booking.return_flight_id === undefined);
-
-//     const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
-//     console.log("Flight IDs filtrés:", flightIds);
-
-//     let flights: Flight[] = [];
-
-//     if (flightIds.length > 0) {
-//       const placeholders = flightIds.map(() => '?').join(',');
-//       console.log("Requête avec placeholders:", placeholders);
-//       console.log("Valeurs pour placeholders:", flightIds);
-      
-//       const queryResult = await pool.query(
-//         `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
-//          FROM flights f
-//          JOIN locations dep ON dep.id = f.departure_location_id
-//          JOIN locations arr ON arr.id = f.arrival_location_id
-//          WHERE f.id IN (${placeholders})`,
-//         flightIds
-//       );
-      
-//       flights = queryResult[0] as Flight[];
-//       console.log("Nombre de vols trouvés:", flights.length);
-      
-//       flights.forEach((flight, index) => {
-//         console.log(`\nVol ${index}:`);
-//         console.log("  ID:", flight.id);
-//         console.log("  Numéro de vol:", flight.flight_number);
-//         console.log("  Départ:", flight.dep_name, "(", flight.dep_code, ")");
-//         console.log("  Arrivée:", flight.arr_name, "(", flight.arr_code, ")");
-//         console.log("  Date départ:", flight.departure_time);
-//         console.log("  Date arrivée:", flight.arrival_time);
-//       });
-//     }
-
-//     // 5️⃣ Identifier les vols aller et retour
-//     const outboundFlight = flights.find((f: Flight) => f.id === booking.flight_id);
-//     const returnFlight = flights.find((f: Flight) => f.id === booking.return_flight_id);
-
-//     console.log("\n=== IDENTIFICATION VOLS ===");
-//     console.log("OutboundFlight trouvé?:", !!outboundFlight);
-//     console.log("OutboundFlight ID:", outboundFlight?.id);
-//     console.log("OutboundFlight numéro:", outboundFlight?.flight_number);
-    
-//     console.log("ReturnFlight trouvé?:", !!returnFlight);
-//     console.log("ReturnFlight ID:", returnFlight?.id);
-//     console.log("ReturnFlight numéro:", returnFlight?.flight_number);
-    
-//     console.log("Même objet?", outboundFlight === returnFlight);
-//     console.log("Même ID?", outboundFlight?.id === returnFlight?.id);
-//     console.log("=== DEBUG END ===\n");
-
-//     // 6️⃣ Fonction utilitaire pour les dates
-//     const formatDateSafe = (dateString: string | null, dateFormat: string): string => {
-//       if (!dateString) return 'Non spécifié';
-//       try {
-//         return format(parseISO(dateString), dateFormat);
-//       } catch (error) {
-//         console.error('Erreur de formatage de date:', dateString, error);
-//         return 'Date invalide';
-//       }
-//     };
-
-//     // 7️⃣ QR Code
-//     const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
-
-//     // 8️⃣ HTML Template - UNIFORME pour les deux pages
-//     const htmlContent = `
-//     <html>
-//     <head>
-//       <style>
-//         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-//         .flight-card { padding: 15px; margin-bottom: 20px; }
-//         .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-//         .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-//       </style>
-//     </head>
-//     <body>
-//       <!-- PREMIÈRE PAGE (Anglais) -->
-//       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-//         <!-- ... en-tête ... -->
-        
-//         <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-
-//         <!-- Vol aller -->
-//         ${outboundFlight ? `
-//         <div class="flight-card">
-//           <div class="flight-header">Outbound Flight</div>
-//           <div class="flight-details">
-//             <div>
-//               <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
-//               <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
-//               <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-//               <strong>Departure:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
-//               <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
-//               <strong>Flight Number:</strong> ${outboundFlight.flight_number}
-//             </div>
-//           </div>
-//         </div>
-//         ` : '<div>No outbound flight information</div>'}
-
-//         <!-- Vol retour -->
-//         ${returnFlight && outboundFlight?.id !== returnFlight?.id ? `
-//         <div class="flight-card">
-//           <div class="flight-header">Return Flight</div>
-//           <div class="flight-details">
-//             <div>
-//               <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-//               <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-//               <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-//               <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-//               <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-//               <strong>Flight Number:</strong> ${returnFlight.flight_number}
-//             </div>
-//           </div>
-//         </div>
-//         ` : returnFlight && outboundFlight?.id === returnFlight?.id ? 
-//           '<div class="flight-card"><em>Return flight is the same as outbound flight</em></div>' : ''}
-
-//         <!-- ... reste du contenu anglais ... -->
-//       </div>
-
-//       <!-- FORCER NOUVELLE PAGE -->
-//       <div style="page-break-after: always;"></div>
-
-//       <!-- DEUXIÈME PAGE (Français) -->
-//       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-//         <!-- ... en-tête français ... -->
-        
-//         <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-
-//         <!-- Vol aller (Français) -->
-//         ${outboundFlight ? `
-//         <div class="flight-card">
-//           <div class="flight-header">Vol aller</div>
-//           <div class="flight-details">
-//             <div>
-//               <strong>De:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
-//               <strong>À:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
-//               <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-//               <strong>Départ:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
-//               <strong>Arrivée:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
-//               <strong>Numéro du vol:</strong> ${outboundFlight.flight_number}
-//             </div>
-//           </div>
-//         </div>
-//         ` : '<div>Informations du vol aller non disponibles</div>'}
-
-//         <!-- Vol retour (Français) -->
-//         ${returnFlight && outboundFlight?.id !== returnFlight?.id ? `
-//         <div class="flight-card">
-//           <div class="flight-header">Vol retour</div>
-//           <div class="flight-details">
-//             <div>
-//               <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-//               <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-//               <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-//               <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-//               <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-//               <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
-//             </div>
-//           </div>
-//         </div>
-//         ` : returnFlight && outboundFlight?.id === returnFlight?.id ? 
-//           '<div class="flight-card"><em>Le vol retour est le même que le vol aller</em></div>' : ''}
-
-//         <!-- ... reste du contenu français ... -->
-//       </div>
-//     </body>
-//     </html>
-//     `;
-
-//     // 9️⃣ Générer le PDF
-//     const file = { content: htmlContent };
-//     const options = { format: 'A4', printBackground: true, margin: { top: '10px', right: '10px', bottom: '10px', left: '10px' } };
-
-//     const pdfBuffer = await pdf.generatePdf(file, options);
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", `attachment; filename=${reference}.pdf`);
-//     res.send(pdfBuffer);
-
-//   } catch (err) {
-//     console.error("❌ ERREUR PDF :", err);
-//     res.status(500).json({ error: "Erreur lors de la génération du billet" });
-//   }
-// });
 
 
 
