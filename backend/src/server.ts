@@ -2816,7 +2816,7 @@ pour ces raisons.</p>
 });
 
 
-// app.get("/api/generate/:reference2", async (req: Request, res: Response) => {
+// app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
 //   const { reference } = req.params;
 
 //   try {
@@ -3264,7 +3264,7 @@ pour ces raisons.</p>
 //   }
 // });
 
-app.get("/api/generate/:reference2", async (req: Request, res: Response) => {
+app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 
   try {
