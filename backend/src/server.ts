@@ -1657,6 +1657,7 @@ if (passengers[0]?.flightNumberReturn) {
   returnFlightIdResolved = returnFlightRows[0].id;
 }
 
+
     // Vérifier les vols
     const TotalPrice2 = returnFlightIdResolved ? totalPrice * 2 : totalPrice;
     const flightIds = returnFlightIdResolved ? [flightId, returnFlightIdResolved] : [flightId];
@@ -2487,7 +2488,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         <tr>
           <td colspan="2" style="padding-top: 8px">
             <div style="padding: 20px; text-align: center">
-              <h3 style="color: #1a237e; margin: 0">One Way</h3>
+              <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Round Trip" : "One Way"}</h3>
             </div>
             <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
 
