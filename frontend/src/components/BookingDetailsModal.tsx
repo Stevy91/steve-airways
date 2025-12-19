@@ -174,7 +174,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
   const generateTicketPDF = async (): Promise<void> => {
   try {
     const response = await fetch(
-      `https://steve-airways.onrender.com/api/generate/${booking.reference}`
+      `https://steve-airways.onrender.com/api/generate2/${booking.reference}`
     );
 
     if (!response.ok) {
