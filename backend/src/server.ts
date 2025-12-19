@@ -3019,7 +3019,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                         ` : '<div>No outbound flight information</div>'}
                       
                       </td>
-                      <td style="text-align: right;"> 
+                      <td > 
                              
                           <!-- Vol retour -->
                         ${returnFlight ? `
@@ -3171,7 +3171,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                         ` : '<div>No outbound flight information</div>'}
                       
                       </td>
-                      <td style="text-align: right;"> 
+                      <td> 
                              
                           <!-- Vol retour -->
                         ${returnFlight ? `
