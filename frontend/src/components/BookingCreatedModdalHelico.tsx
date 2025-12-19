@@ -546,9 +546,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
                 
-                <table width="100%">
+                <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td>
+                    <td width="50%" valign="top" style="padding-right: 10px;">
                       <div class="flight-card">
                         <div class="flight-header">Outbound Flight</div>
                         <div class="flight-details">
@@ -565,7 +565,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                         </div>
                       </div>
                     </td>
-                    <td style="text-align: right;">
+                    <td width="50%" valign="top" style="padding-left: 10px;">
                       ${
                           isRoundTrip && returnFlight
                               ? `
@@ -683,49 +683,54 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
                 
-                <table width="100%">
-                  <tr>
-                    <td>
-                      <div class="flight-card">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    
+                    <td width="50%" valign="top" style="padding-right: 10px;">
+                    <div class="flight-card">
                         <div class="flight-header">Vol aller</div>
                         <div class="flight-details">
-                          <div>
+                        <div>
                             <strong>De:</strong> ${bookingData.from}<br>
-                            <strong>A:</strong> ${bookingData.to}<br>
+                            <strong>À:</strong> ${bookingData.to}<br>
                             <strong>Date:</strong> ${formattedDepartureDate}
-                          </div>
-                          <div>
+                        </div>
+                        <div>
                             <strong>Départ:</strong> ${departureTime}<br>
                             <strong>Arrivée:</strong> ${arrivalTime}<br>
                             <strong>Numéro du vol:</strong> ${outboundFlight.noflight}
-                          </div>
                         </div>
-                      </div>
+                        </div>
+                    </div>
                     </td>
-                    <td style="text-align: right;">
-                      ${
-                          isRoundTrip && returnFlight
-                              ? `
-                          <div class="flight-card">
+
+                    
+                    <td width="50%" valign="top" style="padding-left: 10px;">
+                    ${
+                        isRoundTrip && returnFlight
+                        ? `
+                        <div class="flight-card">
                             <div class="flight-header">Vol de retour</div>
                             <div class="flight-details">
-                              <div>
-                                <strong>De:</strong> ${bookingData.to || "N/A"}<br>
-                                <strong>A:</strong> ${bookingData.from || "N/A"}<br>
+                            <div>
+                                <strong>De:</strong> ${bookingData.to}<br>
+                                <strong>À:</strong> ${bookingData.from}<br>
                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
-                              </div>
-                              <div>
+                            </div>
+                            <div>
                                 <strong>Départ:</strong> ${returnDepartureTime}<br>
                                 <strong>Arrivée:</strong> ${returnArrivalTime}<br>
                                 <strong>Numéro du vol:</strong> ${returnFlight.noflight}
-                              </div>
                             </div>
-                          </div>`
-                              : ""
-                      }
+                            </div>
+                        </div>
+                        `
+                        : ""
+                    }
                     </td>
-                  </tr>
+                </tr>
                 </table>
+
               </td>
             </tr>
 
