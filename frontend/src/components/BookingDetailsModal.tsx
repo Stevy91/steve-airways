@@ -428,7 +428,7 @@ const handleSaveChanges = async () => {
         const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
 
         // Sauvegarder les modifications via API
-        const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
+        const res = await fetch(`https://steve-airways.onrender.com/api/bookings2/${editedBooking.reference}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
