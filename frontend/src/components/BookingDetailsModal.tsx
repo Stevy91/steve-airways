@@ -539,6 +539,22 @@ const handleSaveChanges = async () => {
         }
     };
 
+    
+
+const birth = (dateString: string, formatString: string) => {
+  try {
+    if (!dateString) return "Invalid date";
+
+    const date = parseISO(dateString);
+    date.setHours(12); // 🔥 empêche le décalage de jour
+
+    return format(date, formatString);
+  } catch {
+    return "Invalid date";
+  }
+};
+
+
     if (!open) return null;
     if (loading || !booking || !editedBooking)
         return (
@@ -906,7 +922,7 @@ const handleSaveChanges = async () => {
                                                             </div>
                                                             <div>
                                                                 <span className="font-semibold text-slate-700">Birthday: </span>{" "}
-                                                                {formatDateSafely(passenger.dob || passenger.dateOfBirth || "", "EEE, dd MMM yyyy")}
+                                                                {birth(passenger.dob, "EEE, dd MMM yyyy")}
                                                             </div>
                                                             {passenger.phone && (
                                                                 <div>
