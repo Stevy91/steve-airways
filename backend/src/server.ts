@@ -1283,10 +1283,10 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 
     // VÉRIFICATION DES DOUBLONS : Version améliorée
     console.log("🔍 Vérification des doublons de réservation...");
-    
+
     const duplicatePassengers = [];
     const now = new Date();
-    
+
     for (const passenger of passengers) {
       if (!passenger.firstName || !passenger.lastName) {
         await connection.rollback();
@@ -1296,12 +1296,12 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
         });
       }
 
-      
+
 
       // Normaliser le nom pour la comparaison
       const normalizedFirstName = passenger.firstName.trim().toLowerCase();
       const normalizedLastName = passenger.lastName.trim().toLowerCase();
-      
+
       // OPTION 1: Vérification stricte avec date de naissance si disponible
       // if (passenger.dateOfBirth) {
       //   const [existingWithDOB] = await connection.query<mysql.RowDataPacket[]>(
@@ -1404,7 +1404,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
            AND b.status NOT IN ('cancelled', 'refunded')
            AND DATE(b.departure_date) = DATE(?)`,
         [
-          normalizedFirstName, 
+          normalizedFirstName,
           normalizedLastName,
           flightId,
           departureDate
@@ -1429,9 +1429,9 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     if (duplicatePassengers.length > 0) {
       await connection.rollback();
       console.log("❌ Doublons détectés:", duplicatePassengers);
-      
+
       const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
-      
+
       return res.status(409).json({
         success: false,
         error: "Duplicate booking detected",
@@ -1635,29 +1635,29 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
       });
     }
 
-   
-let returnFlightIdResolved = returnFlightId || null;
 
-// Si le client a fourni un numéro de vol retour
-if (passengers[0]?.flightNumberReturn) {
-  const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
+    let returnFlightIdResolved = returnFlightId || null;
 
-  const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
-    "SELECT id FROM flights WHERE flight_number = ?",
-    [flightNumberReturn]
-  );
+    // Si le client a fourni un numéro de vol retour
+    if (passengers[0]?.flightNumberReturn) {
+      const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
 
-  if (returnFlightRows.length === 0) {
-    await connection.rollback();
-    return res.status(404).json({
-      success: false,
-      error: "Return flight not found",
-      details: `Aucun vol trouvé avec le numéro de vol ${flightNumberReturn}`
-    });
-  }
+      const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT id FROM flights WHERE flight_number = ?",
+        [flightNumberReturn]
+      );
 
-  returnFlightIdResolved = returnFlightRows[0].id;
-}
+      if (returnFlightRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          error: "Return flight not found",
+          details: `Aucun vol trouvé avec le numéro de vol ${flightNumberReturn}`
+        });
+      }
+
+      returnFlightIdResolved = returnFlightRows[0].id;
+    }
 
 
     // Vérifier les vols
@@ -1690,10 +1690,10 @@ if (passengers[0]?.flightNumberReturn) {
 
     // VÉRIFICATION DES DOUBLONS : Version améliorée
     console.log("🔍 Vérification des doublons de réservation...");
-    
+
     const duplicatePassengers = [];
     const now = new Date();
-    
+
     for (const passenger of passengers) {
       if (!passenger.firstName || !passenger.lastName) {
         await connection.rollback();
@@ -1703,17 +1703,17 @@ if (passengers[0]?.flightNumberReturn) {
         });
       }
 
-      
+
 
       // Normaliser le nom pour la comparaison
       const normalizedFirstName = passenger.firstName.trim().toLowerCase();
       const normalizedLastName = passenger.lastName.trim().toLowerCase();
-      
-  
+
+
 
       // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
-      
-      
+
+
       const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
         `SELECT 
             p.first_name, 
@@ -1731,7 +1731,7 @@ if (passengers[0]?.flightNumberReturn) {
            AND b.status NOT IN ('cancelled', 'refunded')
            AND DATE(b.departure_date) = DATE(?)`,
         [
-          normalizedFirstName, 
+          normalizedFirstName,
           normalizedLastName,
           flightId,
           departureDate
@@ -1756,9 +1756,9 @@ if (passengers[0]?.flightNumberReturn) {
     if (duplicatePassengers.length > 0) {
       await connection.rollback();
       console.log("❌ Doublons détectés:", duplicatePassengers);
-      
+
       const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
-      
+
       return res.status(409).json({
         success: false,
         error: "Duplicate booking detected",
@@ -2316,7 +2316,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       [flightIds]
     );
 
- 
+
 
     // 2️⃣ QR Code
 
@@ -2865,18 +2865,18 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
     const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
     let flights: Flight[] = [];
 
-   if (flightIds.length > 0) {
-  const placeholders = flightIds.map(() => '?').join(',');
-  const [flightsResult]: any = await pool.query(
-    `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
+    if (flightIds.length > 0) {
+      const placeholders = flightIds.map(() => '?').join(',');
+      const [flightsResult]: any = await pool.query(
+        `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
      FROM flights f
      JOIN locations dep ON dep.id = f.departure_location_id
      JOIN locations arr ON arr.id = f.arrival_location_id
      WHERE f.id IN (${placeholders})`,
-    flightIds
-  );
-  flights = flightsResult as Flight[];
-}
+        flightIds
+      );
+      flights = flightsResult as Flight[];
+    }
 
     // Identifier les vols aller et retour
     const outboundFlight = flights.find((f: Flight) => f.id === booking.flight_id);
@@ -3242,7 +3242,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
     </html>
     `;
 
-    
+
 
     // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
@@ -4487,6 +4487,8 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
 
 
 // API pour rechercher un vol par son code
+
+
 app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
   const {
@@ -4562,7 +4564,7 @@ app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
       if (!newFlightCode) return { changed: false, newFlightId: currentFlightId, details: null };
 
       let currentFlightNumber = null;
-      
+
       // Récupérer le vol actuel
       if (currentFlightId) {
         const [currentFlights] = await connection!.query<mysql.RowDataPacket[]>(
@@ -4640,7 +4642,7 @@ app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
           updatedFlights[0].code,
           'aller'
         );
-        
+
         if (result.changed) {
           flightChanged = true;
           newFlightId = result.newFlightId;
@@ -4663,7 +4665,7 @@ app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
           updatedFlights[1].code,
           'retour'
         );
-        
+
         if (result.changed) {
           returnFlightChanged = true;
           newReturnFlightId = result.newFlightId;
@@ -4932,15 +4934,15 @@ app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
         // Générer le QR Code
         const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
 
-// Extraire les vols aller et retour du tableau
-const outboundFlight = flightInfosForEmail.find(f => f.type === 'aller');
-const returnFlight = flightInfosForEmail.find(f => f.type === 'retour');
+        // Extraire les vols aller et retour du tableau
+        const outboundFlight = flightInfosForEmail.find(f => f.type === 'aller');
+        const returnFlight = flightInfosForEmail.find(f => f.type === 'retour');
 
-const hasOutboundFlight = outboundFlight !== undefined;
-const hasReturnFlight = returnFlight !== undefined;
+        const hasOutboundFlight = outboundFlight !== undefined;
+        const hasReturnFlight = returnFlight !== undefined;
 
-// Section HTML pour les détails du vol aller
-const outboundFlightHtml = hasOutboundFlight ? `
+        // Section HTML pour les détails du vol aller
+        const outboundFlightHtml = hasOutboundFlight ? `
 
   <div class="flight-details">
     <div>
@@ -4961,8 +4963,8 @@ const outboundFlightHtml = hasOutboundFlight ? `
   </div>
 `;
 
-// Section HTML pour les détails du vol retour
-const returnFlightHtml = hasReturnFlight ? `
+        // Section HTML pour les détails du vol retour
+        const returnFlightHtml = hasReturnFlight ? `
   <div class="flight-details">
     <div>
       <strong>From:</strong> ${returnFlight!.from}<br />
@@ -4975,8 +4977,8 @@ const returnFlightHtml = hasReturnFlight ? `
   </div>
 ` : '';
 
-// Section HTML pour les détails du vol aller en français
-const outboundFlightHtmlFr = hasOutboundFlight ? `
+        // Section HTML pour les détails du vol aller en français
+        const outboundFlightHtmlFr = hasOutboundFlight ? `
   <div class="flight-details">
     <div>
       <strong>De:</strong> ${outboundFlight!.from}<br />
@@ -4996,8 +4998,8 @@ const outboundFlightHtmlFr = hasOutboundFlight ? `
   </div>
 `;
 
-// Section HTML pour les détails du vol retour en français
-const returnFlightHtmlFr = hasReturnFlight ? `
+        // Section HTML pour les détails du vol retour en français
+        const returnFlightHtmlFr = hasReturnFlight ? `
   <div class="flight-details">
     <div>
       <strong>De:</strong> ${returnFlight!.from}<br />
@@ -5010,7 +5012,7 @@ const returnFlightHtmlFr = hasReturnFlight ? `
   </div>
 ` : '';
 
-                // EMAIL EN ANGLAIS
+        // EMAIL EN ANGLAIS
         const englishHtml = `
   <!DOCTYPE html>
   <html>
@@ -5164,27 +5166,33 @@ const returnFlightHtmlFr = hasReturnFlight ? `
             <tr>
               <td colspan="2" style="padding-top: 8px">
                 <div style="padding: 20px; text-align: center">
-                  <h3 style="color: #1a237e; margin: 0">One Way</h3>
+                  <h3 style="color: #1a237e; margin: 0">${hasReturnFlight ? "Round Trip" : "One Way"}</h3>
                 </div>
                 <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-                 <table width="100%">
+                    <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                      ${hasOutboundFlight ? `
-                        <td>
-                          <div class="flight-card">
-                            <div class="flight-header">Outbound Flight</div>
-                            ${outboundFlightHtml}
-                          </div>
-                        </td>
+                        ${hasOutboundFlight ? `
+                          <td width="50%" valign="top" align="left">
+                            <div class="flight-card">
+                              <div class="flight-header">Outbound Flight</div>
+                              ${outboundFlightHtml}
+                            </div>
+                          </td>
                         ` : ''}
                         ${hasReturnFlight ? `
-                        <td>
-                          <div class="flight-card">
-                            <div class="flight-header">Return Flight</div>
-                            ${returnFlightHtml}
-                          </div>
-                        </td>
-                         ` : ''}
+                          <td width="50%" valign="top">
+                            <table align="right" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td>
+                                  <div class="flight-card">
+                                    <div class="flight-header">Return Flight</div>
+                                    ${returnFlightHtml}
+                                  </div>
+                                </td> 
+                              </tr>
+                            </table>
+                          </td>
+                        ` : ''}
                       </tr>
                     </table>
               </td>
@@ -5431,37 +5439,40 @@ const returnFlightHtmlFr = hasReturnFlight ? `
 
           </tr>
 
-          <tr>
-            <td colspan="2" style="padding-top: 8px">
-              <div style="padding: 20px; text-align: center">
-                <h3 style="color: #1a237e; margin: 0">Vol Simple</h3>
-              </div>
-              <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-            
-                  
-                    <table width="100%">
+            <tr>
+              <td colspan="2" style="padding-top: 8px">
+                <div style="padding: 20px; text-align: center">
+                  <h3 style="color: #1a237e; margin: 0">${hasReturnFlight ? "Aller-Retour" : "Simple Aller"}</h3>
+                </div>
+                <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
+                    <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                      ${hasOutboundFlight ? `
-                        <td>
-                          <div class="flight-card">
-                            <div class="flight-header">Vol Aller</div>
-                            ${outboundFlightHtmlFr}
-                          </div>
-                        </td>
+                        ${hasOutboundFlight ? `
+                          <td width="50%" valign="top" align="left">
+                            <div class="flight-card">
+                              <div class="flight-header">Vol Aller</div>
+                              ${outboundFlightHtmlFr}
+                            </div>
+                          </td>
                         ` : ''}
                         ${hasReturnFlight ? `
-                        <td>
-                          <div class="flight-card">
-                            <div class="flight-header">Vol Retour</div>
-                            ${returnFlightHtmlFr}
-                          </div>
-                        </td>
-                         ` : ''}
+                          <td width="50%" valign="top">
+                            <table align="right" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td>
+                                  <div class="flight-card">
+                                    <div class="flight-header">Vol Retour</div>
+                                    ${returnFlightHtmlFr}
+                                  </div>
+                                </td> 
+                              </tr>
+                            </table>
+                          </td>
+                        ` : ''}
                       </tr>
                     </table>
-                 
-            </td>
-          </tr>
+              </td>
+            </tr>
 
           <tr>
             <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
@@ -5691,7 +5702,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             [booking.flight_id]
           );
 
-          
+
 
           if (currentFlights.length > 0) {
             currentFlightNumber = currentFlights[0].flight_number;
@@ -5853,41 +5864,41 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     const emailResults = [];
 
 
-if (passengers && Array.isArray(passengers)) {
-  console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
+    if (passengers && Array.isArray(passengers)) {
+      console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
 
-  // Supprimer les anciens passagers
-  await connection.query(
-    `DELETE FROM passengers WHERE booking_id = ?`,
-    [booking.id]
-  );
-  console.log(`🗑️ Anciens passagers supprimés`);
+      // Supprimer les anciens passagers
+      await connection.query(
+        `DELETE FROM passengers WHERE booking_id = ?`,
+        [booking.id]
+      );
+      console.log(`🗑️ Anciens passagers supprimés`);
 
-  // Récupérer les informations du vol pour l'email - CORRECTION ICI
-  // Récupérer les informations du vol pour l'email - CORRECTION ICI
-let flightInfoForEmail: {
-  code: string;
-  from: string;
-  to: string;
-  date: string;
-  arrival_date: string;
-} | null = null;
+      // Récupérer les informations du vol pour l'email - CORRECTION ICI
+      // Récupérer les informations du vol pour l'email - CORRECTION ICI
+      let flightInfoForEmail: {
+        code: string;
+        from: string;
+        to: string;
+        date: string;
+        arrival_date: string;
+      } | null = null;
 
-if (flightChanged && newFlightDetails) {
-  // Utiliser les informations du nouveau vol
-  flightInfoForEmail = {
-    code: newFlightDetails.flight_number,
-    from: newFlightDetails.departure_name,
-    to: newFlightDetails.arrival_name,
-    date: newFlightDetails.departure_time,
-    arrival_date: newFlightDetails.arrival_time
-  };
-  console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
-} else {
-  // Récupérer les informations du vol actuel
-  if (booking.flight_id) {
-    const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT f.flight_number as code, 
+      if (flightChanged && newFlightDetails) {
+        // Utiliser les informations du nouveau vol
+        flightInfoForEmail = {
+          code: newFlightDetails.flight_number,
+          from: newFlightDetails.departure_name,
+          to: newFlightDetails.arrival_name,
+          date: newFlightDetails.departure_time,
+          arrival_date: newFlightDetails.arrival_time
+        };
+        console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
+      } else {
+        // Récupérer les informations du vol actuel
+        if (booking.flight_id) {
+          const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
+            `SELECT f.flight_number as code, 
               f.departure_time as date, 
               f.arrival_time as arrival_date,
               l1.name as departure_city,
@@ -5896,111 +5907,111 @@ if (flightChanged && newFlightDetails) {
        JOIN locations l1 ON f.departure_location_id = l1.id
        JOIN locations l2 ON f.arrival_location_id = l2.id
        WHERE f.id = ?`,
-      [booking.flight_id]
-    );
+            [booking.flight_id]
+          );
 
-    if (currentFlightInfo.length > 0) {
-      flightInfoForEmail = {
-        code: currentFlightInfo[0].code,
-        from: currentFlightInfo[0].departure_city,
-        to: currentFlightInfo[0].arrival_city,
-        date: currentFlightInfo[0].date,
-        arrival_date: currentFlightInfo[0].arrival_date
+          if (currentFlightInfo.length > 0) {
+            flightInfoForEmail = {
+              code: currentFlightInfo[0].code,
+              from: currentFlightInfo[0].departure_city,
+              to: currentFlightInfo[0].arrival_city,
+              date: currentFlightInfo[0].date,
+              arrival_date: currentFlightInfo[0].arrival_date
+            };
+            console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
+          } else {
+            console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
+
+            // Alternative: utiliser les données envoyées depuis le frontend
+            if (updatedFlights && updatedFlights.length > 0) {
+              flightInfoForEmail = {
+                code: updatedFlights[0].code || 'N/A',
+                from: updatedFlights[0].from || 'N/A',
+                to: updatedFlights[0].to || 'N/A',
+                date: updatedFlights[0].date || 'N/A',
+                arrival_date: updatedFlights[0].arrival_date || 'N/A'
+              };
+              console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
+            }
+          }
+        } else {
+          console.log(`⚠️ Aucun flight_id dans la réservation`);
+        }
+      }
+
+      // Fonction pour formater les dates
+      const formatDateSafely = (dateString: string, formatString: string) => {
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) {
+            return "Invalid date";
+          }
+          return format(date, formatString);
+        } catch (error) {
+          return "Invalid date";
+        }
       };
-      console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
-    } else {
-      console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
-      
-      // Alternative: utiliser les données envoyées depuis le frontend
-      if (updatedFlights && updatedFlights.length > 0) {
-        flightInfoForEmail = {
-          code: updatedFlights[0].code || 'N/A',
-          from: updatedFlights[0].from || 'N/A',
-          to: updatedFlights[0].to || 'N/A',
-          date: updatedFlights[0].date || 'N/A',
-          arrival_date: updatedFlights[0].arrival_date || 'N/A'
-        };
-        console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
-      }
-    }
-  } else {
-    console.log(`⚠️ Aucun flight_id dans la réservation`);
-  }
-}
 
-  // Fonction pour formater les dates
-  const formatDateSafely = (dateString: string, formatString: string) => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
-      return format(date, formatString);
-    } catch (error) {
-      return "Invalid date";
-    }
-  };
+      // Fonction pour formater l'heure
+      const formatTimeSafely = (dateString: string) => {
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) {
+            return "Invalid time";
+          }
+          return date.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        } catch (error) {
+          return "Invalid time";
+        }
+      };
 
-  // Fonction pour formater l'heure
-  const formatTimeSafely = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return "Invalid time";
-      }
-      return date.toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      return "Invalid time";
-    }
-  };
-
-  // Insérer les nouveaux passagers et envoyer les emails
-  for (const passenger of passengers) {
-    await connection.query(
-      `INSERT INTO passengers (
+      // Insérer les nouveaux passagers et envoyer les emails
+      for (const passenger of passengers) {
+        await connection.query(
+          `INSERT INTO passengers (
         booking_id, first_name, middle_name, last_name,
         date_of_birth, gender, title, address, type,
         type_vol, type_v, country, nationality,
         phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        booking.id,
-        passenger.firstName || passenger.name || '',
-        passenger.middleName || null,
-        passenger.lastName || '',
-        passenger.dateOfBirth || passenger.dob || null,
-        passenger.gender || "other",
-        passenger.title || "Mr",
-        passenger.address || null,
-        passenger.type || "adult",
-        passenger.typeVol || "plane",
-        passenger.typeVolV || "onway",
-        passenger.country || null,
-        passenger.nationality || null,
-        passenger.phone || null,
-        passenger.email || null,
-        passenger.nom_urgence || null,
-        passenger.email_urgence || null,
-        passenger.tel_urgence || null,
-        new Date(),
-        new Date()
-      ]
-    );
+          [
+            booking.id,
+            passenger.firstName || passenger.name || '',
+            passenger.middleName || null,
+            passenger.lastName || '',
+            passenger.dateOfBirth || passenger.dob || null,
+            passenger.gender || "other",
+            passenger.title || "Mr",
+            passenger.address || null,
+            passenger.type || "adult",
+            passenger.typeVol || "plane",
+            passenger.typeVolV || "onway",
+            passenger.country || null,
+            passenger.nationality || null,
+            passenger.phone || null,
+            passenger.email || null,
+            passenger.nom_urgence || null,
+            passenger.email_urgence || null,
+            passenger.tel_urgence || null,
+            new Date(),
+            new Date()
+          ]
+        );
 
-    // Générer le QR Code
-    const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+        // Générer le QR Code
+        const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
 
-    
-    
-    // Section HTML pour les détails du vol (à insérer dans vos emails)
-    // Vérifier si on a des informations de vol pour l'email
-const hasFlightInfo = flightInfoForEmail !== null;
 
-// Section HTML pour les détails du vol (à insérer dans vos emails)
-const flightDetailsHtml = hasFlightInfo ? `
+
+        // Section HTML pour les détails du vol (à insérer dans vos emails)
+        // Vérifier si on a des informations de vol pour l'email
+        const hasFlightInfo = flightInfoForEmail !== null;
+
+        // Section HTML pour les détails du vol (à insérer dans vos emails)
+        const flightDetailsHtml = hasFlightInfo ? `
   <div class="flight-details">
     <div>
       <strong>From:</strong> ${flightInfoForEmail!.from}<br />
@@ -6020,8 +6031,8 @@ const flightDetailsHtml = hasFlightInfo ? `
   </div>
 `;
 
-// Section HTML pour les détails du vol en français
-const flightDetailsHtmlFr = hasFlightInfo ? `
+        // Section HTML pour les détails du vol en français
+        const flightDetailsHtmlFr = hasFlightInfo ? `
   <div class="flight-details">
     <div>
       <strong>De:</strong> ${flightInfoForEmail!.from}<br />
@@ -7540,7 +7551,7 @@ app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
   }
 });
 
-// Endpoint pour les données du dashboard
+
 // app.get("/api/booking-plane", async (req: Request, res: Response) => {
 //     let connection;
 //     try {
@@ -7600,6 +7611,7 @@ app.get("/api/bookings/:reference", async (req: Request, res: Response) => {
 
 
 // Endpoint pour les données du dashboard
+
 app.get("/api/booking-plane", async (req: Request, res: Response) => {
   try {
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
@@ -7934,6 +7946,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la recherche" });
   }
 });
+
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, transactionType, status } = req.query;
@@ -8476,9 +8489,6 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
 
 
 
-
-
-
 app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res: Response) => {
   const { reference } = req.params;
   const { paymentStatus } = req.body;
@@ -8698,8 +8708,6 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
 });
 
 
-
-
 app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
   try {
     const bookingId = req.params.id;
@@ -8793,7 +8801,6 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la récupération du détail de la réservation" });
   }
 });
-
 
 
 app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
@@ -8892,12 +8899,6 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
   }
   // ❌ Ne fais PAS pool.end() ici
 });
-
-
-
-
-
-
 
 
 const PORT = process.env.PORT || 3009;
