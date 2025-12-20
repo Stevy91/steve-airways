@@ -2961,44 +2961,56 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                     <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Round Trip" : "One Way"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-                  <table width="100%">
-  <tr>
-    <td style="vertical-align: top; width: 50%;">
-      ${outboundFlight ? `
-      <div class="flight-card">
-        <div class="flight-header">Outbound Flight</div>
-        <div class="flight-details">
-          <div>
-            <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
-            <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
-            <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-            <strong>Departure:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
-            <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
-            <strong>Flight Number:</strong> ${outboundFlight.flight_number}
-          </div>
-        </div>
-      </div>
-      ` : '<div>No outbound flight information</div>'}
-    </td>
-    <td style="vertical-align: top; width: 50%; text-align: right; padding-left: 20px;">
-      ${returnFlight ? `
-      <div class="flight-card" style="display: inline-block; text-align: left;">
-        <div class="flight-header">Return Flight</div>
-        <div class="flight-details">
-          <div>
-            <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-            <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-            <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-            <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-            <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-            <strong>Flight Number:</strong> ${returnFlight.flight_number}
-          </div>
-        </div>
-      </div>
-      ` : ''}
-    </td>
-  </tr>
-</table>               
+
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <!-- OUTBOUND -->
+                      <td width="50%" valign="top" align="left">
+                      ${outboundFlight ? `
+                        <div class="flight-card">
+                          <div class="flight-header">Outbound Flight</div>
+                        
+                            <div>
+                                                <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
+                                                <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
+                                                <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                                                <strong>DDeparture:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
+                                                <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
+                                                <strong>Flight Number:</strong> ${outboundFlight.flight_number}
+                            </div>
+                          
+                        </div>
+                        ` : ''}
+                      </td>
+
+                      <!-- RETURN -->
+                      <td width="50%" valign="top">
+                    ${returnFlight ? `
+                    <table align="right" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td>
+                          <div class="flight-card" style="text-align:left;">
+                            <div class="flight-header">Return Flight</div>
+                            <div >
+                              
+                                <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+                                <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+                                <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                                <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+                                <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+                                <strong>Flight Number:</strong> ${returnFlight.flight_number}
+                            
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+                  </td>
+
+                    </tr>
+                  </table>
+            
                 </td>
               </tr>
 
@@ -3111,53 +3123,53 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
                   <table width="100%" cellpadding="0" cellspacing="0">
-  <tr>
-    <!-- OUTBOUND -->
-    <td width="50%" valign="top" align="left">
-    ${outboundFlight ? `
-      <div class="flight-card">
-        <div class="flight-header">Outbound Flight</div>
-       
-          <div>
-                              <strong>De:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
-                              <strong>À:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
-                              <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-                              <strong>Départ:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
-                              <strong>Arrivée:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
-                              <strong>Numéro du vol:</strong> ${outboundFlight.flight_number}
-          </div>
-        
-      </div>
-      ` : '<div>No outbound flight information</div>'}
-    </td>
+                    <tr>
+                      <!-- OUTBOUND -->
+                      <td width="50%" valign="top" align="left">
+                      ${outboundFlight ? `
+                        <div class="flight-card">
+                          <div class="flight-header">Vol Aller</div>
+                        
+                            <div>
+                                                <strong>De:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
+                                                <strong>À:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
+                                                <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                                                <strong>Départ:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
+                                                <strong>Arrivée:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
+                                                <strong>Numéro du vol:</strong> ${outboundFlight.flight_number}
+                            </div>
+                          
+                        </div>
+                        ` : ''}
+                      </td>
 
-    <!-- RETURN -->
-    <td width="50%" valign="top">
-  ${returnFlight ? `
-  <table align="right" cellpadding="0" cellspacing="0">
-    <tr>
-      <td>
-        <div class="flight-card" style="text-align:left;">
-          <div class="flight-header">Return Flight</div>
-          <div >
-            
-              <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-              <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-              <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-              <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-              <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
-           
-          </div>
-        </div>
-      </td>
-    </tr>
-  </table>
-  ` : ''}
-</td>
+                      <!-- RETURN -->
+                      <td width="50%" valign="top">
+                    ${returnFlight ? `
+                    <table align="right" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td>
+                          <div class="flight-card" style="text-align:left;">
+                            <div class="flight-header">Vol Retour</div>
+                            <div >
+                              
+                                <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+                                <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+                                <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                                <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+                                <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+                                <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
+                            
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+                  </td>
 
-  </tr>
-</table>
+                    </tr>
+                  </table>
 
                      
                 </td>
