@@ -174,7 +174,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
   const generateTicketPDF = async (): Promise<void> => {
   try {
     const response = await fetch(
-      `https://steve-airways.onrender.com/api/generate2/${booking.reference}`
+      `https://steve-airways.onrender.com/api/generate/${booking.reference}`
     );
 
     if (!response.ok) {
@@ -428,7 +428,7 @@ const handleSaveChanges = async () => {
         const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
 
         // Sauvegarder les modifications via API
-        const res = await fetch(`https://steve-airways.onrender.com/api/bookings2/${editedBooking.reference}`, {
+        const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

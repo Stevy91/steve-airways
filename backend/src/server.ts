@@ -1213,388 +1213,388 @@ interface User extends mysql.RowDataPacket {
 // });
 
 
+// app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
+//   const connection = await pool.getConnection();
+//   const userId = req.user.id;
+
+//   try {
+//     await connection.beginTransaction();
+//     console.log("✅ Transaction started");
+
+//     const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+//     for (const field of requiredFields) {
+//       if (!req.body[field]) {
+//         console.error(`Missing field: ${field}`);
+//         throw new Error(`Missing required field: ${field}`);
+//       }
+//     }
+
+//     const {
+//       flightId,
+//       passengers,
+//       contactInfo,
+//       totalPrice,
+//       referenceNumber,
+//       unpaid,
+//       returnFlightId,
+//       departureDate,
+//       returnDate,
+//       paymentMethod = "card",
+//     } = req.body;
+
+//     const typeVol = passengers[0]?.typeVol || "plane";
+//     const typeVolV = passengers[0]?.typeVolV || "onway";
+
+//     // VÉRIFICATION : S'assurer qu'il y a au moins un passager
+//     if (!passengers || passengers.length === 0) {
+//       await connection.rollback();
+//       return res.status(400).json({
+//         error: "Au moins un passager est requis pour créer un ticket",
+//         details: "La liste des passagers est vide"
+//       });
+//     }
+
+//     // Vérifier les vols
+//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+//     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+//       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+//       [flightIds],
+//     );
+
+//     const flights = flightsRows as mysql.RowDataPacket[];
+
+//     if (flights.length !== flightIds.length) {
+//       await connection.rollback();
+//       throw new Error("One or more flights not found");
+//     }
+
+//     for (const flight of flights) {
+//       if (flight.seats_available < passengers.length) {
+//         await connection.rollback();
+//         return res.status(400).json({
+//           error: "Not enough seats available",
+//           details: `Not enough seats available for flight ${flight.id}`,
+//           flightId: flight.id,
+//           seatsAvailable: flight.seats_available,
+//           passengersNeeded: passengers.length
+//         });
+//       }
+//     }
+
+//     // VÉRIFICATION DES DOUBLONS : Version améliorée
+//     console.log("🔍 Vérification des doublons de réservation...");
+
+//     const duplicatePassengers = [];
+//     const now = new Date();
+
+//     for (const passenger of passengers) {
+//       if (!passenger.firstName || !passenger.lastName) {
+//         await connection.rollback();
+//         return res.status(400).json({
+//           error: "Informations passager incomplètes",
+//           details: `Le passager doit avoir un prénom et un nom de famille`
+//         });
+//       }
+
+
+
+//       // Normaliser le nom pour la comparaison
+//       const normalizedFirstName = passenger.firstName.trim().toLowerCase();
+//       const normalizedLastName = passenger.lastName.trim().toLowerCase();
+
+//       // OPTION 1: Vérification stricte avec date de naissance si disponible
+//       // if (passenger.dateOfBirth) {
+//       //   const [existingWithDOB] = await connection.query<mysql.RowDataPacket[]>(
+//       //     `SELECT 
+//       //         p.first_name, 
+//       //         p.last_name,
+//       //         p.date_of_birth,
+//       //         b.booking_reference,
+//       //         b.status,
+//       //         b.departure_date,
+//       //         f.flight_number
+//       //      FROM passengers p
+//       //      JOIN bookings b ON p.booking_id = b.id
+//       //      JOIN flights f ON b.flight_id = f.id
+//       //      WHERE LOWER(p.first_name) = ? 
+//       //        AND LOWER(p.last_name) = ?
+//       //        AND p.date_of_birth = ?
+//       //        AND b.flight_id = ?
+//       //        AND b.status NOT IN ('cancelled', 'refunded')
+//       //        AND DATE(b.departure_date) = DATE(?)`,
+//       //     [
+//       //       normalizedFirstName, 
+//       //       normalizedLastName, 
+//       //       passenger.dateOfBirth,
+//       //       flightId,
+//       //       departureDate
+//       //     ]
+//       //   );
+
+//       //   if (existingWithDOB.length > 0) {
+//       //     duplicatePassengers.push({
+//       //       passenger: `${passenger.firstName} ${passenger.lastName}`,
+//       //       reason: "Même passager avec même date de naissance sur même vol et même date",
+//       //       existingBookings: existingWithDOB.map(b => ({
+//       //         bookingReference: b.booking_reference,
+//       //         status: b.status,
+//       //         flightNumber: b.flight_number,
+//       //         departureDate: b.departure_date
+//       //       }))
+//       //     });
+//       //     continue; // Passer au passager suivant
+//       //   }
+//       // }
+
+//       // OPTION 2: Vérification avec email si disponible
+//       // if (passenger.email) {
+//       //   const [existingWithEmail] = await connection.query<mysql.RowDataPacket[]>(
+//       //     `SELECT 
+//       //         p.first_name, 
+//       //         p.last_name,
+//       //         p.email,
+//       //         b.booking_reference,
+//       //         b.status,
+//       //         b.departure_date,
+//       //         f.flight_number
+//       //      FROM passengers p
+//       //      JOIN bookings b ON p.booking_id = b.id
+//       //      JOIN flights f ON b.flight_id = f.id
+//       //      WHERE LOWER(p.email) = LOWER(?)
+//       //        AND b.flight_id = ?
+//       //        AND b.status NOT IN ('cancelled', 'refunded')
+//       //        AND DATE(b.departure_date) = DATE(?)`,
+//       //     [
+//       //       passenger.email,
+//       //       flightId,
+//       //       departureDate
+//       //     ]
+//       //   );
+
+//       //   if (existingWithEmail.length > 0) {
+//       //     duplicatePassengers.push({
+//       //       passenger: `${passenger.firstName} ${passenger.lastName}`,
+//       //       reason: "Même email sur même vol et même date",
+//       //       existingBookings: existingWithEmail.map(b => ({
+//       //         bookingReference: b.booking_reference,
+//       //         status: b.status,
+//       //         flightNumber: b.flight_number,
+//       //         departureDate: b.departure_date
+//       //       }))
+//       //     });
+//       //     continue; // Passer au passager suivant
+//       //   }
+//       // }
+
+//       // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
+//       const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
+//         `SELECT 
+//             p.first_name, 
+//             p.last_name,
+//             b.booking_reference,
+//             b.status,
+//             b.departure_date,
+//             f.flight_number
+//          FROM passengers p
+//          JOIN bookings b ON p.booking_id = b.id
+//          JOIN flights f ON b.flight_id = f.id
+//          WHERE LOWER(p.first_name) = ? 
+//            AND LOWER(p.last_name) = ?
+//            AND b.flight_id = ?
+//            AND b.status NOT IN ('cancelled', 'refunded')
+//            AND DATE(b.departure_date) = DATE(?)`,
+//         [
+//           normalizedFirstName,
+//           normalizedLastName,
+//           flightId,
+//           departureDate
+//         ]
+//       );
+
+//       if (existingBasic.length > 0) {
+//         duplicatePassengers.push({
+//           passenger: `${passenger.firstName} ${passenger.lastName}`,
+//           reason: "Même nom et prénom sur même vol et même date",
+//           existingBookings: existingBasic.map(b => ({
+//             bookingReference: b.booking_reference,
+//             status: b.status,
+//             flightNumber: b.flight_number,
+//             departureDate: b.departure_date
+//           }))
+//         });
+//       }
+//     }
+
+//     // Si des doublons sont trouvés, annuler et retourner une erreur
+//     if (duplicatePassengers.length > 0) {
+//       await connection.rollback();
+//       console.log("❌ Doublons détectés:", duplicatePassengers);
+
+//       const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
+
+//       return res.status(409).json({
+//         success: false,
+//         error: "Duplicate booking detected",
+//         details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
+//         duplicatePassengers: duplicatePassengers,
+//         message: `Impossible de créer le ticket. Le passager suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
+//       });
+//     }
+
+//     console.log("✅ Aucun doublon détecté, poursuite de la création du ticket");
+
+//     // Création réservation
+//     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+
+//     const depDate = formatDateToSQL(departureDate);
+//     const retDate = formatDateToSQL(returnDate);
+
+//     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+//       `INSERT INTO bookings (
+//           flight_id, payment_intent_id, total_price,
+//           contact_email, contact_phone, status,
+//           type_vol, type_v, guest_user, guest_email,
+//           created_at, updated_at, departure_date,
+//           return_date, passenger_count, booking_reference, return_flight_id,
+//           payment_method, user_created_booking
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//       [
+//         flightId,
+//         referenceNumber,
+//         totalPrice,
+//         contactInfo.email,
+//         contactInfo.phone,
+//         unpaid || "confirmed",
+//         typeVol,
+//         typeVolV,
+//         1,
+//         contactInfo.email,
+//         now,
+//         now,
+//         depDate,
+//         retDate,
+//         passengers.length,
+//         bookingReference,
+//         returnFlightId || null,
+//         paymentMethod,
+//         userId,
+//       ],
+//     );
+
+//     const bookingResult = bookingResultRows as mysql.OkPacket;
+
+//     // Enregistrer les passagers
+//     for (const passenger of passengers) {
+//       await connection.query(
+//         `INSERT INTO passengers (
+//           booking_id, first_name, middle_name, last_name,
+//           date_of_birth, gender, title, address, type,
+//           type_vol, type_v, country, nationality,
+//           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//         [
+//           bookingResult.insertId,
+//           passenger.firstName,
+//           passenger.middleName || null,
+//           passenger.lastName,
+//           passenger.dateOfBirth || null,
+//           passenger.gender || "other",
+//           passenger.title || "Mr",
+//           passenger.address || null,
+//           passenger.type,
+//           passenger.typeVol || "plane",
+//           passenger.typeVolV || "onway",
+//           passenger.country,
+//           passenger.nationality || null,
+//           passenger.phone || contactInfo.phone,
+//           passenger.email || contactInfo.email,
+//           passenger.nom_urgence || null,
+//           passenger.email_urgence || null,
+//           passenger.tel_urgence || null,
+//           now,
+//           now,
+//         ],
+//       );
+//     }
+
+//     // Mise à jour des sièges
+//     for (const flight of flights) {
+//       await connection.execute(
+//         "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//         [passengers.length, flight.id],
+//       );
+//     }
+
+//     // Notification
+//     try {
+//       await connection.query(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           "ticket",
+//           `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//           bookingResult.insertId,
+//           false,
+//           now,
+//         ],
+//       );
+
+//       io.emit("new-notification", {
+//         message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+//         bookingId: bookingResult.insertId,
+//         createdAt: now,
+//       });
+//     } catch (notifyErr) {
+//       console.error("⚠️ Notification error (non bloquant):", notifyErr);
+//     }
+
+//     // Commit final
+//     await connection.commit();
+
+//     // ✅ Réponse succès
+//     res.status(200).json({
+//       success: true,
+//       bookingId: bookingResult.insertId,
+//       bookingReference,
+//       passengerCount: passengers.length,
+//       paymentMethod,
+//       createdBy: userId,
+//       message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
+//     });
+
+//   } catch (error: any) {
+//     await connection.rollback();
+//     console.error("❌ ERREUR DÉTAILLÉE:", {
+//       message: error.message,
+//       stack: error.stack,
+//       sqlMessage: error.sqlMessage,
+//       code: error.code,
+//       sql: error.sql
+//     });
+
+//     // Vérifier si c'est une erreur de doublon SQL
+//     if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+//       return res.status(409).json({
+//         success: false,
+//         error: "Duplicate entry",
+//         details: "Une réservation similaire existe déjà",
+//         message: "Impossible de créer le ticket : une réservation similaire existe déjà"
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       error: "Ticket creation failed",
+//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+//     });
+//   } finally {
+//     connection.release();
+//   }
+// });
+
+
+
 app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) => {
-  const connection = await pool.getConnection();
-  const userId = req.user.id;
-
-  try {
-    await connection.beginTransaction();
-    console.log("✅ Transaction started");
-
-    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        console.error(`Missing field: ${field}`);
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
-
-    const {
-      flightId,
-      passengers,
-      contactInfo,
-      totalPrice,
-      referenceNumber,
-      unpaid,
-      returnFlightId,
-      departureDate,
-      returnDate,
-      paymentMethod = "card",
-    } = req.body;
-
-    const typeVol = passengers[0]?.typeVol || "plane";
-    const typeVolV = passengers[0]?.typeVolV || "onway";
-
-    // VÉRIFICATION : S'assurer qu'il y a au moins un passager
-    if (!passengers || passengers.length === 0) {
-      await connection.rollback();
-      return res.status(400).json({
-        error: "Au moins un passager est requis pour créer un ticket",
-        details: "La liste des passagers est vide"
-      });
-    }
-
-    // Vérifier les vols
-    const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
-    const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
-      "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
-      [flightIds],
-    );
-
-    const flights = flightsRows as mysql.RowDataPacket[];
-
-    if (flights.length !== flightIds.length) {
-      await connection.rollback();
-      throw new Error("One or more flights not found");
-    }
-
-    for (const flight of flights) {
-      if (flight.seats_available < passengers.length) {
-        await connection.rollback();
-        return res.status(400).json({
-          error: "Not enough seats available",
-          details: `Not enough seats available for flight ${flight.id}`,
-          flightId: flight.id,
-          seatsAvailable: flight.seats_available,
-          passengersNeeded: passengers.length
-        });
-      }
-    }
-
-    // VÉRIFICATION DES DOUBLONS : Version améliorée
-    console.log("🔍 Vérification des doublons de réservation...");
-
-    const duplicatePassengers = [];
-    const now = new Date();
-
-    for (const passenger of passengers) {
-      if (!passenger.firstName || !passenger.lastName) {
-        await connection.rollback();
-        return res.status(400).json({
-          error: "Informations passager incomplètes",
-          details: `Le passager doit avoir un prénom et un nom de famille`
-        });
-      }
-
-
-
-      // Normaliser le nom pour la comparaison
-      const normalizedFirstName = passenger.firstName.trim().toLowerCase();
-      const normalizedLastName = passenger.lastName.trim().toLowerCase();
-
-      // OPTION 1: Vérification stricte avec date de naissance si disponible
-      // if (passenger.dateOfBirth) {
-      //   const [existingWithDOB] = await connection.query<mysql.RowDataPacket[]>(
-      //     `SELECT 
-      //         p.first_name, 
-      //         p.last_name,
-      //         p.date_of_birth,
-      //         b.booking_reference,
-      //         b.status,
-      //         b.departure_date,
-      //         f.flight_number
-      //      FROM passengers p
-      //      JOIN bookings b ON p.booking_id = b.id
-      //      JOIN flights f ON b.flight_id = f.id
-      //      WHERE LOWER(p.first_name) = ? 
-      //        AND LOWER(p.last_name) = ?
-      //        AND p.date_of_birth = ?
-      //        AND b.flight_id = ?
-      //        AND b.status NOT IN ('cancelled', 'refunded')
-      //        AND DATE(b.departure_date) = DATE(?)`,
-      //     [
-      //       normalizedFirstName, 
-      //       normalizedLastName, 
-      //       passenger.dateOfBirth,
-      //       flightId,
-      //       departureDate
-      //     ]
-      //   );
-
-      //   if (existingWithDOB.length > 0) {
-      //     duplicatePassengers.push({
-      //       passenger: `${passenger.firstName} ${passenger.lastName}`,
-      //       reason: "Même passager avec même date de naissance sur même vol et même date",
-      //       existingBookings: existingWithDOB.map(b => ({
-      //         bookingReference: b.booking_reference,
-      //         status: b.status,
-      //         flightNumber: b.flight_number,
-      //         departureDate: b.departure_date
-      //       }))
-      //     });
-      //     continue; // Passer au passager suivant
-      //   }
-      // }
-
-      // OPTION 2: Vérification avec email si disponible
-      // if (passenger.email) {
-      //   const [existingWithEmail] = await connection.query<mysql.RowDataPacket[]>(
-      //     `SELECT 
-      //         p.first_name, 
-      //         p.last_name,
-      //         p.email,
-      //         b.booking_reference,
-      //         b.status,
-      //         b.departure_date,
-      //         f.flight_number
-      //      FROM passengers p
-      //      JOIN bookings b ON p.booking_id = b.id
-      //      JOIN flights f ON b.flight_id = f.id
-      //      WHERE LOWER(p.email) = LOWER(?)
-      //        AND b.flight_id = ?
-      //        AND b.status NOT IN ('cancelled', 'refunded')
-      //        AND DATE(b.departure_date) = DATE(?)`,
-      //     [
-      //       passenger.email,
-      //       flightId,
-      //       departureDate
-      //     ]
-      //   );
-
-      //   if (existingWithEmail.length > 0) {
-      //     duplicatePassengers.push({
-      //       passenger: `${passenger.firstName} ${passenger.lastName}`,
-      //       reason: "Même email sur même vol et même date",
-      //       existingBookings: existingWithEmail.map(b => ({
-      //         bookingReference: b.booking_reference,
-      //         status: b.status,
-      //         flightNumber: b.flight_number,
-      //         departureDate: b.departure_date
-      //       }))
-      //     });
-      //     continue; // Passer au passager suivant
-      //   }
-      // }
-
-      // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
-      const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
-        `SELECT 
-            p.first_name, 
-            p.last_name,
-            b.booking_reference,
-            b.status,
-            b.departure_date,
-            f.flight_number
-         FROM passengers p
-         JOIN bookings b ON p.booking_id = b.id
-         JOIN flights f ON b.flight_id = f.id
-         WHERE LOWER(p.first_name) = ? 
-           AND LOWER(p.last_name) = ?
-           AND b.flight_id = ?
-           AND b.status NOT IN ('cancelled', 'refunded')
-           AND DATE(b.departure_date) = DATE(?)`,
-        [
-          normalizedFirstName,
-          normalizedLastName,
-          flightId,
-          departureDate
-        ]
-      );
-
-      if (existingBasic.length > 0) {
-        duplicatePassengers.push({
-          passenger: `${passenger.firstName} ${passenger.lastName}`,
-          reason: "Même nom et prénom sur même vol et même date",
-          existingBookings: existingBasic.map(b => ({
-            bookingReference: b.booking_reference,
-            status: b.status,
-            flightNumber: b.flight_number,
-            departureDate: b.departure_date
-          }))
-        });
-      }
-    }
-
-    // Si des doublons sont trouvés, annuler et retourner une erreur
-    if (duplicatePassengers.length > 0) {
-      await connection.rollback();
-      console.log("❌ Doublons détectés:", duplicatePassengers);
-
-      const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
-
-      return res.status(409).json({
-        success: false,
-        error: "Duplicate booking detected",
-        details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
-        duplicatePassengers: duplicatePassengers,
-        message: `Impossible de créer le ticket. Le passager suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
-      });
-    }
-
-    console.log("✅ Aucun doublon détecté, poursuite de la création du ticket");
-
-    // Création réservation
-    const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const depDate = formatDateToSQL(departureDate);
-    const retDate = formatDateToSQL(returnDate);
-
-    const [bookingResultRows] = await connection.query<mysql.OkPacket>(
-      `INSERT INTO bookings (
-          flight_id, payment_intent_id, total_price,
-          contact_email, contact_phone, status,
-          type_vol, type_v, guest_user, guest_email,
-          created_at, updated_at, departure_date,
-          return_date, passenger_count, booking_reference, return_flight_id,
-          payment_method, user_created_booking
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        flightId,
-        referenceNumber,
-        totalPrice,
-        contactInfo.email,
-        contactInfo.phone,
-        unpaid || "confirmed",
-        typeVol,
-        typeVolV,
-        1,
-        contactInfo.email,
-        now,
-        now,
-        depDate,
-        retDate,
-        passengers.length,
-        bookingReference,
-        returnFlightId || null,
-        paymentMethod,
-        userId,
-      ],
-    );
-
-    const bookingResult = bookingResultRows as mysql.OkPacket;
-
-    // Enregistrer les passagers
-    for (const passenger of passengers) {
-      await connection.query(
-        `INSERT INTO passengers (
-          booking_id, first_name, middle_name, last_name,
-          date_of_birth, gender, title, address, type,
-          type_vol, type_v, country, nationality,
-          phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          bookingResult.insertId,
-          passenger.firstName,
-          passenger.middleName || null,
-          passenger.lastName,
-          passenger.dateOfBirth || null,
-          passenger.gender || "other",
-          passenger.title || "Mr",
-          passenger.address || null,
-          passenger.type,
-          passenger.typeVol || "plane",
-          passenger.typeVolV || "onway",
-          passenger.country,
-          passenger.nationality || null,
-          passenger.phone || contactInfo.phone,
-          passenger.email || contactInfo.email,
-          passenger.nom_urgence || null,
-          passenger.email_urgence || null,
-          passenger.tel_urgence || null,
-          now,
-          now,
-        ],
-      );
-    }
-
-    // Mise à jour des sièges
-    for (const flight of flights) {
-      await connection.execute(
-        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-        [passengers.length, flight.id],
-      );
-    }
-
-    // Notification
-    try {
-      await connection.query(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          "ticket",
-          `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-          bookingResult.insertId,
-          false,
-          now,
-        ],
-      );
-
-      io.emit("new-notification", {
-        message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
-        bookingId: bookingResult.insertId,
-        createdAt: now,
-      });
-    } catch (notifyErr) {
-      console.error("⚠️ Notification error (non bloquant):", notifyErr);
-    }
-
-    // Commit final
-    await connection.commit();
-
-    // ✅ Réponse succès
-    res.status(200).json({
-      success: true,
-      bookingId: bookingResult.insertId,
-      bookingReference,
-      passengerCount: passengers.length,
-      paymentMethod,
-      createdBy: userId,
-      message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
-    });
-
-  } catch (error: any) {
-    await connection.rollback();
-    console.error("❌ ERREUR DÉTAILLÉE:", {
-      message: error.message,
-      stack: error.stack,
-      sqlMessage: error.sqlMessage,
-      code: error.code,
-      sql: error.sql
-    });
-
-    // Vérifier si c'est une erreur de doublon SQL
-    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
-      return res.status(409).json({
-        success: false,
-        error: "Duplicate entry",
-        details: "Une réservation similaire existe déjà",
-        message: "Impossible de créer le ticket : une réservation similaire existe déjà"
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Ticket creation failed",
-      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
-    });
-  } finally {
-    connection.release();
-  }
-});
-
-
-
-app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
   const userId = req.user.id;
 
@@ -2287,538 +2287,538 @@ import pdf from 'html-pdf-node'
 import { format, parseISO, isValid, parse } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
-app.get("/api/generate/:reference", async (req: Request, res: Response) => {
-  const { reference } = req.params;
+// app.get("/api/generate/:reference", async (req: Request, res: Response) => {
+//   const { reference } = req.params;
 
-  try {
-    // 1️⃣ Récupérer booking, passengers, flights depuis la base
-    const [bookingRows]: any = await pool.query(
-      "SELECT * FROM bookings WHERE booking_reference = ?",
-      [reference]
-    );
-    if (!bookingRows.length)
-      return res.status(404).json({ error: "Réservation introuvable" });
+//   try {
+//     // 1️⃣ Récupérer booking, passengers, flights depuis la base
+//     const [bookingRows]: any = await pool.query(
+//       "SELECT * FROM bookings WHERE booking_reference = ?",
+//       [reference]
+//     );
+//     if (!bookingRows.length)
+//       return res.status(404).json({ error: "Réservation introuvable" });
 
-    const booking = bookingRows[0];
+//     const booking = bookingRows[0];
 
-    const [passengers]: any = await pool.query(
-      "SELECT * FROM passengers WHERE booking_id = ?",
-      [booking.id]
-    );
+//     const [passengers]: any = await pool.query(
+//       "SELECT * FROM passengers WHERE booking_id = ?",
+//       [booking.id]
+//     );
 
-    const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
-    const [flights]: any = await pool.query(
-      `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
-       FROM flights f
-       JOIN locations dep ON dep.id = f.departure_location_id
-       JOIN locations arr ON arr.id = f.arrival_location_id
-       WHERE f.id IN (?)`,
-      [flightIds]
-    );
-
-
-
-    // 2️⃣ QR Code
-
-    const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
-    // Use configured timezone if provided, otherwise default to Port-au-Prince
-    const timeZone = process.env.TIMEZONE || "America/Port-au-Prince";
-    const formatDateToday = () => {
-      const now = toZonedTime(new Date(), timeZone);
-      return format(now, "EEE, dd MMM");
-    };
+//     const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
+//     const [flights]: any = await pool.query(
+//       `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
+//        FROM flights f
+//        JOIN locations dep ON dep.id = f.departure_location_id
+//        JOIN locations arr ON arr.id = f.arrival_location_id
+//        WHERE f.id IN (?)`,
+//       [flightIds]
+//     );
 
 
 
+//     // 2️⃣ QR Code
+
+//     const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+//     // Use configured timezone if provided, otherwise default to Port-au-Prince
+//     const timeZone = process.env.TIMEZONE || "America/Port-au-Prince";
+//     const formatDateToday = () => {
+//       const now = toZonedTime(new Date(), timeZone);
+//       return format(now, "EEE, dd MMM");
+//     };
 
 
-    // 3️⃣ HTML Template
-    const htmlContent = `
-    <html>
-    <head>
+
+
+
+//     // 3️⃣ HTML Template
+//     const htmlContent = `
+//     <html>
+//     <head>
       
-    </head>
-    <body>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-        }
-        .container {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .header {
-          background-color: #f0f7ff;
-          padding: 20px;
-          text-align: center;
-          border-radius: 5px;
-        }
-        .flight-card {
+//     </head>
+//     <body>
+//       <style>
+//         body {
+//           font-family: Arial, sans-serif;
+//           line-height: 1.6;
+//           color: #333;
+//         }
+//         .container {
+//           max-width: 600px;
+//           margin: 0 auto;
+//           padding: 20px;
+//         }
+//         .header {
+//           background-color: #f0f7ff;
+//           padding: 20px;
+//           text-align: center;
+//           border-radius: 5px;
+//         }
+//         .flight-card {
       
-          padding: 15px;
-          margin-bottom: 20px;
-        }
-        .flight-header {
-          font-size: 18px;
-          font-weight: bold;
-          margin-bottom: 10px;
-        }
-        .flight-details {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-        .passenger-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-        .passenger-table th,
-        .passenger-table td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-        .passenger-table th {
-          background-color: #f2f2f2;
-        }
-        .footer {
-          margin-top: 30px;
-          font-size: 12px;
-          color: #777;
-          text-align: center;
-        }
-      </style>
-<div
-  style="
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 800px;
-    margin: 0 auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-  "
->
-  <div
-  style="
-    display: block;
-    width: 100%;
-    background-color: #1A237E; /* ou 'blue' */
-    color: white;
-    padding: 20px;
-    text-align: center;
-  "
->
-    <img
-      src="https://trogonairways.com/logo-trogonpng.png"
-      alt=""
-      style="height: 55px; vertical-align: middle"
-    />
-    <p style="margin: 5px 0 0; font-size: 1.2em">Your Booking is Confirmed</p>
-  </div>
+//           padding: 15px;
+//           margin-bottom: 20px;
+//         }
+//         .flight-header {
+//           font-size: 18px;
+//           font-weight: bold;
+//           margin-bottom: 10px;
+//         }
+//         .flight-details {
+//           display: grid;
+//           grid-template-columns: 1fr 1fr;
+//           gap: 10px;
+//         }
+//         .passenger-table {
+//           width: 100%;
+//           border-collapse: collapse;
+//           margin-top: 20px;
+//         }
+//         .passenger-table th,
+//         .passenger-table td {
+//           border: 1px solid #ddd;
+//           padding: 8px;
+//           text-align: left;
+//         }
+//         .passenger-table th {
+//           background-color: #f2f2f2;
+//         }
+//         .footer {
+//           margin-top: 30px;
+//           font-size: 12px;
+//           color: #777;
+//           text-align: center;
+//         }
+//       </style>
+// <div
+//   style="
+//     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+//       'Helvetica Neue', Arial, sans-serif;
+//     line-height: 1.6;
+//     color: #333;
+//     max-width: 800px;
+//     margin: 0 auto;
+//     border: 1px solid #ddd;
+//     border-radius: 8px;
+//     overflow: hidden;
+//   "
+// >
+//   <div
+//   style="
+//     display: block;
+//     width: 100%;
+//     background-color: #1A237E; /* ou 'blue' */
+//     color: white;
+//     padding: 20px;
+//     text-align: center;
+//   "
+// >
+//     <img
+//       src="https://trogonairways.com/logo-trogonpng.png"
+//       alt=""
+//       style="height: 55px; vertical-align: middle"
+//     />
+//     <p style="margin: 5px 0 0; font-size: 1.2em">Your Booking is Confirmed</p>
+//   </div>
 
-  <div style="padding: 8px">
-    <p>
-      Dear ${passengers.map((p: any) => p.first_name + " " +
-      p.last_name).join(", ")}
-    </p>
-    <p>
-      Thank you for choosing Trogon Airways. Please find your e-ticket below. We
-      recommend printing this section or having it available on your mobile
-      device at the airport.
-    </p>
-  </div>
+//   <div style="padding: 8px">
+//     <p>
+//       Dear ${passengers.map((p: any) => p.first_name + " " +
+//       p.last_name).join(", ")}
+//     </p>
+//     <p>
+//       Thank you for choosing Trogon Airways. Please find your e-ticket below. We
+//       recommend printing this section or having it available on your mobile
+//       device at the airport.
+//     </p>
+//   </div>
 
-  <!-- E-Ticket Section -->
-  <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
-    <div style="padding: 8px; text-align: center">
-      <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-        <strong>Payment Method:</strong>
+//   <!-- E-Ticket Section -->
+//   <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+//     <div style="padding: 8px; text-align: center">
+//       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
+//         <strong>Payment Method:</strong>
 
-        ${booking.payment_method === "cash" ? "Cash" : booking.payment_method
-        === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
-        "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
-          booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
-      </p>
+//         ${booking.payment_method === "cash" ? "Cash" : booking.payment_method
+//         === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ?
+//         "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" :
+//           booking.payment_method === "transfert" ? "Transfer" : "Contrat"}
+//       </p>
       
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
-      }</p>
-    </div>
+//       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"
+//       }</p>
+//     </div>
 
-    <div
-      style="
-        background: rgba(0, 28, 150, 0.3);
-        border: 1px solid #eee;
-        padding: 8px;
-        border-radius: 8px;
-      "
-    >
-      <table width="100%" style="border-collapse: collapse">
-        <tr>
-          <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
+//     <div
+//       style="
+//         background: rgba(0, 28, 150, 0.3);
+//         border: 1px solid #eee;
+//         padding: 8px;
+//         border-radius: 8px;
+//       "
+//     >
+//       <table width="100%" style="border-collapse: collapse">
+//         <tr>
+//           <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
             
-            <span
-              style="
-                font-size: 1.5em;
-                font-weight: bold;
-                color: #1a237e;
-                vertical-align: middle;
-                margin-left: 10px;
-              "
-              >Boarding Pass</span
-            >
-          </td>
-          <td
-            style="
-              padding-bottom: 20px;
-              border-bottom: 1px solid #eee;
-              text-align: right;
-            "
-          >
-            <img
-              src="${qrCodeDataUrl}"
-              alt="Booking Barcode"
-              style="height: 50px"
-            />
-          </td>
-        </tr>
+//             <span
+//               style="
+//                 font-size: 1.5em;
+//                 font-weight: bold;
+//                 color: #1a237e;
+//                 vertical-align: middle;
+//                 margin-left: 10px;
+//               "
+//               >Boarding Pass</span
+//             >
+//           </td>
+//           <td
+//             style="
+//               padding-bottom: 20px;
+//               border-bottom: 1px solid #eee;
+//               text-align: right;
+//             "
+//           >
+//             <img
+//               src="${qrCodeDataUrl}"
+//               alt="Booking Barcode"
+//               style="height: 50px"
+//             />
+//           </td>
+//         </tr>
 
-        <tr>
-          <td colspan="2" style="padding-top: 8px">
-            <div style="padding: 20px; text-align: center">
-              <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Round Trip" : "One Way"}</h3>
-            </div>
-            <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
+//         <tr>
+//           <td colspan="2" style="padding-top: 8px">
+//             <div style="padding: 20px; text-align: center">
+//               <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Round Trip" : "One Way"}</h3>
+//             </div>
+//             <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
 
-            <table width="100%">
-              <tr>
-                <td>
-                  <div class="flight-card">
-                    <div class="flight-header">Outbound Flight</div>
-                    ${flights.map((f: any, idx: number) => `
-                    <div class="flight-details">
-                      <div>
+//             <table width="100%">
+//               <tr>
+//                 <td>
+//                   <div class="flight-card">
+//                     <div class="flight-header">Outbound Flight</div>
+//                     ${flights.map((f: any, idx: number) => `
+//                     <div class="flight-details">
+//                       <div>
                     
-                        <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
-                        <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Departure:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
-                        <strong>Arrival:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
-                        <strong>Flight Number:</strong> ${f.flight_number}
-                    </div>
-                    `).join("")}
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+//                         <strong>From:</strong> ${f.dep_name} (${f.dep_code})<br />
+//                         <strong>To:</strong> ${f.arr_name} (${f.arr_code})<br />
+//                         <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
+//                         <strong>Departure:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
+//                         <strong>Arrival:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
+//                         <strong>Flight Number:</strong> ${f.flight_number}
+//                     </div>
+//                     `).join("")}
+//                   </div>
+//                 </td>
+//               </tr>
+//             </table>
+//           </td>
+//         </tr>
 
-        <tr>
-          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
-            <p style="margin: 0">
-              ${passengers.map((p: any) => `<strong>Adult:</strong>
-              ${p.first_name} ${p.last_name}<br />
-              <strong>Email:</strong> ${p.email}`).join("<br />")}
-            </p>
-          </td>
-        </tr>
+//         <tr>
+//           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
+//             <p style="margin: 0">
+//               ${passengers.map((p: any) => `<strong>Adult:</strong>
+//               ${p.first_name} ${p.last_name}<br />
+//               <strong>Email:</strong> ${p.email}`).join("<br />")}
+//             </p>
+//           </td>
+//         </tr>
 
-        <tr>
-          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <table width="100%">
-              <tr>
-                <td>
-                  <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Booking ID:</strong> ${booking.booking_reference}
-                  </p>
+//         <tr>
+//           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//             <table width="100%">
+//               <tr>
+//                 <td>
+//                   <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
+//                   <p style="margin: 0; font-size: 0.9em">
+//                     <strong>Booking ID:</strong> ${booking.booking_reference}
+//                   </p>
                   
-                </td>
-                <td style="text-align: right">
-                  <h3 style="color: #1a237e; margin: 0">Payment</h3>
-                  <p style="margin: 0; font-size: 1.1em">
-                    <strong>Total:</strong> $${booking.total_price}
-                  </p>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Status: </strong>
-                    ${booking.payment_method === "cash" ? "Paid" :
-        booking.payment_method === "card" ? "Paid" :
-          booking.payment_method === "cheque" ? "Paid" :
-            booking.payment_method === "virement" ? "Paid" :
-              booking.payment_method === "transfert" ? "Paid" : "UnPaid"}
-                  </p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-  <!-- End E-Ticket Section -->
+//                 </td>
+//                 <td style="text-align: right">
+//                   <h3 style="color: #1a237e; margin: 0">Payment</h3>
+//                   <p style="margin: 0; font-size: 1.1em">
+//                     <strong>Total:</strong> $${booking.total_price}
+//                   </p>
+//                   <p style="margin: 0; font-size: 0.9em">
+//                     <strong>Status: </strong>
+//                     ${booking.payment_method === "cash" ? "Paid" :
+//         booking.payment_method === "card" ? "Paid" :
+//           booking.payment_method === "cheque" ? "Paid" :
+//             booking.payment_method === "virement" ? "Paid" :
+//               booking.payment_method === "transfert" ? "Paid" : "UnPaid"}
+//                   </p>
+//                 </td>
+//               </tr>
+//             </table>
+//           </td>
+//         </tr>
+//       </table>
+//     </div>
+//   </div>
+//   <!-- End E-Ticket Section -->
 
-  ${booking.type_vol === "plane" ? `
-      <div style="padding: 8px; font-size: 0.9em; color: #555">
-    <p>
-      <strong>Important:</strong> Please arrive at the airport at least 1 hour
-      before your departure time. All passengers must present a valid ID at
-      check-in.
-    </p>
-    <p>
-      <strong>Baggage Limitation: **</strong> The maximum allowance for
-      passenger baggage is 30 lb.
-    </p>
-    <p>
-      <strong>Remarks: **</strong> The company declines all responsibility for
-      flight delays, cancellations, or changes resulting from circumstances
-      beyond its control, such as, technical problems, strikes, or any other
-      problems. The customer is responsible for their own personal arrangements
-      (airport arrival time, travel formalities, etc.). No refund or
-      compensation can be claimed in the event of a missed flight
-      for these reasons.
-    </p>
-    <p>
-      <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
-      before your trip will result in a 50% cancellation fee being charged..
-    </p>
-    <p>We look forward to welcoming you on board.</p>
-    <p>Sincerely,<br />The Trogon Airways Team</p>
-  </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
-        <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb.</p>
-        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
-        <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
-        <p>We look forward to welcoming you on board.</p>
-        <p>Sincerely,<br>The Trogon Airways Team</p>
-      </div>`}
+//   ${booking.type_vol === "plane" ? `
+//       <div style="padding: 8px; font-size: 0.9em; color: #555">
+//     <p>
+//       <strong>Important:</strong> Please arrive at the airport at least 1 hour
+//       before your departure time. All passengers must present a valid ID at
+//       check-in.
+//     </p>
+//     <p>
+//       <strong>Baggage Limitation: **</strong> The maximum allowance for
+//       passenger baggage is 30 lb.
+//     </p>
+//     <p>
+//       <strong>Remarks: **</strong> The company declines all responsibility for
+//       flight delays, cancellations, or changes resulting from circumstances
+//       beyond its control, such as, technical problems, strikes, or any other
+//       problems. The customer is responsible for their own personal arrangements
+//       (airport arrival time, travel formalities, etc.). No refund or
+//       compensation can be claimed in the event of a missed flight
+//       for these reasons.
+//     </p>
+//     <p>
+//       <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
+//       before your trip will result in a 50% cancellation fee being charged..
+//     </p>
+//     <p>We look forward to welcoming you on board.</p>
+//     <p>Sincerely,<br />The Trogon Airways Team</p>
+//   </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//         <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+//         <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb.</p>
+//         <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+//         <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
+//         <p>We look forward to welcoming you on board.</p>
+//         <p>Sincerely,<br>The Trogon Airways Team</p>
+//       </div>`}
 
  
-</div>
+// </div>
 
 
-<!--->
-<!-- Forcer une nouvelle page -->
-<div style="page-break-after: always;"></div>
+// <!--->
+// <!-- Forcer une nouvelle page -->
+// <div style="page-break-after: always;"></div>
 
-<div
-  style="
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 800px;
-    margin: 0 auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-  "
->
-  <div
-  style="
-    display: block;
-    width: 100%;
-    background-color: #1A237E; /* ou 'blue' */
-    color: white;
-    padding: 20px;
-    text-align: center;
-  "
->
-    <img
-      src="https://trogonairways.com/logo-trogonpng.png"
-      alt=""
-      style="height: 55px; vertical-align: middle"
-    />
-    <p style="margin: 5px 0 0; font-size: 1.2em">Votre réservation est confirmée.</p>
-  </div>
+// <div
+//   style="
+//     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+//       'Helvetica Neue', Arial, sans-serif;
+//     line-height: 1.6;
+//     color: #333;
+//     max-width: 800px;
+//     margin: 0 auto;
+//     border: 1px solid #ddd;
+//     border-radius: 8px;
+//     overflow: hidden;
+//   "
+// >
+//   <div
+//   style="
+//     display: block;
+//     width: 100%;
+//     background-color: #1A237E; /* ou 'blue' */
+//     color: white;
+//     padding: 20px;
+//     text-align: center;
+//   "
+// >
+//     <img
+//       src="https://trogonairways.com/logo-trogonpng.png"
+//       alt=""
+//       style="height: 55px; vertical-align: middle"
+//     />
+//     <p style="margin: 5px 0 0; font-size: 1.2em">Votre réservation est confirmée.</p>
+//   </div>
 
-  <div style="padding: 8px">
-    <p>
-      Cher(e) ${passengers.map((p: any) => p.first_name + " " +
-                p.last_name).join(", ")}
-    </p>
-    <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
-  </div>
+//   <div style="padding: 8px">
+//     <p>
+//       Cher(e) ${passengers.map((p: any) => p.first_name + " " +
+//                 p.last_name).join(", ")}
+//     </p>
+//     <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile au comptoire de l'aéroport.</p>
+//   </div>
 
-  <!-- E-Ticket Section -->
-  <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
-    <div style="padding: 8px; text-align: center">
-      <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-        <strong>Mode de paiement:</strong>
+//   <!-- E-Ticket Section -->
+//   <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+//     <div style="padding: 8px; text-align: center">
+//       <p style="margin: 0; color: #1a237e; font-size: 0.9em">
+//         <strong>Mode de paiement:</strong>
 
-           ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
-      </p>
+//            ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
+//       </p>
       
-      <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Avion"
-      }</p>
-    </div>
+//       <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Avion"
+//       }</p>
+//     </div>
 
-    <div
-      style="
-        background: rgba(0, 28, 150, 0.3);
-        border: 1px solid #eee;
-        padding: 8px;
-        border-radius: 8px;
-      "
-    >
-      <table width="100%" style="border-collapse: collapse">
-        <tr>
-          <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
+//     <div
+//       style="
+//         background: rgba(0, 28, 150, 0.3);
+//         border: 1px solid #eee;
+//         padding: 8px;
+//         border-radius: 8px;
+//       "
+//     >
+//       <table width="100%" style="border-collapse: collapse">
+//         <tr>
+//           <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
             
-            <span
-              style="
-                font-size: 1.5em;
-                font-weight: bold;
-                color: #1a237e;
-                vertical-align: middle;
-                margin-left: 10px;
-              "
-              >Carte d'embarquement</span
-            >
-          </td>
-          <td
-            style="
-              padding-bottom: 20px;
-              border-bottom: 1px solid #eee;
-              text-align: right;
-            "
-          >
-            <img
-              src="${qrCodeDataUrl}"
-              alt="Booking Barcode"
-              style="height: 50px"
-            />
-          </td>
-        </tr>
+//             <span
+//               style="
+//                 font-size: 1.5em;
+//                 font-weight: bold;
+//                 color: #1a237e;
+//                 vertical-align: middle;
+//                 margin-left: 10px;
+//               "
+//               >Carte d'embarquement</span
+//             >
+//           </td>
+//           <td
+//             style="
+//               padding-bottom: 20px;
+//               border-bottom: 1px solid #eee;
+//               text-align: right;
+//             "
+//           >
+//             <img
+//               src="${qrCodeDataUrl}"
+//               alt="Booking Barcode"
+//               style="height: 50px"
+//             />
+//           </td>
+//         </tr>
 
-        <tr>
-          <td colspan="2" style="padding-top: 8px">
-            <div style="padding: 20px; text-align: center">
-              <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Vol Simple"}</h3>
-            </div>
-            <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
+//         <tr>
+//           <td colspan="2" style="padding-top: 8px">
+//             <div style="padding: 20px; text-align: center">
+//               <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Vol Simple"}</h3>
+//             </div>
+//             <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
 
-            <table width="100%">
-              <tr>
-                <td>
-                  <div class="flight-card">
-                    <div class="flight-header">Vol aller</div>
-                    ${flights.map((f: any, idx: number) => `
-                    <div class="flight-details">
-                      <div>
+//             <table width="100%">
+//               <tr>
+//                 <td>
+//                   <div class="flight-card">
+//                     <div class="flight-header">Vol aller</div>
+//                     ${flights.map((f: any, idx: number) => `
+//                     <div class="flight-details">
+//                       <div>
                     
-                        <strong>De:</strong> ${f.dep_name} (${f.dep_code})<br />
-                        <strong>A:</strong> ${f.arr_name} (${f.arr_code})<br />
-                        <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
-                        <strong>Départ:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
-                        <strong>Arrivée:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
-                        <strong>Numéro du vol:</strong> ${f.flight_number}
-                    </div>
-                    `).join("")}
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+//                         <strong>De:</strong> ${f.dep_name} (${f.dep_code})<br />
+//                         <strong>À:</strong> ${f.arr_name} (${f.arr_code})<br />
+//                         <strong>Date:</strong> ${format(parseISO(f.departure_time), "EEE, dd MMM yyyy")}<br />
+//                         <strong>Départ:</strong> ${format(parseISO(f.departure_time), "HH:mm")}<br />
+//                         <strong>Arrivée:</strong> ${format(parseISO(f.arrival_time), "HH:mm")}<br />
+//                         <strong>Numéro du vol:</strong> ${f.flight_number}
+//                     </div>
+//                     `).join("")}
+//                   </div>
+//                 </td>
+//               </tr>
+//             </table>
+//           </td>
+//         </tr>
 
-        <tr>
-          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <h3 style="color: #1a237e; margin: 0 0 10px 0">Passager</h3>
-            <p style="margin: 0">
-              ${passengers.map((p: any) => `<strong>Adult:</strong>
-              ${p.first_name} ${p.last_name}<br />
-              <strong>Email:</strong> ${p.email}`).join("<br />")}
-            </p>
-          </td>
-        </tr>
+//         <tr>
+//           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//             <h3 style="color: #1a237e; margin: 0 0 10px 0">Passager</h3>
+//             <p style="margin: 0">
+//               ${passengers.map((p: any) => `<strong>Adult:</strong>
+//               ${p.first_name} ${p.last_name}<br />
+//               <strong>Email:</strong> ${p.email}`).join("<br />")}
+//             </p>
+//           </td>
+//         </tr>
 
-        <tr>
-          <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-            <table width="100%">
-              <tr>
-                <td>
-                  <h3 style="color: #1a237e; margin: 0">Détails de la réservation</h3>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Réservation ID:</strong> ${booking.booking_reference}
-                  </p>
+//         <tr>
+//           <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//             <table width="100%">
+//               <tr>
+//                 <td>
+//                   <h3 style="color: #1a237e; margin: 0">Détails de la réservation</h3>
+//                   <p style="margin: 0; font-size: 0.9em">
+//                     <strong>Réservation ID:</strong> ${booking.booking_reference}
+//                   </p>
                   
-                </td>
-                <td style="text-align: right">
-                  <h3 style="color: #1a237e; margin: 0">Paiement</h3>
-                  <p style="margin: 0; font-size: 1.1em">
-                    <strong>Total:</strong> $${booking.total_price}
-                  </p>
-                  <p style="margin: 0; font-size: 0.9em">
-                    <strong>Status: </strong>
+//                 </td>
+//                 <td style="text-align: right">
+//                   <h3 style="color: #1a237e; margin: 0">Paiement</h3>
+//                   <p style="margin: 0; font-size: 1.1em">
+//                     <strong>Total:</strong> $${booking.total_price}
+//                   </p>
+//                   <p style="margin: 0; font-size: 0.9em">
+//                     <strong>Status: </strong>
                    
-              ${booking.payment_method === "cash" ? "Payé" : booking.payment_method === "card" ? "Payé" : booking.payment_method === "cheque" ? "Payé" : booking.payment_method === "virement" ? "Payé" : booking.payment_method === "transfert" ? "Payé" : "Non rémunéré"}
-                  </p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-  <!-- End E-Ticket Section -->
-  ${booking.type_vol === "plane" ? `
-    <div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.</p>
-        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
-Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
-</p>
-        <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
-        <p>Nous nous réjouissons de vous accueillir à bord.</p>
-        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-      </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.</p> 
-        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol
-imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
-incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à
-l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué
-pour ces raisons.</p>
-        <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
-        <p>Nous nous réjouissons de vous accueillir à bord.</p>
-        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-      </div>`}
+//               ${booking.payment_method === "cash" ? "Payé" : booking.payment_method === "card" ? "Payé" : booking.payment_method === "cheque" ? "Payé" : booking.payment_method === "virement" ? "Payé" : booking.payment_method === "transfert" ? "Payé" : "Non rémunéré"}
+//                   </p>
+//                 </td>
+//               </tr>
+//             </table>
+//           </td>
+//         </tr>
+//       </table>
+//     </div>
+//   </div>
+//   <!-- End E-Ticket Section -->
+//   ${booking.type_vol === "plane" ? `
+//     <div style="padding: 20px; font-size: 0.9em; color: #555;">
+//         <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+//         <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.</p>
+//         <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
+// Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
+// </p>
+//         <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+//         <p>Nous nous réjouissons de vous accueillir à bord.</p>
+//         <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+//       </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//         <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+//         <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.</p> 
+//         <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol
+// imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
+// incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à
+// l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué
+// pour ces raisons.</p>
+//         <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+//         <p>Nous nous réjouissons de vous accueillir à bord.</p>
+//         <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+//       </div>`}
 
   
-</div>
+// </div>
 
 
-    </body>
-    </html>
-    `;
+//     </body>
+//     </html>
+//     `;
 
-    // 4️⃣ Générer le PDF
-    const file = { content: htmlContent };
-    const options = { format: 'A3', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
+//     // 4️⃣ Générer le PDF
+//     const file = { content: htmlContent };
+//     const options = { format: 'A3', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
 
-    const pdfBuffer = await pdf.generatePdf(file, options);
+//     const pdfBuffer = await pdf.generatePdf(file, options);
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=${reference}.pdf`);
-    res.send(pdfBuffer);
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `attachment; filename=${reference}.pdf`);
+//     res.send(pdfBuffer);
 
-  } catch (err) {
-    console.error("❌ ERREUR PDF :", err);
-    res.status(500).json({ error: "Erreur lors de la génération du billet" });
-  }
-});
+//   } catch (err) {
+//     console.error("❌ ERREUR PDF :", err);
+//     res.status(500).json({ error: "Erreur lors de la génération du billet" });
+//   }
+// });
 
 
-app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
+app.get("/api/generate/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
 
   try {
@@ -4489,7 +4489,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
 // API pour rechercher un vol par son code
 
 
-app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
+app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
   const { reference } = req.params;
   const {
     passengers,
@@ -5632,1041 +5632,1041 @@ app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
 });
 
 
-app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
-  const { reference } = req.params;
-  const {
-    passengers,
-    flights: updatedFlights,
-    contactEmail,
-    contactPhone,
-    totalPrice,
-    adminNotes,
-    paymentStatus,
-    bookingReference,
-    typeVol,
-    payment_method
-  } = req.body;
-
-  console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
-  console.log(`📦 Données reçues:`, JSON.stringify(req.body, null, 2));
-
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
-    console.log(`✅ Transaction démarrée`);
-
-    // 1. Vérifier que la réservation existe
-    const [bookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT 
-          id, 
-          status, 
-          flight_id, 
-          return_flight_id, 
-          passenger_count,
-          booking_reference,
-          total_price,
-          contact_email,
-          contact_phone,
-          type_vol,
-          payment_method,
-          departure_date
-       FROM bookings 
-       WHERE booking_reference = ? FOR UPDATE`,
-      [reference]
-    );
-
-    if (bookings.length === 0) {
-      await connection.rollback();
-      return res.status(404).json({
-        success: false,
-        error: "Réservation non trouvée"
-      });
-    }
-
-    const booking = bookings[0];
-    console.log(`📋 Réservation trouvée: ID ${booking.id}, Flight ID: ${booking.flight_id}`);
-
-    // 2. VÉRIFIER SI LE NUMÉRO DE VOL A CHANGÉ
-    let flightChanged = false;
-    let newFlightId = booking.flight_id;
-    let newFlightDetails = null;
-
-    if (updatedFlights && updatedFlights.length > 0 && updatedFlights[0].code) {
-      try {
-        // Récupérer le vol actuel de la réservation
-        let currentFlightNumber = null;
-        if (booking.flight_id) {
-          const [currentFlights] = await connection.query<mysql.RowDataPacket[]>(
-            "SELECT flight_number FROM flights WHERE id = ?",
-            [booking.flight_id]
-          );
-
-
-
-          if (currentFlights.length > 0) {
-            currentFlightNumber = currentFlights[0].flight_number;
-            console.log(`Numéro du vol actuel: ${currentFlightNumber}`);
-          }
-        }
-
-        // Vérifier si le numéro de vol a changé
-        if (currentFlightNumber !== updatedFlights[0].code) {
-          console.log(`🔄 Changement de vol détecté: ${currentFlightNumber || 'N/A'} -> ${updatedFlights[0].code}`);
-
-          // Rechercher le nouveau vol par son numéro (flight_number)
-          const [newFlight] = await connection.query<mysql.RowDataPacket[]>(
-            `SELECT f.id, f.flight_number, f.seats_available, f.type,
-                    f.departure_time, f.arrival_time,
-                    l1.code as departure_code, l1.name as departure_name,
-                    l2.code as arrival_code, l2.name as arrival_name
-             FROM flights f
-             JOIN locations l1 ON f.departure_location_id = l1.id
-             JOIN locations l2 ON f.arrival_location_id = l2.id
-             WHERE f.flight_number = ?
-             LIMIT 1 FOR UPDATE`,
-            [updatedFlights[0].code]
-          );
-
-          if (newFlight.length === 0) {
-            await connection.rollback();
-            return res.status(400).json({
-              success: false,
-              error: "Le vol n'existe pas",
-              details: `Aucun vol trouvé avec le numéro: ${updatedFlights[0].code}`
-            });
-          }
-
-          console.log(`✅ Nouveau vol trouvé: ID ${newFlight[0].id}, Numéro: ${newFlight[0].flight_number}`);
-
-          // Vérifier les sièges disponibles
-          const passengerCount = passengers ? passengers.length : booking.passenger_count;
-          if (newFlight[0].seats_available < passengerCount) {
-            await connection.rollback();
-            return res.status(400).json({
-              success: false,
-              error: "Pas assez de sièges disponibles",
-              details: `Vol ${newFlight[0].flight_number}: ${newFlight[0].seats_available} sièges disponibles, besoin de ${passengerCount}`,
-              seatsAvailable: newFlight[0].seats_available,
-              passengersNeeded: passengerCount
-            });
-          }
-
-          // Libérer les sièges de l'ancien vol
-          if (booking.flight_id) {
-            await connection.execute(
-              "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
-              [booking.passenger_count, booking.flight_id]
-            );
-            console.log(`🔄 Sièges libérés pour l'ancien vol ID ${booking.flight_id}`);
-          }
-
-          // Réserver les sièges du nouveau vol
-          await connection.execute(
-            "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-            [passengerCount, newFlight[0].id]
-          );
-          console.log(`✅ Sièges réservés pour le nouveau vol ID ${newFlight[0].id}`);
-
-          newFlightId = newFlight[0].id;
-          flightChanged = true;
-          newFlightDetails = newFlight[0];
-
-          // Mettre à jour l'ID du vol et les dates dans la réservation
-          await connection.query(
-            "UPDATE bookings SET flight_id = ?, departure_date = ?, updated_at = NOW() WHERE id = ?",
-            [newFlightId, newFlight[0].departure_time, booking.id]
-          );
-          console.log(`✅ ID du vol et dates mis à jour dans la réservation`);
-        }
-      } catch (error: any) {
-        console.error("❌ Erreur lors de la vérification du vol:", error);
-        await connection.rollback();
-        return res.status(500).json({
-          success: false,
-          error: "Erreur lors de la vérification du vol",
-          details: error.message
-        });
-      }
-    }
-
-    // 3. Mettre à jour les informations générales de la réservation
-    const updateFields = [];
-    const updateValues = [];
-
-    if (contactEmail !== undefined) {
-      updateFields.push("contact_email = ?");
-      updateValues.push(contactEmail);
-    }
-    if (contactPhone !== undefined) {
-      updateFields.push("contact_phone = ?");
-      updateValues.push(contactPhone);
-    }
-    if (totalPrice !== undefined) {
-      updateFields.push("total_price = ?");
-      updateValues.push(totalPrice);
-    }
-    if (adminNotes !== undefined) {
-      updateFields.push("adminNotes = ?");
-      updateValues.push(adminNotes);
-    }
-    if (paymentStatus !== undefined) {
-      updateFields.push("status = ?");
-      updateValues.push(paymentStatus);
-    }
-    if (typeVol !== undefined) {
-      updateFields.push("type_vol = ?");
-      updateValues.push(typeVol);
-    }
-    if (payment_method !== undefined) {
-      updateFields.push("payment_method = ?");
-      updateValues.push(payment_method);
-    }
-
-    if (updateFields.length > 0) {
-      updateValues.push(booking.id);
-      await connection.query(
-        `UPDATE bookings SET ${updateFields.join(", ")}, updated_at = NOW() WHERE id = ?`,
-        updateValues
-      );
-      console.log(`✅ Informations générales mises à jour`);
-    }
-
-    // 4. GESTION DES SIÈGES - ajustement si nombre de passagers change
-    const oldPassengerCount = booking.passenger_count;
-    const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
-
-    if (newPassengerCount !== oldPassengerCount && !flightChanged) {
-      console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
-
-      const seatDifference = newPassengerCount - oldPassengerCount;
-
-      // Mettre à jour le vol actuel
-      if (booking.flight_id) {
-        await connection.execute(
-          "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-          [seatDifference, booking.flight_id]
-        );
-        console.log(`✅ Sièges ajustés pour le vol ${booking.flight_id}: ${seatDifference}`);
-      }
-
-      // Mettre à jour le vol retour si existe
-      if (booking.return_flight_id) {
-        await connection.execute(
-          "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
-          [seatDifference, booking.return_flight_id]
-        );
-        console.log(`✅ Sièges ajustés pour le vol retour ${booking.return_flight_id}: ${seatDifference}`);
-      }
-    }
-
-    // 5. Mettre à jour les passagers et envoyer les emails
-    const emailResults = [];
-
-
-    if (passengers && Array.isArray(passengers)) {
-      console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
-
-      // Supprimer les anciens passagers
-      await connection.query(
-        `DELETE FROM passengers WHERE booking_id = ?`,
-        [booking.id]
-      );
-      console.log(`🗑️ Anciens passagers supprimés`);
-
-      // Récupérer les informations du vol pour l'email - CORRECTION ICI
-      // Récupérer les informations du vol pour l'email - CORRECTION ICI
-      let flightInfoForEmail: {
-        code: string;
-        from: string;
-        to: string;
-        date: string;
-        arrival_date: string;
-      } | null = null;
-
-      if (flightChanged && newFlightDetails) {
-        // Utiliser les informations du nouveau vol
-        flightInfoForEmail = {
-          code: newFlightDetails.flight_number,
-          from: newFlightDetails.departure_name,
-          to: newFlightDetails.arrival_name,
-          date: newFlightDetails.departure_time,
-          arrival_date: newFlightDetails.arrival_time
-        };
-        console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
-      } else {
-        // Récupérer les informations du vol actuel
-        if (booking.flight_id) {
-          const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
-            `SELECT f.flight_number as code, 
-              f.departure_time as date, 
-              f.arrival_time as arrival_date,
-              l1.name as departure_city,
-              l2.name as arrival_city
-       FROM flights f
-       JOIN locations l1 ON f.departure_location_id = l1.id
-       JOIN locations l2 ON f.arrival_location_id = l2.id
-       WHERE f.id = ?`,
-            [booking.flight_id]
-          );
-
-          if (currentFlightInfo.length > 0) {
-            flightInfoForEmail = {
-              code: currentFlightInfo[0].code,
-              from: currentFlightInfo[0].departure_city,
-              to: currentFlightInfo[0].arrival_city,
-              date: currentFlightInfo[0].date,
-              arrival_date: currentFlightInfo[0].arrival_date
-            };
-            console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
-          } else {
-            console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
-
-            // Alternative: utiliser les données envoyées depuis le frontend
-            if (updatedFlights && updatedFlights.length > 0) {
-              flightInfoForEmail = {
-                code: updatedFlights[0].code || 'N/A',
-                from: updatedFlights[0].from || 'N/A',
-                to: updatedFlights[0].to || 'N/A',
-                date: updatedFlights[0].date || 'N/A',
-                arrival_date: updatedFlights[0].arrival_date || 'N/A'
-              };
-              console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
-            }
-          }
-        } else {
-          console.log(`⚠️ Aucun flight_id dans la réservation`);
-        }
-      }
-
-      // Fonction pour formater les dates
-      const formatDateSafely = (dateString: string, formatString: string) => {
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) {
-            return "Invalid date";
-          }
-          return format(date, formatString);
-        } catch (error) {
-          return "Invalid date";
-        }
-      };
-
-      // Fonction pour formater l'heure
-      const formatTimeSafely = (dateString: string) => {
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) {
-            return "Invalid time";
-          }
-          return date.toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        } catch (error) {
-          return "Invalid time";
-        }
-      };
-
-      // Insérer les nouveaux passagers et envoyer les emails
-      for (const passenger of passengers) {
-        await connection.query(
-          `INSERT INTO passengers (
-        booking_id, first_name, middle_name, last_name,
-        date_of_birth, gender, title, address, type,
-        type_vol, type_v, country, nationality,
-        phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            booking.id,
-            passenger.firstName || passenger.name || '',
-            passenger.middleName || null,
-            passenger.lastName || '',
-            passenger.dateOfBirth || passenger.dob || null,
-            passenger.gender || "other",
-            passenger.title || "Mr",
-            passenger.address || null,
-            passenger.type || "adult",
-            passenger.typeVol || "plane",
-            passenger.typeVolV || "onway",
-            passenger.country || null,
-            passenger.nationality || null,
-            passenger.phone || null,
-            passenger.email || null,
-            passenger.nom_urgence || null,
-            passenger.email_urgence || null,
-            passenger.tel_urgence || null,
-            new Date(),
-            new Date()
-          ]
-        );
-
-        // Générer le QR Code
-        const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
-
-
-
-        // Section HTML pour les détails du vol (à insérer dans vos emails)
-        // Vérifier si on a des informations de vol pour l'email
-        const hasFlightInfo = flightInfoForEmail !== null;
-
-        // Section HTML pour les détails du vol (à insérer dans vos emails)
-        const flightDetailsHtml = hasFlightInfo ? `
-  <div class="flight-details">
-    <div>
-      <strong>From:</strong> ${flightInfoForEmail!.from}<br />
-      <strong>To:</strong> ${flightInfoForEmail!.to}<br />
-      <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail!.date, "EEE, dd MMM yy")}<br />
-      <strong>Departure:</strong> ${formatTimeSafely(flightInfoForEmail!.date)}<br />
-      <strong>Arrival:</strong> ${formatTimeSafely(flightInfoForEmail!.arrival_date)}<br />
-      <strong>Flight Number:</strong> ${flightInfoForEmail!.code}
-    </div>
-  </div>
-` : `
-  <div class="flight-details">
-    <div> 
-      <strong>Flight Information:</strong> Not available<br />
-      <strong>Please contact customer service for flight details.</strong>
-    </div>
-  </div>
-`;
-
-        // Section HTML pour les détails du vol en français
-        const flightDetailsHtmlFr = hasFlightInfo ? `
-  <div class="flight-details">
-    <div>
-      <strong>De:</strong> ${flightInfoForEmail!.from}<br />
-      <strong>À:</strong> ${flightInfoForEmail!.to}<br />
-      <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail!.date, "EEE, dd MMM yy")}<br />
-      <strong>Départ:</strong> ${formatTimeSafely(flightInfoForEmail!.date)}<br />
-      <strong>Arrivée:</strong> ${formatTimeSafely(flightInfoForEmail!.arrival_date)}<br />
-      <strong>Numéro du vol:</strong> ${flightInfoForEmail!.code}
-    </div>
-  </div>
-` : `
-  <div class="flight-details">
-    <div>
-      <strong>Informations du vol:</strong> Non disponibles<br />
-      <strong>Veuillez contacter le service client pour les détails du vol.</strong>
-    </div>
-  </div>
-`;
-
-
-
-        // EMAIL EN ANGLAIS
-        const englishHtml = `
-  <!DOCTYPE html>
-  <html>
-
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trogon Airways - ${flightChanged ? 'Flight Updated' : 'Booking Confirmation'}</title>
-  </head>
-
-  <body>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-      }
-
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-
-      .header {
-        background-color: #f0f7ff;
-        padding: 20px;
-        text-align: center;
-        border-radius: 5px;
-      }
-
-      .flight-card {
-
-        padding: 15px;
-        margin-bottom: 20px;
-      }
-
-      .flight-header {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-
-      .flight-details {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .passenger-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-
-      .passenger-table th,
-      .passenger-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-      }
-
-      .passenger-table th {
-        background-color: #f2f2f2;
-      }
-
-      .footer {
-        margin-top: 30px;
-        font-size: 12px;
-        color: #777;
-        text-align: center;
-      }
-    </style>
-    <div style="
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                'Helvetica Neue', Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              max-width: 800px;
-              margin: 0 auto;
-              border: 1px solid #ddd;
-              border-radius: 8px;
-              overflow: hidden;
-            ">
-      <div style="
-                display: block;
-                width: 100%;
-                background-color: #1A237E; /* ou 'blue' */
-                color: white;
-                padding: 20px;
-                text-align: center;
-              ">
-        <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle" />
-        <p style="margin: 5px 0 0; font-size: 1.2em">${flightChanged ? 'Your Flight Has Been Updated' : 'Your Booking is Confirmed'}</p>
-      </div>
-
-      <div style="padding: 8px">
-        <p>Dear ${passenger.firstName} ${passenger.lastName},</p>
-        <p>
-          ${flightChanged ?
-            'Your flight booking has been updated. Please find your new e-ticket below.' :
-            'Thank you for choosing Trogon Airways. Please find your e-ticket below.'}
-          We recommend printing this section or having it available on your mobile device at the airport.
-        </p>
-      </div>
-
-      <!-- E-Ticket Section -->
-      <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
-        <div style="padding: 8px; text-align: center">
-          <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-            <strong>Payment Method:</strong>
-
-            ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Credit/Debit Card" :
-            payment_method === "cheque" ? "Bank Check" : payment_method === "virement" ? "Bank Transfer" :
-              payment_method === "transfert" ? "Transfer" : "Contract"}
-          </p>
-
-          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter"
-            ? "Helicopter" : "Air Plane"
-          }</p>
-          ${flightChanged ?
-            `<p style="margin: 10px 0 0; color: #ff9900; font-size: 1em;">
-            <strong>⚠️ Important: Your flight details have been updated</strong>
-          </p>` : ''}
-        </div>
-
-        <div style="
-                  background: rgba(0, 28, 150, 0.3);
-                  border: 1px solid #eee;
-                  padding: 8px;
-                  border-radius: 8px;
-                ">
-          <table width="100%" style="border-collapse: collapse">
-            <tr>
-              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
-
-                <span style="
-                          font-size: 1.5em;
-                          font-weight: bold;
-                          color: #1a237e;
-                          vertical-align: middle;
-                          margin-left: 10px;
-                        ">Boarding Pass</span>
-              </td>
-              <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
-                <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
-              </td>
-
-            </tr>
-
-            <tr>
-              <td colspan="2" style="padding-top: 8px">
-                <div style="padding: 20px; text-align: center">
-                  <h3 style="color: #1a237e; margin: 0">One Way</h3>
-                </div>
-                <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-
-                <table width="100%">
-                  <tr>
-                    <td>
-                      <div class="flight-card">
-                        <div class="flight-header">Outbound Flight</div>
-                        ${flightDetailsHtml}
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-
-            <tr>
-              <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-                <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
-
-                <p style="margin: 0">
-                  <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
-                  <strong>Email:</strong> ${passenger.email}
-                </p>
-
-              </td>
-            </tr>
-
-            <tr>
-              <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-                <table width="100%">
-                  <tr>
-                    <td>
-                      <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
-                      <p style="margin: 0; font-size: 0.9em">
-                        <strong>Booking ID:</strong> ${reference}
-                      </p>
-
-                    </td>
-                    <td style="text-align: right">
-                      <h3 style="color: #1a237e; margin: 0">Payment</h3>
-                      <p style="margin: 0; font-size: 1.1em">
-                        <strong>Total:</strong> $${totalPrice}
-                      </p>
-                      <p style="margin: 0; font-size: 0.9em">
-                        <strong>Status: </strong>
-                        ${payment_method === "cash" || payment_method === "card" || payment_method === "cheque" ||
-            payment_method === "virement" || payment_method === "transfert" ? "Paid" : "Unpaid"}
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-      <!-- End E-Ticket Section -->
-
-      ${passenger.typeVol === "plane" ? `
-      <div style="padding: 8px; font-size: 0.9em; color: #555">
-        <p>
-          <strong>Important:</strong> Please arrive at the airport at least 1 hour
-          before your departure time. All passengers must present a valid ID at
-          check-in.
-        </p>
-        <p>
-          <strong>Baggage Limitation: **</strong> The maximum allowance for
-          passenger baggage is 30 lb.
-        </p>
-        <p>
-          <strong>Remarks: **</strong> The company declines all responsibility for
-          flight delays, cancellations, or changes resulting from circumstances
-          beyond its control, such as, technical problems, strikes, or any other
-          problems. The customer is responsible for their own personal arrangements
-          (airport arrival time, travel formalities, etc.). No refund or
-          compensation can be claimed in the event of a missed flight
-          for these reasons.
-        </p>
-        <p>
-          <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
-          before your trip will result in a 50% cancellation fee being charged..
-        </p>
-        <p>We look forward to welcoming you on board.</p>
-        <p>Sincerely,<br />The Trogon Airways Team</p>
-      </div>` :
-            `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-        <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All
-          passengers must present a valid ID at check-in.</p>
-        <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb.</p>
-        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or
-          changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other
-          problems. The customer is responsible for their own personal arrangements (airport arrival time, travel
-          formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.
-        </p>
-        <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50%
-          cancellation fee being charged..</p>
-        <p>We look forward to welcoming you on board.</p>
-        <p>Sincerely,<br>The Trogon Airways Team</p>
-      </div>
-      `}
-    </div>
-
-  </body>
-  </html>
-`;
-
-        // EMAIL EN FRANÇAIS
-        const frenchHtml = `
-<!DOCTYPE html>
-<html>
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trogon Airways - ${flightChanged ? 'Vol Modifié' : 'Réservation Confirmée'}</title>
-</head>
-
-<body>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .header {
-      background-color: #f0f7ff;
-      padding: 20px;
-      text-align: center;
-      border-radius: 5px;
-    }
-
-    .flight-card {
-
-      padding: 15px;
-      margin-bottom: 20px;
-    }
-
-    .flight-header {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .flight-details {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .passenger-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    .passenger-table th,
-    .passenger-table td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-
-    .passenger-table th {
-      background-color: #f2f2f2;
-    }
-
-    .footer {
-      margin-top: 30px;
-      font-size: 12px;
-      color: #777;
-      text-align: center;
-    }
-  </style>
-  <div style="
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-              'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-          ">
-    <div style="
-              display: block;
-              width: 100%;
-              background-color: #1A237E; /* ou 'blue' */
-              color: white;
-              padding: 20px;
-              text-align: center;
-            ">
-      <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle" />
-      <p style="margin: 5px 0 0; font-size: 1.2em">${flightChanged ? 'Votre vol a été modifié' : 'Votre réservation est confirmée'}</p>
-    </div>
-
-    <div style="padding: 8px">
-      <p>Cher(e) ${passenger.firstName} ${passenger.lastName},</p>
-      <p>
-        ${flightChanged ?
-            'Votre réservation de vol a été modifiée. Veuillez trouver votre nouveau billet électronique ci-dessous.' :
-            'Merci d\'avoir choisi Trogon Airways. Veuillez trouver votre billet électronique ci-dessous.'}
-        Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile à l'aéroport.
-      </p>
-    </div>
-
-    <!-- E-Ticket Section -->
-    <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
-      <div style="padding: 8px; text-align: center">
-        <p style="margin: 0; color: #1a237e; font-size: 0.9em">
-          <strong>Payment Method:</strong>
-          ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Carte bancaire" :
-            payment_method === "cheque" ? "Chèque bancaire" : payment_method === "virement" ? "Virement bancaire" :
-              payment_method === "transfert" ? "Transfert" : "Contrat"}
-        </p>
-
-        <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${typeVol === "helicopter"
-            ? "Hélicoptère" : "Avion"}</p>
-
-        ${flightChanged ?
-            `<p style="margin: 10px 0 0; color: #ff9900; font-size: 1em;">
-          <strong>⚠️ Important: Vos détails de vol ont été modifiés</strong>
-        </p>` : ''}
-      </div>
-
-      <div style="
-                background: rgba(0, 28, 150, 0.3);
-                border: 1px solid #eee;
-                padding: 8px;
-                border-radius: 8px;
-              ">
-        <table width="100%" style="border-collapse: collapse">
-          <tr>
-            <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
-
-              <span style="
-                        font-size: 1.5em;
-                        font-weight: bold;
-                        color: #1a237e;
-                        vertical-align: middle;
-                        margin-left: 10px;
-                      ">Carte d'embarquement</span>
-            </td>
-            <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
-              <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
-            </td>
-
-          </tr>
-
-          <tr>
-            <td colspan="2" style="padding-top: 8px">
-              <div style="padding: 20px; text-align: center">
-                <h3 style="color: #1a237e; margin: 0">Vol Simple</h3>
-              </div>
-              <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-
-              <table width="100%">
-                <tr>
-                  <td>
-                    <div class="flight-card">
-                      <div class="flight-header">Vol Aller</div>
-                      ${flightDetailsHtmlFr}
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <tr>
-            <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-              <h3 style="color: #1a237e; margin: 0 0 10px 0">Passager</h3>
-
-              <p style="margin: 0">
-                <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
-                <strong>Email:</strong> ${passenger.email}
-              </p>
-
-            </td>
-          </tr>
-
-          <tr>
-            <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
-              <table width="100%">
-                <tr>
-                  <td>
-                    <h3 style="color: #1a237e; margin: 0">Détails de la Réservation</h3>
-                    <p style="margin: 0; font-size: 0.9em">
-                      <strong>Réservation ID:</strong> ${reference}
-                    </p>
-
-                  </td>
-                  <td style="text-align: right">
-                    <h3 style="color: #1a237e; margin: 0">Paiement</h3>
-                    <p style="margin: 0; font-size: 1.1em">
-                      <strong>Total:</strong> $${totalPrice}
-                    </p>
-                    <p style="margin: 0; font-size: 0.9em">
-                      <strong>Status: </strong>
-                      ${payment_method === "cash" || payment_method === "card" || payment_method === "cheque" ||
-            payment_method === "virement" || payment_method === "transfert" ? "Payé" : "Non payé"}
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </div>
-    <!-- End E-Ticket Section -->
-
-    ${passenger.typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-      <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
-        les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-      <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.
-      </p>
-      <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
-        modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques,
-        grèves ou tout autre incident ne relevant pas de sa responsabilité.
-        Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage,
-        etc.).
-        Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
-      </p>
-      <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une
-        retenue
-        de 50% du montant total à titre de frais d'annulation.</p>
-      <p>Nous nous réjouissons de vous accueillir à bord.</p>
-      <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-    </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-      <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
-        les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-      <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.
-      </p>
-      <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
-        modification de vol
-        imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
-        incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure
-        d'arrivée à
-        l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol
-        manqué
-        pour ces raisons.</p>
-      <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une
-        retenue de 50% du montant total à titre de frais d'annulation.</p>
-      <p>Nous nous réjouissons de vous accueillir à bord.</p>
-      <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-    </div>`}
-  </div>
-
-</body>
-
-</html>`;
-
-        // Combiner les deux versions dans un seul email
-        const combinedHtml = `${englishHtml}<hr style="margin: 40px 0; border: 1px solid #ddd;">${frenchHtml}`;
-
-        // Envoyer l'email
-        const emailResult = await sendEmail(
-          passenger.email,
-          flightChanged ?
-            `Trogon Airways - Flight Updated / Vol Modifié - ${reference}` :
-            `Trogon Airways - Booking Confirmation / Réservation Confirmée - ${reference}`,
-          combinedHtml
-        );
-
-        console.log(`📧 Email envoyé à ${passenger.email}:`, emailResult.success ? 'SUCCÈS' : 'ÉCHEC');
-        if (!emailResult.success) {
-          console.log(`❌ Erreur email:`, emailResult.error);
-        }
-
-        emailResults.push({
-          passenger: passenger.email,
-          success: emailResult.success,
-          error: emailResult.error
-        });
-      }
-      console.log(`✅ ${passengers.length} passager(s) insérés et emails envoyés`);
-
-      // Mettre à jour le nombre de passagers dans la réservation
-      await connection.query(
-        "UPDATE bookings SET passenger_count = ? WHERE id = ?",
-        [passengers.length, booking.id]
-      );
-      console.log(`✅ Nombre de passagers mis à jour: ${passengers.length}`);
-    }
-
-    // 6. Créer une notification
-    await connection.query(
-      `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [
-        flightChanged ? "flight_change" : "update",
-        `Réservation ${reference} modifiée.${flightChanged ? ' Changement de vol effectué.' : ''}`,
-        booking.id,
-        false,
-        new Date()
-      ]
-    );
-
-    // ✅ COMMIT
-    await connection.commit();
-    console.log(`💾 Transaction commitée`);
-
-    // Récupérer la réservation mise à jour avec les détails du vol
-    const [updatedBooking] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT b.*, 
-              f.flight_number as flight_code,
-              l1.name as departure_city,
-              l2.name as arrival_city,
-              f.departure_time,
-              f.arrival_time
-       FROM bookings b
-       LEFT JOIN flights f ON b.flight_id = f.id
-       LEFT JOIN locations l1 ON f.departure_location_id = l1.id
-       LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
-       WHERE b.booking_reference = ?`,
-      [reference]
-    );
-
-    const [updatedPassengers] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT * FROM passengers WHERE booking_id = ?`,
-      [booking.id]
-    );
-
-    res.json({
-      success: true,
-      message: "Réservation mise à jour avec succès",
-      flightChanged: flightChanged,
-      booking: updatedBooking[0],
-      passengers: updatedPassengers,
-      emailResults: emailResults,
-      updatedAt: new Date()
-    });
-
-  } catch (error: any) {
-    console.error("❌ Erreur modification réservation:", error);
-    if (connection) {
-      await connection.rollback();
-    }
-    res.status(500).json({
-      success: false,
-      error: "Échec de la modification de la réservation",
-      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
-      sqlMessage: process.env.NODE_ENV !== "production" ? error.sqlMessage : undefined
-    });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-    console.log(`🏁 Fin modification réservation: ${reference}`);
-  }
-});
+// app.put("/api/bookings2/:reference", async (req: Request, res: Response) => {
+//   const { reference } = req.params;
+//   const {
+//     passengers,
+//     flights: updatedFlights,
+//     contactEmail,
+//     contactPhone,
+//     totalPrice,
+//     adminNotes,
+//     paymentStatus,
+//     bookingReference,
+//     typeVol,
+//     payment_method
+//   } = req.body;
+
+//   console.log(`🔍 DEBUG - Début modification réservation: ${reference}`);
+//   console.log(`📦 Données reçues:`, JSON.stringify(req.body, null, 2));
+
+//   let connection;
+//   try {
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+//     console.log(`✅ Transaction démarrée`);
+
+//     // 1. Vérifier que la réservation existe
+//     const [bookings] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT 
+//           id, 
+//           status, 
+//           flight_id, 
+//           return_flight_id, 
+//           passenger_count,
+//           booking_reference,
+//           total_price,
+//           contact_email,
+//           contact_phone,
+//           type_vol,
+//           payment_method,
+//           departure_date
+//        FROM bookings 
+//        WHERE booking_reference = ? FOR UPDATE`,
+//       [reference]
+//     );
+
+//     if (bookings.length === 0) {
+//       await connection.rollback();
+//       return res.status(404).json({
+//         success: false,
+//         error: "Réservation non trouvée"
+//       });
+//     }
+
+//     const booking = bookings[0];
+//     console.log(`📋 Réservation trouvée: ID ${booking.id}, Flight ID: ${booking.flight_id}`);
+
+//     // 2. VÉRIFIER SI LE NUMÉRO DE VOL A CHANGÉ
+//     let flightChanged = false;
+//     let newFlightId = booking.flight_id;
+//     let newFlightDetails = null;
+
+//     if (updatedFlights && updatedFlights.length > 0 && updatedFlights[0].code) {
+//       try {
+//         // Récupérer le vol actuel de la réservation
+//         let currentFlightNumber = null;
+//         if (booking.flight_id) {
+//           const [currentFlights] = await connection.query<mysql.RowDataPacket[]>(
+//             "SELECT flight_number FROM flights WHERE id = ?",
+//             [booking.flight_id]
+//           );
+
+
+
+//           if (currentFlights.length > 0) {
+//             currentFlightNumber = currentFlights[0].flight_number;
+//             console.log(`Numéro du vol actuel: ${currentFlightNumber}`);
+//           }
+//         }
+
+//         // Vérifier si le numéro de vol a changé
+//         if (currentFlightNumber !== updatedFlights[0].code) {
+//           console.log(`🔄 Changement de vol détecté: ${currentFlightNumber || 'N/A'} -> ${updatedFlights[0].code}`);
+
+//           // Rechercher le nouveau vol par son numéro (flight_number)
+//           const [newFlight] = await connection.query<mysql.RowDataPacket[]>(
+//             `SELECT f.id, f.flight_number, f.seats_available, f.type,
+//                     f.departure_time, f.arrival_time,
+//                     l1.code as departure_code, l1.name as departure_name,
+//                     l2.code as arrival_code, l2.name as arrival_name
+//              FROM flights f
+//              JOIN locations l1 ON f.departure_location_id = l1.id
+//              JOIN locations l2 ON f.arrival_location_id = l2.id
+//              WHERE f.flight_number = ?
+//              LIMIT 1 FOR UPDATE`,
+//             [updatedFlights[0].code]
+//           );
+
+//           if (newFlight.length === 0) {
+//             await connection.rollback();
+//             return res.status(400).json({
+//               success: false,
+//               error: "Le vol n'existe pas",
+//               details: `Aucun vol trouvé avec le numéro: ${updatedFlights[0].code}`
+//             });
+//           }
+
+//           console.log(`✅ Nouveau vol trouvé: ID ${newFlight[0].id}, Numéro: ${newFlight[0].flight_number}`);
+
+//           // Vérifier les sièges disponibles
+//           const passengerCount = passengers ? passengers.length : booking.passenger_count;
+//           if (newFlight[0].seats_available < passengerCount) {
+//             await connection.rollback();
+//             return res.status(400).json({
+//               success: false,
+//               error: "Pas assez de sièges disponibles",
+//               details: `Vol ${newFlight[0].flight_number}: ${newFlight[0].seats_available} sièges disponibles, besoin de ${passengerCount}`,
+//               seatsAvailable: newFlight[0].seats_available,
+//               passengersNeeded: passengerCount
+//             });
+//           }
+
+//           // Libérer les sièges de l'ancien vol
+//           if (booking.flight_id) {
+//             await connection.execute(
+//               "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
+//               [booking.passenger_count, booking.flight_id]
+//             );
+//             console.log(`🔄 Sièges libérés pour l'ancien vol ID ${booking.flight_id}`);
+//           }
+
+//           // Réserver les sièges du nouveau vol
+//           await connection.execute(
+//             "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//             [passengerCount, newFlight[0].id]
+//           );
+//           console.log(`✅ Sièges réservés pour le nouveau vol ID ${newFlight[0].id}`);
+
+//           newFlightId = newFlight[0].id;
+//           flightChanged = true;
+//           newFlightDetails = newFlight[0];
+
+//           // Mettre à jour l'ID du vol et les dates dans la réservation
+//           await connection.query(
+//             "UPDATE bookings SET flight_id = ?, departure_date = ?, updated_at = NOW() WHERE id = ?",
+//             [newFlightId, newFlight[0].departure_time, booking.id]
+//           );
+//           console.log(`✅ ID du vol et dates mis à jour dans la réservation`);
+//         }
+//       } catch (error: any) {
+//         console.error("❌ Erreur lors de la vérification du vol:", error);
+//         await connection.rollback();
+//         return res.status(500).json({
+//           success: false,
+//           error: "Erreur lors de la vérification du vol",
+//           details: error.message
+//         });
+//       }
+//     }
+
+//     // 3. Mettre à jour les informations générales de la réservation
+//     const updateFields = [];
+//     const updateValues = [];
+
+//     if (contactEmail !== undefined) {
+//       updateFields.push("contact_email = ?");
+//       updateValues.push(contactEmail);
+//     }
+//     if (contactPhone !== undefined) {
+//       updateFields.push("contact_phone = ?");
+//       updateValues.push(contactPhone);
+//     }
+//     if (totalPrice !== undefined) {
+//       updateFields.push("total_price = ?");
+//       updateValues.push(totalPrice);
+//     }
+//     if (adminNotes !== undefined) {
+//       updateFields.push("adminNotes = ?");
+//       updateValues.push(adminNotes);
+//     }
+//     if (paymentStatus !== undefined) {
+//       updateFields.push("status = ?");
+//       updateValues.push(paymentStatus);
+//     }
+//     if (typeVol !== undefined) {
+//       updateFields.push("type_vol = ?");
+//       updateValues.push(typeVol);
+//     }
+//     if (payment_method !== undefined) {
+//       updateFields.push("payment_method = ?");
+//       updateValues.push(payment_method);
+//     }
+
+//     if (updateFields.length > 0) {
+//       updateValues.push(booking.id);
+//       await connection.query(
+//         `UPDATE bookings SET ${updateFields.join(", ")}, updated_at = NOW() WHERE id = ?`,
+//         updateValues
+//       );
+//       console.log(`✅ Informations générales mises à jour`);
+//     }
+
+//     // 4. GESTION DES SIÈGES - ajustement si nombre de passagers change
+//     const oldPassengerCount = booking.passenger_count;
+//     const newPassengerCount = passengers ? passengers.length : oldPassengerCount;
+
+//     if (newPassengerCount !== oldPassengerCount && !flightChanged) {
+//       console.log(`🔄 Ajustement des sièges: ${oldPassengerCount} → ${newPassengerCount} passagers`);
+
+//       const seatDifference = newPassengerCount - oldPassengerCount;
+
+//       // Mettre à jour le vol actuel
+//       if (booking.flight_id) {
+//         await connection.execute(
+//           "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//           [seatDifference, booking.flight_id]
+//         );
+//         console.log(`✅ Sièges ajustés pour le vol ${booking.flight_id}: ${seatDifference}`);
+//       }
+
+//       // Mettre à jour le vol retour si existe
+//       if (booking.return_flight_id) {
+//         await connection.execute(
+//           "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+//           [seatDifference, booking.return_flight_id]
+//         );
+//         console.log(`✅ Sièges ajustés pour le vol retour ${booking.return_flight_id}: ${seatDifference}`);
+//       }
+//     }
+
+//     // 5. Mettre à jour les passagers et envoyer les emails
+//     const emailResults = [];
+
+
+//     if (passengers && Array.isArray(passengers)) {
+//       console.log(`👥 Mise à jour de ${passengers.length} passager(s)`);
+
+//       // Supprimer les anciens passagers
+//       await connection.query(
+//         `DELETE FROM passengers WHERE booking_id = ?`,
+//         [booking.id]
+//       );
+//       console.log(`🗑️ Anciens passagers supprimés`);
+
+//       // Récupérer les informations du vol pour l'email - CORRECTION ICI
+//       // Récupérer les informations du vol pour l'email - CORRECTION ICI
+//       let flightInfoForEmail: {
+//         code: string;
+//         from: string;
+//         to: string;
+//         date: string;
+//         arrival_date: string;
+//       } | null = null;
+
+//       if (flightChanged && newFlightDetails) {
+//         // Utiliser les informations du nouveau vol
+//         flightInfoForEmail = {
+//           code: newFlightDetails.flight_number,
+//           from: newFlightDetails.departure_name,
+//           to: newFlightDetails.arrival_name,
+//           date: newFlightDetails.departure_time,
+//           arrival_date: newFlightDetails.arrival_time
+//         };
+//         console.log(`✅ Informations du NOUVEAU vol pour l'email:`, flightInfoForEmail);
+//       } else {
+//         // Récupérer les informations du vol actuel
+//         if (booking.flight_id) {
+//           const [currentFlightInfo] = await connection.query<mysql.RowDataPacket[]>(
+//             `SELECT f.flight_number as code, 
+//               f.departure_time as date, 
+//               f.arrival_time as arrival_date,
+//               l1.name as departure_city,
+//               l2.name as arrival_city
+//        FROM flights f
+//        JOIN locations l1 ON f.departure_location_id = l1.id
+//        JOIN locations l2 ON f.arrival_location_id = l2.id
+//        WHERE f.id = ?`,
+//             [booking.flight_id]
+//           );
+
+//           if (currentFlightInfo.length > 0) {
+//             flightInfoForEmail = {
+//               code: currentFlightInfo[0].code,
+//               from: currentFlightInfo[0].departure_city,
+//               to: currentFlightInfo[0].arrival_city,
+//               date: currentFlightInfo[0].date,
+//               arrival_date: currentFlightInfo[0].arrival_date
+//             };
+//             console.log(`✅ Informations du vol ACTUEL pour l'email:`, flightInfoForEmail);
+//           } else {
+//             console.log(`⚠️ Aucune information de vol trouvée pour l'ID ${booking.flight_id}`);
+
+//             // Alternative: utiliser les données envoyées depuis le frontend
+//             if (updatedFlights && updatedFlights.length > 0) {
+//               flightInfoForEmail = {
+//                 code: updatedFlights[0].code || 'N/A',
+//                 from: updatedFlights[0].from || 'N/A',
+//                 to: updatedFlights[0].to || 'N/A',
+//                 date: updatedFlights[0].date || 'N/A',
+//                 arrival_date: updatedFlights[0].arrival_date || 'N/A'
+//               };
+//               console.log(`✅ Utilisation des données du frontend pour l'email:`, flightInfoForEmail);
+//             }
+//           }
+//         } else {
+//           console.log(`⚠️ Aucun flight_id dans la réservation`);
+//         }
+//       }
+
+//       // Fonction pour formater les dates
+//       const formatDateSafely = (dateString: string, formatString: string) => {
+//         try {
+//           const date = new Date(dateString);
+//           if (isNaN(date.getTime())) {
+//             return "Invalid date";
+//           }
+//           return format(date, formatString);
+//         } catch (error) {
+//           return "Invalid date";
+//         }
+//       };
+
+//       // Fonction pour formater l'heure
+//       const formatTimeSafely = (dateString: string) => {
+//         try {
+//           const date = new Date(dateString);
+//           if (isNaN(date.getTime())) {
+//             return "Invalid time";
+//           }
+//           return date.toLocaleTimeString("fr-FR", {
+//             hour: "2-digit",
+//             minute: "2-digit",
+//           });
+//         } catch (error) {
+//           return "Invalid time";
+//         }
+//       };
+
+//       // Insérer les nouveaux passagers et envoyer les emails
+//       for (const passenger of passengers) {
+//         await connection.query(
+//           `INSERT INTO passengers (
+//         booking_id, first_name, middle_name, last_name,
+//         date_of_birth, gender, title, address, type,
+//         type_vol, type_v, country, nationality,
+//         phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//           [
+//             booking.id,
+//             passenger.firstName || passenger.name || '',
+//             passenger.middleName || null,
+//             passenger.lastName || '',
+//             passenger.dateOfBirth || passenger.dob || null,
+//             passenger.gender || "other",
+//             passenger.title || "Mr",
+//             passenger.address || null,
+//             passenger.type || "adult",
+//             passenger.typeVol || "plane",
+//             passenger.typeVolV || "onway",
+//             passenger.country || null,
+//             passenger.nationality || null,
+//             passenger.phone || null,
+//             passenger.email || null,
+//             passenger.nom_urgence || null,
+//             passenger.email_urgence || null,
+//             passenger.tel_urgence || null,
+//             new Date(),
+//             new Date()
+//           ]
+//         );
+
+//         // Générer le QR Code
+//         const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
+
+
+
+//         // Section HTML pour les détails du vol (à insérer dans vos emails)
+//         // Vérifier si on a des informations de vol pour l'email
+//         const hasFlightInfo = flightInfoForEmail !== null;
+
+//         // Section HTML pour les détails du vol (à insérer dans vos emails)
+//         const flightDetailsHtml = hasFlightInfo ? `
+//   <div class="flight-details">
+//     <div>
+//       <strong>From:</strong> ${flightInfoForEmail!.from}<br />
+//       <strong>To:</strong> ${flightInfoForEmail!.to}<br />
+//       <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail!.date, "EEE, dd MMM yy")}<br />
+//       <strong>Departure:</strong> ${formatTimeSafely(flightInfoForEmail!.date)}<br />
+//       <strong>Arrival:</strong> ${formatTimeSafely(flightInfoForEmail!.arrival_date)}<br />
+//       <strong>Flight Number:</strong> ${flightInfoForEmail!.code}
+//     </div>
+//   </div>
+// ` : `
+//   <div class="flight-details">
+//     <div> 
+//       <strong>Flight Information:</strong> Not available<br />
+//       <strong>Please contact customer service for flight details.</strong>
+//     </div>
+//   </div>
+// `;
+
+//         // Section HTML pour les détails du vol en français
+//         const flightDetailsHtmlFr = hasFlightInfo ? `
+//   <div class="flight-details">
+//     <div>
+//       <strong>De:</strong> ${flightInfoForEmail!.from}<br />
+//       <strong>À:</strong> ${flightInfoForEmail!.to}<br />
+//       <strong>Date:</strong> ${formatDateSafely(flightInfoForEmail!.date, "EEE, dd MMM yy")}<br />
+//       <strong>Départ:</strong> ${formatTimeSafely(flightInfoForEmail!.date)}<br />
+//       <strong>Arrivée:</strong> ${formatTimeSafely(flightInfoForEmail!.arrival_date)}<br />
+//       <strong>Numéro du vol:</strong> ${flightInfoForEmail!.code}
+//     </div>
+//   </div>
+// ` : `
+//   <div class="flight-details">
+//     <div>
+//       <strong>Informations du vol:</strong> Non disponibles<br />
+//       <strong>Veuillez contacter le service client pour les détails du vol.</strong>
+//     </div>
+//   </div>
+// `;
+
+
+
+//         // EMAIL EN ANGLAIS
+//         const englishHtml = `
+//   <!DOCTYPE html>
+//   <html>
+
+//   <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Trogon Airways - ${flightChanged ? 'Flight Updated' : 'Booking Confirmation'}</title>
+//   </head>
+
+//   <body>
+//     <style>
+//       body {
+//         font-family: Arial, sans-serif;
+//         line-height: 1.6;
+//         color: #333;
+//       }
+
+//       .container {
+//         max-width: 600px;
+//         margin: 0 auto;
+//         padding: 20px;
+//       }
+
+//       .header {
+//         background-color: #f0f7ff;
+//         padding: 20px;
+//         text-align: center;
+//         border-radius: 5px;
+//       }
+
+//       .flight-card {
+
+//         padding: 15px;
+//         margin-bottom: 20px;
+//       }
+
+//       .flight-header {
+//         font-size: 18px;
+//         font-weight: bold;
+//         margin-bottom: 10px;
+//       }
+
+//       .flight-details {
+//         display: grid;
+//         grid-template-columns: 1fr 1fr;
+//         gap: 10px;
+//       }
+
+//       .passenger-table {
+//         width: 100%;
+//         border-collapse: collapse;
+//         margin-top: 20px;
+//       }
+
+//       .passenger-table th,
+//       .passenger-table td {
+//         border: 1px solid #ddd;
+//         padding: 8px;
+//         text-align: left;
+//       }
+
+//       .passenger-table th {
+//         background-color: #f2f2f2;
+//       }
+
+//       .footer {
+//         margin-top: 30px;
+//         font-size: 12px;
+//         color: #777;
+//         text-align: center;
+//       }
+//     </style>
+//     <div style="
+//               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+//                 'Helvetica Neue', Arial, sans-serif;
+//               line-height: 1.6;
+//               color: #333;
+//               max-width: 800px;
+//               margin: 0 auto;
+//               border: 1px solid #ddd;
+//               border-radius: 8px;
+//               overflow: hidden;
+//             ">
+//       <div style="
+//                 display: block;
+//                 width: 100%;
+//                 background-color: #1A237E; /* ou 'blue' */
+//                 color: white;
+//                 padding: 20px;
+//                 text-align: center;
+//               ">
+//         <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle" />
+//         <p style="margin: 5px 0 0; font-size: 1.2em">${flightChanged ? 'Your Flight Has Been Updated' : 'Your Booking is Confirmed'}</p>
+//       </div>
+
+//       <div style="padding: 8px">
+//         <p>Dear ${passenger.firstName} ${passenger.lastName},</p>
+//         <p>
+//           ${flightChanged ?
+//             'Your flight booking has been updated. Please find your new e-ticket below.' :
+//             'Thank you for choosing Trogon Airways. Please find your e-ticket below.'}
+//           We recommend printing this section or having it available on your mobile device at the airport.
+//         </p>
+//       </div>
+
+//       <!-- E-Ticket Section -->
+//       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+//         <div style="padding: 8px; text-align: center">
+//           <p style="margin: 0; color: #1a237e; font-size: 0.9em">
+//             <strong>Payment Method:</strong>
+
+//             ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Credit/Debit Card" :
+//             payment_method === "cheque" ? "Bank Check" : payment_method === "virement" ? "Bank Transfer" :
+//               payment_method === "transfert" ? "Transfer" : "Contract"}
+//           </p>
+
+//           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter"
+//             ? "Helicopter" : "Air Plane"
+//           }</p>
+//           ${flightChanged ?
+//             `<p style="margin: 10px 0 0; color: #ff9900; font-size: 1em;">
+//             <strong>⚠️ Important: Your flight details have been updated</strong>
+//           </p>` : ''}
+//         </div>
+
+//         <div style="
+//                   background: rgba(0, 28, 150, 0.3);
+//                   border: 1px solid #eee;
+//                   padding: 8px;
+//                   border-radius: 8px;
+//                 ">
+//           <table width="100%" style="border-collapse: collapse">
+//             <tr>
+//               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
+
+//                 <span style="
+//                           font-size: 1.5em;
+//                           font-weight: bold;
+//                           color: #1a237e;
+//                           vertical-align: middle;
+//                           margin-left: 10px;
+//                         ">Boarding Pass</span>
+//               </td>
+//               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+//                 <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
+//               </td>
+
+//             </tr>
+
+//             <tr>
+//               <td colspan="2" style="padding-top: 8px">
+//                 <div style="padding: 20px; text-align: center">
+//                   <h3 style="color: #1a237e; margin: 0">One Way</h3>
+//                 </div>
+//                 <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
+
+//                 <table width="100%">
+//                   <tr>
+//                     <td>
+//                       <div class="flight-card">
+//                         <div class="flight-header">Outbound Flight</div>
+//                         ${flightDetailsHtml}
+//                     </td>
+//                   </tr>
+//                 </table>
+//               </td>
+//             </tr>
+
+//             <tr>
+//               <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//                 <h3 style="color: #1a237e; margin: 0 0 10px 0">Passengers</h3>
+
+//                 <p style="margin: 0">
+//                   <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
+//                   <strong>Email:</strong> ${passenger.email}
+//                 </p>
+
+//               </td>
+//             </tr>
+
+//             <tr>
+//               <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//                 <table width="100%">
+//                   <tr>
+//                     <td>
+//                       <h3 style="color: #1a237e; margin: 0">Booking Details</h3>
+//                       <p style="margin: 0; font-size: 0.9em">
+//                         <strong>Booking ID:</strong> ${reference}
+//                       </p>
+
+//                     </td>
+//                     <td style="text-align: right">
+//                       <h3 style="color: #1a237e; margin: 0">Payment</h3>
+//                       <p style="margin: 0; font-size: 1.1em">
+//                         <strong>Total:</strong> $${totalPrice}
+//                       </p>
+//                       <p style="margin: 0; font-size: 0.9em">
+//                         <strong>Status: </strong>
+//                         ${payment_method === "cash" || payment_method === "card" || payment_method === "cheque" ||
+//             payment_method === "virement" || payment_method === "transfert" ? "Paid" : "Unpaid"}
+//                       </p>
+//                     </td>
+//                   </tr>
+//                 </table>
+//               </td>
+//             </tr>
+//           </table>
+//         </div>
+//       </div>
+//       <!-- End E-Ticket Section -->
+
+//       ${passenger.typeVol === "plane" ? `
+//       <div style="padding: 8px; font-size: 0.9em; color: #555">
+//         <p>
+//           <strong>Important:</strong> Please arrive at the airport at least 1 hour
+//           before your departure time. All passengers must present a valid ID at
+//           check-in.
+//         </p>
+//         <p>
+//           <strong>Baggage Limitation: **</strong> The maximum allowance for
+//           passenger baggage is 30 lb.
+//         </p>
+//         <p>
+//           <strong>Remarks: **</strong> The company declines all responsibility for
+//           flight delays, cancellations, or changes resulting from circumstances
+//           beyond its control, such as, technical problems, strikes, or any other
+//           problems. The customer is responsible for their own personal arrangements
+//           (airport arrival time, travel formalities, etc.). No refund or
+//           compensation can be claimed in the event of a missed flight
+//           for these reasons.
+//         </p>
+//         <p>
+//           <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
+//           before your trip will result in a 50% cancellation fee being charged..
+//         </p>
+//         <p>We look forward to welcoming you on board.</p>
+//         <p>Sincerely,<br />The Trogon Airways Team</p>
+//       </div>` :
+//             `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//         <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All
+//           passengers must present a valid ID at check-in.</p>
+//         <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb.</p>
+//         <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or
+//           changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other
+//           problems. The customer is responsible for their own personal arrangements (airport arrival time, travel
+//           formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.
+//         </p>
+//         <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50%
+//           cancellation fee being charged..</p>
+//         <p>We look forward to welcoming you on board.</p>
+//         <p>Sincerely,<br>The Trogon Airways Team</p>
+//       </div>
+//       `}
+//     </div>
+
+//   </body>
+//   </html>
+// `;
+
+//         // EMAIL EN FRANÇAIS
+//         const frenchHtml = `
+// <!DOCTYPE html>
+// <html>
+
+// <head>
+//   <meta charset="UTF-8">
+//   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//   <title>Trogon Airways - ${flightChanged ? 'Vol Modifié' : 'Réservation Confirmée'}</title>
+// </head>
+
+// <body>
+//   <style>
+//     body {
+//       font-family: Arial, sans-serif;
+//       line-height: 1.6;
+//       color: #333;
+//     }
+
+//     .container {
+//       max-width: 600px;
+//       margin: 0 auto;
+//       padding: 20px;
+//     }
+
+//     .header {
+//       background-color: #f0f7ff;
+//       padding: 20px;
+//       text-align: center;
+//       border-radius: 5px;
+//     }
+
+//     .flight-card {
+
+//       padding: 15px;
+//       margin-bottom: 20px;
+//     }
+
+//     .flight-header {
+//       font-size: 18px;
+//       font-weight: bold;
+//       margin-bottom: 10px;
+//     }
+
+//     .flight-details {
+//       display: grid;
+//       grid-template-columns: 1fr 1fr;
+//       gap: 10px;
+//     }
+
+//     .passenger-table {
+//       width: 100%;
+//       border-collapse: collapse;
+//       margin-top: 20px;
+//     }
+
+//     .passenger-table th,
+//     .passenger-table td {
+//       border: 1px solid #ddd;
+//       padding: 8px;
+//       text-align: left;
+//     }
+
+//     .passenger-table th {
+//       background-color: #f2f2f2;
+//     }
+
+//     .footer {
+//       margin-top: 30px;
+//       font-size: 12px;
+//       color: #777;
+//       text-align: center;
+//     }
+//   </style>
+//   <div style="
+//             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+//               'Helvetica Neue', Arial, sans-serif;
+//             line-height: 1.6;
+//             color: #333;
+//             max-width: 800px;
+//             margin: 0 auto;
+//             border: 1px solid #ddd;
+//             border-radius: 8px;
+//             overflow: hidden;
+//           ">
+//     <div style="
+//               display: block;
+//               width: 100%;
+//               background-color: #1A237E; /* ou 'blue' */
+//               color: white;
+//               padding: 20px;
+//               text-align: center;
+//             ">
+//       <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle" />
+//       <p style="margin: 5px 0 0; font-size: 1.2em">${flightChanged ? 'Votre vol a été modifié' : 'Votre réservation est confirmée'}</p>
+//     </div>
+
+//     <div style="padding: 8px">
+//       <p>Cher(e) ${passenger.firstName} ${passenger.lastName},</p>
+//       <p>
+//         ${flightChanged ?
+//             'Votre réservation de vol a été modifiée. Veuillez trouver votre nouveau billet électronique ci-dessous.' :
+//             'Merci d\'avoir choisi Trogon Airways. Veuillez trouver votre billet électronique ci-dessous.'}
+//         Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile à l'aéroport.
+//       </p>
+//     </div>
+
+//     <!-- E-Ticket Section -->
+//     <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 8px">
+//       <div style="padding: 8px; text-align: center">
+//         <p style="margin: 0; color: #1a237e; font-size: 0.9em">
+//           <strong>Payment Method:</strong>
+//           ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Carte bancaire" :
+//             payment_method === "cheque" ? "Chèque bancaire" : payment_method === "virement" ? "Virement bancaire" :
+//               payment_method === "transfert" ? "Transfert" : "Contrat"}
+//         </p>
+
+//         <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${typeVol === "helicopter"
+//             ? "Hélicoptère" : "Avion"}</p>
+
+//         ${flightChanged ?
+//             `<p style="margin: 10px 0 0; color: #ff9900; font-size: 1em;">
+//           <strong>⚠️ Important: Vos détails de vol ont été modifiés</strong>
+//         </p>` : ''}
+//       </div>
+
+//       <div style="
+//                 background: rgba(0, 28, 150, 0.3);
+//                 border: 1px solid #eee;
+//                 padding: 8px;
+//                 border-radius: 8px;
+//               ">
+//         <table width="100%" style="border-collapse: collapse">
+//           <tr>
+//             <td style="padding-bottom: 20px; border-bottom: 1px solid #eee">
+
+//               <span style="
+//                         font-size: 1.5em;
+//                         font-weight: bold;
+//                         color: #1a237e;
+//                         vertical-align: middle;
+//                         margin-left: 10px;
+//                       ">Carte d'embarquement</span>
+//             </td>
+//             <td style="padding-bottom: 20px; border-bottom: 1px solid #eee; text-align: right;">
+//               <img src="${qrCodeDataUrl}" alt="Booking Barcode" style="height: 50px;">
+//             </td>
+
+//           </tr>
+
+//           <tr>
+//             <td colspan="2" style="padding-top: 8px">
+//               <div style="padding: 20px; text-align: center">
+//                 <h3 style="color: #1a237e; margin: 0">Vol Simple</h3>
+//               </div>
+//               <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
+
+//               <table width="100%">
+//                 <tr>
+//                   <td>
+//                     <div class="flight-card">
+//                       <div class="flight-header">Vol Aller</div>
+//                       ${flightDetailsHtmlFr}
+//                   </td>
+//                 </tr>
+//               </table>
+//             </td>
+//           </tr>
+
+//           <tr>
+//             <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//               <h3 style="color: #1a237e; margin: 0 0 10px 0">Passager</h3>
+
+//               <p style="margin: 0">
+//                 <strong>Adult:</strong> ${passenger.firstName} ${passenger.lastName}<br />
+//                 <strong>Email:</strong> ${passenger.email}
+//               </p>
+
+//             </td>
+//           </tr>
+
+//           <tr>
+//             <td colspan="2" style="padding-top: 8px; border-top: 1px solid #eee">
+//               <table width="100%">
+//                 <tr>
+//                   <td>
+//                     <h3 style="color: #1a237e; margin: 0">Détails de la Réservation</h3>
+//                     <p style="margin: 0; font-size: 0.9em">
+//                       <strong>Réservation ID:</strong> ${reference}
+//                     </p>
+
+//                   </td>
+//                   <td style="text-align: right">
+//                     <h3 style="color: #1a237e; margin: 0">Paiement</h3>
+//                     <p style="margin: 0; font-size: 1.1em">
+//                       <strong>Total:</strong> $${totalPrice}
+//                     </p>
+//                     <p style="margin: 0; font-size: 0.9em">
+//                       <strong>Status: </strong>
+//                       ${payment_method === "cash" || payment_method === "card" || payment_method === "cheque" ||
+//             payment_method === "virement" || payment_method === "transfert" ? "Payé" : "Non payé"}
+//                     </p>
+//                   </td>
+//                 </tr>
+//               </table>
+//             </td>
+//           </tr>
+//         </table>
+//       </div>
+//     </div>
+//     <!-- End E-Ticket Section -->
+
+//     ${passenger.typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//       <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
+//         les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+//       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.
+//       </p>
+//       <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
+//         modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques,
+//         grèves ou tout autre incident ne relevant pas de sa responsabilité.
+//         Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage,
+//         etc.).
+//         Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
+//       </p>
+//       <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une
+//         retenue
+//         de 50% du montant total à titre de frais d'annulation.</p>
+//       <p>Nous nous réjouissons de vous accueillir à bord.</p>
+//       <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+//     </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+//       <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
+//         les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+//       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb.
+//       </p>
+//       <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
+//         modification de vol
+//         imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
+//         incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure
+//         d'arrivée à
+//         l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol
+//         manqué
+//         pour ces raisons.</p>
+//       <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une
+//         retenue de 50% du montant total à titre de frais d'annulation.</p>
+//       <p>Nous nous réjouissons de vous accueillir à bord.</p>
+//       <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+//     </div>`}
+//   </div>
+
+// </body>
+
+// </html>`;
+
+//         // Combiner les deux versions dans un seul email
+//         const combinedHtml = `${englishHtml}<hr style="margin: 40px 0; border: 1px solid #ddd;">${frenchHtml}`;
+
+//         // Envoyer l'email
+//         const emailResult = await sendEmail(
+//           passenger.email,
+//           flightChanged ?
+//             `Trogon Airways - Flight Updated / Vol Modifié - ${reference}` :
+//             `Trogon Airways - Booking Confirmation / Réservation Confirmée - ${reference}`,
+//           combinedHtml
+//         );
+
+//         console.log(`📧 Email envoyé à ${passenger.email}:`, emailResult.success ? 'SUCCÈS' : 'ÉCHEC');
+//         if (!emailResult.success) {
+//           console.log(`❌ Erreur email:`, emailResult.error);
+//         }
+
+//         emailResults.push({
+//           passenger: passenger.email,
+//           success: emailResult.success,
+//           error: emailResult.error
+//         });
+//       }
+//       console.log(`✅ ${passengers.length} passager(s) insérés et emails envoyés`);
+
+//       // Mettre à jour le nombre de passagers dans la réservation
+//       await connection.query(
+//         "UPDATE bookings SET passenger_count = ? WHERE id = ?",
+//         [passengers.length, booking.id]
+//       );
+//       console.log(`✅ Nombre de passagers mis à jour: ${passengers.length}`);
+//     }
+
+//     // 6. Créer une notification
+//     await connection.query(
+//       `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//        VALUES (?, ?, ?, ?, ?)`,
+//       [
+//         flightChanged ? "flight_change" : "update",
+//         `Réservation ${reference} modifiée.${flightChanged ? ' Changement de vol effectué.' : ''}`,
+//         booking.id,
+//         false,
+//         new Date()
+//       ]
+//     );
+
+//     // ✅ COMMIT
+//     await connection.commit();
+//     console.log(`💾 Transaction commitée`);
+
+//     // Récupérer la réservation mise à jour avec les détails du vol
+//     const [updatedBooking] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT b.*, 
+//               f.flight_number as flight_code,
+//               l1.name as departure_city,
+//               l2.name as arrival_city,
+//               f.departure_time,
+//               f.arrival_time
+//        FROM bookings b
+//        LEFT JOIN flights f ON b.flight_id = f.id
+//        LEFT JOIN locations l1 ON f.departure_location_id = l1.id
+//        LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
+//        WHERE b.booking_reference = ?`,
+//       [reference]
+//     );
+
+//     const [updatedPassengers] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT * FROM passengers WHERE booking_id = ?`,
+//       [booking.id]
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Réservation mise à jour avec succès",
+//       flightChanged: flightChanged,
+//       booking: updatedBooking[0],
+//       passengers: updatedPassengers,
+//       emailResults: emailResults,
+//       updatedAt: new Date()
+//     });
+
+//   } catch (error: any) {
+//     console.error("❌ Erreur modification réservation:", error);
+//     if (connection) {
+//       await connection.rollback();
+//     }
+//     res.status(500).json({
+//       success: false,
+//       error: "Échec de la modification de la réservation",
+//       details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+//       sqlMessage: process.env.NODE_ENV !== "production" ? error.sqlMessage : undefined
+//     });
+//   } finally {
+//     if (connection) {
+//       connection.release();
+//     }
+//     console.log(`🏁 Fin modification réservation: ${reference}`);
+//   }
+// });
 
 
 

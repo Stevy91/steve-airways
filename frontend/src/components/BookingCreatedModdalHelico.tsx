@@ -140,7 +140,7 @@ type BookingData = {
 //       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
 //         <div style="padding: 20px; text-align: center;">
 //           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> 
-          
+
 //           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Transfer" : "Contrat"}
 //           </p>
 //           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
@@ -169,9 +169,9 @@ type BookingData = {
 //                     <h3 style="color: #1A237E; margin: 0;"> ${returnFlight ? "Round Trip" : "One Way"}</h3>
 //                     </div>
 //                 <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
-                
-                    
-                
+
+
+
 //                 <table width="100%">
 //                   <tr>
 //                     <td>
@@ -224,7 +224,7 @@ type BookingData = {
 //                 <p style="margin: 0;">${bookingData.passengersData?.adults
 //                     ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email}`)
 //                     .join("<br>")}</p>
-               
+
 //               </td>
 //             </tr>
 
@@ -282,8 +282,8 @@ type BookingData = {
 //       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
 //         <div style="padding: 20px; text-align: center;">
 //           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
-          
-       
+
+
 //           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
 //           </p>
 //           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
@@ -305,15 +305,15 @@ type BookingData = {
 //                 <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
 //               </td>
 //             </tr>
-           
+
 //             <tr>
 //               <td colspan="2" style="padding-top: 20px;">
 //                <div style="padding: 20px; text-align: center;">
 //                     <h3 style="color: #1A237E; margin: 0;"> ${returnFlight ? "Vol Aller-Retour" : "Vol Simple"}</h3>
 //                     </div>
 //                 <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
-                
-               
+
+
 //                 <table width="100%">
 //                   <tr>
 //                     <td>
@@ -346,7 +346,7 @@ type BookingData = {
 //                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
 //                               </div>
 //                               <div>
-                               
+
 //                                 <strong>Départ:</strong> ${returnDepartureTime}<br>
 //                                 <strong>Arrivée:</strong> ${returnArrivalTime}<br>
 //                                 <strong>Numéro du vol:</strong> ${returnFlight.noflight}
@@ -364,11 +364,11 @@ type BookingData = {
 //             <tr>
 //               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
 //                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
-                
+
 //                     <p style="margin: 0;">${bookingData.passengersData?.adults
 //                         ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email}`)
 //                         .join("<br>")}</p>
-               
+
 //               </td>
 //             </tr>
 
@@ -454,11 +454,11 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     let returnDepartureTime = "N/A";
     let returnArrivalDate = "N/A";
     let returnArrivalTime = "N/A";
-    
+
     if (returnFlight && returnFlight.departure_time) {
         [returnDepartureDate, returnDepartureTime] = returnFlight.departure_time.split(" ");
     }
-    
+
     if (returnFlight && returnFlight.arrival_time) {
         [returnArrivalDate, returnArrivalTime] = returnFlight.arrival_time.split(" ");
     }
@@ -519,9 +519,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           
           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Transfer" : "Contrat"}
           </p>
-          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
-              bookingData.tabType === "helicopter" ? "Helicopter" : "Helicopter"
-          }</p>
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${bookingData.tabType === "helicopter" ? "Helicopter" : "Helicopter"
+        }</p>
         </div>
 
         <div style=" background: rgba(0, 28, 150, 0.3);
@@ -539,65 +538,69 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
               </td>
             </tr>
 
-            <tr>
-              <td colspan="2" style="padding-top: 20px;">
+                   <tr>
+            <td colspan="2" style="padding-top: 20px;">
               <div style="padding: 20px; text-align: center;">
                     <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Round Trip" : "One Way"}</h3>
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
                 
                 <table width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td width="50%" valign="top" style="padding-right: 10px;">
-                      <div class="flight-card">
-                        <div class="flight-header">Outbound Flight</div>
-                        <div class="flight-details">
-                          <div>
-                            <strong>From:</strong> ${bookingData.from}<br>
-                            <strong>To:</strong> ${bookingData.to}<br>
-                            <strong>Date:</strong> ${formattedDepartureDate}
-                          </div>
-                          <div>
-                            <strong>Departure:</strong> ${departureTime}<br>
-                            <strong>Arrival:</strong> ${arrivalTime}<br>
-                            <strong>Flight Number:</strong> ${outboundFlight.noflight}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td width="50%" valign="top" style="padding-left: 10px;">
-                      ${
-                          isRoundTrip && returnFlight
-                              ? `
-                          <div class="flight-card">
-                            <div class="flight-header">Return Flight</div>
-                            <div class="flight-details">
-                              <div>
-                                <strong>From:</strong> ${bookingData.to || "N/A"}<br>
-                                <strong>To:</strong> ${bookingData.from || "N/A"}<br>
-                                <strong>Date:</strong> ${formatDate(returnFlight.date)}
-                              </div>
-                              <div>
-                                <strong>Departure:</strong> ${returnDepartureTime}<br>
-                                <strong>Arrival:</strong> ${returnArrivalTime}<br>
-                                <strong>Flight Number:</strong> ${returnFlight.noflight}
-                              </div>
+                    <tr>
+                        <td width="50%" valign="top" align="left">
+                            <div class="flight-card">
+                                <div class="flight-header">Outbound Flight</div>
+                                <div class="flight-details">
+                                <div>
+                                    <strong>From:</strong> ${bookingData.from}<br>
+                                    <strong>To:</strong> ${bookingData.to}<br>
+                                    <strong>Date:</strong> ${formattedDepartureDate}
+                                </div>
+                                <div>
+                                    <strong>Departure:</strong> ${departureTime}<br>
+                                    <strong>Arrival:</strong> ${arrivalTime}<br>
+                                    <strong>Flight Number:</strong> ${outboundFlight.noflight}
+                                </div>
+                                </div>
                             </div>
-                          </div>`
-                              : ""
-                      }
-                    </td>
-                  </tr>
+                        </td>
+                        <td  width="50%" valign="top">
+                            ${isRoundTrip && returnFlight
+                            ? `
+                                <table align="right" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td>
+                                            <div class="flight-card">
+                                                <div class="flight-header">Return flight</div>
+                                                <div class="flight-details">
+                                                    <div>
+                                                        <strong>From:</strong> ${bookingData.to || "N/A"}<br>
+                                                        <strong>To:</strong> ${bookingData.from || "N/A"}<br>
+                                                        <strong>Date:</strong> ${formatDate(returnFlight.date)}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Departure:</strong> ${returnDepartureTime}<br>
+                                                        <strong>Arrival:</strong> ${returnArrivalTime}<br>
+                                                        <strong>Flight Number:</strong> ${returnFlight.noflight}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>`
+                            : ""}
+                        </td>
+                    </tr>
                 </table>
-              </td>
-            </tr>
+            </td>
+        </tr>
 
             <tr>
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passengers</h3>
                 <p style="margin: 0;">${bookingData.passengersData?.adults
-                    ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email || "N/A"}`)
-                    .join("<br>")}</p>
+            ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email || "N/A"}`)
+            .join("<br>")}</p>
               </td>
             </tr>
 
@@ -656,9 +659,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
        
           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
           </p>
-          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
-              bookingData.tabType === "helicopter" ? "Hélicoptère" : "Hélicoptère"
-          }</p>
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${bookingData.tabType === "helicopter" ? "Hélicoptère" : "Hélicoptère"
+        }</p>
         </div>
 
         <div style=" background: rgba(0, 28, 150, 0.3);
@@ -676,71 +678,70 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
               </td>
             </tr>
            
-            <tr>
-              <td colspan="2" style="padding-top: 20px;">
-               <div style="padding: 20px; text-align: center;">
-                    <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Vol Aller-Retour" : "Vol Simple"}</h3>
+        <tr>
+            <td colspan="2" style="padding-top: 20px;">
+              <div style="padding: 20px; text-align: center;">
+                    <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Vol Aller Retour" : "Vol Simple"}</h3>
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
                 
                 <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                    
-                    <td width="50%" valign="top" style="padding-right: 10px;">
-                    <div class="flight-card">
-                        <div class="flight-header">Vol aller</div>
-                        <div class="flight-details">
-                        <div>
-                            <strong>De:</strong> ${bookingData.from}<br>
-                            <strong>À:</strong> ${bookingData.to}<br>
-                            <strong>Date:</strong> ${formattedDepartureDate}
-                        </div>
-                        <div>
-                            <strong>Départ:</strong> ${departureTime}<br>
-                            <strong>Arrivée:</strong> ${arrivalTime}<br>
-                            <strong>Numéro du vol:</strong> ${outboundFlight.noflight}
-                        </div>
-                        </div>
-                    </div>
-                    </td>
-
-                    
-                    <td width="50%" valign="top" style="padding-left: 10px;">
-                    ${
-                        isRoundTrip && returnFlight
-                        ? `
-                        <div class="flight-card">
-                            <div class="flight-header">Vol de retour</div>
-                            <div class="flight-details">
-                            <div>
-                                <strong>De:</strong> ${bookingData.to}<br>
-                                <strong>À:</strong> ${bookingData.from}<br>
-                                <strong>Date:</strong> ${formatDate(returnFlight.date)}
+                    <tr>
+                        <td width="50%" valign="top" align="left">
+                            <div class="flight-card">
+                                <div class="flight-header">Vol Aller</div>
+                                <div class="flight-details">
+                                <div>
+                                    <strong>De:</strong> ${bookingData.from}<br>
+                                    <strong>À:</strong> ${bookingData.to}<br>
+                                    <strong>Date:</strong> ${formattedDepartureDate}
+                                </div>
+                                <div>
+                                    <strong>Départ:</strong> ${departureTime}<br>
+                                    <strong>Arrivée:</strong> ${arrivalTime}<br>
+                                    <strong>Numéro du vol:</strong> ${outboundFlight.noflight}
+                                </div>
+                                </div>
                             </div>
-                            <div>
-                                <strong>Départ:</strong> ${returnDepartureTime}<br>
-                                <strong>Arrivée:</strong> ${returnArrivalTime}<br>
-                                <strong>Numéro du vol:</strong> ${returnFlight.noflight}
-                            </div>
-                            </div>
-                        </div>
-                        `
-                        : ""
-                    }
-                    </td>
-                </tr>
+                        </td>
+                        <td  width="50%" valign="top">
+                            ${isRoundTrip && returnFlight
+                            ? `
+                                <table align="right" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td>
+                                            <div class="flight-card">
+                                                <div class="flight-header">Vol de Retour</div>
+                                                <div class="flight-details">
+                                                    <div>
+                                                        <strong>De:</strong> ${bookingData.to || "N/A"}<br>
+                                                        <strong>À:</strong> ${bookingData.from || "N/A"}<br>
+                                                        <strong>Date:</strong> ${formatDate(returnFlight.date)}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Départ:</strong> ${returnDepartureTime}<br>
+                                                        <strong>Arrivée:</strong> ${returnArrivalTime}<br>
+                                                        <strong>Numéro du vol:</strong> ${returnFlight.noflight}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>`
+                            : ""}
+                        </td>
+                    </tr>
                 </table>
-
-              </td>
-            </tr>
+            </td>
+        </tr>
 
             <tr>
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
                 
                     <p style="margin: 0;">${bookingData.passengersData?.adults
-                        ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email || "N/A"}`)
-                        .join("<br>")}</p>
+            ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email || "N/A"}`)
+            .join("<br>")}</p>
                
               </td>
             </tr>
@@ -926,7 +927,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -967,63 +968,63 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
                     let returnFlight = null;
 
-if (isRoundTrip && formData.flightNumberReturn) {
-    try {
-        const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-        });
-        const dataReturn = await resReturn.json();
+                    if (isRoundTrip && formData.flightNumberReturn) {
+                        try {
+                            const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                                },
+                            });
+                            const dataReturn = await resReturn.json();
 
-        if (resReturn.ok && dataReturn) {
-            const flightData = dataReturn;
-            returnFlight = {
-                date: flightData.departure_time,
-                noflight: flightData.flight_number,
-                departure_time: flightData.departure_time,
-                arrival_time: flightData.arrival_time,
-                from: flightData.from,
-                to: flightData.to,
-                fromCity: flightData.fromCity,
-                toCity: flightData.toCity,
-            };
-        } else {
-            console.warn("Vol retour introuvable, création sans vol retour");
-            // Ne pas afficher d'erreur toast ici pour ne pas interrompre le processus
-        }
-    } catch (err) {
-        console.error("Erreur récupération vol retour:", err);
-        // Ne pas afficher d'erreur toast pour ne pas bloquer l'email
-    }
-}
+                            if (resReturn.ok && dataReturn) {
+                                const flightData = dataReturn;
+                                returnFlight = {
+                                    date: flightData.departure_time,
+                                    noflight: flightData.flight_number,
+                                    departure_time: flightData.departure_time,
+                                    arrival_time: flightData.arrival_time,
+                                    from: flightData.from,
+                                    to: flightData.to,
+                                    fromCity: flightData.fromCity,
+                                    toCity: flightData.toCity,
+                                };
+                            } else {
+                                console.warn("Vol retour introuvable, création sans vol retour");
+                                // Ne pas afficher d'erreur toast ici pour ne pas interrompre le processus
+                            }
+                        } catch (err) {
+                            console.error("Erreur récupération vol retour:", err);
+                            // Ne pas afficher d'erreur toast pour ne pas bloquer l'email
+                        }
+                    }
 
-// Envoyer l'email même si returnFlight est null
-try {
-    await sendTicketByEmail(
-        {
-            from: flight.from || "",
-            to: flight.to || "",
-            outbound: {
-                date: flight.departure,
-                noflight: flight.flight_number,
-                departure_time: flight.departure,
-                arrival_time: flight.arrival,
-            },
-            return: returnFlight, // Peut être null
-            passengersData: { adults: passengers },
-            totalPrice: body.totalPrice,
-        },
-        data.bookingReference,
-        formData.paymentMethod,
-    );
+                    // Envoyer l'email même si returnFlight est null
+                    try {
+                        await sendTicketByEmail(
+                            {
+                                from: flight.from || "",
+                                to: flight.to || "",
+                                outbound: {
+                                    date: flight.departure,
+                                    noflight: flight.flight_number,
+                                    departure_time: flight.departure,
+                                    arrival_time: flight.arrival,
+                                },
+                                return: returnFlight, // Peut être null
+                                passengersData: { adults: passengers },
+                                totalPrice: body.totalPrice,
+                            },
+                            data.bookingReference,
+                            formData.paymentMethod,
+                        );
 
-    console.log("✅ Email envoyé avec succès");
-} catch (emailError) {
-    console.error("❌ Erreur détaillée envoi email:", emailError);
-    // Afficher un warning plutôt qu'une erreur pour ne pas perturber l'utilisateur
-    toast.error("Ticket créé mais email non envoyé");
-}
+                        console.log("✅ Email envoyé avec succès");
+                    } catch (emailError) {
+                        console.error("❌ Erreur détaillée envoi email:", emailError);
+                        // Afficher un warning plutôt qu'une erreur pour ne pas perturber l'utilisateur
+                        toast.error("Ticket créé mais email non envoyé");
+                    }
 
                     console.log("✅ Email envoyé avec succès");
                 } catch (emailError) {
@@ -1112,11 +1113,10 @@ try {
                                         disabled={!isRoundTrip}
                                         required={isRoundTrip}
                                         onChange={handleChange}
-                                        className={`w-full rounded-md border px-4 py-2 outline-none transition ${
-                                            isRoundTrip
+                                        className={`w-full rounded-md border px-4 py-2 outline-none transition ${isRoundTrip
                                                 ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                 : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                                        } `}
+                                            } `}
                                     />
                                 </div>
                             </div>

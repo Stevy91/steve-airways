@@ -536,58 +536,62 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
               </td>
             </tr>
 
-            <tr>
-              <td colspan="2" style="padding-top: 20px;">
+                   <tr>
+            <td colspan="2" style="padding-top: 20px;">
               <div style="padding: 20px; text-align: center;">
                     <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Round Trip" : "One Way"}</h3>
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
                 
-                <table width="100%">
-                  <tr>
-                    <td>
-                      <div class="flight-card">
-                        <div class="flight-header">Outbound Flight</div>
-                        <div class="flight-details">
-                          <div>
-                            <strong>From:</strong> ${bookingData.from}<br>
-                            <strong>To:</strong> ${bookingData.to}<br>
-                            <strong>Date:</strong> ${formattedDepartureDate}
-                          </div>
-                          <div>
-                            <strong>Departure:</strong> ${departureTime}<br>
-                            <strong>Arrival:</strong> ${arrivalTime}<br>
-                            <strong>Flight Number:</strong> ${outboundFlight.noflight}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style="text-align: right;">
-                      ${
-                          isRoundTrip && returnFlight
-                              ? `
-                          <div class="flight-card">
-                            <div class="flight-header">Return Flight</div>
-                            <div class="flight-details">
-                              <div>
-                                <strong>From:</strong> ${bookingData.to || "N/A"}<br>
-                                <strong>To:</strong> ${bookingData.from || "N/A"}<br>
-                                <strong>Date:</strong> ${formatDate(returnFlight.date)}
-                              </div>
-                              <div>
-                                <strong>Departure:</strong> ${returnDepartureTime}<br>
-                                <strong>Arrival:</strong> ${returnArrivalTime}<br>
-                                <strong>Flight Number:</strong> ${returnFlight.noflight}
-                              </div>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td width="50%" valign="top" align="left">
+                            <div class="flight-card">
+                                <div class="flight-header">Outbound Flight</div>
+                                <div class="flight-details">
+                                <div>
+                                    <strong>From:</strong> ${bookingData.from}<br>
+                                    <strong>To:</strong> ${bookingData.to}<br>
+                                    <strong>Date:</strong> ${formattedDepartureDate}
+                                </div>
+                                <div>
+                                    <strong>Departure:</strong> ${departureTime}<br>
+                                    <strong>Arrival:</strong> ${arrivalTime}<br>
+                                    <strong>Flight Number:</strong> ${outboundFlight.noflight}
+                                </div>
+                                </div>
                             </div>
-                          </div>`
-                              : ""
-                      }
-                    </td>
-                  </tr>
+                        </td>
+                        <td  width="50%" valign="top">
+                            ${isRoundTrip && returnFlight
+                            ? `
+                                <table align="right" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td>
+                                            <div class="flight-card">
+                                                <div class="flight-header">Return flight</div>
+                                                <div class="flight-details">
+                                                    <div>
+                                                        <strong>From:</strong> ${bookingData.to || "N/A"}<br>
+                                                        <strong>To:</strong> ${bookingData.from || "N/A"}<br>
+                                                        <strong>Date:</strong> ${formatDate(returnFlight.date)}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Departure:</strong> ${returnDepartureTime}<br>
+                                                        <strong>Arrival:</strong> ${returnArrivalTime}<br>
+                                                        <strong>Flight Number:</strong> ${returnFlight.noflight}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>`
+                            : ""}
+                        </td>
+                    </tr>
                 </table>
-              </td>
-            </tr>
+            </td>
+        </tr>
 
             <tr>
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
@@ -673,58 +677,62 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
               </td>
             </tr>
            
-            <tr>
-              <td colspan="2" style="padding-top: 20px;">
-               <div style="padding: 20px; text-align: center;">
-                    <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Vol Aller-Retour" : "Vol Simple"}</h3>
+             <tr>
+            <td colspan="2" style="padding-top: 20px;">
+              <div style="padding: 20px; text-align: center;">
+                    <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Vol Aller Retour" : "Vol Simple"}</h3>
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
                 
-                <table width="100%">
-                  <tr>
-                    <td>
-                      <div class="flight-card">
-                        <div class="flight-header">Vol aller</div>
-                        <div class="flight-details">
-                          <div>
-                            <strong>De:</strong> ${bookingData.from}<br>
-                            <strong>A:</strong> ${bookingData.to}<br>
-                            <strong>Date:</strong> ${formattedDepartureDate}
-                          </div>
-                          <div>
-                            <strong>Départ:</strong> ${departureTime}<br>
-                            <strong>Arrivée:</strong> ${arrivalTime}<br>
-                            <strong>Numéro du vol:</strong> ${outboundFlight.noflight}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style="text-align: right;">
-                      ${
-                          isRoundTrip && returnFlight
-                              ? `
-                          <div class="flight-card">
-                            <div class="flight-header">Vol de retour</div>
-                            <div class="flight-details">
-                              <div>
-                                <strong>De:</strong> ${bookingData.to || "N/A"}<br>
-                                <strong>A:</strong> ${bookingData.from || "N/A"}<br>
-                                <strong>Date:</strong> ${formatDate(returnFlight.date)}
-                              </div>
-                              <div>
-                                <strong>Départ:</strong> ${returnDepartureTime}<br>
-                                <strong>Arrivée:</strong> ${returnArrivalTime}<br>
-                                <strong>Numéro du vol:</strong> ${returnFlight.noflight}
-                              </div>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td width="50%" valign="top" align="left">
+                            <div class="flight-card">
+                                <div class="flight-header">Vol Aller</div>
+                                <div class="flight-details">
+                                <div>
+                                    <strong>De:</strong> ${bookingData.from}<br>
+                                    <strong>À:</strong> ${bookingData.to}<br>
+                                    <strong>Date:</strong> ${formattedDepartureDate}
+                                </div>
+                                <div>
+                                    <strong>Départ:</strong> ${departureTime}<br>
+                                    <strong>Arrivée:</strong> ${arrivalTime}<br>
+                                    <strong>Numéro du vol:</strong> ${outboundFlight.noflight}
+                                </div>
+                                </div>
                             </div>
-                          </div>`
-                              : ""
-                      }
-                    </td>
-                  </tr>
+                        </td>
+                        <td  width="50%" valign="top">
+                            ${isRoundTrip && returnFlight
+                            ? `
+                                <table align="right" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td>
+                                            <div class="flight-card">
+                                                <div class="flight-header">Vol de Retour</div>
+                                                <div class="flight-details">
+                                                    <div>
+                                                        <strong>De:</strong> ${bookingData.to || "N/A"}<br>
+                                                        <strong>À:</strong> ${bookingData.from || "N/A"}<br>
+                                                        <strong>Date:</strong> ${formatDate(returnFlight.date)}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Départ:</strong> ${returnDepartureTime}<br>
+                                                        <strong>Arrivée:</strong> ${returnArrivalTime}<br>
+                                                        <strong>Numéro du vol:</strong> ${returnFlight.noflight}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>`
+                            : ""}
+                        </td>
+                    </tr>
                 </table>
-              </td>
-            </tr>
+            </td>
+        </tr>
 
             <tr>
               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
@@ -927,7 +935,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
