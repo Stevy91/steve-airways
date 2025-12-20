@@ -2974,7 +2974,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                                                 <strong>From:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
                                                 <strong>To:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
                                                 <strong>Date:</strong> ${formatDateSafe(outboundFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-                                                <strong>DDeparture:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
+                                                <strong>Departure:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
                                                 <strong>Arrival:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
                                                 <strong>Flight Number:</strong> ${outboundFlight.flight_number}
                             </div>
