@@ -2961,9 +2961,9 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                     <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Round Trip" : "One Way"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-                  <table width="100%" cellpadding="0" cellspacing="0">
+                  <table width="100%" >
                     <tr>
-                      <td width="50%" valign="top" style="padding-right: 10px;"> 
+                      <td > 
                          ${outboundFlight ? `
                         <div class="flight-card">
                           <div class="flight-header">Outbound Flight</div>
@@ -2981,7 +2981,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                         ` : '<div>No outbound flight information</div>'}
                       
                       </td>
-                      <td  width="50%" valign="top" style="padding-left: 10px;"> 
+                      <td style="text-align: right;"> 
                              
                           <!-- Vol retour -->
                         ${returnFlight ? `
@@ -3113,7 +3113,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                     <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Vol Simple"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-                  <table width="100%" style="center">
+                  <table width="100%">
                     <tr>
                       <td> 
                          ${outboundFlight ? `
@@ -3133,7 +3133,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                         ` : '<div>No outbound flight information</div>'}
                       
                       </td>
-                      <td> 
+                      <td style="text-align: right;"> 
                              
                           <!-- Vol retour -->
                         ${returnFlight ? `
