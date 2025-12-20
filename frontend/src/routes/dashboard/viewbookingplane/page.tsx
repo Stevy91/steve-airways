@@ -343,6 +343,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         contactEmail: apiData.contact_email,
         bookedOn: new Date(apiData.created_at).toLocaleDateString(),
         paymentStatus: apiData.status,
+        payment_method: apiData.payment_method,
         totalPrice: `${apiData.total_price}`,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,
@@ -372,6 +373,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
             from: f.departure_airport_name,
             to: f.arrival_airport_name,
             date: new Date(f.date).toLocaleString(),
+            arrival_date: new Date(f.arrival_date).toLocaleString(),
         })),
     };
 };

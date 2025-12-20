@@ -2903,58 +2903,18 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
       
     </head>
     <body>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-        }
-        .container {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .header {
-          background-color: #f0f7ff;
-          padding: 20px;
-          text-align: center;
-          border-radius: 5px;
-        }
-        .flight-card {
-          padding: 15px;
-          margin-bottom: 20px;
-        }
-        .flight-header {
-          font-size: 18px;
-          font-weight: bold;
-          margin-bottom: 10px;
-        }
-        .flight-details {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-        .passenger-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-        .passenger-table th,
-        .passenger-table td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-        .passenger-table th {
-          background-color: #f2f2f2;
-        }
-        .footer {
-          margin-top: 30px;
-          font-size: 12px;
-          color: #777;
-          text-align: center;
-        }
-      </style>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
+        .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+        .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .passenger-table th { background-color: #f2f2f2; }
+        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+    </style>
       
       <!-- PREMIÈRE PAGE (Anglais) -->
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
