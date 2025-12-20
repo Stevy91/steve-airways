@@ -5167,7 +5167,7 @@ const returnFlightHtmlFr = hasReturnFlight ? `
                 </div>
                 <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
 
-                // Dans l'email anglais (remplacez la section du template)
+              
 ${hasOutboundFlight ? `
   <table width="100%">
     <tr>
