@@ -3132,23 +3132,30 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
     </td>
 
     <!-- RETURN -->
-    <td width="50%" valign="top" align="right">
-     ${returnFlight ? `
-      <div class="flight-card" style="display:inline-block; text-align:left;">
-        <div class="flight-header">Return Flight</div>
-        <div class="flight-details">
-           <div>
-                              <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-                              <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-                              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-                              <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-                              <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-                              <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
-                            </div>
+    <td width="50%" valign="top">
+  ${returnFlight ? `
+  <table align="right" cellpadding="0" cellspacing="0">
+    <tr>
+      <td>
+        <div class="flight-card" style="text-align:left;">
+          <div class="flight-header">Return Flight</div>
+          <div class="flight-details">
+            <div>
+              <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+              <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+              <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+              <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+              <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+              <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
+            </div>
+          </div>
         </div>
-      </div>
-      ` : '<div>No outbound flight information</div>'}
-    </td>
+      </td>
+    </tr>
+  </table>
+  ` : ''}
+</td>
+
   </tr>
 </table>
 
