@@ -2898,11 +2898,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
 
     // 3️⃣ HTML Template - Version corrigée
     const htmlContent = `
-    <html>
-    <head>
-      
-    </head>
-    <body>
+ 
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -3220,8 +3216,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
           <p>Cordialement,<br>L'équipe de Trogon Airways</p>
         </div>`}
       </div>
-    </body>
-    </html>
+   
     `;
 
     
