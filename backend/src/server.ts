@@ -3117,7 +3117,7 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
     ${outboundFlight ? `
       <div class="flight-card">
         <div class="flight-header">Outbound Flight</div>
-        <div class="flight-details">
+       
           <div>
                               <strong>De:</strong> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br />
                               <strong>À:</strong> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br />
@@ -3125,8 +3125,8 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
                               <strong>Départ:</strong> ${formatDateSafe(outboundFlight.departure_time, "HH:mm")}<br />
                               <strong>Arrivée:</strong> ${formatDateSafe(outboundFlight.arrival_time, "HH:mm")}<br />
                               <strong>Numéro du vol:</strong> ${outboundFlight.flight_number}
-                            </div>
-        </div>
+          </div>
+        
       </div>
       ` : '<div>No outbound flight information</div>'}
     </td>
@@ -3139,15 +3139,15 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
       <td>
         <div class="flight-card" style="text-align:left;">
           <div class="flight-header">Return Flight</div>
-          <div class="flight-details">
-            <div>
+          <div >
+            
               <strong>De:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
               <strong>À:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
               <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
               <strong>Départ:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
               <strong>Arrivée:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
               <strong>Numéro du vol:</strong> ${returnFlight.flight_number}
-            </div>
+           
           </div>
         </div>
       </td>
