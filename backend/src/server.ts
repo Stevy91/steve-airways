@@ -2314,8 +2314,6 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
       [flightIds]
     );
 
- 
-
     // 2️⃣ QR Code
 
     const qrCodeDataUrl = `https://barcode.tec-it.com/barcode.ashx?data=${reference}&code=Code128&dpi=96`;
