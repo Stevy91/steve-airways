@@ -754,14 +754,14 @@ const birth = (dateString: string, formatString: string) => {
                                                         </div>
                                                     )}
                                                 </div>
-                                                {isEditing && editedBooking.flights.length > 1 && (
+                                                {/* {isEditing && editedBooking.flights.length > 1 && (
                                                     <button
                                                         onClick={() => handleRemoveFlight(idx)}
                                                         className="text-red-500 hover:text-red-700"
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
-                                                )}
+                                                )} */}
                                             </li>
                                         ))}
                                     </ul>

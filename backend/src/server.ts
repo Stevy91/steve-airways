@@ -4941,6 +4941,7 @@ const hasReturnFlight = returnFlight !== undefined;
 
 // Section HTML pour les détails du vol aller
 const outboundFlightHtml = hasOutboundFlight ? `
+
   <div class="flight-details">
     <div>
       <strong>From:</strong> ${outboundFlight!.from}<br />
@@ -5166,33 +5167,26 @@ const returnFlightHtmlFr = hasReturnFlight ? `
                   <h3 style="color: #1a237e; margin: 0">One Way</h3>
                 </div>
                 <h3 style="color: #1a237e; margin: 0">Itinerary</h3>
-
-              
-${hasOutboundFlight ? `
-  <table width="100%">
-    <tr>
-      <td>
-        <div class="flight-card">
-          <div class="flight-header">Outbound Flight</div>
-          ${outboundFlightHtml}
-        </div>
-      </td>
-    </tr>
-  </table>
-` : ''}
-
-${hasReturnFlight ? `
-  <table width="100%">
-    <tr>
-      <td>
-        <div class="flight-card">
-          <div class="flight-header">Return Flight</div>
-          ${returnFlightHtml}
-        </div>
-      </td>
-    </tr>
-  </table>
-` : ''}
+                 <table width="100%">
+                      <tr>
+                      ${hasOutboundFlight ? `
+                        <td>
+                          <div class="flight-card">
+                            <div class="flight-header">Outbound Flight</div>
+                            ${outboundFlightHtml}
+                          </div>
+                        </td>
+                        ` : ''}
+                        ${hasReturnFlight ? `
+                        <td>
+                          <div class="flight-card">
+                            <div class="flight-header">Return Flight</div>
+                            ${returnFlightHtml}
+                          </div>
+                        </td>
+                         ` : ''}
+                      </tr>
+                    </table>
               </td>
             </tr>
 
@@ -5443,33 +5437,29 @@ ${hasReturnFlight ? `
                 <h3 style="color: #1a237e; margin: 0">Vol Simple</h3>
               </div>
               <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
-
-             // Dans l'email français (remplacez la section du template)
-${hasOutboundFlight ? `
-  <table width="100%">
-    <tr>
-      <td>
-        <div class="flight-card">
-          <div class="flight-header">Vol Aller</div>
-          ${outboundFlightHtmlFr}
-        </div>
-      </td>
-    </tr>
-  </table>
-` : ''}
-
-${hasReturnFlight ? `
-  <table width="100%">
-    <tr>
-      <td>
-        <div class="flight-card">
-          <div class="flight-header">Vol Retour</div>
-          ${returnFlightHtmlFr}
-        </div>
-      </td>
-    </tr>
-  </table>
-` : ''}
+            
+                  
+                    <table width="100%">
+                      <tr>
+                      ${hasOutboundFlight ? `
+                        <td>
+                          <div class="flight-card">
+                            <div class="flight-header">Vol Aller</div>
+                            ${outboundFlightHtmlFr}
+                          </div>
+                        </td>
+                        ` : ''}
+                        ${hasReturnFlight ? `
+                        <td>
+                          <div class="flight-card">
+                            <div class="flight-header">Vol Retour</div>
+                            ${returnFlightHtmlFr}
+                          </div>
+                        </td>
+                         ` : ''}
+                      </tr>
+                    </table>
+                 
             </td>
           </tr>
 
