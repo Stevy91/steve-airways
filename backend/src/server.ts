@@ -2980,21 +2980,30 @@ app.get("/api/generate2/:reference", async (req: Request, res: Response) => {
       </div>
       ` : '<div>No outbound flight information</div>'}
     </td>
-    <td style="vertical-align: top; width: 50%; text-align: right; padding-left: 20px;">
+    <td style="vertical-align: top; width: 50%; padding-left: 20px;">
       ${returnFlight ? `
-      <div class="flight-card" style="display: inline-block; text-align: left;">
-        <div class="flight-header">Return Flight</div>
-        <div class="flight-details">
-          <div>
-            <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
-            <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
-            <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
-            <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
-            <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
-            <strong>Flight Number:</strong> ${returnFlight.flight_number}
-          </div>
-        </div>
-      </div>
+      
+          <table align="right" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <div class="flight-card" style="text-align: left;">
+                  <div class="flight-header">Return Flight</div>
+                  <div class="flight-details">
+                    <div>
+                      <strong>From:</strong> ${returnFlight.dep_name} (${returnFlight.dep_code})<br />
+                      <strong>To:</strong> ${returnFlight.arr_name} (${returnFlight.arr_code})<br />
+                      <strong>Date:</strong> ${formatDateSafe(returnFlight.departure_time, "EEE, dd MMM yyyy")}<br />
+                      <strong>Departure:</strong> ${formatDateSafe(returnFlight.departure_time, "HH:mm")}<br />
+                      <strong>Arrival:</strong> ${formatDateSafe(returnFlight.arrival_time, "HH:mm")}<br />
+                      <strong>Flight Number:</strong> ${returnFlight.flight_number}
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+
       ` : ''}
     </td>
   </tr>
