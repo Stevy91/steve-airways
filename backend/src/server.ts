@@ -3021,7 +3021,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                     ${passengers.map((p: any) => `
                     <strong>Passenger:</strong> ${p.first_name || ''} ${p.last_name || ''}<br />
                     <strong>Email:</strong> ${p.email || 'N/A'}<br />
-                    <strong>Phone:</strong> ${p.phone || 'N/A'}<br /><br />
+                    ${p.phone ? `<strong>Phone:</strong> ${p.phone}<br /><br />` : ``}                                                          
                     `).join("")}
                   </p>
                 </td>
@@ -3037,7 +3037,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                           <strong>Booking ID:</strong> ${booking.booking_reference || 'N/A'}
                         </p>
                         <p style="margin: 0; font-size: 0.9em">
-                          <strong>Booking Date:</strong> ${formatDateSafe(booking.created_at, "EEE, dd MMM yyyy HH:mm")}
+                          <strong>Booking Date:</strong> ${formatDateSafe(booking.created_at, "EEE, dd MMM yyyy")}
                         </p>
                       </td>
                       <td style="text-align: right">
@@ -3182,7 +3182,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                     ${passengers.map((p: any) => `
                     <strong>Passager:</strong> ${p.first_name || ''} ${p.last_name || ''}<br />
                     <strong>Email:</strong> ${p.email || 'N/A'}<br />
-                    <strong>Téléphone:</strong> ${p.phone || 'N/A'}<br /><br />
+                    ${p.phone ? `<strong>Téléphone:</strong> ${p.phone}<br /><br />` : ``}                                                          
                     `).join("")}
                   </p>
                 </td>
@@ -3198,7 +3198,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                           <strong>Réservation ID:</strong> ${booking.booking_reference || 'N/A'}
                         </p>
                         <p style="margin: 0; font-size: 0.9em">
-                          <strong>Date de réservation:</strong> ${formatDateSafe(booking.created_at, "EEE, dd MMM yyyy HH:mm")}
+                          <strong>Date de réservation:</strong> ${formatDateSafe(booking.created_at, "EEE, dd MMM yyyy")}
                         </p>
                       </td>
                       <td style="text-align: right">
