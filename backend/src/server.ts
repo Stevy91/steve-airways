@@ -2280,10 +2280,13 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
 });
 
 
+
 import fetch from "node-fetch";
 
 import pdf from 'html-pdf-node'
 import { format, parseISO, isValid, parse } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+
 
 
 app.get("/api/generate/:reference", async (req: Request, res: Response) => {
@@ -2731,6 +2734,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
 
 
+
+
 app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
   let connection;
   try {
@@ -2862,6 +2867,119 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
 });
 
 
+// Endpoint pour les données du dashboard
+// app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
+//     let connection;
+//     try {
+
+
+//         // 1. Récupérer les réservations avec un typage explicite
+//         const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
+//       SELECT 
+//         id, 
+//         booking_reference, 
+//         total_price, 
+//         status, 
+//         created_at, 
+//         passenger_count, 
+//         contact_email,
+//         type_vol,
+//         type_v
+//       FROM bookings
+//       ORDER BY created_at DESC
+//     `);
+
+//         // Convertir en type Booking[]
+//         const bookings: Booking[] = bookingRows.map((row) => ({
+//             id: row.id,
+//             booking_reference: row.booking_reference,
+//             total_price: Number(row.total_price),
+//             status: row.status,
+//             created_at: new Date(row.created_at).toISOString(),
+//             passenger_count: row.passenger_count,
+//             contact_email: row.contact_email,
+//             type_vol: row.type_vol,
+//             type_v: row.type_v,
+//         }));
+
+//         // 2. Récupérer les vols avec un typage explicite
+//         const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
+//       SELECT id, type, departure_time, price, seats_available 
+//       FROM flights
+//     `);
+
+//         // Convertir en type Flight[]
+//         const flights: Flights[] = flightRows.map((row) => ({
+//             id: row.id,
+//             type: row.type,
+//             departure_time: new Date(row.departure_time).toISOString(),
+//             price: Number(row.price),
+//             seats_available: row.seats_available,
+//         }));
+
+//         // 3. Calcul des statistiques avec typage fort
+//         const totalRevenue = bookings.reduce((sum, booking) => sum + booking.total_price, 0);
+//         const totalBookings = bookings.length;
+//         const flightsAvailable = flights.length;
+//         const averageBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
+
+//         // 4. Statistiques par statut
+//         const statusCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+//             acc[booking.status] = (acc[booking.status] || 0) + 1;
+//             return acc;
+//         }, {});
+
+//         const bookingsByStatus = Object.entries(statusCounts).map(([name, value]) => ({
+//             name,
+//             value,
+//         }));
+
+//         // 5. Statistiques par type de vol
+//         const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+//             const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+//             acc[type] = (acc[type] || 0) + 1;
+//             return acc;
+//         }, {});
+
+//         const bookingsByFlightType = Object.entries(flightTypeCounts).map(([name, value]) => ({
+//             name,
+//             value,
+//         }));
+
+//         // 6. Revenu par mois
+//         const monthlyRevenue = bookings.reduce((acc: Record<string, number>, booking) => {
+//             const date = new Date(booking.created_at);
+//             const month = date.toLocaleString("fr-FR", { month: "short" });
+//             acc[month] = (acc[month] || 0) + booking.total_price;
+//             return acc;
+//         }, {});
+
+//         const revenueByMonth = Object.entries(monthlyRevenue).map(([name, total]) => ({
+//             name,
+//             total,
+//         }));
+
+
+//         const recentBookings = bookings.slice(0, 6);
+
+//         // 8. Construction de la réponse
+//         const response: DashboardStats = {
+//             totalRevenue,
+//             totalBookings,
+//             flightsAvailable,
+//             averageBookingValue,
+//             bookingsByStatus,
+//             revenueByMonth,
+//             bookingsByFlightType,
+//             recentBookings,
+//         };
+
+//         res.json(response);
+//     } catch (error) {
+//         console.error("Dashboard error:", error);
+//         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+//     } 
+// });
 
 
 app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
