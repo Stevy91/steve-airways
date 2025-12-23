@@ -1,25 +1,12 @@
 import { useState, useEffect } from "react";
 import { Eye } from "lucide-react";
-import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
+import UsersDetailsModal, { UsersDetails } from "../../../components/UsersDetailsModal";
 import { useTheme } from "../../../contexts/theme-context";
 import { useAuth } from "../../../hooks/useAuth";
 
 // Types
-type Booking = {
+type Users = {
     id: number;
-    booking_reference: string;
-    payment_intent_id: string;
-    total_price: number;
-    status: string;
-    created_at: string;
-    updated_at: string;
-    passenger_count: number;
-    contact_email: string;
-    payment_method: string;
-    adminNotes: string;
-    type_vol: string;
-    type_v: string;
-    created_by_name?: string; 
     email?: string;
     name?: string;
     role?: string;
@@ -30,13 +17,10 @@ const Users = () => {
     const { theme } = useTheme();
     const { isAdmin, isOperateur } = useAuth();
 
-    const [stats, setStats] = useState<Booking[]>([]);
+    const [stats, setStats] = useState<Users[]>([]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-
- 
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -44,33 +28,40 @@ const Users = () => {
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentBookings = stats.slice(indexOfFirstRow, indexOfLastRow);
-const totalPages = Math.ceil(stats.length / rowsPerPage);
-
-
+    const currentUsers = stats.slice(indexOfFirstRow, indexOfLastRow);
+    const totalPages = Math.ceil(stats.length / rowsPerPage);
 
     // Charger liste par défaut = date du jour
     const fetchDashboardData = async () => {
-  try {
-    setLoading(true);
-    const response = await fetch(`https://steve-airways.onrender.com/api/users`);
-    const data = await response.json();
-    // s'assurer que data est un tableau
-    setStats(Array.isArray(data) ? data : []);
-  } catch (err) {
-    setError("Impossible de charger les données");
-  } finally {
-    setLoading(false);
-  }
-};
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("token");
 
+            const response = await fetch("https://steve-airways.onrender.com/api/users", {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`, // <- obligatoire
+                },
+            });
 
+            const data = await response.json();
+
+            if (data.error) {
+                setError(data.error); // Affiche le vrai message
+                setStats([]); // Evite stats undefined
+            } else {
+                setStats(Array.isArray(data) ? data : []);
+            }
+        } catch (err) {
+            setError("Impossible de charger les données");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         fetchDashboardData();
     }, []);
-
-   
 
     if (loading) {
         return (
@@ -89,8 +80,8 @@ const totalPages = Math.ceil(stats.length / rowsPerPage);
     return (
         <div className="flex flex-col gap-y-4">
             <h1 className="title">All Users</h1>
-          
-            {/* TABLEAU BOOKINGS */}
+
+            {/* TABLEAU UsersS */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                 <div className="card-body overflow-auto p-0">
                     <div className="relative w-full flex-shrink-0 overflow-auto">
@@ -103,30 +94,37 @@ const totalPages = Math.ceil(stats.length / rowsPerPage);
                                     <th className="table-head text-center">Phone</th>
                                     <th className="table-head text-center">Role</th>
                                     <th className="table-head text-center">Action</th>
-                                   
                                 </tr>
                             </thead>
 
                             <tbody className="table-body">
-  {currentBookings.length === 0 ? (
-    <tr>
-      <td colSpan={5} className="text-center">No users found</td>
-    </tr>
-  ) : (
-    currentBookings.map((user: Booking) => (
-      <tr key={user.id} className="table-row">
-        <td className="table-cell text-center">{user.name}</td>
-        <td className="table-cell text-center">{user.email}</td>
-        <td className="table-cell text-center">{user.phone}</td>
-        <td className="table-cell text-center">{user.role}</td>
-        <td className="table-cell text-center">
-          <button className="btn btn-sm btn-primary">Edit</button>
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
-
+                                {currentUsers.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="text-center"
+                                        >
+                                            No users found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    currentUsers.map((user: Users) => (
+                                        <tr
+                                            key={user.id}
+                                            className="table-row"
+                                        >
+                                            <td className="table-cell text-center">acess</td>
+                                            <td className="table-cell text-center">{user.name}</td>
+                                            <td className="table-cell text-center">{user.email}</td>
+                                            <td className="table-cell text-center">{user.phone}</td>
+                                            <td className="table-cell text-center">{user.role}</td>
+                                            <td className="table-cell text-center">
+                                                <button className="btn btn-sm btn-primary">Edit</button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
                         </table>
 
                         {/* PAGINATION */}
@@ -153,11 +151,9 @@ const totalPages = Math.ceil(stats.length / rowsPerPage);
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );
 };
-
 
 export default Users;
