@@ -20,14 +20,18 @@ type Booking = {
     type_vol: string;
     type_v: string;
     created_by_name?: string; 
-    created_by_email?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+    phone?: string;
 };
 
 const Users = () => {
     const { theme } = useTheme();
     const { isAdmin, isOperateur } = useAuth();
 
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<Booking[]>([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,22 +44,26 @@ const Users = () => {
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
-    const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
+    const currentBookings = stats.slice(indexOfFirstRow, indexOfLastRow);
+const totalPages = Math.ceil(stats.length / rowsPerPage);
+
+
 
     // Charger liste par défaut = date du jour
     const fetchDashboardData = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`https://steve-airways.onrender.com/api/users`);
-            const data = await response.json();
-            setStats(data);
-        } catch (err) {
-            setError("Impossible de charger les données");
-        } finally {
-            setLoading(false);
-        }
-    };
+  try {
+    setLoading(true);
+    const response = await fetch(`https://steve-airways.onrender.com/api/users`);
+    const data = await response.json();
+    // s'assurer que data est un tableau
+    setStats(Array.isArray(data) ? data : []);
+  } catch (err) {
+    setError("Impossible de charger les données");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 
     useEffect(() => {
@@ -100,18 +108,25 @@ const Users = () => {
                             </thead>
 
                             <tbody className="table-body">
-                                {currentBookings.map((booking) => (
-                                    <tr key={booking.id} className="table-row">
-                                        <td className="table-cell text-center">{booking.name}</td>
-                                        <td className="table-cell text-center">{booking.email}</td>
-                                        <td className="table-cell text-center">{booking.phone}</td>
-                                        <td className="table-cell text-center">{booking.role}</td>
-                                        <td className="table-cell text-center">
-                                            <button className="btn btn-sm btn-primary">Edit</button>
-                                        </td>
-                                    </tr>
-                               ))}
-                            </tbody>
+  {currentBookings.length === 0 ? (
+    <tr>
+      <td colSpan={5} className="text-center">No users found</td>
+    </tr>
+  ) : (
+    currentBookings.map((user: Booking) => (
+      <tr key={user.id} className="table-row">
+        <td className="table-cell text-center">{user.name}</td>
+        <td className="table-cell text-center">{user.email}</td>
+        <td className="table-cell text-center">{user.phone}</td>
+        <td className="table-cell text-center">{user.role}</td>
+        <td className="table-cell text-center">
+          <button className="btn btn-sm btn-primary">Edit</button>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
                         </table>
 
                         {/* PAGINATION */}
