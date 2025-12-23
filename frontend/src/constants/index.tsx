@@ -1,4 +1,4 @@
-import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List } from "lucide-react";
+import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List, Helicopter } from "lucide-react";
 import { HelicopterIcon } from "../components/icons/HelicopterIcon";
 import { useParams } from "react-router-dom";
 
@@ -19,7 +19,7 @@ export const NavbarLinks = (lang: string) => [
     title: "Air plane",
     icon: Plane,
     links: [
-      { label: "All flights", icon: Plane, path: `/${lang}/dashboard/flights` },
+      { label: "All flights", icon: List, path: `/${lang}/dashboard/flights` },
       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-plane` },
     //   { label: "Airport", icon: TowerControl, path: `/${lang}/dashboard/airport` },
     ],
@@ -28,7 +28,7 @@ export const NavbarLinks = (lang: string) => [
     title: "Helico",
     icon: HelicopterIcon,
     links: [
-      { label: "All flights Helico", icon: HelicopterIcon, path: `/${lang}/dashboard/flights-helico` },
+      { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
     //   { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
     ],

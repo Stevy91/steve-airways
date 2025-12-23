@@ -94,10 +94,7 @@ type BookingData = {
 //         return format(now, "EEE, dd MMM");
 //     };
 
-    
-
 //     // Exemple pour ton vol
-  
 
 //      const [departureDateStr] = outboundFlight.departure_time.split(" ");
 //     const parsedDepartureDate = parse(departureDateStr, "yyyy-MM-dd", new Date());
@@ -141,8 +138,8 @@ type BookingData = {
 //       <!-- E-Ticket Section -->
 //       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
 //         <div style="padding: 20px; text-align: center;">
-//           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> 
-          
+//           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong>
+
 //           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Transfer" : "Contrat"}
 //           </p>
 //           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
@@ -155,7 +152,7 @@ type BookingData = {
 //               padding: 20px;
 //               border-radius: 8px;">
 //           <table width="100%" style="border-collapse: collapse;">
-//             <tr> 
+//             <tr>
 //               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
 //                 <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
 //                 <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Boarding Pass</span>
@@ -171,9 +168,7 @@ type BookingData = {
 //                     <h3 style="color: #1A237E; margin: 0;"> ${returnFlight ? "Round Trip" : "One Way"}</h3>
 //                     </div>
 //                 <h3 style="color: #1A237E; margin: 0;">Itinerary</h3>
-                
-                    
-                
+
 //                 <table width="100%">
 //                   <tr>
 //                     <td>
@@ -226,7 +221,7 @@ type BookingData = {
 //                 <p style="margin: 0;">${bookingData.passengersData?.adults
 //                     ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email}`)
 //                     .join("<br>")}</p>
-               
+
 //               </td>
 //             </tr>
 
@@ -255,19 +250,16 @@ type BookingData = {
 //       </div>
 //       <!-- End E-Ticket Section -->
 
-      // <div style="padding: 20px; font-size: 0.9em; color: #555;">
-      //   <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
-      //  <p><strong>Baggage Limitation: **</strong> The maximum allowance for passenger baggage is 30 lb.</p>
-      //   <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
-      //   <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
-      //   <p>We look forward to welcoming you on board.</p>
-      //   <p>Sincerely,<br>The Trogon Airways Team</p>
-      // </div>
+// <div style="padding: 20px; font-size: 0.9em; color: #555;">
+//   <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+//  <p><strong>Baggage Limitation: **</strong> The maximum allowance for passenger baggage is 30 lb.</p>
+//   <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+//   <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
+//   <p>We look forward to welcoming you on board.</p>
+//   <p>Sincerely,<br>The Trogon Airways Team</p>
+// </div>
 //     </div>
 //     <br><br><br>
-
-
-
 
 //         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
 //       <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
@@ -283,8 +275,8 @@ type BookingData = {
 //       <!-- E-Ticket Section -->
 //       <div style="border-top: 2px dashed #ccc; margin: 0 20px; padding-top: 20px;">
 //         <div style="padding: 20px; text-align: center;">
-//           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
-          
+//           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong>
+
 //           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
 //           </p>
 //           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
@@ -297,7 +289,7 @@ type BookingData = {
 //               padding: 20px;
 //               border-radius: 8px;">
 //           <table width="100%" style="border-collapse: collapse;">
-//             <tr> 
+//             <tr>
 //               <td style="padding-bottom: 20px; border-bottom: 1px solid #eee;">
 //                 <img src="https://storage.googleapis.com/trogon-airways.appspot.com/trogon-logo.png" alt="" style="height: 40px; vertical-align: middle;">
 //                 <span style="font-size: 1.5em; font-weight: bold; color: #1A237E; vertical-align: middle; margin-left: 10px;">Carte d'embarquement</span>
@@ -306,15 +298,14 @@ type BookingData = {
 //                 <img src="${barcodeUrl}" alt="Booking Barcode" style="height: 50px;">
 //               </td>
 //             </tr>
-           
+
 //             <tr>
 //               <td colspan="2" style="padding-top: 20px;">
 //                <div style="padding: 20px; text-align: center;">
 //                     <h3 style="color: #1A237E; margin: 0;"> ${returnFlight ? "Vol Aller-Retour" : "Vol Simple"}</h3>
 //                     </div>
 //                 <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
-                
-               
+
 //                 <table width="100%">
 //                   <tr>
 //                     <td>
@@ -347,7 +338,7 @@ type BookingData = {
 //                                 <strong>Date:</strong> ${formatDate(returnFlight.date)}
 //                               </div>
 //                               <div>
-                               
+
 //                                 <strong>Départ:</strong> ${returnDepartureTime}<br>
 //                                 <strong>Arrivée:</strong> ${returnArrivalTime}<br>
 //                                 <strong>Numéro du vol:</strong> ${returnFlight.noflight}
@@ -365,11 +356,11 @@ type BookingData = {
 //             <tr>
 //               <td colspan="2" style="padding-top: 20px; border-top: 1px solid #eee;">
 //                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
-                
+
 //                     <p style="margin: 0;">${bookingData.passengersData?.adults
 //                         ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email}`)
 //                         .join("<br>")}</p>
-               
+
 //               </td>
 //             </tr>
 
@@ -451,11 +442,11 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
     let returnDepartureTime = "N/A";
     let returnArrivalDate = "N/A";
     let returnArrivalTime = "N/A";
-    
+
     if (returnFlight && returnFlight.departure_time) {
         [returnDepartureDate, returnDepartureTime] = returnFlight.departure_time.split(" ");
     }
-    
+
     if (returnFlight && returnFlight.arrival_time) {
         [returnArrivalDate, returnArrivalTime] = returnFlight.arrival_time.split(" ");
     }
@@ -563,8 +554,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                             </div>
                         </td>
                         <td  width="50%" valign="top">
-                            ${isRoundTrip && returnFlight
-                            ? `
+                            ${
+                                isRoundTrip && returnFlight
+                                    ? `
                                 <table align="right" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td>
@@ -586,7 +578,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                                         </td>
                                     </tr>
                                 </table>`
-                            : ""}
+                                    : ""
+                            }
                         </td>
                     </tr>
                 </table>
@@ -629,8 +622,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 
             <div style="padding: 20px; font-size: 0.9em; color: #555;">
         <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
-       <p><strong>Baggage Limitation: **</strong> The maximum allowance for passenger baggage is 30 lb.</p>
-        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+       <p><strong>Baggage Limitation: **</strong> The maximum allowance for passenger baggage is 30 lb. <strong>Luggage dimensions 65*40*25</strong></p>
+        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
         <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br>The Trogon Airways Team</p>
@@ -704,8 +697,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                             </div>
                         </td>
                         <td  width="50%" valign="top">
-                            ${isRoundTrip && returnFlight
-                            ? `
+                            ${
+                                isRoundTrip && returnFlight
+                                    ? `
                                 <table align="right" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td>
@@ -727,7 +721,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                                         </td>
                                     </tr>
                                 </table>`
-                            : ""}
+                                    : ""
+                            }
                         </td>
                     </tr>
                 </table>
@@ -739,7 +734,9 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                 <h3 style="color: #1A237E; margin: 0 0 10px 0;">Passager</h3>
                 
                     <p style="margin: 0;">${bookingData.passengersData?.adults
-                        ?.map((p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email || "N/A"}`)
+                        ?.map(
+                            (p: Passenger) => `<strong>Adult:</strong> ${p.firstName} ${p.lastName}<br> <strong>Email:</strong> ${p.email || "N/A"}`,
+                        )
                         .join("<br>")}</p>
                
               </td>
@@ -773,7 +770,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
 
        <div style="padding: 20px; font-size: 0.9em; color: #555;">
         <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
-        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb.</p>
+        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
         <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
 Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
 </p>
@@ -784,7 +781,6 @@ Le client est responsable de ses propres dispositions (heure d'arrivée à l'aé
     </div>
   `;
 };
-
 
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string, paymentMethod: string) => {
     const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B"; // ou process.env.SMTP2GO_API_KEY
@@ -814,7 +810,8 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
 };
 
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
-  const [isRoundTrip, setIsRoundTrip] = useState(false);
+    const [createTicket, setCreateTicket] = useState(false);
+    const [isRoundTrip, setIsRoundTrip] = useState(false);
     const [formData, setFormData] = useState({
         firstName: "",
         flightNumberReturn: "",
@@ -840,39 +837,29 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
     if (!open || !flight) return null;
 
-      const handleChange = (
-      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-      const { name, value } = e.target;
-    
-      // Si c’est un checkbox → on cast pour accéder à checked
-      if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        // Si c’est un checkbox → on cast pour accéder à checked
+        if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+            setFormData({
+                ...formData,
+                [name]: e.target.checked ? value : "",
+            });
+            return;
+        }
+
+        // Sinon → input, select…
         setFormData({
-          ...formData,
-          [name]: e.target.checked ? value : "",
+            ...formData,
+            [name]: value,
         });
-        return;
-      }
-    
-      // Sinon → input, select…
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
     };
-    
 
     const handleSubmit = async () => {
         // 1️⃣ Validation des champs obligatoires
-        if (
-            !formData.firstName ||
-            !formData.lastName ||
-         
-            !formData.email ||
-            !formData.phone ||
-            !formData.nationality ||
-            !formData.dateOfBirth
-        ) {
+        setCreateTicket(true);
+        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
             toast.error(`Veuillez remplir tous les champs obligatoires`, {
                 style: {
                     background: "#fee2e2",
@@ -974,68 +961,71 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         email: formData.email,
                     });
 
-                                   let returnFlight = null;
+                    let returnFlight = null;
 
-if (isRoundTrip && formData.flightNumberReturn) {
-    try {
-        const resReturn = await fetch(
-            `https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-                },
-            }
-        );
-        const dataReturn = await resReturn.json();
+                    if (isRoundTrip && formData.flightNumberReturn) {
+                        try {
+                            const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                                },
+                            });
+                            const dataReturn = await resReturn.json();
 
-        if (resReturn.ok && dataReturn) {
-    // dataReturn contient déjà le vol
-    const flightData = dataReturn; 
-    returnFlight = {
-        date: flightData.departure_time,
-        noflight: flightData.flight_number,
-        departure_time: flightData.departure_time,
-        arrival_time: flightData.arrival_time,
-        from: flightData.from,
-        to: flightData.to,
-        fromCity: flightData.fromCity,
-        toCity: flightData.toCity,
-    };
-} else {
-    toast.error("Vol retour introuvable !");
-}
-
-    } catch (err) {
-        console.error("Erreur récupération vol retour:", err);
-        toast.error("Impossible de récupérer le vol retour.");
-    }
-}
-
-
+                            if (resReturn.ok && dataReturn) {
+                                // dataReturn contient déjà le vol
+                                const flightData = dataReturn;
+                                returnFlight = {
+                                    date: flightData.departure_time,
+                                    noflight: flightData.flight_number,
+                                    departure_time: flightData.departure_time,
+                                    arrival_time: flightData.arrival_time,
+                                    from: flightData.from,
+                                    to: flightData.to,
+                                    fromCity: flightData.fromCity,
+                                    toCity: flightData.toCity,
+                                };
+                            } else {
+                                toast.error("Vol retour introuvable !");
+                            }
+                        } catch (err) {
+                            console.error("Erreur récupération vol retour:", err);
+                            toast.error("Impossible de récupérer le vol retour.");
+                        }
+                    }
 
                     await sendTicketByEmail(
-  {
-    from: flight.from || "",
-    to: flight.to || "",
-    outbound: {
-      date: flight.departure,
-      noflight: flight.flight_number,
-      departure_time: flight.departure,
-      arrival_time: flight.arrival,
-    },
-    return: returnFlight || null, // <--- vol retour créé
-    passengersData: { adults: passengers },
-    totalPrice: body.totalPrice,
-  },
-  data.bookingReference,
-  formData.paymentMethod
-);
+                        {
+                            from: flight.from || "",
+                            to: flight.to || "",
+                            outbound: {
+                                date: flight.departure,
+                                noflight: flight.flight_number,
+                                departure_time: flight.departure,
+                                arrival_time: flight.arrival,
+                            },
+                            return: returnFlight || null, // <--- vol retour créé
+                            passengersData: { adults: passengers },
+                            totalPrice: body.totalPrice,
+                        },
+                        data.bookingReference,
+                        formData.paymentMethod,
+                    );
 
                     console.log("✅ Email envoyé avec succès");
                 } catch (emailError) {
                     console.error("❌ Erreur détaillée envoi email:", emailError);
                     toast.error("Ticket créé mais email non envoyé");
                 }
+                
+                // ✅ Réinitialiser le vol retour après succès
+                setIsRoundTrip(false);
+
+                setFormData((prev) => ({
+                    ...prev,
+                    flightNumberReturn: "",
+                    returnDate: "",
+                }));
 
                 if (onTicketCreated) {
                     onTicketCreated();
@@ -1044,18 +1034,20 @@ if (isRoundTrip && formData.flightNumberReturn) {
                 onClose();
             } else {
                 console.error("Erreur création ticket:", data);
-                toast.error(`${data.message || "inconnue"}`, {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: { primary: "#fff", secondary: "#dc2626" },
-            });
+                toast.error(`${data.message || "Le numéro saisi pour le vol de retour ne correspond à aucun vol."}`, {
+                    style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
+                    },
+                    iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                });
             }
         } catch (err) {
             console.error("Erreur réseau:", err);
             toast.error("❌ Erreur de connexion au serveur");
+        } finally {
+            setCreateTicket(false);
         }
     };
     return (
@@ -1092,15 +1084,15 @@ if (isRoundTrip && formData.flightNumberReturn) {
                                     {flight.from} → {flight.to} | Départ: {flight.departure}
                                 </p>
                                 <div className="my-4 h-px w-full bg-slate-100" />
-                                <div className="flex items-center gap-4 mt-1">
+                                <div className="mt-1 flex items-center gap-4">
                                     <span className="text-xl font-semibold text-amber-500">Round-Trip</span>
 
                                     <label className="relative inline-flex cursor-pointer items-center">
                                         <input
-                                        type="checkbox"
-                                        className="peer sr-only"
-                                        checked={isRoundTrip}
-                                        onChange={(e) => setIsRoundTrip(e.target.checked)}
+                                            type="checkbox"
+                                            className="peer sr-only"
+                                            checked={isRoundTrip}
+                                            onChange={(e) => setIsRoundTrip(e.target.checked)}
                                         />
 
                                         <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
@@ -1111,17 +1103,15 @@ if (isRoundTrip && formData.flightNumberReturn) {
                                         type="text"
                                         id="flightNumberReturn"
                                         name="flightNumberReturn"
-                                        placeholder="Numéro de vol retour"
+                                        placeholder="Numéro du vol retour"
                                         disabled={!isRoundTrip}
                                         required={isRoundTrip}
                                         onChange={handleChange}
-                                        className={`w-full rounded-md border px-4 py-2 outline-none transition
-                                        ${
+                                        className={`w-full rounded-md border px-4 py-2 outline-none transition ${
                                             isRoundTrip
-                                            ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            : "cursor-not-allowed bg-gray-100 border-gray-200 text-gray-400"
-                                        }
-                                        `}
+                                                ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                                        } `}
                                     />
                                 </div>
                             </div>
@@ -1430,9 +1420,10 @@ if (isRoundTrip && formData.flightNumberReturn) {
                                 <div className="md:col-span-3">
                                     <button
                                         onClick={handleSubmit}
-                                        className="w-full rounded-md bg-amber-500 py-3 font-semibold text-white transition-colors hover:bg-amber-600"
+                                        disabled={createTicket}
+                                        className="w-full rounded-md bg-amber-500 py-3 font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
                                     >
-                                        Confirmer et Créer le Ticket
+                                        {createTicket ? "Saving..." : "Confirmer et Créer le Ticket"}
                                     </button>
                                 </div>
                             </div>

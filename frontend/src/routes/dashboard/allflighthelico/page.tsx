@@ -428,15 +428,15 @@ const [flightNumber, setFlightNumber] = useState("");
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
-                                    <th className="table-head text-center">Numéro de vol</th>
-                                    <th className="table-head text-center">Type</th>
-                                    <th className="table-head text-center">Compagnie</th>
-                                    <th className="table-head text-center">Départ</th>
+                                    <th className="table-head text-center">Flight number</th>
+                                    <th className="table-head text-center">Flight type</th>
+                                    <th className="table-head text-center">Company</th>
+                                    <th className="table-head text-center">Departure</th>
                                     <th className="table-head text-center">Destination</th>
-                                    <th className="table-head text-center">Départ heure</th>
-                                    <th className="table-head text-center">Arrivée heure</th>
-                                    <th className="table-head text-center">Prix</th>
-                                    <th className="table-head text-center">Sièges</th>
+                                    <th className="table-head text-center">Departure time</th>
+                                    <th className="table-head text-center">Arrival time</th>
+                                    <th className="table-head text-center">Price</th>
+                                    <th className="table-head text-center">Seats</th>
                                     <th className="table-head text-center">Action</th>
                                 </tr>
                             </thead>
@@ -666,7 +666,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                                     type="text"
                                                     name="flight_number"
                                                     placeholder="Flight number"
-                                                    defaultValue={editingFlight?.flightNumber || flightNumber}
+                                                    defaultValue={editingFlight?.flight_number || flightNumber}
                                                     className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                                     required
                                                 />
@@ -877,14 +877,18 @@ const [flightNumber, setFlightNumber] = useState("");
                                             <div className="md:col-span-2">
                                                 <button
                                                     type="submit"
-                                                    className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600"
+                                                    className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
                                                     disabled={submitting}
-                                                >
+                                                    >
                                                     {submitting && (
                                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
                                                     )}
-                                                    {editingFlight ? "Update" : "Save"}
+
+                                                    {editingFlight
+                                                        ? submitting ? "Updating..." : "Update"
+                                                        : submitting ? "Saving..." : "Save"}
                                                 </button>
+
                                             </div>
                                         </div>
                                     </form>

@@ -132,74 +132,76 @@ const ViewBookingHelico = () => {
         <div className="flex flex-col gap-y-4">
             <h1 className="title">View Booking Helico</h1>
             {/* Filtres */}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Date début</label>
-                    <input
-                        type="date"
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    />
-                </div>
 
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Date fin</label>
-                    <input
-                        type="date"
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    />
-                </div>
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Status</label>
-                    <select
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    >
-                        <option value="">Tous</option>
-                        <option value="confirmed">Paid</option>
-                        <option value="pending">UnPaid</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
-                </div>
+            {(isAdmin || isOperateur) && (
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Start date</label>
+                                <input
+                                    type="date"
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                />
+                            </div>
 
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Type de transaction</label>
-                    <select
-                        onChange={(e) => setTransactionType(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    >
-                        <option value="">Tous</option>
-                        <option value="cash">Cash</option>
-                        <option value="card">Carte</option>
-                        <option value="cheque">Chèque</option>
-                        <option value="virement">Virement</option>
-                        <option value="transfert">Transfert</option>
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">End date</label>
+                                <input
+                                    type="date"
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Status</label>
+                                <select
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                >
+                                    <option value="">All</option>
+                                    <option value="confirmed">Paid</option>
+                                    <option value="pending">UnPaid</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
 
-                        
-                    </select>
-                </div>
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Transaction type</label>
+                                <select
+                                    onChange={(e) => setTransactionType(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                >
+                                    <option value="">All</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Bank Card</option>
+                                    <option value="cheque">Check</option>
+                                    <option value="virement">bank transfer</option>
+                                    <option value="transfert">Transfer</option>
 
-                <div className="flex flex-col">
-                    <label className="mb-7 font-medium text-gray-700"></label>
-                    <button
-                        type="button"
-                        onClick={handleSearch}
-                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
-                    >
-                        Search
-                    </button>
-                </div>
+                                    
+                                </select>
+                            </div>
 
-                <button
-                    type="button"
-                    onClick={downloadExcel}
-                    className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
-                >
-                    Excel
-                </button>
-            </div>
+                            <div className="flex flex-col">
+                                <label className="mb-7 font-medium text-gray-700"></label>
+                                <button
+                                    type="button"
+                                    onClick={handleSearch}
+                                    className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                                >
+                                    Search
+                                </button>
+                            </div>
 
+                            <button
+                                type="button"
+                                onClick={downloadExcel}
+                                className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                            >
+                                Excel
+                            </button>
+                        </div>
+            )}
             {/* TABLEAU BOOKINGS */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                 <div className="card-body overflow-auto p-0">
@@ -207,16 +209,16 @@ const ViewBookingHelico = () => {
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
-                                    <th className="table-head text-center">Booking Référence</th>
-                                    <th className="table-head text-center">Paiement Référence</th>
-                                    <th className="table-head text-center">Type</th>
-                                    <th className="table-head text-center">Type Vol</th>
+                                    <th className="table-head text-center">Booking Reference</th>
+                                    <th className="table-head text-center">Payment Reference</th>
+                                    <th className="table-head text-center">Flight Type</th>
+                                    <th className="table-head text-center">Trip Type</th>
                                     <th className="table-head text-center">Contact Email</th>
                                     <th className="table-head text-center">Total Price</th>
                                     <th className="table-head text-center">Passager</th>
-                                    <th className="table-head text-center">Paiement</th>
-                                    <th className="table-head text-center">Méthode</th>
-                                    <th className="table-head text-center">Créé par</th>
+                                    <th className="table-head text-center">Payment</th>
+                                    <th className="table-head text-center">Method</th>
+                                    <th className="table-head text-center">Created by</th>
                                     <th className="table-head text-center">Date</th>
                                     <th className="table-head text-center">Action</th>
                                 </tr>
