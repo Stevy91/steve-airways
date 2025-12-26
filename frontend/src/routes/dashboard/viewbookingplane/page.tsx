@@ -38,6 +38,7 @@ const ViewBookingPlane = () => {
     const [endDate, setEndDate] = useState("");
     const [transactionType, setTransactionType] = useState("");
     const [status, setStatus] = useState("");
+    const [name, setName] = useState("");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -77,6 +78,7 @@ const ViewBookingPlane = () => {
         if (endDate) url.searchParams.append("endDate", endDate);
         if (transactionType) url.searchParams.append("transactionType", transactionType);
         if (status) url.searchParams.append("status", status);
+        if (name) url.searchParams.append("name", name);
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -95,7 +97,7 @@ const ViewBookingPlane = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-plane-export?" +
-            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}`;
+            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}&name=${name}`;
 
         window.open(url, "_blank");
     };
@@ -136,7 +138,7 @@ const ViewBookingPlane = () => {
             <h1 className="title">View Booking Air Plane</h1>
             {/* Filtres */}
             {(isAdmin || isOperateur) && (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Start date</label>
                     <input
@@ -154,6 +156,15 @@ const ViewBookingPlane = () => {
                         className="rounded border px-4 py-2 text-sm"
                     />
                 </div>
+                <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="Client Name"
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                />
+                            </div>
                 <div className="flex flex-col">
                     <label className="mb-1 font-medium text-gray-700">Status</label>
                     <select
@@ -227,7 +238,7 @@ const ViewBookingPlane = () => {
                                 </tr>
                             </thead>
 
-                            <tbody className="table-body">
+                            <tbody className="table-body">  
                                 {currentBookings.map((booking) => (
                                     <tr key={booking.id} className="table-row">
                                         <td className="table-cell text-center">{booking.booking_reference}</td>

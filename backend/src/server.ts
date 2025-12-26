@@ -7371,6 +7371,61 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 });
 
 
+app.get("/api/booking-helico", async (req: Request, res: Response) => {
+  try {
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+                b.id, 
+                b.booking_reference, 
+                b.payment_intent_id, 
+                b.total_price, 
+                b.status, 
+                b.created_at, 
+                b.passenger_count, 
+                b.payment_method, 
+                b.contact_email, 
+                b.type_vol, 
+                b.type_v,
+                p.first_name,
+                p.last_name
+                u.name as created_by_name,  
+                u.email as created_by_email 
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id  
+            LEFT JOIN passengers p ON b.id = p.booking_id
+            WHERE b.type_vol = ?
+            ORDER BY b.created_at DESC`,
+      ["helicopter"]
+    );
+
+    const bookings: Booking[] = bookingRows.map((row) => ({
+      id: row.id,
+      booking_reference: row.booking_reference,
+      payment_intent_id: row.payment_intent_id,
+      total_price: Number(row.total_price),
+      status: row.status,
+      created_at: row.created_at,
+      passenger_count: row.passenger_count,
+      payment_method: row.payment_method,
+      contact_email: row.contact_email,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      type_vol: row.type_vol,
+      type_v: row.type_v,
+      created_by_name: row.created_by_name,
+      created_by_email: row.created_by_email
+    }));
+
+    // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ recentBookings: bookings });
+
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération" });
+  }
+});
+
+
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, transactionType, status, name } = req.query;
@@ -7949,54 +8004,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 // });
 
 
-app.get("/api/booking-helico", async (req: Request, res: Response) => {
-  try {
-    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT 
-                b.id, 
-                b.booking_reference, 
-                b.payment_intent_id, 
-                b.total_price, 
-                b.status, 
-                b.created_at, 
-                b.passenger_count, 
-                b.payment_method, 
-                b.contact_email, 
-                b.type_vol, 
-                b.type_v,
-                u.name as created_by_name,  
-                u.email as created_by_email 
-            FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id  
-            WHERE b.type_vol = ?
-            ORDER BY b.created_at DESC`,
-      ["helicopter"]
-    );
 
-    const bookings: Booking[] = bookingRows.map((row) => ({
-      id: row.id,
-      booking_reference: row.booking_reference,
-      payment_intent_id: row.payment_intent_id,
-      total_price: Number(row.total_price),
-      status: row.status,
-      created_at: row.created_at,
-      passenger_count: row.passenger_count,
-      payment_method: row.payment_method,
-      contact_email: row.contact_email,
-      type_vol: row.type_vol,
-      type_v: row.type_v,
-      created_by_name: row.created_by_name,
-      created_by_email: row.created_by_email
-    }));
-
-    // 👉 IMPORTANT : envoyer TOUTES les réservations
-    res.json({ recentBookings: bookings });
-
-  } catch (error) {
-    console.error("Dashboard error:", error);
-    res.status(500).json({ error: "Erreur lors de la récupération" });
-  }
-});
 
 
 
