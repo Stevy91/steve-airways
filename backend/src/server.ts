@@ -7389,9 +7389,9 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     }
 
        // 🔹 Avec type de name
-    if (name) {
-      conditions += " AND p.first_name = ? ";
-      params.push(name);
+        if (name) {
+      conditions += " AND p.first_name LIKE ? ";
+      params.push(`%${name}%`);
     }
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
