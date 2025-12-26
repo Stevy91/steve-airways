@@ -7376,7 +7376,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
   b.id,
-  b.booking_reference,
+  b.payment_intent_id,
   b.total_price,
   b.status,
   b.created_at,
