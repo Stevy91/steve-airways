@@ -7944,15 +7944,19 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
                 b.contact_email, 
                 b.type_vol, 
                 b.type_v,
+                p.first_name AS passenger_first_name,
                 u.name as created_by_name,  
                 u.email as created_by_email 
             FROM bookings b
             LEFT JOIN users u ON b.user_created_booking = u.id  
+            LEFT JOIN passengers p ON b.passenger_id = p.id
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
       ["helicopter"]
     );
 
+     
+            
     const bookings: Booking[] = bookingRows.map((row) => ({
       id: row.id,
       booking_reference: row.booking_reference,
@@ -7966,7 +7970,9 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
       type_vol: row.type_vol,
       type_v: row.type_v,
       created_by_name: row.created_by_name,
-      created_by_email: row.created_by_email
+      created_by_email: row.created_by_email,
+      passenger_first_name: row.passenger_first_name,
+
     }));
 
     // 👉 IMPORTANT : envoyer TOUTES les réservations
