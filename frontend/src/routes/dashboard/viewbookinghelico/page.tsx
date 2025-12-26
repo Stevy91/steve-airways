@@ -94,7 +94,7 @@ const ViewBookingHelico = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-helico-export?" +
-            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}`;
+            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}&name=${name}`;
 
         window.open(url, "_blank");
     };
