@@ -7689,9 +7689,10 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
   try {
     // 🔹 Récupérer le vol
     const [flightRows] = await pool.query<RowDataPacket[]>(
-  "SELECT flight_number, airline, departure, `to` FROM flights WHERE id = ?",
+  "SELECT flight_number, airline, departure_airport AS departure, arrival_airport AS `to`, departure_date FROM flights WHERE id = ?",
   [flightId]
 );
+
     const flight = flightRows[0];
     if (!flight) return res.status(404).json({ error: "Flight not found" });
 
@@ -7700,6 +7701,7 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
   "SELECT first_name, last_name, email, phone, booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
   [flightId]
 );
+
 
     // 🔹 Générer PDF
     const doc = new PDFDocument({ margin: 50 });
