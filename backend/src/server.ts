@@ -7679,8 +7679,6 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 
 
 
-import PDFDocument from "pdfkit";
-
 
 app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Response) => { 
   const flightId = Number(req.params.flightId);
@@ -7738,7 +7736,7 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
             <td class="table-cell px-6 py-4">${p.email || '-'}</td>
             <td class="table-cell px-6 py-4">${p.phone || 'No Number'}</td>
             <td class="table-cell px-6 py-4">${p.nationality || '-'}</td>
-            <td class="table-cell px-6 py-4">${p.gender || '-'}</td>
+            <td class="table-cell px-6 py-4">${p.date_of_birth || '-'}</td>
             <td class="table-cell px-6 py-4">${formatDate(p.booking_date)}</td>
         </tr>
     `).join('');
@@ -7836,16 +7834,20 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
             </div>
 
             <div class="content">
-                <div class="title">Passenger List - ${passengerRows[0]?.flight_number || 'Flight'}</div>
+                <div class="title">Passenger List -${flight.flight_number} || 'Flight'}</div>
                 
                 <div class="flight-info">
                     <p><strong>Total Passengers:</strong> ${passengerRows.length}</p>
-                    <p><strong>Report Date:</strong> ${new Date().toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })}</p>
+                   
+
+                        <p>Airline: ${flight.airline}</p>
+                        <p>Departure: ${flight.departure_location_name} (${flight.departure_city}, ${flight.departure_country})</p>
+                        <p>Departure Time: ${new Date(flight.departure_time).toLocaleString()}</p>
+                        <p>Arrival: ${flight.arrival_location_name} (${flight.arrival_city}, ${flight.arrival_country})</p>
+                        <p>Arrival Time: ${new Date(flight.arrival_time).toLocaleString()}</p>
+                        <p>Arrival Time: ${new Date(flight.arrival_time).toLocaleString()}</p>
+                        <p>Available Seats: ${flight.seats_available}</p>
+
                 </div>
 
                 <table class="passenger-table hover-bg-gray-50">
@@ -7856,7 +7858,8 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Nationality</th>
-                            <th>Gender</th>
+                            <th>Date of Birth</th>
+                         
                             <th>Booking Date</th>
                         </tr>
                     </thead>
