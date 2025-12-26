@@ -7714,7 +7714,7 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
 
     // 🔹 Récupérer les passagers
     const [passengerRows] = await pool.query<RowDataPacket[]>(
-      "SELECT first_name, last_name, email, phone, booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
+      "SELECT first_name, last_name, email, phone, created_at AS booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
       [flightId]
     );
 
