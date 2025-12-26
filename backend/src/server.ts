@@ -7353,7 +7353,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
+    const { startDate, endDate, transactionType, status } = req.query;
 
     // Conditions dynamiques
     let conditions = " WHERE b.type_vol = 'helicopter' ";
@@ -7388,12 +7388,11 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
       params.push(status);
     }
 
-       // 🔹 Avec type de nom
-    if (name) {
-  conditions += " AND p.first_name LIKE ? ";
-  params.push(`%${name}%`);
-}
-
+       // 🔹 Avec type de status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
@@ -7406,14 +7405,12 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
                 b.passenger_count, 
                 b.payment_method, 
                 b.contact_email, 
-                p.first_name AS passenger_first_name,
                 b.type_vol, 
                 b.type_v,
                 u.name AS created_by_name,
                 u.email AS created_by_email
             FROM bookings b
             LEFT JOIN users u ON b.user_created_booking = u.id
-            LEFT JOIN passengers p ON b.passenger_id = p.id
             ${conditions}
             ORDER BY b.created_at DESC`,
       params
@@ -7429,7 +7426,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
+    const { startDate, endDate, transactionType, status } = req.query;
 
     let conditions = " WHERE b.type_vol = 'helicopter' ";
     const params: any[] = [];
@@ -7457,13 +7454,6 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       params.push(status);
     }
 
-    // Filtre name
-    if (name) {
-      conditions += " AND p.first_name LIKE ? ";
-      params.push(`%${name}%`);
-    }
-    
-
     // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
     const [rowsUntyped] = await pool.query(`
             SELECT 
@@ -7476,12 +7466,10 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
                 b.passenger_count,
                 b.status,
                 b.payment_method,
-                p.first_name AS passenger_first_name,
                 u.name AS created_by_name,
                 b.created_at
             FROM bookings b
             LEFT JOIN users u ON b.user_created_booking = u.id
-            LEFT JOIN passengers p ON b.passenger_id = p.id
             ${conditions}
             ORDER BY b.created_at DESC
         `, params);
@@ -7505,7 +7493,6 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       "Payment Ref",
       "Type",
       "Trajet",
-      "Name",
       "Email",
       "Total",
       "Passagers",
@@ -7526,7 +7513,6 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       { key: "payment_intent_id" },
       { key: "type_vol" },
       { key: "type_v" },
-      { key: "passenger_first_name" },
       { key: "contact_email" },
       { key: "total_price" },
       { key: "passenger_count" },
@@ -7944,19 +7930,15 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
                 b.contact_email, 
                 b.type_vol, 
                 b.type_v,
-                p.first_name AS passenger_first_name,
                 u.name as created_by_name,  
                 u.email as created_by_email 
             FROM bookings b
             LEFT JOIN users u ON b.user_created_booking = u.id  
-            LEFT JOIN passengers p ON b.passenger_id = p.id
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
       ["helicopter"]
     );
 
-     
-            
     const bookings: Booking[] = bookingRows.map((row) => ({
       id: row.id,
       booking_reference: row.booking_reference,
@@ -7970,9 +7952,7 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
       type_vol: row.type_vol,
       type_v: row.type_v,
       created_by_name: row.created_by_name,
-      created_by_email: row.created_by_email,
-      passenger_first_name: row.passenger_first_name,
-
+      created_by_email: row.created_by_email
     }));
 
     // 👉 IMPORTANT : envoyer TOUTES les réservations

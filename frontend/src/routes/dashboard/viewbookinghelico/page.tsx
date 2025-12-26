@@ -38,7 +38,6 @@ const ViewBookingHelico = () => {
     const [endDate, setEndDate] = useState("");
     const [transactionType, setTransactionType] = useState("");
     const [status, setStatus] = useState("");
-    const [name, setName] = useState("");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -75,7 +74,6 @@ const ViewBookingHelico = () => {
         if (endDate) url.searchParams.append("endDate", endDate);
         if (transactionType) url.searchParams.append("transactionType", transactionType);
         if (status) url.searchParams.append("status", status);
-        if (name) url.searchParams.append("name", name);
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -94,7 +92,7 @@ const ViewBookingHelico = () => {
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-helico-export?" +
-            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}&name=${name}`;
+            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}`;
 
         window.open(url, "_blank");
     };
@@ -154,15 +152,7 @@ const ViewBookingHelico = () => {
                                     className="rounded border px-4 py-2 text-sm"
                                 />
                             </div>
-                            <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="Client Name"
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="rounded border px-4 py-2 text-sm"
-                                />
-                            </div>
+                            
                             <div className="flex flex-col">
                                 <label className="mb-1 font-medium text-gray-700">Status</label>
                                 <select
