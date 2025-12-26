@@ -7413,6 +7413,8 @@ LEFT JOIN passengers p
       created_at: row.created_at,
       passenger_count: row.passenger_count,
       payment_method: row.payment_method,
+      first_name: row.first_name,
+      last_name: row.last_name,
       contact_email: row.contact_email,
       type_vol: row.type_vol,
       type_v: row.type_v,
