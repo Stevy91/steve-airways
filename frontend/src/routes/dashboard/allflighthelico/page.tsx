@@ -6,6 +6,7 @@ import { format, toZonedTime } from "date-fns-tz";
 import { parse, parseISO } from "date-fns";
 import BookingCreatedModalHelico from "../../../components/BookingCreatedModdalHelico";
 import { AnimatePresence, motion } from "framer-motion";
+import Passenger from "../../passenger/page";
 
 interface Flight {
     id: number;
@@ -40,6 +41,17 @@ type Notification = {
     type: "success" | "error";
 };
 
+export type ListeDetails = {
+
+    id?: string;
+  
+};
+type ListeDetailsModalProps = {
+   
+    data?: ListeDetails;
+ 
+};
+
 const FlightTableHelico = () => {
     const [flights, setFlights] = useState<Flight[]>([]);
     const [loading, setLoading] = useState(true);
@@ -54,48 +66,39 @@ const FlightTableHelico = () => {
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
+    const [liste, setListe] = useState<undefined>();
 
-//        const generateFlightNumber = () => {
-//   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; 
-//   const prefix = "TR"; // Préfixe fixe
-//   const number = Math.floor(1000 + Math.random() * 9000); 
-//   return `${prefix}${number}`;
-// };
+   
+    const generateFlightNumber = () => {
+        const prefix = "TR";
 
-// utils/generateFlightNumber.ts
-const generateFlightNumber = () => {
-  const prefix = "TR";
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        const datePart = `${yyyy}${mm}${dd}`;
 
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const datePart = `${yyyy}${mm}${dd}`;
+        const key = `flight_seq_${datePart}`;
+        const last = Number(localStorage.getItem(key) || "0") + 1;
 
-  const key = `flight_seq_${datePart}`;
-  const last = Number(localStorage.getItem(key) || "0") + 1;
+        localStorage.setItem(key, String(last));
 
-  localStorage.setItem(key, String(last));
+        const sequence = String(last).padStart(4, "0");
 
-  const sequence = String(last).padStart(4, "0");
+        return `${prefix}-${datePart}-${sequence}`;
+    };
 
-  return `${prefix}-${datePart}-${sequence}`;
-};
+    const [flightNumber, setFlightNumber] = useState("");
 
-
-
-const [flightNumber, setFlightNumber] = useState("");
-
-  const handleGenerate = () => {
-    setFlightNumber(generateFlightNumber());
-  };
+    const handleGenerate = () => {
+        setFlightNumber(generateFlightNumber());
+    };
 
     // 🔹 Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
-  
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -121,6 +124,22 @@ const [flightNumber, setFlightNumber] = useState("");
             setLoadingPassengers(false);
         }
     };
+
+   
+
+const generatePassengerPDF = async (flightId: number) => {
+  const response = await fetch(`https://steve-airways.onrender.com/api/generate/${flightId}/passengers-list`);
+  if (!response.ok) throw new Error("Erreur serveur");
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Passenger-List-${flightId}.pdf`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+};
+
 
     // Fermer le dropdown si clic/touch extérieur de l'élément ouvert
     useEffect(() => {
@@ -509,19 +528,16 @@ const [flightNumber, setFlightNumber] = useState("");
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
 
-                                                            {/* Option Passengers réservée aux admins */}
-                                                            {isAdmin && (
-                                                                <button
-                                                                    className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
-                                                                    onClick={() => {
-                                                                        fetchPassengers(flight.id);
-                                                                        setShowModalPassager(true);
-                                                                        setOpenDropdown(null);
-                                                                    }}
-                                                                >
-                                                                    <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    fetchPassengers(flight.id);
+                                                                    setShowModalPassager(true);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 )}
@@ -879,16 +895,13 @@ const [flightNumber, setFlightNumber] = useState("");
                                                     type="submit"
                                                     className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
                                                     disabled={submitting}
-                                                    >
+                                                >
                                                     {submitting && (
                                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
                                                     )}
 
-                                                    {editingFlight
-                                                        ? submitting ? "Updating..." : "Update"
-                                                        : submitting ? "Saving..." : "Save"}
+                                                    {editingFlight ? (submitting ? "Updating..." : "Update") : submitting ? "Saving..." : "Save"}
                                                 </button>
-
                                             </div>
                                         </div>
                                     </form>
@@ -969,13 +982,10 @@ const [flightNumber, setFlightNumber] = useState("");
                                                                 <td className="table-cell px-6 py-4">{p.first_name}</td>
                                                                 <td className="table-cell px-6 py-4">{p.last_name}</td>
                                                                 <td className="table-cell px-6 py-4">{p.email}</td>
-                                                                <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td> {/* Nouvelle colonne */}
+                                                                <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td>{" "}
+                                                                {/* Nouvelle colonne */}
                                                                 <td className="table-cell px-6 py-4">
-                                                                    {format(parseISO(p.booking_date), "EEE, dd MMM")} at{" "}
-                                                                    {new Date(p.booking_date).toLocaleTimeString("fr-FR", {
-                                                                        hour: "2-digit",
-                                                                        minute: "2-digit",
-                                                                    })}
+                                                                    {format(parseISO(p.booking_date), "EEE, dd MMM yyyy")}
                                                                 </td>
                                                             </tr>
                                                         ))
@@ -991,6 +1001,17 @@ const [flightNumber, setFlightNumber] = useState("");
                                                     )}
                                                 </tbody>
                                             </table>
+                                            <div className="md:col-span-3">
+                                                <div className="flex items-center justify-center py-6">
+                                                    <button
+  onClick={() => generatePassengerPDF(currentFlights[0].id)}
+  className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
+>
+  Download the passenger list
+</button>
+
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

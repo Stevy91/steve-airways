@@ -114,59 +114,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         setIsEditing(!isEditing);
     };
 
-//     const handlePrint = async () => {
-//   try {
-//     const response = await fetch("https://steve-airways.onrender.com/api/generate", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ bookingData: booking }),
-//     });
 
-//     if (!response.ok) throw new Error("Erreur lors de la génération du PDF");
-
-//     const blob = await response.blob();
-//     const url = window.URL.createObjectURL(blob);
-
-//     const a = document.createElement("a");
-//     a.href = url;
-//     a.download = "billet.pdf";
-//     a.click();
-//     window.URL.revokeObjectURL(url);
-//   } catch (err) {
-//     console.error(err);
-//     alert("Impossible de générer le PDF");
-//   }
-// };
-
-
-// const generateTicketPDF = async (pdfPath: string): Promise<void> => {
-//   if (!booking) {
-//     console.error("Booking is undefined, impossible de générer le PDF.");
-//     return;
-//   }
-
-//   try {
-//     const response = await fetch(
-//       `https://steve-airways.onrender.com/api/generate/${booking.reference}`
-//     );
-
-//     if (!response.ok) {
-//       throw new Error(`Erreur serveur : ${response.statusText}`);
-//     }
-
-//     const blob = await response.blob();
-
-//     const url = window.URL.createObjectURL(blob);
-//     const a = document.createElement("a");
-//     a.href = url;
-//     a.download = pdfPath || "billet.pdf";
-//     a.click();
-
-//     window.URL.revokeObjectURL(url);
-//   } catch (error) {
-//     console.error("Erreur lors du téléchargement du billet :", error);
-//   }
-// };
 
 
   if (!booking) return null;
@@ -186,7 +134,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ticket-${booking.reference}.pdf`;
+    a.download = `${booking.reference}.pdf`;
     a.click();
 
     window.URL.revokeObjectURL(url);
@@ -608,7 +556,7 @@ const birth = (dateString: string, formatString: string) => {
                                         className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-900"
                                             onClick={() => generateTicketPDF()}
                                             >
-                                            Imprimer le billet
+                                            Download the ticket
                                         </button>
 
                                        

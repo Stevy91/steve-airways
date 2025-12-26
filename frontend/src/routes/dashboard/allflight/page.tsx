@@ -497,8 +497,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                                             >
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
-                                                            {isAdmin && (
-                                                                <>
+                                                            
                                                                     <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
                                                                         onClick={() => {
@@ -509,8 +508,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                                                     >
                                                                         <PersonStanding className="h-6 w-6 text-amber-500" /> Passengers
                                                                     </button>
-                                                                </>
-                                                            )}
+                                                            
                                                         </div>
                                                     </div>
                                                 )}

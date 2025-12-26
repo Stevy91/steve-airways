@@ -7679,6 +7679,77 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 
 
 
+import PDFDocument from "pdfkit";
+
+
+app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Response) => {
+  const flightId = Number(req.params.flightId);
+  if (!flightId) return res.status(400).json({ error: "Flight ID missing" });
+
+  try {
+    // 🔹 Récupérer le vol
+    const [flightRows] = await pool.query<RowDataPacket[]>(
+  "SELECT flight_number, airline, departure, `to` FROM flights WHERE id = ?",
+  [flightId]
+);
+    const flight = flightRows[0];
+    if (!flight) return res.status(404).json({ error: "Flight not found" });
+
+    // 🔹 Récupérer les passagers
+    const [passengerRows] = await pool.query<RowDataPacket[]>(
+  "SELECT first_name, last_name, email, phone, booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
+  [flightId]
+);
+
+    // 🔹 Générer PDF
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // En-tête pour téléchargement
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Passenger-List-${flight.flight_number}.pdf`
+    );
+
+    doc.pipe(res);
+
+    // Titre
+    doc.fontSize(18).text(`Passenger List - Flight ${flight.flight_number}`, { align: "center" });
+    doc.moveDown();
+    doc.fontSize(12).text(`Airline: ${flight.airline}`);
+    doc.text(`Departure: ${flight.departure}`);
+    doc.text(`Arrival: ${flight.to}`);
+    doc.moveDown();
+
+    // Tableau simple
+    doc.font("Helvetica-Bold");
+    doc.text("First Name", 50, doc.y, { continued: true });
+    doc.text("Last Name", 150, doc.y, { continued: true });
+    doc.text("Email", 250, doc.y, { continued: true });
+    doc.text("Phone", 400, doc.y, { continued: true });
+    doc.text("Booking Date", 500, doc.y);
+    doc.moveDown();
+    doc.font("Helvetica");
+
+    passengerRows.forEach((p: any) => {
+      doc.text(p.first_name, 50, doc.y, { continued: true });
+      doc.text(p.last_name, 150, doc.y, { continued: true });
+      doc.text(p.email, 250, doc.y, { continued: true });
+      doc.text(p.phone || "—", 400, doc.y, { continued: true });
+      doc.text(new Date(p.booking_date).toLocaleDateString(), 500, doc.y);
+      doc.moveDown();
+    });
+
+    doc.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors de la génération du PDF" });
+  }
+});
+
+
+
+
 // app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 //     try {
 //         const { startDate, endDate, transactionType, status } = req.query;

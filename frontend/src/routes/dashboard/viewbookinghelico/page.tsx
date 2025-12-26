@@ -225,7 +225,7 @@ const ViewBookingHelico = () => {
                                     <th className="table-head text-center">Payment Reference</th>
                                     <th className="table-head text-center">Flight Type</th>
                                     <th className="table-head text-center">Trip Type</th>
-                                    <th className="table-head text-center">Client Name</th>
+                                    <th className="table-head text-center">Passenger Name</th>
                                     <th className="table-head text-center">Total Price</th>
                                     <th className="table-head text-center">Passager</th>
                                     <th className="table-head text-center">Payment</th>

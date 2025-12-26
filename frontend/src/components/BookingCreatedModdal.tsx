@@ -742,9 +742,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                             </button>
 
                             <div className="px-6 pt-6">
-                                <h2 className="text-xl font-semibold text-slate-800">Créer un Ticket pour le vol {flight.flight_number}</h2>
+                                <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.flight_number}</h2>
                                 <p className="text-sm text-slate-500">
-                                    {flight.from} → {flight.to} | Départ: {flight.departure}
+                                    {flight.from} → {flight.to} | Departure: {flight.departure}
                                 </p>
                                 <div className="my-4 h-px w-full bg-slate-100" />
                                 <div className="mt-1 flex items-center gap-4">
@@ -766,7 +766,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         type="text"
                                         id="flightNumberReturn"
                                         name="flightNumberReturn"
-                                        placeholder="Numéro du vol retour"
+                                        placeholder="Return flight number"
                                         disabled={!isRoundTrip}
                                         required={isRoundTrip}
                                         onChange={handleChange}
@@ -788,13 +788,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="firstName"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Prénom
+                                        First Name
                                     </label>
                                     <input
                                         type="text"
                                         id="firstName"
                                         name="firstName"
-                                        placeholder="Prénom"
+                                        placeholder="First Name"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -807,13 +807,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="middleName"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Deuxième prénom
+                                        Middle Name
                                     </label>
                                     <input
                                         type="text"
                                         id="middleName"
                                         name="middleName"
-                                        placeholder="Deuxième prénom"
+                                        placeholder="Middle Name"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -826,13 +826,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="lastName"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Nom
+                                        Last Name
                                     </label>
                                     <input
                                         type="text"
                                         id="lastName"
                                         name="lastName"
-                                        placeholder="Nom"
+                                        placeholder="Last Name"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -845,7 +845,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="dateOfBirth"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Date de naissance
+                                        Date of birth
                                     </label>
                                     <input
                                         type="date"
@@ -863,13 +863,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="address"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Adresse
+                                        Address
                                     </label>
                                     <input
                                         type="text"
                                         id="address"
                                         name="address"
-                                        placeholder="Adresse"
+                                        placeholder="Address"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -882,13 +882,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="country"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Pays
+                                        Country
                                     </label>
                                     <input
                                         type="text"
                                         id="country"
                                         name="country"
-                                        placeholder="Pays"
+                                        placeholder="Country"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -901,13 +901,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="nationality"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Nationalité
+                                        Nationality
                                     </label>
                                     <input
                                         type="text"
                                         id="nationality"
                                         name="nationality"
-                                        placeholder="Nationalité"
+                                        placeholder="Nationality"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -920,13 +920,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="email"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Email
+                                        E-mail
                                     </label>
                                     <input
                                         type="email"
                                         id="email"
                                         name="email"
-                                        placeholder="Email"
+                                        placeholder="E-mail"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -939,13 +939,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="phone"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Téléphone
+                                        Phone
                                     </label>
                                     <input
                                         type="text"
                                         id="phone"
                                         name="phone"
-                                        placeholder="Téléphone"
+                                        placeholder="Phone"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -958,7 +958,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="paymentMethod"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Méthode de paiement
+                                        Payment method
                                     </label>
                                     <select
                                         id="paymentMethod"
@@ -968,10 +968,10 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     >
                                         <option value="cash">Cash</option>
-                                        <option value="card">Carte</option>
-                                        <option value="cheque">Chèque</option>
-                                        <option value="virement">Virement</option>
-                                        <option value="transfert">Transfert</option>
+                                        <option value="card">Card</option>
+                                        <option value="cheque">Check</option>
+                                        <option value="virement">bank transfer</option>
+                                        <option value="transfert">Transfer</option>
                                         <option value="contrat">Contrat</option>
                                     </select>
                                     {/* Nombre de passagers */}
@@ -991,7 +991,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="unpaid"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Non rémunéré
+                                        Unpaid
                                     </label>
 
                                     <label className="relative inline-flex cursor-pointer items-center">
@@ -1015,13 +1015,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         htmlFor="reference"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Numéro de Référence
+                                        Reference Number
                                     </label>
                                     <input
                                         type="text"
                                         id="reference"
                                         name="reference"
-                                        placeholder="Numéro de Référence"
+                                        placeholder="Reference Number"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1086,7 +1086,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         disabled={createTicket}
                                         className="w-full rounded-md bg-amber-500 py-3 font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
                                     >
-                                        {createTicket ? "Saving..." : "Confirmer et Créer le Ticket"}
+                                        {createTicket ? "Saving..." : "Confirm and Create the Ticket"}
                                     </button>
                                 </div>
                             </div>

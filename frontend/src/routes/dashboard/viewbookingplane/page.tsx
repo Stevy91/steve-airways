@@ -227,7 +227,7 @@ const ViewBookingPlane = () => {
                                     <th className="table-head text-center">Payment Reference</th>
                                     <th className="table-head text-center">Flight Type</th>
                                     <th className="table-head text-center">Trip Type</th>
-                                    <th className="table-head text-center">Contact Email</th>
+                                    <th className="table-head text-center">Passenger Name</th>
                                     <th className="table-head text-center">Total Price</th>
                                     <th className="table-head text-center">Passager</th>
                                     <th className="table-head text-center">Payment</th>
@@ -261,7 +261,7 @@ const ViewBookingPlane = () => {
                                             </span>
                                         </td>
 
-                                        <td className="table-cell text-center">{booking.contact_email}</td>
+                                        <td className="table-cell text-center">{booking.first_name} {booking.last_name}</td>
                                         <td className="table-cell text-center">${booking.total_price}</td>
                                         <td className="table-cell text-center">{booking.passenger_count}</td>
 
