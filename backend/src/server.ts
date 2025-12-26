@@ -7353,7 +7353,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status } = req.query;
+    const { startDate, endDate, transactionType, status, name } = req.query;
 
     // Conditions dynamiques
     let conditions = " WHERE b.type_vol = 'helicopter' ";
@@ -7388,10 +7388,10 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
       params.push(status);
     }
 
-       // 🔹 Avec type de status
-    if (status) {
-      conditions += " AND b.status = ? ";
-      params.push(status);
+       // 🔹 Avec type de name
+    if (name) {
+      conditions += " AND b.first_name = ? ";
+      params.push(name);
     }
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
@@ -7407,10 +7407,12 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
                 b.contact_email, 
                 b.type_vol, 
                 b.type_v,
+                p.first_name,
                 u.name AS created_by_name,
                 u.email AS created_by_email
             FROM bookings b
             LEFT JOIN users u ON b.user_created_booking = u.id
+            LEFT JOIN passengers p ON b.id = p.booking_id
             ${conditions}
             ORDER BY b.created_at DESC`,
       params
