@@ -29,7 +29,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
         <aside
             ref={ref}
             className={cn(
-                "fixed z-[100] flex h-full w-[240px] flex-col overflow-x-hidden border-r border-slate-300 bg-white transition-all dark:border-slate-700 dark:bg-slate-900",
+                "fixed z-[100] flex h-full w-[240px] flex-col overflow-x-hidden border-r border-slate-300 bgSidebar transition-all dark:border-slate-700 dark:bg-slate-900",
                 collapsed ? "md:w-[70px] md:items-center" : "md:w-[240px]",
                 collapsed ? "max-md:-left-full" : "max-md:left-0",
             )}
@@ -45,7 +45,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                     alt="Logo"
                     className="hidden dark:block"
                 />
-                {!collapsed && <p className="text-lg font-bold text-slate-900 dark:text-slate-50">Trogon Airways</p>}
+                {!collapsed && <p className="text-lg font-bold text-white dark:text-slate-50">Trogon Airways</p>}
             </div>
 
             <div className="flex w-full flex-col gap-y-4 overflow-y-auto p-3">
@@ -87,7 +87,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                 <button
                                     onClick={() => toggleGroup(navbarLink.title)}
                                     className={cn(
-                                        "sidebar-group-title flex w-full items-center gap-2 rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800",
+                                        "sidebar-group-title flex w-full items-center text-white gap-2 rounded p-2 hover:bg-slate-100 hover:text-black dark:hover:bg-slate-800",
                                         collapsed ? "mx-auto h-[45px] w-[45px] justify-center" : "justify-between",
                                     )}
                                 >
@@ -98,7 +98,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                     {!collapsed && (openGroup === navbarLink.title ? <ChevronDown size={18} /> : <ChevronRight size={18} />)}
                                 </button>
 
-                                <div className={cn("ml-3 space-y-1", openGroup !== navbarLink.title && "hidden")}>
+                                <div className={cn("ml-3 space-y-1 ", openGroup !== navbarLink.title && "hidden")}>
                                     {navbarLink.links.map((link) => {
                                         const Icon = link.icon;
                                         return (
@@ -190,7 +190,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                 <button
                                     onClick={() => toggleGroup(navbarLink.title)}
                                     className={cn(
-                                        "sidebar-group-title flex w-full items-center gap-2 rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800",
+                                        "sidebar-group-title flex  w-full items-center gap-2 rounded p-2 hover:bg-slate-100 dark:hover:bg-slate-800",
                                         collapsed ? "mx-auto h-[45px] w-[45px] justify-center" : "justify-between",
                                     )}
                                 >

@@ -88,7 +88,8 @@ const Users = () => {
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
-                                    <th className="table-head text-center">Acces</th>
+                                  
+                                    <th className="table-head text-center">Access</th>
                                     <th className="table-head text-center">Name</th>
                                     <th className="table-head text-center">Email</th>
                                     <th className="table-head text-center">Phone</th>
@@ -113,7 +114,8 @@ const Users = () => {
                                             key={user.id}
                                             className="table-row"
                                         >
-                                            <td className="table-cell text-center">acess</td>
+                                         
+                                            <td className="table-cell text-center">Access</td>
                                             <td className="table-cell text-center">{user.name}</td>
                                             <td className="table-cell text-center">{user.email}</td>
                                             <td className="table-cell text-center">{user.phone}</td>

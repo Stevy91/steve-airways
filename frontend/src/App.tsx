@@ -24,6 +24,7 @@ import Privacy from "./routes/privacy/page";
 import Login from "./routes/login/page";
 import Register from "./routes/register/page";
 import Users from "./routes/dashboard/user/page";
+import PermissionsPage from "./routes/dashboard/permission/page";
 
 // export default function App() {
 //   const router = createBrowserRouter([
@@ -192,6 +193,7 @@ const router = createBrowserRouter([
             { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
             { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
             { path: "user", element: <Users /> },
+            { path: "permissions", element: <PermissionsPage /> },
             { path: "roleUser", element: <h1 className="title">Role</h1> },
             { path: "settings", element: <h1 className="title">Settings</h1> },
         ],

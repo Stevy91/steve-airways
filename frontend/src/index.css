@@ -14,17 +14,21 @@
     }
 
     .sidebar-group-title {
-        @apply overflow-hidden text-ellipsis text-base font-medium text-black dark:text-slate-50;
+        @apply overflow-hidden text-ellipsis text-base font-medium text-white dark:text-slate-50;
+    }
+
+    .bgSidebar {
+       background-color: #0e113b ;
     }
 
     .sidebar-item {
-        @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-slate-900 transition-colors hover:bg-blue-50 dark:text-slate-50 dark:hover:bg-blue-950;
+        @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-slate-50 hover:text-black transition-colors hover:bg-blue-50 dark:text-slate-50 dark:hover:bg-blue-950;
         &.active {
             @apply bg-blue-900 text-slate-50 dark:bg-red-600;
         }
     }
     .sidebar-item-dashboard {
-       @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-slate-900 transition-colors hover:bg-blue-50 dark:text-slate-50 dark:hover:bg-blue-950;
+       @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-white transition-colors hover:bg-blue-50 dark:text-slate-50 dark:hover:bg-blue-950;
         &.active {
             @apply bg-amber-500 text-slate-50 dark:bg-red-600;
         }

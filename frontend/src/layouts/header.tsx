@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
             </div>
 
             <div className="relative flex items-center gap-x-3">
-                <button
+                {/* <button
                     className="btn-ghost size-10"
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
                     aria-label="Toggle theme"
@@ -194,7 +194,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                         size={20}
                         className="hidden dark:block"
                     />
-                </button>
+                </button> */}
 
                 {/* Notifications */}
                 <div
