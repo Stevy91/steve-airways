@@ -7385,14 +7385,12 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
                 b.payment_method, 
                 b.contact_email, 
                 b.type_vol, 
-                b.type_v,
-                p.first_name,
-                p.last_name
+                b.type_v, 
                 u.name as created_by_name,  
                 u.email as created_by_email 
             FROM bookings b
             LEFT JOIN users u ON b.user_created_booking = u.id  
-            LEFT JOIN passengers p ON b.id = p.booking_id
+           
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
       ["helicopter"]
@@ -7408,8 +7406,6 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
       passenger_count: row.passenger_count,
       payment_method: row.payment_method,
       contact_email: row.contact_email,
-      first_name: row.first_name,
-      last_name: row.last_name,
       type_vol: row.type_vol,
       type_v: row.type_v,
       created_by_name: row.created_by_name,
