@@ -7682,26 +7682,41 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 import PDFDocument from "pdfkit";
 
 
-app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Response) => {
+app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Response) => { 
   const flightId = Number(req.params.flightId);
   if (!flightId) return res.status(400).json({ error: "Flight ID missing" });
 
   try {
-    // 🔹 Récupérer le vol
+    // 🔹 Récupérer le vol avec les noms des lieux via JOIN
     const [flightRows] = await pool.query<RowDataPacket[]>(
-  "SELECT flight_number, airline, departure_airport AS departure, arrival_airport AS `to`, departure_date FROM flights WHERE id = ?",
-  [flightId]
-);
-
+      `SELECT 
+        f.flight_number, 
+        f.airline, 
+        f.departure_time,
+        f.arrival_time,
+        f.price,
+        f.seats_available,
+        dep.name as departure_location_name,
+        arr.name as arrival_location_name,
+        dep.city as departure_city,
+        arr.city as arrival_city,
+        dep.country as departure_country,
+        arr.country as arrival_country
+      FROM flights f
+      LEFT JOIN locations dep ON f.departure_location_id = dep.id
+      LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+      WHERE f.id = ?`,
+      [flightId]
+    );
+    
     const flight = flightRows[0];
     if (!flight) return res.status(404).json({ error: "Flight not found" });
 
     // 🔹 Récupérer les passagers
     const [passengerRows] = await pool.query<RowDataPacket[]>(
-  "SELECT first_name, last_name, email, phone, booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
-  [flightId]
-);
-
+      "SELECT first_name, last_name, email, phone, booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
+      [flightId]
+    );
 
     // 🔹 Générer PDF
     const doc = new PDFDocument({ margin: 50 });
@@ -7719,8 +7734,12 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
     doc.fontSize(18).text(`Passenger List - Flight ${flight.flight_number}`, { align: "center" });
     doc.moveDown();
     doc.fontSize(12).text(`Airline: ${flight.airline}`);
-    doc.text(`Departure: ${flight.departure}`);
-    doc.text(`Arrival: ${flight.to}`);
+    doc.text(`Departure: ${flight.departure_location_name} (${flight.departure_city}, ${flight.departure_country})`);
+    doc.text(`Departure Time: ${new Date(flight.departure_time).toLocaleString()}`);
+    doc.text(`Arrival: ${flight.arrival_location_name} (${flight.arrival_city}, ${flight.arrival_country})`);
+    doc.text(`Arrival Time: ${new Date(flight.arrival_time).toLocaleString()}`);
+    doc.text(`Price: $${flight.price}`);
+    doc.text(`Available Seats: ${flight.seats_available}`);
     doc.moveDown();
 
     // Tableau simple
@@ -7748,7 +7767,6 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
     res.status(500).json({ error: "Erreur lors de la génération du PDF" });
   }
 });
-
 
 
 
