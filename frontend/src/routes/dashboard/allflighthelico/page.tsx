@@ -42,14 +42,10 @@ type Notification = {
 };
 
 export type ListeDetails = {
-
     id?: string;
-  
 };
 type ListeDetailsModalProps = {
-   
     data?: ListeDetails;
- 
 };
 
 const FlightTableHelico = () => {
@@ -67,8 +63,8 @@ const FlightTableHelico = () => {
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loadingLocations, setLoadingLocations] = useState(true);
     const [liste, setListe] = useState<undefined>();
+    const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
 
-   
     const generateFlightNumber = () => {
         const prefix = "TR";
 
@@ -125,21 +121,30 @@ const FlightTableHelico = () => {
         }
     };
 
-   
+    const generatePassengerPDF = async (flightId: number) => {
+        if (!flightId) {
+            toast.error("Aucun vol sélectionné");
+            return;
+        }
 
-const generatePassengerPDF = async (flightId: number) => {
-  const response = await fetch(`https://steve-airways.onrender.com/api/generate/${flightId}/passengers-list`);
-  if (!response.ok) throw new Error("Erreur serveur");
+        try {
+            const response = await fetch(`https://steve-airways.onrender.com/api/generate/${flightId}/passengers-list`);
+            if (!response.ok) throw new Error("Erreur serveur");
 
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Passenger-List-${flightId}.pdf`;
-  a.click();
-  window.URL.revokeObjectURL(url);
-};
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Passenger-List-${flightId}.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
 
+            toast.success("PDF téléchargé avec succès");
+        } catch (err) {
+            console.error("Erreur lors du téléchargement:", err);
+            toast.error("Erreur lors du téléchargement du PDF");
+        }
+    };
 
     // Fermer le dropdown si clic/touch extérieur de l'élément ouvert
     useEffect(() => {
@@ -532,6 +537,7 @@ const generatePassengerPDF = async (flightId: number) => {
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     fetchPassengers(flight.id);
+                                                                    setSelectedFlightId(flight.id); // Stocker l'ID du vol
                                                                     setShowModalPassager(true);
                                                                     setOpenDropdown(null);
                                                                 }}
@@ -1004,12 +1010,18 @@ const generatePassengerPDF = async (flightId: number) => {
                                             <div className="md:col-span-3">
                                                 <div className="flex items-center justify-center py-6">
                                                     <button
-  onClick={() => generatePassengerPDF(currentFlights[0].id)}
-  className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
->
-  Download the passenger list
-</button>
-
+                                                        onClick={() => {
+                                                            if (selectedFlightId) {
+                                                                generatePassengerPDF(selectedFlightId);
+                                                            } else {
+                                                                toast.error("Aucun vol sélectionné");
+                                                            }
+                                                        }}
+                                                        className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
+                                                        disabled={!selectedFlightId}
+                                                    >
+                                                        {loadingPassengers ? "Chargement..." : "Download the passenger list"}
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

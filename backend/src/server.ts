@@ -7731,92 +7731,160 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
       [flightId]
     );
 
-    // 🔹 Générer PDF
-    const doc = new PDFDocument({ margin: 50 });
-    
-    // En-tête pour téléchargement
+    const passengerRowsHTML = passengerRows.map((p) => `
+        <tr key="${p.id}" class="border-b hover:bg-gray-50">
+            <td class="table-cell px-6 py-4">${p.first_name || '-'}</td>
+            <td class="table-cell px-6 py-4">${p.last_name || '-'}</td>
+            <td class="table-cell px-6 py-4">${p.email || '-'}</td>
+            <td class="table-cell px-6 py-4">${p.phone || 'No Number'}</td>
+            <td class="table-cell px-6 py-4">${p.nationality || '-'}</td>
+            <td class="table-cell px-6 py-4">${p.gender || '-'}</td>
+            <td class="table-cell px-6 py-4">${formatDate(p.booking_date)}</td>
+        </tr>
+    `).join('');
+
+
+  const htmlContent = `
+    <html>
+    <head>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                margin: 0;
+                padding: 20px;
+            }
+            .container { 
+                max-width: 800px; 
+                margin: 0 auto; 
+                border: 1px solid #ddd; 
+                border-radius: 8px; 
+                overflow: hidden;
+            }
+            .header { 
+                background-color: #1A237E; 
+                color: white; 
+                padding: 20px; 
+                text-align: center;
+            }
+            .logo {
+                height: 55px;
+                vertical-align: middle;
+            }
+            .content {
+                padding: 20px;
+            }
+            .passenger-table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 20px;
+                font-size: 12px;
+            }
+            .passenger-table th { 
+                background-color: #f2f2f2; 
+                border: 1px solid #ddd; 
+                padding: 8px; 
+                text-align: left;
+                font-weight: bold;
+            }
+            .passenger-table td { 
+                border: 1px solid #ddd; 
+                padding: 8px; 
+                text-align: left;
+            }
+            .border-b {
+                border-bottom: 1px solid #e5e7eb;
+            }
+            .hover-bg-gray-50 tr:hover {
+                background-color: #f9fafb;
+            }
+            .px-6 {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+            .py-4 {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+            .table-cell {
+                border: 1px solid #ddd;
+                padding: 0.75rem;
+            }
+            .title {
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 20px;
+                color: #1A237E;
+            }
+            .flight-info {
+                margin-bottom: 20px;
+                padding: 15px;
+                background-color: #f8f9fa;
+                border-radius: 5px;
+            }
+            .flight-info p {
+                margin: 5px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways Logo" class="logo" />
+                <h1 style="margin: 10px 0 0 0; font-size: 24px;">Passenger List</h1>
+            </div>
+
+            <div class="content">
+                <div class="title">Passenger List - ${passengerRows[0]?.flight_number || 'Flight'}</div>
+                
+                <div class="flight-info">
+                    <p><strong>Total Passengers:</strong> ${passengerRows.length}</p>
+                    <p><strong>Report Date:</strong> ${new Date().toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    })}</p>
+                </div>
+
+                <table class="passenger-table hover-bg-gray-50">
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Nationality</th>
+                            <th>Gender</th>
+                            <th>Booking Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${passengerRowsHTML}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #777;">
+                    <p>Generated by Trogon Airways Passenger Management System</p>
+                    <p>${new Date().toLocaleString()}</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+// 4️⃣ Générer le PDF
+    const file = { content: htmlContent };
+    const options = { format: 'A3', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
+
+    const pdfBuffer = await pdf.generatePdf(file, options);
+
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Passenger-List-${flight.flight_number}.pdf`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename=${flight}.pdf`);
+    res.send(pdfBuffer);
 
-    doc.pipe(res);
 
-    // Titre
-    doc.fontSize(18).text(`Passenger List - Flight ${flight.flight_number}`, { align: "center" });
-    doc.moveDown();
-    
-    // Informations du vol
-    doc.fontSize(12).text(`Airline: ${flight.airline}`);
-    doc.text(`Departure: ${flight.departure_location_name} (${flight.departure_city}, ${flight.departure_country})`);
-    doc.text(`Departure Time: ${new Date(flight.departure_time).toLocaleString()}`);
-    doc.text(`Arrival: ${flight.arrival_location_name} (${flight.arrival_city}, ${flight.arrival_country})`);
-    doc.text(`Arrival Time: ${new Date(flight.arrival_time).toLocaleString()}`);
-    doc.text(`Price: $${flight.price}`);
-    doc.text(`Available Seats: ${flight.seats_available}`);
-    doc.moveDown();
-
-    // Informations sur les passagers
-    doc.fontSize(14).text(`Total Passengers: ${passengerRows.length}`, { align: "center" });
-    doc.moveDown();
-
-    // Tableau des passagers
-    doc.font("Helvetica-Bold");
-    doc.text("First Name", 50, doc.y, { continued: true });
-    doc.text("Last Name", 150, doc.y, { continued: true });
-    doc.text("Type", 250, doc.y, { continued: true });
-    doc.text("Nationality", 320, doc.y, { continued: true });
-    doc.text("Gender", 420, doc.y, { continued: true });
-    doc.text("Email", 500, doc.y, { continued: true });
-    doc.text("Phone", 650, doc.y, { continued: true });
-    doc.text("Booking Date", 750, doc.y);
-    doc.moveDown();
-    doc.font("Helvetica");
-
-    passengerRows.forEach((p: any) => {
-      const yPos = doc.y;
-      
-      // Gestion du débordement de page
-      if (yPos > 700) {
-        doc.addPage();
-        doc.font("Helvetica-Bold");
-        doc.text("First Name", 50, 50, { continued: true });
-        doc.text("Last Name", 150, 50, { continued: true });
-        doc.text("Type", 250, 50, { continued: true });
-        doc.text("Nationality", 320, 50, { continued: true });
-        doc.text("Gender", 420, 50, { continued: true });
-        doc.text("Email", 500, 50, { continued: true });
-        doc.text("Phone", 650, 50, { continued: true });
-        doc.text("Booking Date", 750, 50);
-        doc.moveDown();
-        doc.font("Helvetica");
-      }
-
-      doc.text(p.first_name || "-", 50, doc.y, { continued: true });
-      doc.text(p.last_name || "-", 150, doc.y, { continued: true });
-      doc.text(p.type || "-", 250, doc.y, { continued: true });
-      doc.text(p.nationality || "-", 320, doc.y, { continued: true });
-      doc.text(p.gender || "-", 420, doc.y, { continued: true });
-      
-      // Email avec coupure si trop long
-      const email = p.email || "-";
-      if (email.length > 20) {
-        doc.text(email.substring(0, 20) + "...", 500, doc.y, { continued: true });
-      } else {
-        doc.text(email, 500, doc.y, { continued: true });
-      }
-      
-      doc.text(p.phone || "-", 650, doc.y, { continued: true });
-      doc.text(new Date(p.booking_date).toLocaleDateString(), 750, doc.y);
-      doc.moveDown();
-    });
-
-    // Pied de page
-    doc.moveDown(2);
-    doc.fontSize(10).text(`Generated on: ${new Date().toLocaleString()}`, { align: "right" });
-
-    doc.end();
   } catch (err) {
     console.error("Erreur lors de la génération du PDF:", err);
     res.status(500).json({ error: "Erreur lors de la génération du PDF" });
