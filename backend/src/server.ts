@@ -7390,7 +7390,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
 
        // 🔹 Avec type de name
     if (name) {
-      conditions += " AND b.first_name = ? ";
+      conditions += " AND p.first_name = ? ";
       params.push(name);
     }
 
