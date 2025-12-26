@@ -7375,21 +7375,29 @@ app.get("/api/booking-helico", async (req: Request, res: Response) => {
   try {
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
-                b.id, 
-                b.booking_reference, 
-                b.payment_intent_id, 
-                b.total_price, 
-                b.status, 
-                b.created_at, 
-                b.passenger_count, 
-                b.payment_method, 
-                b.contact_email, 
-                b.type_vol, 
-                b.type_v, 
-                u.name as created_by_name,  
-                u.email as created_by_email 
-            FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id  
+  b.id,
+  b.booking_reference,
+  b.total_price,
+  b.status,
+  b.created_at,
+  b.passenger_count,
+  b.payment_method,
+  b.contact_email,
+  b.type_vol,
+  b.type_v,
+  u.name AS created_by_name,
+  u.email AS created_by_email,
+  p.first_name,
+  p.last_name
+FROM bookings b
+LEFT JOIN users u ON b.user_created_booking = u.id
+LEFT JOIN passengers p 
+  ON p.id = (
+    SELECT id FROM passengers
+    WHERE booking_id = b.id
+    ORDER BY id ASC
+    LIMIT 1
+  )
            
             WHERE b.type_vol = ?
             ORDER BY b.created_at DESC`,
