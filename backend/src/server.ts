@@ -7712,9 +7712,22 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
     const flight = flightRows[0];
     if (!flight) return res.status(404).json({ error: "Flight not found" });
 
-    // 🔹 Récupérer les passagers
+    // 🔹 Récupérer les passagers via la table bookings
     const [passengerRows] = await pool.query<RowDataPacket[]>(
-      "SELECT first_name, last_name, email, phone, created_at AS booking_date FROM passengers WHERE flight_id = ? ORDER BY id ASC",
+      `SELECT 
+        p.first_name, 
+        p.last_name, 
+        p.email, 
+        p.phone, 
+        p.created_at as booking_date,
+        p.type,
+        p.nationality,
+        p.gender,
+        p.date_of_birth
+      FROM passengers p
+      INNER JOIN bookings b ON p.booking_id = b.id
+      WHERE b.flight_id = ? 
+      ORDER BY p.id ASC`,
       [flightId]
     );
 
@@ -7733,6 +7746,8 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
     // Titre
     doc.fontSize(18).text(`Passenger List - Flight ${flight.flight_number}`, { align: "center" });
     doc.moveDown();
+    
+    // Informations du vol
     doc.fontSize(12).text(`Airline: ${flight.airline}`);
     doc.text(`Departure: ${flight.departure_location_name} (${flight.departure_city}, ${flight.departure_country})`);
     doc.text(`Departure Time: ${new Date(flight.departure_time).toLocaleString()}`);
@@ -7742,32 +7757,71 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
     doc.text(`Available Seats: ${flight.seats_available}`);
     doc.moveDown();
 
-    // Tableau simple
+    // Informations sur les passagers
+    doc.fontSize(14).text(`Total Passengers: ${passengerRows.length}`, { align: "center" });
+    doc.moveDown();
+
+    // Tableau des passagers
     doc.font("Helvetica-Bold");
     doc.text("First Name", 50, doc.y, { continued: true });
     doc.text("Last Name", 150, doc.y, { continued: true });
-    doc.text("Email", 250, doc.y, { continued: true });
-    doc.text("Phone", 400, doc.y, { continued: true });
-    doc.text("Booking Date", 500, doc.y);
+    doc.text("Type", 250, doc.y, { continued: true });
+    doc.text("Nationality", 320, doc.y, { continued: true });
+    doc.text("Gender", 420, doc.y, { continued: true });
+    doc.text("Email", 500, doc.y, { continued: true });
+    doc.text("Phone", 650, doc.y, { continued: true });
+    doc.text("Booking Date", 750, doc.y);
     doc.moveDown();
     doc.font("Helvetica");
 
     passengerRows.forEach((p: any) => {
-      doc.text(p.first_name, 50, doc.y, { continued: true });
-      doc.text(p.last_name, 150, doc.y, { continued: true });
-      doc.text(p.email, 250, doc.y, { continued: true });
-      doc.text(p.phone || "—", 400, doc.y, { continued: true });
-      doc.text(new Date(p.booking_date).toLocaleDateString(), 500, doc.y);
+      const yPos = doc.y;
+      
+      // Gestion du débordement de page
+      if (yPos > 700) {
+        doc.addPage();
+        doc.font("Helvetica-Bold");
+        doc.text("First Name", 50, 50, { continued: true });
+        doc.text("Last Name", 150, 50, { continued: true });
+        doc.text("Type", 250, 50, { continued: true });
+        doc.text("Nationality", 320, 50, { continued: true });
+        doc.text("Gender", 420, 50, { continued: true });
+        doc.text("Email", 500, 50, { continued: true });
+        doc.text("Phone", 650, 50, { continued: true });
+        doc.text("Booking Date", 750, 50);
+        doc.moveDown();
+        doc.font("Helvetica");
+      }
+
+      doc.text(p.first_name || "-", 50, doc.y, { continued: true });
+      doc.text(p.last_name || "-", 150, doc.y, { continued: true });
+      doc.text(p.type || "-", 250, doc.y, { continued: true });
+      doc.text(p.nationality || "-", 320, doc.y, { continued: true });
+      doc.text(p.gender || "-", 420, doc.y, { continued: true });
+      
+      // Email avec coupure si trop long
+      const email = p.email || "-";
+      if (email.length > 20) {
+        doc.text(email.substring(0, 20) + "...", 500, doc.y, { continued: true });
+      } else {
+        doc.text(email, 500, doc.y, { continued: true });
+      }
+      
+      doc.text(p.phone || "-", 650, doc.y, { continued: true });
+      doc.text(new Date(p.booking_date).toLocaleDateString(), 750, doc.y);
       doc.moveDown();
     });
 
+    // Pied de page
+    doc.moveDown(2);
+    doc.fontSize(10).text(`Generated on: ${new Date().toLocaleString()}`, { align: "right" });
+
     doc.end();
   } catch (err) {
-    console.error(err);
+    console.error("Erreur lors de la génération du PDF:", err);
     res.status(500).json({ error: "Erreur lors de la génération du PDF" });
   }
 });
-
 
 
 // app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
