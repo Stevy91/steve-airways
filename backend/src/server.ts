@@ -2736,7 +2736,75 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
 
 
+app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
+  let connection;
+  try {
 
+
+    const query = `
+            SELECT 
+                f.id,
+                f.flight_number,
+                f.type,
+                f.airline,
+                f.departure_time,
+                f.arrival_time,
+                f.price,
+                f.seats_available,
+                dep.name AS departure_airport_name,
+                dep.city AS departure_city,
+                dep.code AS departure_code,
+                arr.name AS arrival_airport_name,
+                arr.city AS arrival_city,
+                arr.code AS arrival_code
+            FROM 
+                flights f
+            JOIN 
+                locations dep ON f.departure_location_id = dep.id
+            JOIN 
+                locations arr ON f.arrival_location_id = arr.id
+            WHERE 
+                f.type = 'helicopter'    
+            ORDER BY 
+                f.departure_time ASC
+        `;
+
+    console.log("Exécution de la requête SQL...");
+    const [flights] = await pool.query<FlightWithAirports[]>(query);
+    console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
+
+    // Formater les données
+    const formattedFlights = flights.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
+
+
+    res.json(formattedFlights);
+  } catch (err) {
+    console.error("ERREUR DÉTAILLÉE:", {
+      message: err instanceof Error ? err.message : "Erreur inconnue",
+      stack: err instanceof Error ? err.stack : undefined,
+
+    });
+
+    if (connection)
+      res.status(500).json({
+        error: "Erreur serveur",
+        details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
+      });
+  }
+});
 
 
 
@@ -7450,62 +7518,7 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la recherche" });
   }
 });
-app.get("/api/flighttablehelico1", async (req: Request, res: Response) => {
-  try {
-    const { flightNumb, tailNumber, dateDeparture } = req.query;
-    
-    let conditions = " WHERE f.type = 'helicopter' ";
-    const params: any[] = [];
-    
-    if (flightNumb) {
-      conditions += " AND f.flight_number = ? ";
-      params.push(flightNumb);
-    }
-    
-    if (tailNumber) {
-      conditions += " AND f.airline = ? ";
-      params.push(tailNumber);
-    }
-    
-    if (dateDeparture) {
-      conditions += " AND DATE(f.departure_time) = ? ";
-      params.push(dateDeparture);
-    }
-    
-    const [flights] = await pool.query<FlightWithAirports[]>(`
-      SELECT 
-        f.id,
-        f.flight_number,
-        f.type,
-        f.airline,
-        f.departure_time,
-        f.arrival_time,
-        f.price,
-        f.seats_available,
-        dep.name AS departure_airport_name,
-        dep.city AS departure_city,
-        dep.code AS departure_code,
-        arr.name AS arrival_airport_name,
-        arr.city AS arrival_city,
-        arr.code AS arrival_code
-      FROM 
-        flights f
-      JOIN 
-        locations dep ON f.departure_location_id = dep.id
-      JOIN 
-        locations arr ON f.arrival_location_id = arr.id
-      ${conditions}
-      ORDER BY f.departure_time ASC
-    `, params);
-    
-    // Retourner directement le tableau comme l'autre API
-    res.json(flights);
-    
-  } catch (err) {
-    console.error("Erreur recherche vols:", err);
-    res.status(500).json({ error: "Erreur lors de la recherche" });
-  }
-});
+
 
 app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
   try {
@@ -7534,6 +7547,8 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
       params.push(dateDeparture);
     }
 
+   
+
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
                 f.id, 
@@ -7557,164 +7572,6 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la recherche" });
   }
 });
-
-// app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
-//   try {
-//     const { startDate, endDate, transactionType, status, name } = req.query;
-
-//     let conditions = " WHERE b.type_vol = 'helicopter' ";
-//     const params: any[] = [];
-
-//     // Filtre dates
-//     if (startDate) {
-//       conditions += " AND DATE(b.created_at) >= ? ";
-//       params.push(startDate);
-//     }
-
-//     if (endDate) {
-//       conditions += " AND DATE(b.created_at) <= ? ";
-//       params.push(endDate);
-//     }
-
-//     // Filtre payment_method (insensible à la casse + espaces)
-//     if (transactionType) {
-//       conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
-//       params.push(transactionType);
-//     }
-
-//     // Filtre status
-//     if (status) {
-//       conditions += " AND b.status = ? ";
-//       params.push(status);
-//     }
-
-//     // Filtre name
-//     if (name) {
-//       conditions += " AND p.first_name LIKE ? ";
-//       params.push(`%${name}%`);
-//     }
-
-//     // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
-//     const [rowsUntyped] = await pool.query(`
-//             SELECT 
-//                 b.booking_reference,
-//                 b.payment_intent_id,
-//                 b.type_vol,
-//                 b.type_v,
-//                 b.contact_email,
-//                 b.total_price,
-//                 b.passenger_count,
-//                 b.status,
-//                 b.payment_method,
-//                 p.first_name,
-//                 p.last_name
-//                 u.name AS created_by_name,
-//                 b.created_at
-//             FROM bookings b
-//             LEFT JOIN users u ON b.user_created_booking = u.id
-//             LEFT JOIN passengers p ON b.id = p.booking_id
-//             ${conditions}
-//             ORDER BY b.created_at DESC
-//         `, params);
-
-//     const rows = rowsUntyped as mysql.RowDataPacket[];
-
-//     // 🟩 Génération Excel
-//     const workbook = new ExcelJS.Workbook();
-//     const sheet = workbook.addWorksheet("Bookings");
-
-//     // 1️⃣ Titre fusionné
-//     sheet.mergeCells('A1:K1');
-//     const headerRow = sheet.getRow(1);
-//     headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
-//     headerRow.getCell(1).font = { bold: true, size: 14 };
-//     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-
-//     // 2️⃣ En-têtes
-//     const headers = [
-//       "Booking Reference",
-//       "Payment Ref",
-//       "Type",
-//       "Trajet",
-//       "Client",
-//       "Email",
-//       "Total",
-//       "Passagers",
-//       "Status",
-//       "Méthode",
-//       "Créé par",
-//       "Date"
-//     ];
-
-//     const titleRow = sheet.addRow(headers);
-//     titleRow.eachCell((cell) => {
-//       cell.font = { bold: true };
-//     });
-
-//     // 3️⃣ Définition des colonnes
-//     sheet.columns = [
-//       { key: "booking_reference" },
-//       { key: "payment_intent_id" },
-//       { key: "type_vol" },
-//       { key: "type_v" },
-//       { key: "first_name"},
-//       { key: "contact_email" },
-//       { key: "total_price" },
-//       { key: "passenger_count" },
-//       { key: "status" },
-//       { key: "payment_method" },
-//       { key: "created_by_name" },
-//       { key: "created_at" }
-//     ];
-
-//     // 4️⃣ Ajout des données
-//     rows.forEach((row) => {
-//       sheet.addRow([
-//         row.booking_reference,
-//         row.payment_intent_id,
-//         row.type_vol,
-//         row.type_v,
-//         `${row.first_name} ${row.last_name}`,
-//         row.contact_email,
-//         row.total_price,
-//         row.passenger_count,
-//         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
-//         row.payment_method,
-//         row.created_by_name,
-//         row.created_at
-//       ]);
-//     });
-
-//     // 5️⃣ Auto-size colonnes
-//     sheet.columns.forEach((column) => {
-//       if (column && column.eachCell) {
-//         let maxLength = 0;
-//         column.eachCell({ includeEmpty: true }, (cell) => {
-//           const len = cell.value ? cell.value.toString().length : 10;
-//           if (len > maxLength) maxLength = len;
-//         });
-//         column.width = maxLength + 2;
-//       }
-//     });
-
-//     // 6️⃣ Headers HTTP
-//     res.setHeader(
-//       "Content-Type",
-//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-//     );
-//     res.setHeader(
-//       "Content-Disposition",
-//       "attachment; filename=Trogon Transactions Helico.xlsx"
-//     );
-
-//     await workbook.xlsx.write(res);
-//     res.end();
-
-//   } catch (error) {
-//     console.error("Erreur Excel:", error);
-//     res.status(500).json({ error: "Erreur export Excel" });
-//   }
-// });
 
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   try {

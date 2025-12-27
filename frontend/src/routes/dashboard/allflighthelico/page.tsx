@@ -201,7 +201,7 @@ const totalPages = stats && stats.recentBookings
 const fetchFlights = async () => {
     try {
         setLoading(true);
-        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico");
+        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico1");
         const data = await res.json();
         
         // Si data est un tableau, le mettre dans recentBookings
