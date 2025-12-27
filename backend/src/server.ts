@@ -6894,7 +6894,8 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
 
    
     if (dateDeparture) {
-      conditions += " AND f.departure_time = ? ";
+     
+      conditions += " AND DATE(f.departure_time) = ? ";
       params.push(dateDeparture);
     }
 
