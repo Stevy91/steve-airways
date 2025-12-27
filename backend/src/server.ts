@@ -7520,7 +7520,8 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
       });
   }
 });
-app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
+
+app.get("/api/flighttablehelico1", async (req: Request, res: Response) => {
   try {
     const { flightNumb, tailNumber, dateDeparture } = req.query;
     
