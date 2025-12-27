@@ -6872,68 +6872,6 @@ app.get("/api/flighttablehelico2", async (req: Request, res: Response) => {
 
 
 
-app.get("/api/flighttablehelico1", async (req: Request, res: Response) => {
-  try {
-    const { flightNumb, tailNumber, dateDeparture } = req.query;
-    
-    let conditions = " WHERE f.type = 'helicopter' ";
-    const params: any[] = [];
-    
-    if (flightNumb) {
-      conditions += " AND f.flight_number = ? ";
-      params.push(flightNumb);
-    }
-    
-    if (tailNumber) {
-      conditions += " AND f.airline = ? ";
-      params.push(tailNumber);
-    }
-    
-    if (dateDeparture) {
-      conditions += " AND DATE(f.departure_time) = ? ";
-      params.push(dateDeparture);
-    }
-    
-    const [flights] = await pool.query<FlightWithAirports[]>(`
-      SELECT 
-        f.id,
-        f.flight_number,
-        f.type,
-        f.airline,
-        f.departure_time,
-        f.arrival_time,
-        f.price,
-        f.seats_available,
-        dep.name AS departure_airport_name,
-        dep.city AS departure_city,
-        dep.code AS departure_code,
-        arr.name AS arrival_airport_name,
-        arr.city AS arrival_city,
-        arr.code AS arrival_code
-
-        
-      FROM 
-        flights f
-      JOIN 
-        locations dep ON f.departure_location_id = dep.id
-      JOIN 
-        locations arr ON f.arrival_location_id = arr.id
-      ${conditions}
-      ORDER BY f.departure_time ASC
-    `, params);
-
-
-    
-    
-    // Retourner directement le tableau comme l'autre API
-    res.json(flights);
-    
-  } catch (err) {
-    console.error("Erreur recherche vols:", err);
-    res.status(500).json({ error: "Erreur lors de la recherche" });
-  }
-});
-
 app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
   try {
     // const { startDate, endDate, transactionType, status, name } = req.query;
@@ -7017,15 +6955,26 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
-                f.id, 
-                f.flight_number, 
-                f.airline, 
-                f.departure_time, 
-                f.arrival_time, 
-                f.price, 
+                f.id,
+                f.flight_number,
+                f.type,
+                f.airline,
+                f.departure_time,
+                f.arrival_time,
+                f.price,
                 f.seats_available,
-                f.type
-            FROM flights f
+                dep.name AS departure_airport_name,
+                dep.city AS departure_city,
+                dep.code AS departure_code,
+                arr.name AS arrival_airport_name,
+                arr.city AS arrival_city,
+                arr.code AS arrival_code
+            FROM 
+                flights f
+            JOIN 
+                locations dep ON f.departure_location_id = dep.id
+            JOIN 
+                locations arr ON f.arrival_location_id = arr.id
             ${conditions}
             ORDER BY f.created_at DESC`,
       params

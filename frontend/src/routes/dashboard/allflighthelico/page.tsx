@@ -201,16 +201,9 @@ const totalPages = stats && stats.recentBookings
 const fetchFlights = async () => {
     try {
         setLoading(true);
-        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico1");
+        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico2");
         const data = await res.json();
-        
-        // Si data est un tableau, le mettre dans recentBookings
-        if (Array.isArray(data)) {
-            setStats({ recentBookings: data });
-        } else {
-            // Sinon, garder la structure existante
             setStats(data);
-        }
         
     } catch {
         setError("Erreur lors du chargement des vols");
@@ -218,6 +211,8 @@ const fetchFlights = async () => {
         setLoading(false);
     }
 };
+
+
 const handleSearch = async () => {
     try {
         setLoading(true);
@@ -229,24 +224,17 @@ const handleSearch = async () => {
         
         const res = await fetch(url.toString());
         const data = await res.json();
-        
-        // Vérifier si la réponse contient 'bookings' ou est directement un tableau
-        if (data.bookings) {
-            setStats({ recentBookings: data.bookings });
-        } else if (Array.isArray(data)) {
-            setStats({ recentBookings: data });
-        } else {
-            setStats({ recentBookings: [] });
-        }
-        
+
+        setStats({ recentBookings: data.bookings });
         setCurrentPage(1);
     } catch (err) {
-        console.error("Erreur recherche:", err);
-        toast.error("Erreur lors de la recherche");
+        alert("Erreur lors de la recherche");
     } finally {
         setLoading(false);
     }
 };
+
+
    const downloadExcel = () => {
     let url = "https://steve-airways.onrender.com/api/flight-helico-export";
     
