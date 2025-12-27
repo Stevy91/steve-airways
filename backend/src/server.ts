@@ -6998,8 +6998,12 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
     f.price,
     f.seats_available,
 
-    p.first_name,
-    p.last_name,
+     JSON_ARRAYAGG(
+    JSON_OBJECT(
+      'first_name', p.first_name,
+      'last_name', p.last_name
+    )
+  ) AS passengers
 
     dep.name AS departure_airport_name,
     dep.city AS departure_city,
@@ -7011,12 +7015,12 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
 
 FROM flights f
 JOIN bookings b ON f.id = b.flight_id
-LEFT JOIN passengers p ON b.id = p.booking_id
+JOIN passengers p ON b.id = p.booking_id
 JOIN locations dep ON f.departure_location_id = dep.id
 JOIN locations arr ON f.arrival_location_id = arr.id
 
 ${conditions}
-ORDER BY f.departure_time ASC;
+ORDER BY f.id;
 `,
       params);
 
