@@ -6927,7 +6927,29 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
       params
     );
 
-    res.json({ bookings: rows });
+       
+
+    // Formater les données
+    const formattedFlights = rows.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
+
+
+     // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ bookings: formattedFlights });
+
+   
 
   } catch (error) {
     console.error("Erreur recherche booking:", error);
