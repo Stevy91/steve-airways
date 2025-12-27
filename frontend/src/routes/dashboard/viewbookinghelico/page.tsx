@@ -135,7 +135,7 @@ const ViewBookingHelico = () => {
             <h1 className="title">View Booking Helico</h1>
             {/* Filtres */}
 
-            {(isAdmin || isOperateur) && (
+            
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
                             <div className="flex flex-col">
                                 <label className="mb-1 font-medium text-gray-700">Start date</label>
@@ -213,7 +213,7 @@ const ViewBookingHelico = () => {
                                 Excel
                             </button>
                         </div>
-            )}
+           
             {/* TABLEAU BOOKINGS */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                 <div className="card-body overflow-auto p-0">

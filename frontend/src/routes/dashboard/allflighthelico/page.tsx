@@ -64,6 +64,12 @@ const FlightTableHelico = () => {
     const [loadingLocations, setLoadingLocations] = useState(true);
     const [liste, setListe] = useState<undefined>();
     const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
+    const [stats, setStats] = useState<any>(null);
+
+       // Champs filtres
+    const [flightNumb, setFlightNumb] = useState("");
+    const [tailNumber, setTailNumber] = useState("");
+    const [dateDeparture, setDateDeparture] = useState("");
 
     const generateFlightNumber = () => {
         const prefix = "TR";
@@ -91,15 +97,28 @@ const FlightTableHelico = () => {
     };
 
     // 🔹 Pagination
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    // const [currentPage, setCurrentPage] = useState(1);
+    // const itemsPerPage = 10;
 
     const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
 
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(flights.length / itemsPerPage);
+    // const indexOfLastItem = currentPage * itemsPerPage;
+    // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    // const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
+    // const totalPages = Math.ceil(flights.length / itemsPerPage);
+
+
+        // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 10;
+
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
+    const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
+
+
+
     const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
     const [open, setOpen] = useState(false);
 
@@ -184,6 +203,30 @@ const FlightTableHelico = () => {
             setLoading(false);
         }
     };
+
+        const handleSearch = async () => {
+            try {
+                setLoading(true);
+
+                const url = new URL("https://steve-airways.onrender.com/api/flight-helico-search");
+                if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
+                if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
+                if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
+          
+
+                const res = await fetch(url.toString());
+                const data = await res.json();
+   
+                setStats({ recentBookings: data.bookings });
+                setCurrentPage(1);
+            } catch (err) {
+                alert("Erreur lors de la recherche");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+
     const refreshFlights = () => {
         fetchFlights();
     };
@@ -440,6 +483,46 @@ const FlightTableHelico = () => {
                 )}
             </div>
 
+            {/* Filtres */}
+
+            <div className="mb-9 mt-16 grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Flight number</label>
+                    <input
+                        type="text"
+                        placeholder="Flight number"
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Tail Number</label>
+                    <input
+                        type="text"
+                        placeholder="Tail Number"
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Date</label>
+                    <input
+                        type="date"
+                        
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+
+                <div className="flex flex-col">
+                    <label className="mb-7 font-medium text-gray-700"></label>
+                    <button
+                        type="button"
+                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                    >
+                        Search
+                    </button>
+                </div>
+            </div>
+
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
@@ -454,7 +537,7 @@ const FlightTableHelico = () => {
                                 <tr className="table-row">
                                     <th className="table-head text-center">Flight number</th>
                                     <th className="table-head text-center">Flight type</th>
-                                    <th className="table-head text-center">Company</th>
+                                    <th className="table-head text-center">Tail Number</th>
                                     <th className="table-head text-center">Departure</th>
                                     <th className="table-head text-center">Destination</th>
                                     <th className="table-head text-center">Departure time</th>
@@ -465,7 +548,7 @@ const FlightTableHelico = () => {
                                 </tr>
                             </thead>
                             <tbody className="table-body">
-                                {currentFlights.map((flight, index) => (
+                                {currentBookings.map((flight, index) => (
                                     <tr
                                         key={flight.id}
                                         className="border-b hover:bg-gray-50"
@@ -919,119 +1002,118 @@ const FlightTableHelico = () => {
             )}
 
             {/* Modal list passager - Seulement accessible aux admins */}
-            {isAdmin && (
-                <AnimatePresence>
-                    {showModalPassager && (
-                        <div className="fixed inset-0 z-50">
-                            <motion.div
-                                className="absolute inset-0 bg-black/50"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => {
-                                    setShowModalPassager(false);
-                                }}
-                            />
-                            <motion.div
-                                role="dialog"
-                                aria-modal="true"
-                                className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
-                                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            >
-                                <div className="relative max-h-[90vh] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-                                    <button
-                                        className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                                        aria-label="Close"
-                                        onClick={() => {
-                                            setShowModalPassager(false);
-                                        }}
-                                    >
-                                        <X className="h-5 w-5" />
-                                    </button>
 
-                                    <div className="px-6 pt-6">
-                                        <h2 className="text-xl font-semibold text-slate-800"> Number of passengers ({passengers.length})</h2>
+            <AnimatePresence>
+                {showModalPassager && (
+                    <div className="fixed inset-0 z-50">
+                        <motion.div
+                            className="absolute inset-0 bg-black/50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                setShowModalPassager(false);
+                            }}
+                        />
+                        <motion.div
+                            role="dialog"
+                            aria-modal="true"
+                            className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        >
+                            <div className="relative max-h-[90vh] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                                <button
+                                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Close"
+                                    onClick={() => {
+                                        setShowModalPassager(false);
+                                    }}
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+
+                                <div className="px-6 pt-6">
+                                    <h2 className="text-xl font-semibold text-slate-800"> Number of passengers ({passengers.length})</h2>
+                                </div>
+
+                                <div className="my-4 h-px w-full bg-slate-100" />
+                                {loadingPassengers ? (
+                                    <div className="flex items-center justify-center py-6">
+                                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
                                     </div>
-
-                                    <div className="my-4 h-px w-full bg-slate-100" />
-                                    {loadingPassengers ? (
-                                        <div className="flex items-center justify-center py-6">
-                                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
-                                        </div>
-                                    ) : (
-                                        <div className="max-h-[60vh] overflow-auto">
+                                ) : (
+                                    <div className="max-h-[60vh] overflow-auto">
+                                        {" "}
+                                        {/* Ajout d'un conteneur scrollable */}
+                                        <table className="table w-full">
                                             {" "}
-                                            {/* Ajout d'un conteneur scrollable */}
-                                            <table className="table w-full">
+                                            {/* Ajout de w-full */}
+                                            <thead className="sticky top-0 bg-white">
                                                 {" "}
-                                                {/* Ajout de w-full */}
-                                                <thead className="sticky top-0 bg-white">
-                                                    {" "}
-                                                    {/* Header fixe */}
-                                                    <tr>
-                                                        <th className="table-head px-6 py-4 text-left">FirstName</th> {/* Plus de padding */}
-                                                        <th className="table-head px-6 py-4 text-left">LastName</th>
-                                                        <th className="table-head px-6 py-4 text-left">Email Address</th>
-                                                        <th className="table-head px-6 py-4 text-left">Phone</th> {/* Nouvelle colonne */}
-                                                        <th className="table-head px-6 py-4 text-left">Booking Date</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="table-body">
-                                                    {passengers.length > 0 ? (
-                                                        passengers.map((p) => (
-                                                            <tr
-                                                                key={p.id}
-                                                                className="border-b hover:bg-gray-50"
-                                                            >
-                                                                <td className="table-cell px-6 py-4">{p.first_name}</td>
-                                                                <td className="table-cell px-6 py-4">{p.last_name}</td>
-                                                                <td className="table-cell px-6 py-4">{p.email}</td>
-                                                                <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td>{" "}
-                                                                {/* Nouvelle colonne */}
-                                                                <td className="table-cell px-6 py-4">
-                                                                    {format(parseISO(p.booking_date), "EEE, dd MMM yyyy")}
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    ) : (
-                                                        <tr>
-                                                            <td
-                                                                colSpan={5}
-                                                                className="py-8 text-center text-gray-500"
-                                                            >
-                                                                No passenger found
+                                                {/* Header fixe */}
+                                                <tr>
+                                                    <th className="table-head px-6 py-4 text-left">FirstName</th> {/* Plus de padding */}
+                                                    <th className="table-head px-6 py-4 text-left">LastName</th>
+                                                    <th className="table-head px-6 py-4 text-left">Email Address</th>
+                                                    <th className="table-head px-6 py-4 text-left">Phone</th> {/* Nouvelle colonne */}
+                                                    <th className="table-head px-6 py-4 text-left">Booking Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="table-body">
+                                                {passengers.length > 0 ? (
+                                                    passengers.map((p) => (
+                                                        <tr
+                                                            key={p.id}
+                                                            className="border-b hover:bg-gray-50"
+                                                        >
+                                                            <td className="table-cell px-6 py-4">{p.first_name}</td>
+                                                            <td className="table-cell px-6 py-4">{p.last_name}</td>
+                                                            <td className="table-cell px-6 py-4">{p.email}</td>
+                                                            <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td>{" "}
+                                                            {/* Nouvelle colonne */}
+                                                            <td className="table-cell px-6 py-4">
+                                                                {format(parseISO(p.booking_date), "EEE, dd MMM yyyy")}
                                                             </td>
                                                         </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                            <div className="md:col-span-3">
-                                                <div className="flex items-center justify-center py-6">
-                                                    <button
-                                                        onClick={() => {
-                                                            if (selectedFlightId) {
-                                                                generatePassengerPDF(selectedFlightId);
-                                                            } else {
-                                                                toast.error("Aucun vol sélectionné");
-                                                            }
-                                                        }}
-                                                        className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
-                                                        disabled={!selectedFlightId}
-                                                    >
-                                                        {loadingPassengers ? "Chargement..." : "Download the passenger list"}
-                                                    </button>
-                                                </div>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={5}
+                                                            className="py-8 text-center text-gray-500"
+                                                        >
+                                                            No passenger found
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                        <div className="md:col-span-3">
+                                            <div className="flex items-center justify-center py-6">
+                                                <button
+                                                    onClick={() => {
+                                                        if (selectedFlightId) {
+                                                            generatePassengerPDF(selectedFlightId);
+                                                        } else {
+                                                            toast.error("Aucun vol sélectionné");
+                                                        }
+                                                    }}
+                                                    className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
+                                                    disabled={!selectedFlightId}
+                                                >
+                                                    {loadingPassengers ? "Chargement..." : "Download the passenger list"}
+                                                </button>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-            )}
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

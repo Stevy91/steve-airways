@@ -33,14 +33,14 @@ export const NavbarLinks = (lang: string) => [
     //   { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
     ],
   },
-  {
-    title: "Users",
-    icon: Users,
-    links: [
-      { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
-      { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
-    ],
-  },
+//   {
+//     title: "Users",
+//     icon: Users,
+//     links: [
+//       { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
+//       { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+//     ],
+//   },
 //   {
 //     title: "Settings",
 //     icon: Settings,

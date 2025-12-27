@@ -449,7 +449,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                 <tr className="table-row">
                                     <th className="table-head text-center">Flight number</th>
                                     <th className="table-head text-center">Flight type</th>
-                                    <th className="table-head text-center">Company</th>
+                                    <th className="table-head text-center">Tail Number</th>
                                     <th className="table-head text-center">Departure</th>
                                     <th className="table-head text-center">Destination</th>
                                     <th className="table-head text-center">Departure time</th>
@@ -901,7 +901,7 @@ const [flightNumber, setFlightNumber] = useState("");
 
             {/* Modal list passager*/}
                         {/* Modal list passager - Seulement accessible aux admins */}
-            {isAdmin && (
+         
                 <AnimatePresence>
                     {showModalPassager && (
                         <div className="fixed inset-0 z-50">
@@ -1011,9 +1011,9 @@ const [flightNumber, setFlightNumber] = useState("");
                                 </div>
                             </motion.div>
                         </div>
-                    )}
+                   )}
                 </AnimatePresence>
-            )}
+            
         </div>
     );
 };
