@@ -6958,6 +6958,201 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
+  try {
+ const { flightNumb, tailNumber, dateDeparture } = req.query;
+
+    // Conditions dynamiques
+    let conditions = " WHERE f.type = 'helicopter' ";
+    const params: any[] = [];
+
+  
+    if (flightNumb) {
+      conditions += "  AND f.flight_number = ? ";
+      params.push(flightNumb);
+    }
+
+   
+    if (tailNumber) {
+      conditions += "  AND f.airline = ? ";
+      params.push(tailNumber);
+    }
+
+   
+    if (dateDeparture) {
+     
+      conditions += " AND DATE(f.departure_time) = ? ";
+      params.push(dateDeparture);
+    }
+
+
+    // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
+    const [rowsUntyped] = await pool.query(`
+            SELECT 
+                f.id,
+                f.flight_number,
+                f.type,
+                f.airline,
+                f.departure_time,
+                f.arrival_time,
+                f.price,
+                f.seats_available,
+                dep.name AS departure_airport_name,
+                dep.city AS departure_city,
+                dep.code AS departure_code,
+                arr.name AS arrival_airport_name,
+                arr.city AS arrival_city,
+                arr.code AS arrival_code
+            FROM 
+                flights f
+            JOIN 
+                locations dep ON f.departure_location_id = dep.id
+            JOIN 
+                locations arr ON f.arrival_location_id = arr.id
+            ${conditions}
+            ORDER BY f.created_at DESC`,
+      params);
+
+    const rows = rowsUntyped as mysql.RowDataPacket[];
+
+        const passengerRowsHTML = rows.map((p) => `
+                                <h2>PAP-CAP N2568M</h2>
+
+                        <table class="two-cols">
+                          <tr>
+                            <th>When</th>
+                            <td class="red">Sat 27/12/2025 6:45 am – 7:30 am</td>
+                          </tr>
+                          <tr>
+                            <th>Total reservations</th>
+                            <td class="center">4</td>
+                          </tr>
+                          <tr>
+                            <th>Capacity</th>
+                            <td class="center">5</td>
+                          </tr>
+                          <tr>
+                            <th>Available</th>
+                            <td class="center">1</td>
+                          </tr>
+                        </table>
+
+                        <table class="names-table">
+                          <tr>
+                            <th>Full name</th>
+                            <th>ID</th>
+                          </tr>
+                          <tr><td>Stella HANDAL BABOUN</td><td></td></tr>
+                          <tr><td>Alan Luis Nostra BABOUN</td><td></td></tr>
+                          <tr><td>Michael Philipp P. ZURAIK</td><td></td></tr>
+                          <tr><td>Steeve Climacque DORCELET</td><td></td></tr>
+                        </table>
+    `).join('');
+
+
+  const htmlContent = `
+                          <!DOCTYPE html>
+                          <html lang="fr">
+                        <head>
+                        <meta charset="UTF-8" />
+                        <title>Flight Manifest</title>
+
+                        <style>
+                          /* Taille page impression */
+                          @page {
+                            size: 8.5in 11in;
+                            margin: 0.5in;
+                          }
+
+                          body {
+                            font-family: Arial, Helvetica, sans-serif;
+                            color: #000;
+                            margin: 0;
+                          }
+
+                          h1 {
+                            text-align: center;
+                            font-size: 18px;
+                            margin-bottom: 20px;
+                          }
+
+                          h2 {
+                            font-size: 14px;
+                            color: #1f4e79;
+                            margin: 20px 0 6px;
+                          }
+
+                          table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 18px;
+                            font-size: 12px;
+                          }
+
+                          th, td {
+                            border: 1px solid #555;
+                            padding: 6px 8px;
+                          }
+
+                          th {
+                            background: #f2f2f2;
+                            font-weight: bold;
+                            text-align: left;
+                          }
+
+                          .center {
+                            text-align: center;
+                          }
+
+                          .red {
+                            color: #c00000;
+                            font-weight: bold;
+                          }
+
+                          .two-cols th,
+                          .two-cols td {
+                            width: 50%;
+                          }
+
+                          .names-table th {
+                            text-align: center;
+                          }
+
+                          .spacer {
+                            height: 10px;
+                          }
+                        </style>
+                        </head>
+
+                        <body>
+
+                        <h1 class="red">Manifeste pour Samedi 27 Décembre 2025</h1>
+
+                       ${passengerRowsHTML}
+
+
+                        </body>
+                        </html>
+
+                            `;
+// 4️⃣ Générer le PDF
+    const file = { content: htmlContent };
+    const options = { format: 'A3', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
+
+    const pdfBuffer = await pdf.generatePdf(file, options);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=rapport.pdf`);
+    res.send(pdfBuffer);
+
+ 
+
+  } catch (error) {
+    console.error("Erreur Excel:", error);
+    res.status(500).json({ error: "Erreur export Excel" });
+  }
+});
+
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, transactionType, status, name } = req.query;
@@ -7332,350 +7527,6 @@ app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Res
     res.status(500).json({ error: "Erreur lors de la génération du PDF" });
   }
 });
-
-
-// app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
-//     try {
-//         const { startDate, endDate, transactionType, status } = req.query;
-
-//         let conditions = " WHERE b.type_vol = 'plane' ";
-//         const params: any[] = [];
-
-//         if (startDate) {
-//             conditions += " AND DATE(b.created_at) >= ? ";
-//             params.push(startDate);
-//         }
-
-//         if (endDate) {
-//             conditions += " AND DATE(b.created_at) <= ? ";
-//             params.push(endDate);
-//         }
-
-//         if (transactionType) {
-//             conditions += " AND b.payment_method = ? ";
-//             params.push(transactionType);
-//         }
-
-//         if (status) {
-//             conditions += " AND b.status = ? ";
-//             params.push(status);
-//         }
-
-//         const [rows] = await pool.query<mysql.RowDataPacket[]>(`
-//             SELECT 
-//                 b.booking_reference,
-//                 b.payment_intent_id,
-//                 b.type_vol,
-//                 b.type_v,
-//                 b.contact_email,
-//                 b.total_price,
-//                 b.passenger_count,
-//                 b.status,
-//                 b.payment_method,
-//                 u.name AS created_by_name,
-//                 b.created_at
-//             FROM bookings b
-//             LEFT JOIN users u ON b.user_created_booking = u.id
-//             ${conditions}
-//             ORDER BY b.created_at DESC
-//         `, params);
-
-//                   const workbook = new ExcelJS.Workbook();
-//         const sheet = workbook.addWorksheet("Bookings");
-
-//         // 1️⃣ Ajouter un en-tête global au milieu en gras (fusionné)
-//         sheet.mergeCells('A1:K1');
-//         const headerRow = sheet.getRow(1);
-//         const headerCell = headerRow.getCell(1);
-//         headerCell.value = "TROGON AVION TRANSACTIONS";
-//         headerCell.font = { bold: true, size: 14 };
-//         headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-//         // 2️⃣ Ajouter les en-têtes de colonnes sur la ligne 2
-//         const headers = [
-//             "Booking Reference", 
-//             "Payment Ref", 
-//             "Type", 
-//             "Trajet", 
-//             "Email", 
-//             "Total", 
-//             "Passagers", 
-//             "Status", 
-//             "Méthode", 
-//             "Créé par", 
-//             "Date"
-//         ];
-
-//         // Ajouter la ligne d'en-têtes
-//         const titleRow = sheet.addRow(headers);
-
-//         // 3️⃣ Mettre les en-têtes en gras
-//         titleRow.eachCell((cell) => {
-//             cell.font = { bold: true };
-//         });
-
-//         // 4️⃣ Définir les clés pour les colonnes (facultatif mais utile)
-//         sheet.columns = [
-//             { key: "booking_reference" },
-//             { key: "payment_intent_id" },
-//             { key: "type_vol" },
-//             { key: "type_v" },
-//             { key: "contact_email" },
-//             { key: "total_price" },
-//             { key: "passenger_count" },
-//             { key: "status" },
-//             { key: "payment_method" },
-//             { key: "created_by_name" },
-//             { key: "created_at" }
-//         ];
-
-//         // 5️⃣ Ajouter les données (commençant à la ligne 3)
-//         rows.forEach((row) => {
-//             sheet.addRow([
-//                 row.booking_reference,
-//                 row.payment_intent_id,
-//                 row.type_vol,
-//                 row.type_v,
-//                 row.contact_email,
-//                 row.total_price,
-//                 row.passenger_count,
-//                 row.status,
-//                 row.payment_method,
-//                 row.created_by_name,
-//                 row.created_at
-//             ]);
-//         });
-
-//         // OU si vos objets ont exactement les mêmes propriétés que les clés :
-//         // rows.forEach((r) => sheet.addRow(r));
-
-//         // 6️⃣ Ajuster la largeur des colonnes automatiquement
-//         sheet.columns.forEach((column) => {
-//             if (column && column.eachCell) {
-//                 let maxLength = 0;
-//                 column.eachCell({ includeEmpty: true }, (cell) => {
-//                     const columnLength = cell.value ? cell.value.toString().length : 10;
-//                     if (columnLength > maxLength) {
-//                         maxLength = columnLength;
-//                     }
-//                 });
-//                 column.width = maxLength < 10 ? 10 : maxLength + 2;
-//             }
-//         });
-
-//         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-//         res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Avion.xlsx");
-
-//         await workbook.xlsx.write(res);
-//         res.end();
-
-//     } catch (error) {
-//         console.error("Erreur Excel:", error);
-//         res.status(500).json({ error: "Erreur export Excel" });
-//     }
-// });
-
-// app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
-//     try {
-//         const { startDate, endDate, transactionType, status } = req.query;
-
-//         let conditions = " WHERE b.type_vol = 'helicopter' ";
-//         const params: any[] = [];
-
-//         if (startDate) {
-//             conditions += " AND DATE(b.created_at) >= ? ";
-//             params.push(startDate);
-//         }
-
-//         if (endDate) {
-//             conditions += " AND DATE(b.created_at) <= ? ";
-//             params.push(endDate);
-//         }
-
-//         if (transactionType) {
-//             conditions += " AND b.payment_method = ? ";
-//             params.push(transactionType);
-//         }
-
-//         if (status) {
-//             conditions += " AND b.status = ? ";
-//             params.push(status);
-//         }
-
-//         const [rows] = await pool.query<mysql.RowDataPacket[]>(`
-//             SELECT 
-//                 b.booking_reference,
-//                 b.payment_intent_id,
-//                 b.type_vol,
-//                 b.type_v,
-//                 b.contact_email,
-//                 b.total_price,
-//                 b.passenger_count,
-//                 b.status,
-//                 b.payment_method,
-//                 u.name AS created_by_name,
-//                 b.created_at
-//             FROM bookings b
-//             LEFT JOIN users u ON b.user_created_booking = u.id
-//             ${conditions}
-//             ORDER BY b.created_at DESC
-//         `, params);
-
-//         // Génération Excel
-
-//         const workbook = new ExcelJS.Workbook();
-//         const sheet = workbook.addWorksheet("Bookings");
-
-//         // 1️⃣ Ajouter un en-tête global au milieu en gras (fusionné)
-//         sheet.mergeCells('A1:K1');
-//         const headerRow = sheet.getRow(1);
-//         const headerCell = headerRow.getCell(1);
-//         headerCell.value = "TROGON HELICO TRANSACTIONS";
-//         headerCell.font = { bold: true, size: 14 };
-//         headerCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-//         // 2️⃣ Ajouter les en-têtes de colonnes sur la ligne 2
-//         const headers = [
-//             "Booking Reference", 
-//             "Payment Ref", 
-//             "Type", 
-//             "Trajet", 
-//             "Email", 
-//             "Total", 
-//             "Passagers", 
-//             "Status", 
-//             "Méthode", 
-//             "Créé par", 
-//             "Date"
-//         ];
-
-//         // Ajouter la ligne d'en-têtes
-//         const titleRow = sheet.addRow(headers);
-
-//         // 3️⃣ Mettre les en-têtes en gras
-//         titleRow.eachCell((cell) => {
-//             cell.font = { bold: true };
-//         });
-
-//         // 4️⃣ Définir les clés pour les colonnes (facultatif mais utile)
-//         sheet.columns = [
-//             { key: "booking_reference" },
-//             { key: "payment_intent_id" },
-//             { key: "type_vol" },
-//             { key: "type_v" },
-//             { key: "contact_email" },
-//             { key: "total_price" },
-//             { key: "passenger_count" },
-//             { key: "status" },
-//             { key: "payment_method" },
-//             { key: "created_by_name" },
-//             { key: "created_at" }
-//         ];
-
-//         // 5️⃣ Ajouter les données (commençant à la ligne 3)
-//         rows.forEach((row) => {
-//             sheet.addRow([
-//                 row.booking_reference,
-//                 row.payment_intent_id,
-//                 row.type_vol,
-//                 row.type_v,
-//                 row.contact_email,
-//                 row.total_price,
-//                 row.passenger_count,
-//                 row.status,
-//                 row.payment_method,
-//                 row.created_by_name,
-//                 row.created_at
-//             ]);
-//         });
-
-//         // OU si vos objets ont exactement les mêmes propriétés que les clés :
-//         // rows.forEach((r) => sheet.addRow(r));
-
-//         // 6️⃣ Ajuster la largeur des colonnes automatiquement
-//         sheet.columns.forEach((column) => {
-//             if (column && column.eachCell) {
-//                 let maxLength = 0;
-//                 column.eachCell({ includeEmpty: true }, (cell) => {
-//                     const columnLength = cell.value ? cell.value.toString().length : 10;
-//                     if (columnLength > maxLength) {
-//                         maxLength = columnLength;
-//                     }
-//                 });
-//                 column.width = maxLength < 10 ? 10 : maxLength + 2;
-//             }
-//         });
-
-//         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-//         res.setHeader("Content-Disposition", "attachment; filename=Trogon Transactions Helico.xlsx");
-
-//         await workbook.xlsx.write(res);
-//         res.end();
-//     } catch (error) {
-//         console.error("Erreur Excel:", error);
-//         res.status(500).json({ error: "Erreur export Excel" });
-//     }
-// });
-
-
-
-// app.get("/api/booking-helico", async (req: Request, res: Response) => {
-//     let connection;
-//     try {
-//         // 1. Récupérer les réservations avec jointure pour avoir le nom de l'utilisateur
-//         const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
-//             `SELECT 
-//                 b.id, 
-//                 b.booking_reference, 
-//                 b.payment_intent_id, 
-//                 b.total_price, 
-//                 b.status, 
-//                 b.created_at, 
-//                 b.passenger_count, 
-//                 b.payment_method, 
-//                 b.contact_email, 
-//                 b.type_vol, 
-//                 b.type_v,
-//                 u.name as created_by_name,  
-//                 u.email as created_by_email 
-//             FROM bookings b
-//             LEFT JOIN users u ON b.user_created_booking = u.id  
-//             WHERE b.type_vol = ?
-//             ORDER BY b.created_at DESC`,
-//             ["helicopter"]
-//         );
-
-//         // Convertir en type Booking[] avec le nouveau champ
-//         const bookings: Booking[] = bookingRows.map((row) => ({
-//             id: row.id,
-//             booking_reference: row.booking_reference,
-//             payment_intent_id: row.payment_intent_id,
-//             total_price: Number(row.total_price),
-//             status: row.status,
-//             created_at: new Date(row.created_at).toISOString(),
-//             passenger_count: row.passenger_count,
-//             payment_method: row.payment_method,
-//             contact_email: row.contact_email,
-//             type_vol: row.type_vol,
-//             type_v: row.type_v,
-//             created_by_name: row.created_by_name,  // AJOUT DU CHAMP
-//             created_by_email: row.created_by_email // AJOUT DU CHAMP (optionnel)
-//         }));
-
-//         const recentBookings = bookings.slice(0, 10);
-
-//         // 8. Construction de la réponse
-//         const response: BookingStats = {
-//             recentBookings,
-//         };
-
-//         res.json(response);
-//     } catch (error) {
-//         console.error("Dashboard error:", error);
-//         res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
-//     } 
-// });
-
 
 
 

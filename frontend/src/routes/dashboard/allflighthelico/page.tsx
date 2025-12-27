@@ -235,20 +235,15 @@ const handleSearch = async () => {
 };
 
 
-   const downloadExcel = () => {
-    let url = "https://steve-airways.onrender.com/api/flight-helico-export";
-    
-    const params = new URLSearchParams();
-    if (flightNumb) params.append("flightNumb", flightNumb);
-    if (tailNumber) params.append("tailNumber", tailNumber);
-    if (dateDeparture) params.append("dateDeparture", dateDeparture);
-    
-    if (params.toString()) {
-        url += "?" + params.toString();
-    }
-    
-    window.open(url, "_blank");
-};
+     // API EXPORT EXCEL
+    const downloadExcel = () => {
+        let url =
+            "https://steve-airways.onrender.com/api/flight-helico-export?" +
+            `flightNumb=${flightNumb}&tailNumber=${tailNumber}&dateDeparture=${dateDeparture}`;
+
+        window.open(url, "_blank");
+    };
+
 
 
 
