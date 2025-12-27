@@ -6798,6 +6798,80 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/flighttablehelico2", async (req: Request, res: Response) => {
+  let connection;
+  try {
+
+
+    const query = `
+            SELECT 
+                f.id,
+                f.flight_number,
+                f.type,
+                f.airline,
+                f.departure_time,
+                f.arrival_time,
+                f.price,
+                f.seats_available,
+                dep.name AS departure_airport_name,
+                dep.city AS departure_city,
+                dep.code AS departure_code,
+                arr.name AS arrival_airport_name,
+                arr.city AS arrival_city,
+                arr.code AS arrival_code
+            FROM 
+                flights f
+            JOIN 
+                locations dep ON f.departure_location_id = dep.id
+            JOIN 
+                locations arr ON f.arrival_location_id = arr.id
+            WHERE 
+                f.type = 'helicopter'    
+            ORDER BY 
+                f.departure_time ASC
+        `;
+
+    console.log("Exécution de la requête SQL...");
+    const [flights] = await pool.query<FlightWithAirports[]>(query);
+    console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
+
+    // Formater les données
+    const formattedFlights = flights.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
+
+
+     // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ recentBookings: formattedFlights });
+  } catch (err) {
+    console.error("ERREUR DÉTAILLÉE:", {
+      message: err instanceof Error ? err.message : "Erreur inconnue",
+      stack: err instanceof Error ? err.stack : undefined,
+
+    });
+
+    if (connection)
+      res.status(500).json({
+        error: "Erreur serveur",
+        details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
+      });
+  }
+});
+
+
+
+
 app.get("/api/flighttablehelico1", async (req: Request, res: Response) => {
   try {
     const { flightNumb, tailNumber, dateDeparture } = req.query;
@@ -6836,6 +6910,8 @@ app.get("/api/flighttablehelico1", async (req: Request, res: Response) => {
         arr.name AS arrival_airport_name,
         arr.city AS arrival_city,
         arr.code AS arrival_code
+
+        
       FROM 
         flights f
       JOIN 
@@ -6845,6 +6921,9 @@ app.get("/api/flighttablehelico1", async (req: Request, res: Response) => {
       ${conditions}
       ORDER BY f.departure_time ASC
     `, params);
+
+
+    
     
     // Retourner directement le tableau comme l'autre API
     res.json(flights);
