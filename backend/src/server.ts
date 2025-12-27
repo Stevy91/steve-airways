@@ -6871,59 +6871,6 @@ app.get("/api/flighttablehelico2", async (req: Request, res: Response) => {
 
 
 
-
-app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
-  try {
-    // const { startDate, endDate, transactionType, status, name } = req.query;
-    const { flightNumb, tailNumber, dateDeparture } = req.query;
-
-    // Conditions dynamiques
-    let conditions = " WHERE f.type = 'helicopter' ";
-    const params: any[] = [];
-
-  
-    if (flightNumb) {
-      conditions += "  AND f.flight_number = ? ";
-      params.push(flightNumb);
-    }
-
-   
-    if (tailNumber) {
-      conditions += "  AND f.airline = ? ";
-      params.push(tailNumber);
-    }
-
-   
-    if (dateDeparture) {
-      conditions += " AND f.departure_time = ? ";
-      params.push(dateDeparture);
-    }
-
-    const [rows] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT 
-                f.id, 
-                f.flight_number, 
-                f.airline, 
-                f.departure_time, 
-                f.arrival_time, 
-                f.price, 
-                f.seats_available,
-                f.type
-            FROM flights f
-            ${conditions}
-            ORDER BY f.created_at DESC`,
-      params
-    );
-
-    res.json({ bookings: rows });
-
-  } catch (error) {
-    console.error("Erreur recherche booking:", error);
-    res.status(500).json({ error: "Erreur lors de la recherche" });
-  }
-});
-
-
 app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
   try {
     // const { startDate, endDate, transactionType, status, name } = req.query;
