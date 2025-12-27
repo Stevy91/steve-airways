@@ -6989,67 +6989,82 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
     // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
     const [rowsUntyped] = await pool.query(`
             SELECT 
-                f.id,
-                f.flight_number,
-                f.type,
-                f.airline,
-                f.departure_time,
-                f.arrival_time,
-                f.price,
-                f.seats_available,
-                dep.name AS departure_airport_name,
-                dep.city AS departure_city,
-                dep.code AS departure_code,
-                arr.name AS arrival_airport_name,
-                arr.city AS arrival_city,
-                arr.code AS arrival_code
-            FROM 
-                flights f
-            JOIN 
-                locations dep ON f.departure_location_id = dep.id
-            JOIN 
-                locations arr ON f.arrival_location_id = arr.id
-            ${conditions}
-            ORDER BY f.created_at DESC`,
+    f.id,
+    f.flight_number,
+    f.type,
+    f.airline,
+    f.departure_time,
+    f.arrival_time,
+    f.price,
+    f.seats_available,
+
+    p.first_name,
+    p.last_name,
+
+    dep.name AS departure_airport_name,
+    dep.city AS departure_city,
+    dep.code AS departure_code,
+
+    arr.name AS arrival_airport_name,
+    arr.city AS arrival_city,
+    arr.code AS arrival_code
+
+FROM flights f
+JOIN bookings b ON f.id = b.flight_id
+LEFT JOIN passengers p ON b.id = p.booking_id
+JOIN locations dep ON f.departure_location_id = dep.id
+JOIN locations arr ON f.arrival_location_id = arr.id
+
+${conditions}
+ORDER BY f.departure_time ASC;
+`,
       params);
 
-    const rows = rowsUntyped as mysql.RowDataPacket[];
-    let capacity;
+   const rows = rowsUntyped as mysql.RowDataPacket[];
 
-        const passengerRowsHTML = rows.map((p) => `
-                                <h2>${p.departure_code}-${p.arrival_code} ${p.airline}</h2>
+const passengerRowsHTML = rows.map((p) => {
 
-                        <table class="two-cols">
-                          <tr>
-                            <th>When</th>
-                            <td class="red">${p.departure_time}</td>
-                          </tr>
-                          <tr>
-                            <th>Total reservations</th>
-                            <td class="center">5-${p.seats_available}</td>
-                          </tr>
-                          <tr>
-                        
-                            <th>Capacity</th>
-                            <td class="center">${p.airline === "N2568M" ||  p.airline === "HI1086" ? capacity='3' : '5'}</td>
-                          </tr>
-                          <tr>
-                            <th>Available</th>
-                            <td class="center">${p.seats_available}</td>
-                          </tr>
-                        </table>
+  // 🔹 Déterminer la capacité selon l'appareil
+  const capacity =
+    p.airline === "N2568M" || p.airline === "HI1086" ? 3 : 5;
 
-                        <table class="names-table">
-                          <tr>
-                            <th>Full name</th>
-                            <th>ID</th>
-                          </tr>
-                          <tr><td>Stella HANDAL BABOUN</td><td></td></tr>
-                          <tr><td>Alan Luis Nostra BABOUN</td><td></td></tr>
-                          <tr><td>Michael Philipp P. ZURAIK</td><td></td></tr>
-                          <tr><td>Steeve Climacque DORCELET</td><td></td></tr>
-                        </table>
-    `).join('');
+  // 🔹 Calcul des réservations
+  const totalReservations = capacity - p.seats_available;
+
+  return `
+  <h1 class="red">Manifeste pour ${dateDeparture}</h1>
+    <h2>${p.departure_code}-${p.arrival_code} ${p.airline}</h2>
+
+    <table class="two-cols">
+      <tr>
+        <th>When</th>
+        <td class="red">${p.departure_time}</td>
+      </tr>
+      <tr>
+        <th>Total reservations</th>
+        <td class="center">${totalReservations}</td>
+      </tr>
+      <tr>
+        <th>Capacity</th>
+        <td class="center">${capacity}</td>
+      </tr>
+      <tr>
+        <th>Available</th>
+        <td class="center">${p.seats_available}</td>
+      </tr>
+    </table>
+
+    <table class="names-table">
+      <tr>
+        <th>Full name</th>
+        <th>ID</th>
+      </tr>
+      <tr><td>${p.first_name} ${p.last_name}</td><td></td></tr>
+     
+    </table>
+  `;
+}).join("");
+
 
 
   const htmlContent = `
@@ -7128,7 +7143,7 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
 
                         <body>
 
-                        <h1 class="red">Manifeste pour Samedi 27 Décembre 2025</h1>
+                        
 
                        ${passengerRowsHTML}
 
