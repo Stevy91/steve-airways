@@ -96,12 +96,12 @@ const FlightTableHelico = () => {
         setFlightNumber(generateFlightNumber());
     };
 
-    // 🔹 Pagination
-    // const [currentPage, setCurrentPage] = useState(1);
-    // const itemsPerPage = 10;
+  
 
     const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
-
+  // 🔹 Pagination
+    // const [currentPage, setCurrentPage] = useState(1);
+    // const itemsPerPage = 10;
     // const indexOfLastItem = currentPage * itemsPerPage;
     // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     // const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
@@ -114,8 +114,15 @@ const FlightTableHelico = () => {
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentBookings = stats ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
-    const totalPages = stats ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
+   // Remplacer la ligne 69 (ou autour) où vous utilisez slice()
+const currentBookings = stats && stats.recentBookings 
+    ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) 
+    : [];
+
+// Et pour totalPages
+const totalPages = stats && stats.recentBookings 
+    ? Math.ceil(stats.recentBookings.length / rowsPerPage) 
+    : 1;
 
 
 
@@ -191,40 +198,70 @@ const FlightTableHelico = () => {
     }, [openDropdown]);
 
     // Fetch flights
-    const fetchFlights = async () => {
-        try {
-            setLoading(true);
-            const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico");
-            const data = await res.json();
-            setFlights(data);
-        } catch {
-            setError("Erreur lors du chargement des vols");
-        } finally {
-            setLoading(false);
+const fetchFlights = async () => {
+    try {
+        setLoading(true);
+        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico");
+        const data = await res.json();
+        
+        // Si data est un tableau, le mettre dans recentBookings
+        if (Array.isArray(data)) {
+            setStats({ recentBookings: data });
+        } else {
+            // Sinon, garder la structure existante
+            setStats(data);
         }
-    };
+        
+    } catch {
+        setError("Erreur lors du chargement des vols");
+    } finally {
+        setLoading(false);
+    }
+};
+const handleSearch = async () => {
+    try {
+        setLoading(true);
+        
+        const url = new URL("https://steve-airways.onrender.com/api/flight-helico-search");
+        if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
+        if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
+        if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
+        
+        const res = await fetch(url.toString());
+        const data = await res.json();
+        
+        // Vérifier si la réponse contient 'bookings' ou est directement un tableau
+        if (data.bookings) {
+            setStats({ recentBookings: data.bookings });
+        } else if (Array.isArray(data)) {
+            setStats({ recentBookings: data });
+        } else {
+            setStats({ recentBookings: [] });
+        }
+        
+        setCurrentPage(1);
+    } catch (err) {
+        console.error("Erreur recherche:", err);
+        toast.error("Erreur lors de la recherche");
+    } finally {
+        setLoading(false);
+    }
+};
+   const downloadExcel = () => {
+    let url = "https://steve-airways.onrender.com/api/flight-helico-export";
+    
+    const params = new URLSearchParams();
+    if (flightNumb) params.append("flightNumb", flightNumb);
+    if (tailNumber) params.append("tailNumber", tailNumber);
+    if (dateDeparture) params.append("dateDeparture", dateDeparture);
+    
+    if (params.toString()) {
+        url += "?" + params.toString();
+    }
+    
+    window.open(url, "_blank");
+};
 
-        const handleSearch = async () => {
-            try {
-                setLoading(true);
-
-                const url = new URL("https://steve-airways.onrender.com/api/flight-helico-search");
-                if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
-                if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
-                if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
-          
-
-                const res = await fetch(url.toString());
-                const data = await res.json();
-   
-                setStats({ recentBookings: data.bookings });
-                setCurrentPage(1);
-            } catch (err) {
-                alert("Erreur lors de la recherche");
-            } finally {
-                setLoading(false);
-            }
-        };
 
 
     const refreshFlights = () => {
@@ -491,6 +528,7 @@ const FlightTableHelico = () => {
                     <input
                         type="text"
                         placeholder="Flight number"
+                        onChange={(e) => setFlightNumb(e.target.value)}
                         className="rounded border px-4 py-2 text-sm"
                     />
                 </div>
@@ -499,6 +537,7 @@ const FlightTableHelico = () => {
                     <label className="mb-1 font-medium text-gray-700">Tail Number</label>
                     <input
                         type="text"
+                        onChange={(e) => setTailNumber(e.target.value)}
                         placeholder="Tail Number"
                         className="rounded border px-4 py-2 text-sm"
                     />
@@ -507,7 +546,7 @@ const FlightTableHelico = () => {
                     <label className="mb-1 font-medium text-gray-700">Date</label>
                     <input
                         type="date"
-                        
+                        onChange={(e) => setDateDeparture(e.target.value)}
                         className="rounded border px-4 py-2 text-sm"
                     />
                 </div>
@@ -516,11 +555,19 @@ const FlightTableHelico = () => {
                     <label className="mb-7 font-medium text-gray-700"></label>
                     <button
                         type="button"
+                        onClick={handleSearch}
                         className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
                     >
                         Search
                     </button>
                 </div>
+                <button
+                                type="button"
+                                onClick={downloadExcel}
+                                className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                            >
+                                Excel
+                            </button>
             </div>
 
             {loading && (
@@ -548,7 +595,7 @@ const FlightTableHelico = () => {
                                 </tr>
                             </thead>
                             <tbody className="table-body">
-                                {currentBookings.map((flight, index) => (
+                                {currentBookings.map((flight) => (
                                     <tr
                                         key={flight.id}
                                         className="border-b hover:bg-gray-50"
@@ -558,7 +605,6 @@ const FlightTableHelico = () => {
                                         <td className="table-cell text-center">{flight.airline}</td>
                                         <td className="table-cell text-center">{flight.from}</td>
                                         <td className="table-cell text-center">{flight.to}</td>
-
                                         <td className="table-cell text-center">{formatDateForDisplay(flight.departure)}</td>
                                         <td className="table-cell text-center">{formatDateForDisplay(flight.arrival)}</td>
                                         <td className="table-cell text-center">${flight.price}</td>
