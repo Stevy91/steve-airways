@@ -7014,26 +7014,28 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
       params);
 
     const rows = rowsUntyped as mysql.RowDataPacket[];
+    let capacity;
 
         const passengerRowsHTML = rows.map((p) => `
-                                <h2>PAP-CAP N2568M</h2>
+                                <h2>${p.departure_code}-${p.arrival_code} ${p.airline}</h2>
 
                         <table class="two-cols">
                           <tr>
                             <th>When</th>
-                            <td class="red">Sat 27/12/2025 6:45 am – 7:30 am</td>
+                            <td class="red">${p.departure_time}</td>
                           </tr>
                           <tr>
                             <th>Total reservations</th>
-                            <td class="center">4</td>
+                            <td class="center">5-${p.seats_available}</td>
                           </tr>
                           <tr>
+                        
                             <th>Capacity</th>
-                            <td class="center">5</td>
+                            <td class="center">${p.airline === "N2568M" ||  p.airline === "HI1086" ? capacity='3' : '5'}</td>
                           </tr>
                           <tr>
                             <th>Available</th>
-                            <td class="center">1</td>
+                            <td class="center">${p.seats_available}</td>
                           </tr>
                         </table>
 
