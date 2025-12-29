@@ -7043,6 +7043,21 @@ const passengerRowsHTML = rows.map((p) => {
   // 🔹 Calcul des réservations
   const totalReservations = capacity - p.seats_available;
 
+  const passengerRows = passengers.length
+  ? passengers
+      .map(
+        (ps: any) =>
+          `<tr>
+             <td>${ps.first_name} ${ps.last_name}</td>
+             <td></td>
+           </tr>`
+      )
+      .join("")
+  : `<tr>
+       <td colspan="2" class="center">Aucun passager</td>
+     </tr>`;
+
+
   return `
   <h1 class="red">Manifeste pour ${dateDeparture}</h1>
     <h2>${p.departure_code}-${p.arrival_code} ${p.airline}</h2>
@@ -7071,14 +7086,9 @@ const passengerRowsHTML = rows.map((p) => {
         <th>Full name</th>
         <th>ID</th>
       </tr>
-      <tr><td>${passengers.length
-  ? passengers
-      .map(
-        (ps: any) =>
-          `<tr><td>${ps.first_name} ${ps.last_name}</td><td></td></tr>`
-      )
-      .join("")
-  : `<tr><td colspan="2" class="center">Aucun passager</td></tr>`}</td><td></td></tr>
+      <tr>
+      ${passengerRows}
+     
      
     </table>
   `;
