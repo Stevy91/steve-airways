@@ -66,32 +66,12 @@ const FlightTable = () => {
 
     const [passengers, setPassengers] = useState<any[]>([]);
     const [loadingPassengers, setLoadingPassengers] = useState(false);
-
-const generateFlightNumber = () => {
-  const prefix = "TR";
-
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const datePart = `${yyyy}${mm}${dd}`;
-
-  const key = `flight_seq_${datePart}`;
-  const last = Number(localStorage.getItem(key) || "0") + 1;
-
-  localStorage.setItem(key, String(last));
-
-  const sequence = String(last).padStart(4, "0");
-
-  return `${prefix}-${datePart}-${sequence}`;
-};
+    const [stats, setStats] = useState<any>(null);
 
 
-const [flightNumber, setFlightNumber] = useState("");
 
-  const handleGenerate = () => {
-    setFlightNumber(generateFlightNumber());
-  };
+
+
 
     const fetchPassengers = async (flightId: number) => {
         setLoadingPassengers(true);
@@ -132,6 +112,36 @@ const [flightNumber, setFlightNumber] = useState("");
         }
     };
 
+          // Champs filtres
+    const [flightNumb, setFlightNumb] = useState("");
+    const [tailNumber, setTailNumber] = useState("");
+    const [dateDeparture, setDateDeparture] = useState("");
+
+    const generateFlightNumber = () => {
+        const prefix = "TR";
+
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        const datePart = `${yyyy}${mm}${dd}`;
+
+        const key = `flight_seq_${datePart}`;
+        const last = Number(localStorage.getItem(key) || "0") + 1;
+
+        localStorage.setItem(key, String(last));
+
+        const sequence = String(last).padStart(4, "0");
+
+        return `${prefix}-${datePart}-${sequence}`;
+    };
+
+    const [flightNumber, setFlightNumber] = useState("");
+
+    const handleGenerate = () => {
+        setFlightNumber(generateFlightNumber());
+    };
+
     // Fermer le dropdown si clic/touch extérieur de l'élément ouvert
     useEffect(() => {
         function handleClickOutside(event: MouseEvent | TouchEvent) {
@@ -160,29 +170,37 @@ const [flightNumber, setFlightNumber] = useState("");
 
     const { user, loading: authLoading, isAdmin } = useAuth();
 
-    // 🔹 Pagination
+         // Pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10; // nombre de vols par page
+    const rowsPerPage = 10;
 
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(flights.length / itemsPerPage);
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+   // Remplacer la ligne 69 (ou autour) où vous utilisez slice()
+const currentBookings = stats && stats.recentBookings 
+    ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) 
+    : [];
+
+// Et pour totalPages
+const totalPages = stats && stats.recentBookings 
+    ? Math.ceil(stats.recentBookings.length / rowsPerPage) 
+    : 1;
 
     const [menuOpen, setMenuOpen] = useState(false);
-    // Fetch flights
-    const fetchFlights = async () => {
-        try {
-            setLoading(true);
-            const res = await fetch("https://steve-airways.onrender.com/api/flighttableplane");
-            const data = await res.json();
-            setFlights(data);
-        } catch {
-            setError("Erreur lors du chargement des vols");
-        } finally {
-            setLoading(false);
-        }
-    };
+       // Fetch flights
+const fetchFlights = async () => {
+    try {
+        setLoading(true);
+        const res = await fetch("https://steve-airways.onrender.com/api/flighttableplane");
+        const data = await res.json();
+            setStats(data);
+        
+    } catch {
+        setError("Erreur lors du chargement des vols");
+    } finally {
+        setLoading(false);
+    }
+};
 
     const refreshFlights = () => {
         fetchFlights();
@@ -383,6 +401,37 @@ const [flightNumber, setFlightNumber] = useState("");
         }
     };
 
+    const handleSearch = async () => {
+    try {
+        setLoading(true);
+        
+        const url = new URL("https://steve-airways.onrender.com/api/flight-plane-search");
+        if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
+        if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
+        if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
+        
+        const res = await fetch(url.toString());
+        const data = await res.json();
+
+        setStats({ recentBookings: data.bookings });
+        setCurrentPage(1);
+    } catch (err) {
+        alert("Erreur lors de la recherche");
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+     // API EXPORT EXCEL
+    const downloadExcel = () => {
+        let url =
+            "https://steve-airways.onrender.com/api/flight-plane-export?" +
+            `flightNumb=${flightNumb}&tailNumber=${tailNumber}&dateDeparture=${dateDeparture}`;
+
+        window.open(url, "_blank");
+    };
+
     const timeZone = "America/Port-au-Prince";
 
     const formatDateForDisplay = (dateInput?: string | Date) => {
@@ -435,6 +484,55 @@ const [flightNumber, setFlightNumber] = useState("");
                     </button>
                 )}
             </div>
+                       {/* Filtres */}
+
+            <div className="mb-9 mt-16 grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Flight number</label>
+                    <input
+                        type="text"
+                        placeholder="Flight number"
+                        onChange={(e) => setFlightNumb(e.target.value)}
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Tail Number</label>
+                    <input
+                        type="text"
+                        onChange={(e) => setTailNumber(e.target.value)}
+                        placeholder="Tail Number"
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="mb-1 font-medium text-gray-700">Date</label>
+                    <input
+                        type="date"
+                        onChange={(e) => setDateDeparture(e.target.value)}
+                        className="rounded border px-4 py-2 text-sm"
+                    />
+                </div>
+
+                <div className="flex flex-col">
+                    <label className="mb-7 font-medium text-gray-700"></label>
+                    <button
+                        type="button"
+                        onClick={handleSearch}
+                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                    >
+                        Search Flights
+                    </button>
+                </div>
+                <button
+                                type="button"
+                                onClick={downloadExcel}
+                                className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                            >
+                                PDF
+                            </button>
+            </div>
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
@@ -460,7 +558,7 @@ const [flightNumber, setFlightNumber] = useState("");
                                 </tr>
                             </thead>
                             <tbody className="table-body">
-                                {currentFlights.map((flight, index) => (
+                                {currentBookings.map((flight) => (
                                     <tr
                                         key={flight.id}
                                         className="border-b hover:bg-gray-50"

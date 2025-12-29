@@ -201,7 +201,7 @@ const totalPages = stats && stats.recentBookings
 const fetchFlights = async () => {
     try {
         setLoading(true);
-        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico2");
+        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico");
         const data = await res.json();
             setStats(data);
         
@@ -541,7 +541,7 @@ const handleSearch = async () => {
                         onClick={handleSearch}
                         className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
                     >
-                        Search
+                        Search Flights
                     </button>
                 </div>
                 <button
