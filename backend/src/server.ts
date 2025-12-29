@@ -6762,7 +6762,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
             WHERE 
                 f.type = 'helicopter'    
             ORDER BY 
-                f.departure_time DESC
+                f.departure_time ASC
         `;
 
     console.log("Exécution de la requête SQL...");
@@ -6903,7 +6903,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
             WHERE 
                 f.type = 'plane'    
             ORDER BY 
-                f.departure_time DESC
+                f.departure_time ASC
         `;
 
     console.log("Exécution de la requête SQL...");
