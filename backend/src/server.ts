@@ -7059,7 +7059,7 @@ const passengerRowsHTML = rows.map((p) => {
 
 
   return `
-  <h1 class="red">Manifeste pour ${dateDeparture}</h1>
+  
     <h2>${p.departure_code}-${p.arrival_code} ${p.airline}</h2>
 
     <table class="two-cols">
@@ -7172,7 +7172,7 @@ const passengerRowsHTML = rows.map((p) => {
 
                         <body>
 
-                        
+                        <h1 class="red">Manifeste pour ${dateDeparture}</h1>
 
                        ${passengerRowsHTML}
 
@@ -7183,7 +7183,7 @@ const passengerRowsHTML = rows.map((p) => {
                             `;
 // 4️⃣ Générer le PDF
     const file = { content: htmlContent };
-    const options = { format: 'A3', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
+    const options = { format: 'A4', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
 
     const pdfBuffer = await pdf.generatePdf(file, options);
 
