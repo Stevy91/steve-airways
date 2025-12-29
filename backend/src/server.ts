@@ -1642,7 +1642,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 
 
     let returnFlightIdResolved = returnFlightId || null;
-    const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
+    
     // Si le client a fourni un numéro de vol retour
     if (passengers[0]?.flightNumberReturn) {
       const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
@@ -1672,7 +1672,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
       [flightIds],
     );
-
+const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     const flights = flightsRows as mysql.RowDataPacket[];
 
     if (flights.length !== flightIds.length) {
@@ -1835,7 +1835,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           passenger.address || null,
           passenger.type,
           passenger.typeVol || "plane",
-          passenger.typeVolV || "onway",
+          typeVolV,
           passenger.country,
           passenger.nationality || null,
           passenger.phone || contactInfo.phone,
