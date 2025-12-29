@@ -7027,8 +7027,14 @@ ORDER BY f.id;
       params);
 
    const rows = rowsUntyped as mysql.RowDataPacket[];
+   
 
 const passengerRowsHTML = rows.map((p) => {
+  const passengers =
+  typeof p.passengers === "string"
+    ? JSON.parse(p.passengers)
+    : p.passengers || [];
+
 
   // 🔹 Déterminer la capacité selon l'appareil
   const capacity =
@@ -7065,7 +7071,14 @@ const passengerRowsHTML = rows.map((p) => {
         <th>Full name</th>
         <th>ID</th>
       </tr>
-      <tr><td>${p.first_name} ${p.last_name}</td><td></td></tr>
+      <tr><td>${passengers.length
+  ? passengers
+      .map(
+        (ps: any) =>
+          `<tr><td>${ps.first_name} ${ps.last_name}</td><td></td></tr>`
+      )
+      .join("")
+  : `<tr><td colspan="2" class="center">Aucun passager</td></tr>`}</td><td></td></tr>
      
     </table>
   `;
