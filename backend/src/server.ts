@@ -7036,12 +7036,13 @@ const passengerRowsHTML = rows.map((p) => {
     : p.passengers || [];
 
 
-  // 🔹 Déterminer la capacité selon l'appareil
-  const capacity =
-    p.airline === "N2568M" || p.airline === "HI1086" ? 3 : 5;
 
-  // 🔹 Calcul des réservations
-  const totalReservations = capacity - p.seats_available;
+  const seatsAvailable = Number(p.seats_available) || 0;
+    // 🔹 Calcul des réservations
+const totalReservations = passengers.length;
+  // 🔹 Déterminer la capacité selon l'appareil
+const capacity = totalReservations + seatsAvailable;
+
 
   const passengerRows = passengers.length
   ? passengers
