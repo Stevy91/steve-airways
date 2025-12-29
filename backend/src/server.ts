@@ -6363,163 +6363,7 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
 
 
 
-app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
-  try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
 
-    let conditions = " WHERE b.type_vol = 'plane' ";
-    const params: any[] = [];
-
-    // Filtre dates
-    if (startDate) {
-      conditions += " AND DATE(b.created_at) >= ? ";
-      params.push(startDate);
-    }
-
-    if (endDate) {
-      conditions += " AND DATE(b.created_at) <= ? ";
-      params.push(endDate);
-    }
-
-    // Filtre payment_method (insensible à la casse + espaces)
-    if (transactionType) {
-      conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
-      params.push(transactionType);
-    }
-
-    // Filtre status
-    if (status) {
-      conditions += " AND b.status = ? ";
-      params.push(status);
-    }
-
-    // Filtre name
-    if (name) {
-      conditions += " AND p.first_name LIKE ? ";
-      params.push(`%${name}%`);
-    }
-
-    // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
-    const [rowsUntyped] = await pool.query(`
-            SELECT 
-                b.booking_reference,
-                b.payment_intent_id,
-                b.type_vol,
-                b.type_v,
-                b.contact_email,
-                b.total_price,
-                b.passenger_count,
-                b.status,
-                b.payment_method,
-                p.first_name,
-                p.last_name,
-                u.name AS created_by_name,
-                b.created_at
-            FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id
-            LEFT JOIN passengers p ON b.id = p.booking_id
-            ${conditions}
-            ORDER BY b.created_at DESC
-        `, params);
-
-    const rows = rowsUntyped as mysql.RowDataPacket[];
-
-    // 🟩 Génération Excel
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Bookings");
-
-    // 1️⃣ Titre fusionné
-    sheet.mergeCells('A1:K1');
-    const headerRow = sheet.getRow(1);
-    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
-    headerRow.getCell(1).font = { bold: true, size: 14 };
-    headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-
-    // 2️⃣ En-têtes
-    const headers = [
-      "Booking Reference",
-      "Payment Ref",
-      "Type",
-      "Trajet",
-      "Client",
-      "Email",
-      "Total",
-      "Passagers",
-      "Status",
-      "Méthode",
-      "Créé par",
-      "Date"
-    ];
-
-    const titleRow = sheet.addRow(headers);
-    titleRow.eachCell((cell) => {
-      cell.font = { bold: true };
-    });
-
-    // 3️⃣ Définition des colonnes
-    sheet.columns = [
-      { key: "booking_reference" },
-      { key: "payment_intent_id" },
-      { key: "type_vol" },
-      { key: "type_v" },
-      { key: "first_name" },
-      { key: "contact_email" },
-      { key: "total_price" },
-      { key: "passenger_count" },
-      { key: "status" },
-      { key: "payment_method" },
-      { key: "created_by_name" },
-      { key: "created_at" }
-    ];
-
-    // 4️⃣ Ajout des données
-    rows.forEach((row) => {
-      sheet.addRow([
-        row.booking_reference,
-        row.payment_intent_id,
-        row.type_vol,
-        row.type_v,
-        `${row.first_name} ${row.last_name}`,
-        row.contact_email,
-        row.total_price,
-        row.passenger_count,
-        row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
-        row.payment_method,
-        row.created_by_name,
-        row.created_at
-      ]);
-    });
-
-    // 5️⃣ Auto-size colonnes
-    sheet.columns.forEach((column) => {
-      if (column && column.eachCell) {
-        let maxLength = 0;
-        column.eachCell({ includeEmpty: true }, (cell) => {
-          const len = cell.value ? cell.value.toString().length : 10;
-          if (len > maxLength) maxLength = len;
-        });
-        column.width = maxLength + 2;
-      }
-    });
-
-    // 6️⃣ Headers HTTP
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=Trogon Transactions Avion.xlsx"
-    );
-
-    await workbook.xlsx.write(res);
-    res.end();
-
-  } catch (error) {
-    console.error("Erreur Excel:", error);
-    res.status(500).json({ error: "Erreur export Excel" });
-  }
-});
 
 
 app.get("/api/booking-helico", async (req: Request, res: Response) => {
@@ -7907,7 +7751,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
                 b.status,
                 b.payment_method,
                 p.first_name,
-                p.last_name
+                p.last_name,
                 u.name AS created_by_name,
                 b.created_at
             FROM bookings b
@@ -7926,7 +7770,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     // 1️⃣ Titre fusionné
     sheet.mergeCells('A1:K1');
     const headerRow = sheet.getRow(1);
-    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
+    headerRow.getCell(1).value = "TROGON HELICO TRANSACTIONS";
     headerRow.getCell(1).font = { bold: true, size: 14 };
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -7957,7 +7801,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       { key: "payment_intent_id" },
       { key: "type_vol" },
       { key: "type_v" },
-      { key: "first_name"},
+      { key: "first_name" },
       { key: "contact_email" },
       { key: "total_price" },
       { key: "passenger_count" },
@@ -8016,7 +7860,163 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, transactionType, status, name } = req.query;
 
+    let conditions = " WHERE b.type_vol = 'plane' ";
+    const params: any[] = [];
+
+    // Filtre dates
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
+
+    // Filtre payment_method (insensible à la casse + espaces)
+    if (transactionType) {
+      conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
+      params.push(transactionType);
+    }
+
+    // Filtre status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
+
+    // Filtre name
+    if (name) {
+      conditions += " AND p.first_name LIKE ? ";
+      params.push(`%${name}%`);
+    }
+
+    // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
+    const [rowsUntyped] = await pool.query(`
+            SELECT 
+                b.booking_reference,
+                b.payment_intent_id,
+                b.type_vol,
+                b.type_v,
+                b.contact_email,
+                b.total_price,
+                b.passenger_count,
+                b.status,
+                b.payment_method,
+                p.first_name,
+                p.last_name,
+                u.name AS created_by_name,
+                b.created_at
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id
+            LEFT JOIN passengers p ON b.id = p.booking_id
+            ${conditions}
+            ORDER BY b.created_at DESC
+        `, params);
+
+    const rows = rowsUntyped as mysql.RowDataPacket[];
+
+    // 🟩 Génération Excel
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Bookings");
+
+    // 1️⃣ Titre fusionné
+    sheet.mergeCells('A1:K1');
+    const headerRow = sheet.getRow(1);
+    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
+    headerRow.getCell(1).font = { bold: true, size: 14 };
+    headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // 2️⃣ En-têtes
+    const headers = [
+      "Booking Reference",
+      "Payment Ref",
+      "Type",
+      "Trajet",
+      "Client",
+      "Email",
+      "Total",
+      "Passagers",
+      "Status",
+      "Méthode",
+      "Créé par",
+      "Date"
+    ];
+
+    const titleRow = sheet.addRow(headers);
+    titleRow.eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+
+    // 3️⃣ Définition des colonnes
+    sheet.columns = [
+      { key: "booking_reference" },
+      { key: "payment_intent_id" },
+      { key: "type_vol" },
+      { key: "type_v" },
+      { key: "first_name" },
+      { key: "contact_email" },
+      { key: "total_price" },
+      { key: "passenger_count" },
+      { key: "status" },
+      { key: "payment_method" },
+      { key: "created_by_name" },
+      { key: "created_at" }
+    ];
+
+    // 4️⃣ Ajout des données
+    rows.forEach((row) => {
+      sheet.addRow([
+        row.booking_reference,
+        row.payment_intent_id,
+        row.type_vol,
+        row.type_v,
+        `${row.first_name} ${row.last_name}`,
+        row.contact_email,
+        row.total_price,
+        row.passenger_count,
+        row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
+        row.payment_method,
+        row.created_by_name,
+        row.created_at
+      ]);
+    });
+
+    // 5️⃣ Auto-size colonnes
+    sheet.columns.forEach((column) => {
+      if (column && column.eachCell) {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const len = cell.value ? cell.value.toString().length : 10;
+          if (len > maxLength) maxLength = len;
+        });
+        column.width = maxLength + 2;
+      }
+    });
+
+    // 6️⃣ Headers HTTP
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Trogon Transactions Avion.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error("Erreur Excel:", error);
+    res.status(500).json({ error: "Erreur export Excel" });
+  }
+});
 
 
 app.get("/api/generate/:flightId/passengers-list", async (req: Request, res: Response) => { 
