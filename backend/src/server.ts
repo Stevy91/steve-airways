@@ -6958,520 +6958,6 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
   }
 });
 
-// app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
-//   try {
-//  const { flightNumb, tailNumber, dateDeparture } = req.query;
-
-//     // Conditions dynamiques
-//     let conditions = " WHERE f.type = 'helicopter' ";
-//     const params: any[] = [];
-
-  
-//     if (flightNumb) {
-//       conditions += "  AND f.flight_number = ? ";
-//       params.push(flightNumb);
-//     }
-
-   
-//     if (tailNumber) {
-//       conditions += "  AND f.airline = ? ";
-//       params.push(tailNumber);
-//     }
-
-   
-//     if (dateDeparture) {
-     
-//       conditions += " AND DATE(f.departure_time) = ? ";
-//       params.push(dateDeparture);
-//     }
-
-
-//     // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
-//     const [rowsUntyped] = await pool.query(`
-//            SELECT 
-//   f.id,
-//   f.flight_number,
-//   f.type,
-//   f.airline,
-//   f.departure_time,
-//   f.arrival_time,
-//   f.price,
-//   f.seats_available,
-
-//   COALESCE(
-//     JSON_ARRAYAGG(
-//       CASE 
-//         WHEN p.id IS NOT NULL THEN
-//           JSON_OBJECT(
-//             'first_name', p.first_name,
-//             'last_name', p.last_name
-//           )
-//       END
-//     ),
-//     JSON_ARRAY()
-//   ) AS passengers,
-
-//   dep.name AS departure_airport_name,
-//   dep.city AS departure_city,
-//   dep.code AS departure_code,
-
-//   arr.name AS arrival_airport_name,
-//   arr.city AS arrival_city,
-//   arr.code AS arrival_code
-
-// FROM flights f
-// LEFT JOIN bookings b ON f.id = b.flight_id
-// LEFT JOIN passengers p ON b.id = p.booking_id
-// JOIN locations dep ON f.departure_location_id = dep.id
-// JOIN locations arr ON f.arrival_location_id = arr.id
-
-// ${conditions}
-// GROUP BY f.id
-// ORDER BY f.departure_time;
-// `,
-//       params);
-
-//    const rows = rowsUntyped as mysql.RowDataPacket[];
-   
-
-// const passengerRowsHTML = rows.map((p) => {
-//   const passengers =
-//   typeof p.passengers === "string"
-//     ? JSON.parse(p.passengers)
-//     : p.passengers || [];
-
-
-
-//   const seatsAvailable = Number(p.seats_available) || 0;
-//     // 🔹 Calcul des réservations
-// const totalReservations = passengers.length;
-//   // 🔹 Déterminer la capacité selon l'appareil
-// const capacity = totalReservations + seatsAvailable;
-
-
-//   const passengerRows = passengers.length
-//   ? passengers
-//       .map(
-//         (ps: any) =>
-//           `<tr>
-//              <td>${ps.first_name} ${ps.last_name}</td>
-//              <td></td>
-//            </tr>`
-//       )
-//       .join("")
-//   : `<tr>
-//        <td colspan="2" class="center">Aucun passager</td>
-//      </tr>`;
-
-
-//   return `
-  
-//     <h2>${p.departure_code}-${p.arrival_code} ${p.airline}</h2>
-
-//     <table class="two-cols">
-//       <tr>
-//         <th>When</th>
-//         <td class="red">${p.departure_time}</td>
-//       </tr>
-//       <tr>
-//         <th>Total reservations</th>
-//         <td class="center">${totalReservations}</td>
-//       </tr>
-//       <tr>
-//         <th>Capacity</th>
-//         <td class="center">${capacity}</td>
-//       </tr>
-//       <tr>
-//         <th>Available</th>
-//         <td class="center">${p.seats_available}</td>
-//       </tr>
-//     </table>
-
-//     <table class="names-table">
-//       <tr>
-//         <th>Full name</th>
-//         <th>ID</th>
-//       </tr>
-//       <tr>
-//       ${passengerRows}
-     
-     
-//     </table>
-//   `;
-// }).join("");
-
-
-
-//   const htmlContent = `
-//                           <!DOCTYPE html>
-//                           <html lang="fr">
-//                         <head>
-//                         <meta charset="UTF-8" />
-//                         <title>Flight Manifest</title>
-
-//                         <style>
-//                           /* Taille page impression */
-//                           @page {
-//                             size: 8.5in 11in;
-//                             margin: 0.5in;
-//                           }
-
-//                           body {
-//                             font-family: Arial, Helvetica, sans-serif;
-//                             color: #000;
-//                             margin: 0;
-//                           }
-
-//                           h1 {
-//                             text-align: center;
-//                             font-size: 18px;
-//                             margin-bottom: 20px;
-//                           }
-
-//                           h2 {
-//                             font-size: 14px;
-//                             color: #1f4e79;
-//                             margin: 20px 0 6px;
-//                           }
-
-//                           table {
-//                             width: 100%;
-//                             border-collapse: collapse;
-//                             margin-bottom: 18px;
-//                             font-size: 12px;
-//                           }
-
-//                           th, td {
-//                             border: 1px solid #555;
-//                             padding: 6px 8px;
-//                           }
-
-//                           th {
-//                             background: #f2f2f2;
-//                             font-weight: bold;
-//                             text-align: left;
-//                           }
-
-//                           .center {
-//                             text-align: center;
-//                           }
-
-//                           .red {
-//                             color: #c00000;
-//                             font-weight: bold;
-//                           }
-
-//                           .two-cols th,
-//                           .two-cols td {
-//                             width: 50%;
-//                           }
-
-//                           .names-table th {
-//                             text-align: center;
-//                           }
-
-//                           .spacer {
-//                             height: 10px;
-//                           }
-//                         </style>
-//                         </head>
-
-//                         <body>
-
-//                         <h1 class="red">Manifeste pour ${dateDeparture}</h1>
-
-//                        ${passengerRowsHTML}
-
-
-//                         </body>
-//                         </html>
-
-//                             `;
-// // 4️⃣ Générer le PDF
-//     const file = { content: htmlContent };
-//     const options = { format: 'A4', printBackground: true, margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' } };
-
-//     const pdfBuffer = await pdf.generatePdf(file, options);
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", `attachment; filename=rapport-${dateDeparture}.pdf`);
-//     res.send(pdfBuffer);
-
- 
-
-//   } catch (error) {
-//     console.error("Erreur Excel:", error);
-//     res.status(500).json({ error: "Erreur export Excel" });
-//   }
-// });
-
-// app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
-//   try {
-//     const { flightNumb, tailNumber, dateDeparture } = req.query;
-
-//     // Conditions dynamiques
-//     let conditions = " WHERE f.type = 'helicopter' ";
-//     const params: any[] = [];
-
-//     if (flightNumb) {
-//       conditions += " AND f.flight_number = ? ";
-//       params.push(flightNumb);
-//     }
-
-//     if (tailNumber) {
-//       conditions += " AND f.airline = ? ";
-//       params.push(tailNumber);
-//     }
-
-//     if (dateDeparture) {
-//       conditions += " AND DATE(f.departure_time) = ? ";
-//       params.push(dateDeparture);
-//     }
-
-//     // 🟦 EXÉCUTION SQL - CORRECTION: suppression du "S" en double
-//     const [rowsUntyped] = await pool.query(`
-//       SELECT 
-//         f.id,
-//         f.flight_number,
-//         f.type,
-//         f.airline,
-//         f.departure_time,
-//         f.arrival_time,
-//         f.price,
-//         f.seats_available,
-        
-//         COALESCE(
-//           JSON_ARRAYAGG(
-//             CASE 
-//               WHEN p.id IS NOT NULL THEN
-//                 JSON_OBJECT(
-//                   'first_name', p.first_name,
-//                   'last_name', p.last_name
-//                 )
-//             END
-//           ),
-//           JSON_ARRAY()
-//         ) AS passengers,
-        
-//         dep.name AS departure_airport_name,
-//         dep.city AS departure_city,
-//         dep.code AS departure_code,
-        
-//         arr.name AS arrival_airport_name,
-//         arr.city AS arrival_city,
-//         arr.code AS arrival_code
-        
-//       FROM flights f
-//       LEFT JOIN bookings b ON f.id = b.flight_id
-//       LEFT JOIN passengers p ON b.id = p.booking_id
-//       JOIN locations dep ON f.departure_location_id = dep.id
-//       JOIN locations arr ON f.arrival_location_id = arr.id
-      
-//       ${conditions}
-//       GROUP BY f.id
-//       ORDER BY f.departure_time;
-//     `, params);
-
-//     const rows = rowsUntyped as mysql.RowDataPacket[];
-
-//     // Si aucune donnée trouvée
-//     if (!rows || rows.length === 0) {
-//       return res.status(404).json({ 
-//         error: "Aucune donnée trouvée avec les critères spécifiés" 
-//       });
-//     }
-
-//     const passengerRowsHTML = rows.map((p) => {
-//       // Parse les passagers si nécessaire
-//       let passengers = [];
-//       try {
-//         passengers = typeof p.passengers === "string" 
-//           ? JSON.parse(p.passengers) 
-//           : p.passengers || [];
-        
-//         // Filtrer les entrées null (du au CASE dans le JSON_ARRAYAGG)
-//         passengers = passengers.filter((ps: any) => ps !== null);
-//       } catch (error) {
-//         console.error("Erreur parsing passagers:", error);
-//         passengers = [];
-//       }
-
-//       const seatsAvailable = Number(p.seats_available) || 0;
-//       const totalReservations = passengers.length;
-//       const capacity = totalReservations + seatsAvailable;
-
-//       // Formater la date
-//       const departureTime = p.departure_time 
-//         ? new Date(p.departure_time).toLocaleString('fr-FR')
-//         : 'N/A';
-
-        
-
-//       const passengerRows = passengers.length > 0
-//         ? passengers
-//             .map(
-//               (ps: any) => `
-//                 <tr>
-//                   <td>${ps.first_name || ''} ${ps.last_name || ''}</td>
-//                   <td></td>
-//                 </tr>`
-//             )
-//             .join("")
-//         : `
-//             <tr>
-//               <td colspan="2" class="center">Aucun passager</td>
-//             </tr>
-//           `;
-
-//       return `
-//         <div class="flight-section">
-//           <h2>${p.departure_code || ''}-${p.arrival_code || ''} ${p.airline || ''}</h2>
-          
-//           <table class="two-cols">
-//             <tr>
-//               <th>When</th>
-//               <td class="red">${departureTime}</td>
-//             </tr>
-//             <tr>
-//               <th>Total reservations</th>
-//               <td class="center">${totalReservations}</td>
-//             </tr>
-//             <tr>
-//               <th>Capacity</th>
-//               <td class="center">${capacity}</td>
-//             </tr>
-//             <tr>
-//               <th>Available</th>
-//               <td class="center">${seatsAvailable}</td>
-//             </tr>
-//           </table>
-          
-//           <table class="names-table">
-//             <tr>
-//               <th>Full name</th>
-//               <th>ID</th>
-//             </tr>
-//             ${passengerRows}
-//           </table>
-          
-//           <div class="spacer"></div>
-//         </div>
-//       `;
-//     }).join("");
-
-//     const htmlContent = `
-//       <!DOCTYPE html>
-//       <html lang="fr">
-//       <head>
-//         <meta charset="UTF-8" />
-//         <title>Flight Manifest</title>
-//         <style>
-//           @page {
-//             size: 8.5in 11in;
-//             margin: 0.5in;
-//           }
-          
-//           body {
-//             font-family: Arial, Helvetica, sans-serif;
-//             color: #000;
-//             margin: 0;
-//             padding: 0.5in;
-//           }
-          
-//           h1 {
-//             text-align: center;
-//             font-size: 18px;
-//             margin-bottom: 20px;
-//           }
-          
-//           h2 {
-//             font-size: 14px;
-//             color: #1f4e79;
-//             margin: 20px 0 6px;
-//           }
-          
-//           table {
-//             width: 100%;
-//             border-collapse: collapse;
-//             margin-bottom: 18px;
-//             font-size: 12px;
-//           }
-          
-//           th, td {
-//             border: 1px solid #555;
-//             padding: 6px 8px;
-//           }
-          
-//           th {
-//             background: #f2f2f2;
-//             font-weight: bold;
-//             text-align: left;
-//           }
-          
-//           .center {
-//             text-align: center;
-//           }
-          
-//           .red {
-//             color: #c00000;
-//             font-weight: bold;
-//           }
-          
-//           .two-cols th,
-//           .two-cols td {
-//             width: 50%;
-//           }
-          
-//           .names-table th {
-//             text-align: center;
-//           }
-          
-//           .spacer {
-//             height: 10px;
-//           }
-          
-//           .flight-section {
-//             page-break-inside: avoid;
-//             margin-bottom: 25px;
-//           }
-//         </style>
-//       </head>
-//       <body>
-//         <h1 class="red">Manifeste pour ${dateDeparture || 'Toutes dates'}</h1>
-//         ${passengerRowsHTML}
-//       </body>
-//       </html>
-//     `;
-
-//     // 4️⃣ Générer le PDF
-//     const file = { content: htmlContent };
-//     const options = { 
-//       format: 'A4', 
-//       printBackground: true, 
-//       margin: { 
-//         top: '0.5in', 
-//         right: '0.5in', 
-//         bottom: '0.5in', 
-//         left: '0.5in' 
-//       } 
-//     };
-
-//     // Assurez-vous que la bibliothèque PDF est correctement importée
-//     const pdfBuffer = await pdf.generatePdf(file, options);
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", `attachment; filename=manifeste-${dateDeparture || 'all'}-${Date.now()}.pdf`);
-//     res.send(pdfBuffer);
-
-//   } catch (error) {
-//     console.error("Erreur génération PDF:", error);
-//     // Message d'erreur cohérent (c'est un PDF, pas Excel)
-//     res.status(500).json({ 
-//       error: "Erreur lors de la génération du PDF",
-//       details: error instanceof Error ? error.message : 'Erreur inconnue'
-//     });
-//   }
-// });
 
 
 
@@ -7633,13 +7119,13 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
           
           <div class="flight-info">
             <span class="flight-number">Vol ${p.flight_number || ''}</span>
-            <span class="flight-date">${departureDateFormatted}</span>
+         
           </div>
           
           <table class="two-cols">
             <tr>
               <th>Départ</th>
-              <td class="red">${departureTimeFormatted}</td>
+              <td class="red">${departureDateFormatted} ${departureTimeFormatted}</td>
             </tr>
             <tr>
               <th>Réservations</th>
@@ -7799,14 +7285,12 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
         <div class="header-info">
           <h1>MANIFESTE DE VOL - HÉLICOPTÈRE</h1>
           <div class="date-display">${formattedDate}</div>
-          <div>Généré le: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: fr })}</div>
+          
         </div>
         
         ${passengerRowsHTML}
         
-        <div class="footer">
-          Document généré automatiquement • Total des vols: ${rows.length}
-        </div>
+      
       </body>
       </html>
     `;
@@ -7834,6 +7318,372 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
     
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=manifeste-helico-${fileNameDate}.pdf`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error("Erreur génération PDF:", error);
+    res.status(500).json({ 
+      error: "Erreur lors de la génération du PDF",
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    });
+  }
+});
+
+app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
+  try {
+    const { flightNumb, tailNumber, dateDeparture } = req.query;
+
+    // Formatage de la date pour l'affichage
+    let formattedDate = "Toutes dates";
+    if (dateDeparture) {
+      try {
+        // Convertir la chaîne en objet Date
+        const dateObj = new Date(dateDeparture as string);
+        // Formater la date (ex: "Lun, 15 Janv")
+        formattedDate = format(dateObj, "EEE, dd MMM", { locale: fr });
+      } catch (error) {
+        console.error("Erreur formatage date:", error);
+        formattedDate = dateDeparture as string;
+      }
+    }
+
+    // Conditions dynamiques
+    let conditions = " WHERE f.type = 'plane' ";
+    const params: any[] = [];
+
+    if (flightNumb) {
+      conditions += " AND f.flight_number = ? ";
+      params.push(flightNumb);
+    }
+
+    if (tailNumber) {
+      conditions += " AND f.airline = ? ";
+      params.push(tailNumber);
+    }
+
+    if (dateDeparture) {
+      conditions += " AND DATE(f.departure_time) = ? ";
+      params.push(dateDeparture);
+    }
+
+    // 🟦 EXÉCUTION SQL
+    const [rowsUntyped] = await pool.query(`
+      SELECT 
+        f.id,
+        f.flight_number,
+        f.type,
+        f.airline,
+        f.departure_time,
+        f.arrival_time,
+        f.price,
+        f.seats_available,
+        
+        COALESCE(
+          JSON_ARRAYAGG(
+            CASE 
+              WHEN p.id IS NOT NULL THEN
+                JSON_OBJECT(
+                  'first_name', p.first_name,
+                  'last_name', p.last_name
+                )
+            END
+          ),
+          JSON_ARRAY()
+        ) AS passengers,
+        
+        dep.name AS departure_airport_name,
+        dep.city AS departure_city,
+        dep.code AS departure_code,
+        
+        arr.name AS arrival_airport_name,
+        arr.city AS arrival_city,
+        arr.code AS arrival_code
+        
+      FROM flights f
+      LEFT JOIN bookings b ON f.id = b.flight_id
+      LEFT JOIN passengers p ON b.id = p.booking_id
+      JOIN locations dep ON f.departure_location_id = dep.id
+      JOIN locations arr ON f.arrival_location_id = arr.id
+      
+      ${conditions}
+      GROUP BY f.id
+      ORDER BY f.departure_time;
+    `, params);
+
+    const rows = rowsUntyped as mysql.RowDataPacket[];
+
+    // Si aucune donnée trouvée
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ 
+        error: "Aucune donnée trouvée avec les critères spécifiés" 
+      });
+    }
+
+    const passengerRowsHTML = rows.map((p) => {
+      // Parse les passagers si nécessaire
+      let passengers = [];
+      try {
+        passengers = typeof p.passengers === "string" 
+          ? JSON.parse(p.passengers) 
+          : p.passengers || [];
+        
+        // Filtrer les entrées null
+        passengers = passengers.filter((ps: any) => ps !== null);
+      } catch (error) {
+        console.error("Erreur parsing passagers:", error);
+        passengers = [];
+      }
+
+      const seatsAvailable = Number(p.seats_available) || 0;
+      const totalReservations = passengers.length;
+      const capacity = totalReservations + seatsAvailable;
+
+      // Formater l'heure de départ
+      let departureTimeFormatted = 'N/A';
+      if (p.departure_time) {
+        try {
+          const departureDate = new Date(p.departure_time);
+          // Format: "HH:mm" (ex: "14:30")
+          departureTimeFormatted = format(departureDate, "HH:mm");
+        } catch (error) {
+          console.error("Erreur formatage heure départ:", error);
+          departureTimeFormatted = String(p.departure_time);
+        }
+      }
+
+      // Formater la date complète pour le vol (optionnel)
+      let departureDateFormatted = '';
+      if (p.departure_time) {
+        try {
+          const departureDate = new Date(p.departure_time);
+          // Format: "dd/MM/yyyy" (ex: "15/01/2024")
+          departureDateFormatted = format(departureDate, "dd/MM/yyyy");
+        } catch (error) {
+          departureDateFormatted = '';
+        }
+      }
+
+      const passengerRows = passengers.length > 0
+        ? passengers
+            .map(
+              (ps: any) => `
+                <tr>
+                  <td>${ps.first_name || ''} ${ps.last_name || ''}</td>
+                  <td></td>
+                </tr>`
+            )
+            .join("")
+        : `
+            <tr>
+              <td colspan="2" class="center">Aucun passager</td>
+            </tr>
+          `;
+
+      return `
+        <div class="flight-section">
+          <h2>${p.departure_code || ''} → ${p.arrival_code || ''} | ${p.airline || ''}</h2>
+          
+          <div class="flight-info">
+            <span class="flight-number">Vol ${p.flight_number || ''}</span>
+         
+          </div>
+          
+          <table class="two-cols">
+            <tr>
+              <th>Départ</th>
+              <td class="red">${departureDateFormatted} ${departureTimeFormatted}</td>
+            </tr>
+            <tr>
+              <th>Réservations</th>
+              <td class="center">${totalReservations}</td>
+            </tr>
+            <tr>
+              <th>Capacité</th>
+              <td class="center">${capacity}</td>
+            </tr>
+            <tr>
+              <th>Places disponibles</th>
+              <td class="center">${seatsAvailable}</td>
+            </tr>
+          </table>
+          
+          <table class="names-table">
+            <tr>
+              <th>Nom complet</th>
+              <th>Identifiant</th>
+            </tr>
+            ${passengerRows}
+          </table>
+          
+          <div class="spacer"></div>
+        </div>
+      `;
+    }).join("");
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Manifeste Hélicoptère</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 0.5in;
+          }
+          
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+            margin: 0;
+            padding: 0.5in;
+            font-size: 12px;
+          }
+          
+          h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: #1f4e79;
+            border-bottom: 2px solid #1f4e79;
+            padding-bottom: 10px;
+          }
+          
+          h2 {
+            font-size: 16px;
+            color: #1f4e79;
+            margin: 0 0 5px 0;
+          }
+          
+          .flight-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #666;
+          }
+          
+          .flight-number {
+            font-weight: bold;
+          }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+          }
+          
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+          }
+          
+          th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+          }
+          
+          .center {
+            text-align: center;
+          }
+          
+          .red {
+            color: #d9534f;
+            font-weight: bold;
+          }
+          
+          .two-cols th,
+          .two-cols td {
+            width: 50%;
+          }
+          
+          .names-table th {
+            background: #e9ecef;
+            text-align: center;
+          }
+          
+          .names-table td {
+            text-align: left;
+          }
+          
+          .spacer {
+            height: 15px;
+            border-bottom: 1px dashed #eee;
+            margin: 20px 0;
+          }
+          
+          .flight-section {
+            page-break-inside: avoid;
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background: #fff;
+          }
+          
+          .header-info {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #666;
+          }
+          
+          .date-display {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f4e79;
+            margin-top: 5px;
+          }
+          
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-info">
+          <h1>MANIFESTE DE VOL - AVION</h1>
+          <div class="date-display">${formattedDate}</div>
+          
+        </div>
+        
+        ${passengerRowsHTML}
+        
+      
+      </body>
+      </html>
+    `;
+
+    // Générer le PDF
+    const file = { content: htmlContent };
+    const options = { 
+      format: 'A4', 
+      printBackground: true,
+      displayHeaderFooter: false,
+      margin: { 
+        top: '0.5in', 
+        right: '0.5in', 
+        bottom: '0.5in', 
+        left: '0.5in' 
+      }
+    };
+
+    const pdfBuffer = await pdf.generatePdf(file, options);
+
+    // Nom du fichier avec la date formatée
+    const fileNameDate = dateDeparture 
+      ? format(new Date(dateDeparture as string), 'yyyy-MM-dd')
+      : 'all';
+    
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=manifeste-plane-${fileNameDate}.pdf`);
     res.send(pdfBuffer);
 
   } catch (error) {
