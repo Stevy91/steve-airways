@@ -6988,41 +6988,46 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
 
     // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
     const [rowsUntyped] = await pool.query(`
-           SELECT 
-    f.id,
-    f.flight_number,
-    f.type,
-    f.airline,
-    f.departure_time,
-    f.arrival_time,
-    f.price,
-    f.seats_available,
+           SSELECT 
+  f.id,
+  f.flight_number,
+  f.type,
+  f.airline,
+  f.departure_time,
+  f.arrival_time,
+  f.price,
+  f.seats_available,
 
+  COALESCE(
     JSON_ARRAYAGG(
-      JSON_OBJECT(
-        'first_name', p.first_name,
-        'last_name', p.last_name
-      )
-    ) AS passengers,
+      CASE 
+        WHEN p.id IS NOT NULL THEN
+          JSON_OBJECT(
+            'first_name', p.first_name,
+            'last_name', p.last_name
+          )
+      END
+    ),
+    JSON_ARRAY()
+  ) AS passengers,
 
-    dep.name AS departure_airport_name,
-    dep.city AS departure_city,
-    dep.code AS departure_code,
+  dep.name AS departure_airport_name,
+  dep.city AS departure_city,
+  dep.code AS departure_code,
 
-    arr.name AS arrival_airport_name,
-    arr.city AS arrival_city,
-    arr.code AS arrival_code
+  arr.name AS arrival_airport_name,
+  arr.city AS arrival_city,
+  arr.code AS arrival_code
 
 FROM flights f
-JOIN bookings b ON f.id = b.flight_id
-JOIN passengers p ON b.id = p.booking_id
+LEFT JOIN bookings b ON f.id = b.flight_id
+LEFT JOIN passengers p ON b.id = p.booking_id
 JOIN locations dep ON f.departure_location_id = dep.id
 JOIN locations arr ON f.arrival_location_id = arr.id
 
 ${conditions}
 GROUP BY f.id
-ORDER BY f.id;
-
+ORDER BY f.departure_time;
 `,
       params);
 
@@ -7189,7 +7194,7 @@ const capacity = totalReservations + seatsAvailable;
     const pdfBuffer = await pdf.generatePdf(file, options);
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=rapport.pdf`);
+    res.setHeader("Content-Disposition", `attachment; filename=rapport-${dateDeparture}.pdf`);
     res.send(pdfBuffer);
 
  
