@@ -136,7 +136,7 @@ const ViewBookingHelico = () => {
             {/* Filtres */}
 
             
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-6 mt-16 mb-6">
                             <div className="flex flex-col">
                                 <label className="mb-1 font-medium text-gray-700">Start date</label>
                                 <input

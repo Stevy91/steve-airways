@@ -5048,6 +5048,19 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
         }
       }
 
+            // Formater l'heure de départ
+      let arrivalTimeFormatted = 'N/A';
+      if (p.departure_time) {
+        try {
+          const arrivalDate = new Date(p.arrival_time);
+          // Format: "HH:mm" (ex: "14:30")
+          arrivalTimeFormatted = format(arrivalDate, "HH:mm");
+        } catch (error) {
+          console.error("Erreur formatage heure départ:", error);
+          arrivalTimeFormatted = String(p.arrival_time);
+        }
+      }
+
       // Formater la date complète pour le vol (optionnel)
       let departureDateFormatted = '';
       if (p.departure_time) {
@@ -5088,7 +5101,7 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
           <table class="two-cols">
             <tr>
               <th>Départ</th>
-              <td class="red">${departureDateFormatted} ${departureTimeFormatted}</td>
+              <td class="red">${departureDateFormatted} ${departureTimeFormatted} - ${arrivalTimeFormatted}</td>
             </tr>
             <tr>
               <th>Réservations</th>
@@ -5415,6 +5428,20 @@ app.get("/api/flight-plane-export", async (req: Request, res: Response) => {
         }
       }
 
+              // Formater l'heure de départ
+      let arrivalTimeFormatted = 'N/A';
+      if (p.departure_time) {
+        try {
+          const arrivalDate = new Date(p.arrival_time);
+          // Format: "HH:mm" (ex: "14:30")
+          arrivalTimeFormatted = format(arrivalDate, "HH:mm");
+        } catch (error) {
+          console.error("Erreur formatage heure départ:", error);
+          arrivalTimeFormatted = String(p.arrival_time);
+        }
+      }
+
+
       // Formater la date complète pour le vol (optionnel)
       let departureDateFormatted = '';
       if (p.departure_time) {
@@ -5455,7 +5482,7 @@ app.get("/api/flight-plane-export", async (req: Request, res: Response) => {
           <table class="two-cols">
             <tr>
               <th>Départ</th>
-              <td class="red">${departureDateFormatted} ${departureTimeFormatted}</td>
+              <td class="red">${departureDateFormatted} ${departureTimeFormatted} - ${arrivalTimeFormatted}</td>
             </tr>
             <tr>
               <th>Réservations</th>

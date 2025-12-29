@@ -563,8 +563,8 @@ const handleSearch = async () => {
             )}
 
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">
-                <div className="card-body overflow-auto p-0">
-                    <div className="relative w-full flex-shrink-0 overflow-auto">
+                <div className="card-body overflow-visible p-0">
+                    <div className="relative w-full flex-shrink-0 overflow-visible">
                         <table className="table">
                             <thead className="table-header">
                                 <tr className="table-row">
