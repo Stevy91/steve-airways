@@ -5448,7 +5448,7 @@ app.get("/api/flight-plane-export", async (req: Request, res: Response) => {
         try {
           const departureDate = new Date(p.departure_time);
           // Format: "dd/MM/yyyy" (ex: "15/01/2024")
-          departureDateFormatted = format(departureDate, "dd/MM/yyyy");
+          departureDateFormatted = format(departureDate, "EEE, dd MMM", { locale: fr });
         } catch (error) {
           departureDateFormatted = '';
         }
