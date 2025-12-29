@@ -5061,13 +5061,14 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
         }
       }
 
-      // Formater la date complète pour le vol (optionnel)
+
+            // Formater la date complète pour le vol (optionnel)
       let departureDateFormatted = '';
       if (p.departure_time) {
         try {
           const departureDate = new Date(p.departure_time);
           // Format: "dd/MM/yyyy" (ex: "15/01/2024")
-          departureDateFormatted = format(departureDate, "dd/MM/yyyy");
+          departureDateFormatted = format(departureDate, "EEE, dd MMM", { locale: fr });
         } catch (error) {
           departureDateFormatted = '';
         }
