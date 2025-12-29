@@ -422,13 +422,16 @@ const handleSearch = async () => {
         if (!isAdmin) {
             toast.error("❌ Accès refusé - Admin uniquement");
             return;
-        }
+       }
 
         try {
             const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, { method: "DELETE" });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Erreur suppression");
             setFlights((prev) => prev.filter((f) => f.id !== flightId));
+               await fetchFlights();
+           
+
             toast.success(`Vol supprimé`, {
                 style: {
                     background: "#28a745",
@@ -621,7 +624,7 @@ const handleSearch = async () => {
                                                                     >
                                                                         <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                                     </button>
-                                                                    {/* <button
+                                                                    <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                                         onClick={() => {
                                                                             deleteFlight(flight.id);
@@ -629,7 +632,7 @@ const handleSearch = async () => {
                                                                         }}
                                                                     >
                                                                         <Trash2 className="h-4 w-4 text-red-500" /> Delete
-                                                                    </button> */}
+                                                                    </button>
                                                                 </>
                                                             )}
 
