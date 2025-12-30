@@ -4063,9 +4063,10 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
 
     // 🔹 Avec nom du client
     if (name) {
-      conditions += " AND p.first_name LIKE ? ";
-      params.push(`%${name}%`);
-    }
+  conditions += " AND (p.first_name LIKE ? OR p.last_name LIKE ?) ";
+  params.push(`%${name}%`, `%${name}%`);
+}
+
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
@@ -4199,11 +4200,10 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
       params.push(status);
     }
 
-       // 🔹 Avec type de name
-        if (name) {
-      conditions += " AND p.first_name LIKE ? ";
-      params.push(`%${name}%`);
-    }
+    if (name) {
+  conditions += " AND (p.first_name LIKE ? OR p.last_name LIKE ?) ";
+  params.push(`%${name}%`, `%${name}%`);
+}
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
