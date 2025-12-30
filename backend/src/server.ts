@@ -4840,8 +4840,8 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
             .map(
               (ps: any) => `
                 <tr>
-                  <td>${ps.first_name || ''} ${ps.last_name || ''}</td>
-                  <td>${ps.idTypeClient === "passport" ? "Passport: " : ps.idTypeClient === "nimu" ? "NIMU: " : ps.idTypeClient === "licens" ? "Licens: " : ""}</td>
+                  <td><Strong>${ps.first_name || ''} ${ps.last_name || ''}</Strong></td>
+                  <td><Strong>${ps.idTypeClient === "passport" ? "Passport: " : ps.idTypeClient === "nimu" ? "NIMU: " : ps.idTypeClient === "licens" ? "Licens: " : ""}</Strong> ${ps.idClient ? ps.idClient : ""}</td>
                 </tr>`
             )
             .join("")
@@ -5223,8 +5223,8 @@ app.get("/api/flight-plane-export", async (req: Request, res: Response) => {
             .map(
               (ps: any) => `
                 <tr>
-                  <td>${ps.first_name || ''} ${ps.last_name || ''}</td>
-                  <td>${ps.idTypeClient === "passport" ? "Passport: " : ps.idTypeClient === "nimu" ? "NIMU: " : ps.idTypeClient === "licens" ? "Licens: " : ""}</td>
+                  <td><Strong>${ps.first_name || ''} ${ps.last_name || ''}</Strong></td>
+                  <td><Strong>${ps.idTypeClient === "passport" ? "Passport: " : ps.idTypeClient === "nimu" ? "NIMU: " : ps.idTypeClient === "licens" ? "Licens: " : ""}</Strong> ${ps.idClient ? ps.idClient : ""}</td>
                 </tr>`
             )
             .join("")
