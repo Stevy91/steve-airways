@@ -1588,7 +1588,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
           passenger.lastName,
           passenger.dateOfBirth || null,
           passenger.idClient || null,
-          passenger.idTypeClient || null,
+          passenger.idTypeClient || "passport",
           passenger.gender || "other",
           passenger.title || "Mr",
           passenger.address || null,
