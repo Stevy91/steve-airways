@@ -4725,47 +4725,52 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
     // 🟦 EXÉCUTION SQL
     const [rowsUntyped] = await pool.query(`
       SELECT 
-        f.id,
-        f.flight_number,
-        f.type,
-        f.airline,
-        f.departure_time,
-        f.arrival_time,
-        f.price,
-        f.seats_available,
-        
-        COALESCE(
-          JSON_ARRAYAGG(
-            CASE 
-              WHEN p.id IS NOT NULL THEN
-                JSON_OBJECT(
-                  'first_name', p.first_name,
-                  'last_name', p.last_name,
-                  'idClient', p.idClient,
-                  'idTypeClient', p.idTypeClient
-                )
-            END
-          ),
-          JSON_ARRAY()
-        ) AS passengers,
-        
-        dep.name AS departure_airport_name,
-        dep.city AS departure_city,
-        dep.code AS departure_code,
-        
-        arr.name AS arrival_airport_name,
-        arr.city AS arrival_city,
-        arr.code AS arrival_code
-        
-      FROM flights f
-      LEFT JOIN bookings b ON f.id = b.flight_id
-      LEFT JOIN passengers p ON b.id = p.booking_id
-      JOIN locations dep ON f.departure_location_id = dep.id
-      JOIN locations arr ON f.arrival_location_id = arr.id
-      
-      ${conditions}
-      GROUP BY f.id
-      ORDER BY f.departure_time;
+    f.id,
+    f.flight_number,
+    f.type,
+    f.airline,
+    f.departure_time,
+    f.arrival_time,
+    f.price,
+    f.seats_available,
+
+    COALESCE(
+      JSON_ARRAYAGG(
+        DISTINCT CASE 
+          WHEN p.id IS NOT NULL THEN
+            JSON_OBJECT(
+              'first_name', p.first_name,
+              'last_name', p.last_name,
+              'idClient', p.idClient,
+              'idTypeClient', p.idTypeClient
+            )
+        END
+      ),
+      JSON_ARRAY()
+    ) AS passengers,
+
+    dep.name AS departure_airport_name,
+    dep.city AS departure_city,
+    dep.code AS departure_code,
+
+    arr.name AS arrival_airport_name,
+    arr.city AS arrival_city,
+    arr.code AS arrival_code
+
+FROM flights f
+
+LEFT JOIN bookings b_out ON f.id = b_out.flight_id
+LEFT JOIN bookings b_ret ON f.id = b_ret.return_flight_id
+LEFT JOIN passengers p 
+       ON p.booking_id IN (b_out.id, b_ret.id)
+
+JOIN locations dep ON f.departure_location_id = dep.id
+JOIN locations arr ON f.arrival_location_id = arr.id
+
+${conditions}
+GROUP BY f.id
+ORDER BY f.departure_time;
+;
     `, params);
 
     const rows = rowsUntyped as mysql.RowDataPacket[];
