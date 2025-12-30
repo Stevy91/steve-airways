@@ -5638,7 +5638,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
         row.total_price,
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
-        row.payment_method,
+        row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfer" ? "Deposit" : "Contrat",
         row.created_by_name,
         row.created_at
       ]);

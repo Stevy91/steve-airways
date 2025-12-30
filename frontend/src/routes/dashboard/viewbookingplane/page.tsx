@@ -283,7 +283,7 @@ const ViewBookingPlane = () => {
                                             </span>
                                         </td>
 
-                                        <td className="table-cell text-center">{booking.payment_method}</td>
+                                        <td className="table-cell text-center">{booking.payment_method === "card" ? "Card" : booking.payment_method === "cash" ? "Cash" : booking.payment_method === "cheque" ? "Check" : booking.payment_method === "virement" ? "Bank Transfer" : booking.payment_method === "transfer" ? "Deposit" : "Contrat"}</td>
                                         <td className="table-cell text-center">{booking.created_by_name || "Client Online"}</td>
 
                                         <td className="table-cell text-center">
