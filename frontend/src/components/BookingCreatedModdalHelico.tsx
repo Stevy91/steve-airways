@@ -171,7 +171,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <div style="padding: 20px; text-align: center;">
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Payment Method:</strong> 
           
-          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Transfer" : "Contrat"}
+          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Deposit" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Helicopter"
@@ -314,7 +314,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
           
        
-          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Transfert" : "Contrat"}
+          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Dépôt" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
               bookingData.tabType === "helicopter" ? "Hélicoptère" : "Hélicoptère"
@@ -1004,6 +1004,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         value={formData.firstName} // Utiliser formData.firstName
                                         onChange={handleFirstNameChange}
                                         onBlur={handleFirstNameBlur} // Quand on perd le focus
+                                        autoComplete="off"
+                                        
                                         placeholder="First Name"
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
@@ -1043,6 +1045,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         name="middleName"
                                         placeholder="Middle Name"
                                         value={formData.middleName}
+                                        autoComplete="off"
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
