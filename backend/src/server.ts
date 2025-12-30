@@ -1577,8 +1577,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     for (const passenger of passengers) {
       await connection.query(
         `INSERT INTO passengers (
-          booking_id, first_name, middle_name, last_name, idClient, idTypeClient,
-          date_of_birth, gender, title, address, type,
+          booking_id, first_name, middle_name, last_name, date_of_birth, idClient, idTypeClient, gender, title, address, type,
           type_vol, type_v, country, nationality,
           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
