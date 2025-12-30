@@ -940,7 +940,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         htmlFor="idClient"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        ID Number
+                                        {
+                                            formData.idTypeClient === "nimu" ? "ID NIMU" : formData.idTypeClient === "licens" ? "ID LICENS" : "ID PASSPORT"
+                                        }
                                     </label>
                                     <input
                                         type="text"

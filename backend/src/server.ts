@@ -1683,6 +1683,16 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
   }
 });
 
+
+
+
+
+
+
+
+
+
+
 // Middleware général pour vérifier le token
 
 
@@ -4681,6 +4691,51 @@ app.get("/api/flight-plane-search", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erreur recherche booking:", error);
     res.status(500).json({ error: "Erreur lors de la recherche" });
+  }
+});
+
+app.get("/api/passengers/search", async (req: Request, res: Response) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || String(q).length < 2) {
+      return res.json([]);
+    }
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `
+      SELECT 
+        id,
+        first_name,
+        middle_name,
+        last_name,
+        date_of_birth,
+        idClient,
+        idTypeClient,
+        gender,
+        title,
+        address,
+        country,
+        nationality,
+        phone,
+        email,
+        nom_urgence,
+        email_urgence,
+        tel_urgence
+      FROM passengers
+      WHERE 
+        first_name LIKE ? 
+        OR last_name LIKE ?
+      ORDER BY created_at DESC
+      LIMIT 10
+      `,
+      [`%${q}%`, `%${q}%`]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

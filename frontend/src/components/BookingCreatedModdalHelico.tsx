@@ -482,6 +482,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const [isRoundTrip, setIsRoundTrip] = useState(false);
     const [createTicket, setCreateTicket] = useState(false);
 
+
+
+
     const [formData, setFormData] = useState({
         firstName: "",
         flightNumberReturn: "",
@@ -575,8 +578,66 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     //         [name]: value,
     //     });
     // };
+  // ✅ TOUS les hooks ici (toujours exécutés)
+  const [firstName, setFirstName] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
 
+  useEffect(() => {
+    if (!open) {
+      setSuggestions([]);
+      setShowDropdown(false);
+    }
+  }, [open]);
+
+  // ❗ return APRÈS les hooks
+  if (!open) return null;
+
+
+const handleFirstNameChange = async (e: any) => {
+  const value = e.target.value;
+  setFirstName(value);
+
+  if (value.length < 2) {
+    setSuggestions([]);
+    return;
+  }
+
+  const res = await fetch(
+    `https://steve-airways.onrender.com/api/passengers/search?q=${value}`
+  );
+  const data = await res.json();
+
+  setSuggestions(data);
+  setShowDropdown(true);
+};
+
+const selectPassenger = (p: any) => {
+  setFormData((prev: any) => ({
+    ...prev,
+    firstName: p.first_name,
+    middleName: p.middle_name,
+    lastName: p.last_name,
+    dateOfBirth: p.date_of_birth,
+    idClient: p.idClient,
+    idTypeClient: p.idTypeClient,
+    address: p.address,
+    country: p.country,
+    nationality: p.nationality,
+    phone: p.phone,
+    email: p.email,
+    nom_urgencee: p.nom_urgence,
+    email_urgence: p.email_urgence,
+    tel_urgence: p.tel_urgence
+                
+              
+            
+                
+  }));
+
+  setShowDropdown(false);
+};
 
     const handleSubmit = async () => {
         setCreateTicket(true);
@@ -859,23 +920,42 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 
                             <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
                                 {/* Prénom */}
-                                <div className="flex flex-col">
-                                    <label
-                                        htmlFor="firstName"
-                                        className="mb-1 font-medium text-gray-700"
-                                    >
-                                        First Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="firstName"
-                                        name="firstName"
-                                        placeholder="First Name"
-                                        required
-                                        onChange={handleChange}
-                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                    />
-                                </div>
+                             
+
+                                <div className="relative flex flex-col">
+  <label className="mb-1 font-medium text-gray-700">
+    First Name
+  </label>
+
+  <input
+    type="text"
+    value={firstName}
+    onChange={handleFirstNameChange}
+    placeholder="First Name"
+    className="w-full rounded-md border border-gray-300 px-4 py-2
+      focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+  />
+
+  {showDropdown && suggestions.length > 0 && (
+    <div className="absolute top-full z-50 w-full bg-white border rounded-md shadow-md">
+      {suggestions.map((p) => (
+        <div
+          key={p.id}
+          onClick={() => selectPassenger(p)}
+          className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+        >
+          <p className="font-medium">
+            {p.first_name} {p.last_name}
+          </p>
+          <p className="text-sm text-gray-500">
+            {p.email || p.phone}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
 
                                 {/* Deuxième prénom */}
                                 <div className="flex flex-col">
@@ -980,7 +1060,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         htmlFor="idClient"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        ID Number
+                                        {
+                                            formData.idTypeClient === "nimu" ? "ID NIMU" : formData.idTypeClient === "licens" ? "ID LICENS" : "ID PASSPORT"
+                                        }
                                     </label>
                                     <input
                                         type="text"
