@@ -36,6 +36,7 @@ type Passenger = {
     idClient: string;
     idTypeClient: string;
     reference: string;
+    companyName: string;
     nom_urgence: string;
     email_urgence: string;
     tel_urgence: string;
@@ -67,8 +68,6 @@ type BookingData = {
     tabType?: string;
     totalPrice: number;
 };
-
-
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
     const outboundFlight = bookingData.outbound;
@@ -482,10 +481,12 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const [isRoundTrip, setIsRoundTrip] = useState(false);
     const [createTicket, setCreateTicket] = useState(false);
 
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
+    const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
 
-
-
-    const [formData, setFormData] = useState({
+        const initialFormData = {
         firstName: "",
         flightNumberReturn: "",
         middleName: "",
@@ -494,6 +495,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         idTypeClient: "",
         unpaid: "",
         reference: "",
+        companyName:"",
         nom_urgence: "",
         email_urgence: "",
         tel_urgence: "",
@@ -508,43 +510,83 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         passengerCount: 1,
         paymentMethod: "card",
         returnDate: "",
-    });
+    };
 
+   const [formData, setFormData] = useState(initialFormData);
+
+    useEffect(() => {
+        if (!open) {
+            setSuggestions([]);
+            setShowDropdown(false);
+        }
+    }, [open]);
+
+        // Réinitialiser le formulaire quand le modal s'ouvre ou se ferme
+    useEffect(() => {
+        if (open) {
+            // Réinitialiser le formulaire quand le modal s'ouvre
+            setFormData(initialFormData);
+            setIsRoundTrip(false);
+        }
+    }, [open]);
+
+    // Gérer les clics en dehors du dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            // Si le dropdown est ouvert
+            if (showDropdown && suggestions.length > 0) {
+                // Vérifier si le clic est en dehors du dropdown ET en dehors de l'input
+                if (dropdownRef && !dropdownRef.contains(event.target as Node) && inputRef && !inputRef.contains(event.target as Node)) {
+                    setShowDropdown(false);
+                    setSuggestions([]);
+                }
+            }
+        };
+
+        // Ajouter l'écouteur d'événement
+        document.addEventListener("mousedown", handleClickOutside);
+
+        // Nettoyer l'écouteur d'événement
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showDropdown, suggestions, dropdownRef, inputRef]);
+
+    // Only ONE early return, at the beginning
     if (!open || !flight) return null;
 
     const formatNimuLicens = (value: string) => {
-  // Supprimer tout sauf les chiffres
-  const numbers = value.replace(/\D/g, "");
+        // Supprimer tout sauf les chiffres
+        const numbers = value.replace(/\D/g, "");
 
-  // Limiter à 10 chiffres (000-000-000-0)
-  const trimmed = numbers.slice(0, 10);
+        // Limiter à 10 chiffres (000-000-000-0)
+        const trimmed = numbers.slice(0, 10);
 
-  // Appliquer le format
-  const parts = [];
-  if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
-  if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
-  if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
-  if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
+        // Appliquer le format
+        const parts = [];
+        if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
+        if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
+        if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
+        if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
 
-  return parts.join("-");
-};
+        return parts.join("-");
+    };
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value } = e.target;
+        // Si on modifie ID Number
+        if (name === "idClient") {
+            if (formData.idTypeClient === "nimu") {
+                setFormData((prev) => ({
+                    ...prev,
+                    idClient: formatNimuLicens(value),
+                }));
+                return;
+            }
+        }
 
-  // Si on modifie ID Number
-  if (name === "idClient") {
-    if (formData.idTypeClient === "nimu" || formData.idTypeClient === "licens") {
-      setFormData((prev) => ({
-        ...prev,
-        idClient: formatNimuLicens(value),
-      }));
-      return;
-    }
-  }
-
-          // Si c’est un checkbox → on cast pour accéder à checked
+        // Si c’est un checkbox → on cast pour accéder à checked
         if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
             setFormData({
                 ...formData,
@@ -553,12 +595,11 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
             return;
         }
 
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
-
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
 
     // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     //     const { name, value } = e.target;
@@ -578,66 +619,71 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     //         [name]: value,
     //     });
     // };
-  // ✅ TOUS les hooks ici (toujours exécutés)
-  const [firstName, setFirstName] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
 
+    // Reset suggestions when modal closes
 
-  useEffect(() => {
-    if (!open) {
-      setSuggestions([]);
-      setShowDropdown(false);
-    }
-  }, [open]);
+    // Modifiez handleFirstNameChange pour mettre à jour formData
+    const handleFirstNameChange = async (e: any) => {
+        const value = e.target.value;
 
-  // ❗ return APRÈS les hooks
-  if (!open) return null;
+        // Mettre à jour le champ firstName dans formData
+        setFormData((prev) => ({
+            ...prev,
+            firstName: value,
+        }));
 
+        // Recherche d'auto-complétion
+        if (value.length < 2) {
+            setSuggestions([]);
+            setShowDropdown(false);
+            return;
+        }
 
-const handleFirstNameChange = async (e: any) => {
-  const value = e.target.value;
-  setFirstName(value);
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/passengers/search?q=${value}`);
+            const data = await res.json();
+            setSuggestions(data);
+            setShowDropdown(data.length > 0); // Afficher le dropdown seulement s'il y a des suggestions
+        } catch (error) {
+            console.error("Erreur recherche passagers:", error);
+            setSuggestions([]);
+            setShowDropdown(false);
+        }
+    };
 
-  if (value.length < 2) {
-    setSuggestions([]);
-    return;
-  }
+    // Fonction pour quand l'input perd le focus (quand on clique ailleurs)
+    const handleFirstNameBlur = () => {
+        // Attendre un peu avant de fermer pour permettre la sélection
+        setTimeout(() => {
+            setShowDropdown(false);
+            setSuggestions([]);
+        }, 200);
+    };
 
-  const res = await fetch(
-    `https://steve-airways.onrender.com/api/passengers/search?q=${value}`
-  );
-  const data = await res.json();
+    const selectPassenger = (p: any) => {
+        // Mettre à jour tous les champs
+        setFormData((prev) => ({
+            ...prev,
+            firstName: p.first_name || "",
+            middleName: p.middle_name || "",
+            lastName: p.last_name || "",
+            dateOfBirth: p.date_of_birth || "",
+            idClient: p.idClient || "",
+            idTypeClient: p.idTypeClient || "",
+            address: p.address || "",
+            country: p.country || "",
+            nationality: p.nationality || "",
+            phone: p.phone || "",
+            email: p.email || "",
+            nom_urgence: p.nom_urgence || "",
+            email_urgence: p.email_urgence || "",
+            tel_urgence: p.tel_urgence || "",
+        }));
 
-  setSuggestions(data);
-  setShowDropdown(true);
-};
-
-const selectPassenger = (p: any) => {
-  setFormData((prev: any) => ({
-    ...prev,
-    firstName: p.first_name,
-    middleName: p.middle_name,
-    lastName: p.last_name,
-    dateOfBirth: p.date_of_birth,
-    idClient: p.idClient,
-    idTypeClient: p.idTypeClient,
-    address: p.address,
-    country: p.country,
-    nationality: p.nationality,
-    phone: p.phone,
-    email: p.email,
-    nom_urgencee: p.nom_urgence,
-    email_urgence: p.email_urgence,
-    tel_urgence: p.tel_urgence
-                
-              
-            
-                
-  }));
-
-  setShowDropdown(false);
-};
+        // Fermer le dropdown et vider les suggestions
+        setShowDropdown(false);
+        setSuggestions([]);
+    };
 
     const handleSubmit = async () => {
         setCreateTicket(true);
@@ -664,6 +710,7 @@ const selectPassenger = (p: any) => {
                 middleName: formData.middleName,
                 lastName: formData.lastName,
                 reference: formData.reference,
+                companyName: formData.companyName,
                 idClient: formData.idClient,
                 idTypeClient: formData.idTypeClient,
                 nom_urgence: formData.nom_urgence,
@@ -689,6 +736,7 @@ const selectPassenger = (p: any) => {
             passengers,
             unpaid: formData.unpaid,
             referenceNumber: formData.reference,
+            companyName: formData.companyName,
             contactInfo: { email: formData.email, phone: formData.phone },
             totalPrice: flight.price * passengerCount,
             departureDate: flight.departure.split("T")[0],
@@ -823,6 +871,20 @@ const selectPassenger = (p: any) => {
                     returnDate: "",
                 }));
 
+             
+                setFormData(initialFormData);
+                setIsRoundTrip(false);
+                setSuggestions([]);
+                setShowDropdown(false);
+
+                // ✅ Réinitialiser aussi le checkbox UnPaid
+                setFormData(prev => ({
+                    ...initialFormData,
+                    // Conserver certaines valeurs par défaut si nécessaire
+                    paymentMethod: "card",
+                    gender: "other",
+                    title: "Mr",
+                }));
 
                 if (onTicketCreated) {
                     onTicketCreated();
@@ -849,6 +911,16 @@ const selectPassenger = (p: any) => {
         }
     };
 
+        // Fonction pour fermer et réinitialiser
+    const handleClose = () => {
+        // Réinitialiser les champs avant de fermer
+        setFormData(initialFormData);
+        setIsRoundTrip(false);
+        setSuggestions([]);
+        setShowDropdown(false);
+        onClose();
+    };
+
     return (
         <AnimatePresence>
             {open && (
@@ -858,7 +930,7 @@ const selectPassenger = (p: any) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={onClose}
+                        onClick={handleClose}
                     />
                     <motion.div
                         role="dialog"
@@ -870,7 +942,7 @@ const selectPassenger = (p: any) => {
                     >
                         <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                             <button
-                                onClick={onClose}
+                                onClick={handleClose}
                                 className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                                 aria-label="Close"
                             >
@@ -920,42 +992,42 @@ const selectPassenger = (p: any) => {
 
                             <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
                                 {/* Prénom */}
-                             
 
                                 <div className="relative flex flex-col">
-  <label className="mb-1 font-medium text-gray-700">
-    First Name
-  </label>
+                                    <label className="mb-1 font-medium text-gray-700">First Name</label>
 
-  <input
-    type="text"
-    value={firstName}
-    onChange={handleFirstNameChange}
-    placeholder="First Name"
-    className="w-full rounded-md border border-gray-300 px-4 py-2
-      focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-  />
+                                    <input
+                                        type="text"
+                                        ref={setInputRef}
+                                        id="firstName" // Ajout d'un id
+                                        name="firstName" // Ajout d'un name
+                                        value={formData.firstName} // Utiliser formData.firstName
+                                        onChange={handleFirstNameChange}
+                                        onBlur={handleFirstNameBlur} // Quand on perd le focus
+                                        placeholder="First Name"
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
 
-  {showDropdown && suggestions.length > 0 && (
-    <div className="absolute top-full z-50 w-full bg-white border rounded-md shadow-md">
-      {suggestions.map((p) => (
-        <div
-          key={p.id}
-          onClick={() => selectPassenger(p)}
-          className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-        >
-          <p className="font-medium">
-            {p.first_name} {p.last_name}
-          </p>
-          <p className="text-sm text-gray-500">
-            {p.email || p.phone}
-          </p>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
+                                    {showDropdown && suggestions.length > 0 && (
+                                        <div
+                                            ref={setDropdownRef}
+                                            className="absolute top-full z-50 w-full rounded-md border bg-white shadow-md"
+                                        >
+                                            {suggestions.map((p) => (
+                                                <div
+                                                    key={p.id}
+                                                    onClick={() => selectPassenger(p)}
+                                                    className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                                                >
+                                                    <p className="font-medium">
+                                                        {p.first_name} {p.last_name}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">{p.email || p.phone}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Deuxième prénom */}
                                 <div className="flex flex-col">
@@ -970,6 +1042,7 @@ const selectPassenger = (p: any) => {
                                         id="middleName"
                                         name="middleName"
                                         placeholder="Middle Name"
+                                        value={formData.middleName}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -989,6 +1062,7 @@ const selectPassenger = (p: any) => {
                                         id="lastName"
                                         name="lastName"
                                         placeholder="Last Name"
+                                        value={formData.lastName}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1007,6 +1081,7 @@ const selectPassenger = (p: any) => {
                                         type="date"
                                         id="dateOfBirth"
                                         name="dateOfBirth"
+                                        value={formData.dateOfBirth}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1026,6 +1101,7 @@ const selectPassenger = (p: any) => {
                                         id="address"
                                         name="address"
                                         placeholder="Adress"
+                                        value={formData.address}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1033,7 +1109,6 @@ const selectPassenger = (p: any) => {
                                 </div>
                                 {/* ID Type */}
                                 <div className="flex flex-col">
-                                    
                                     <label
                                         htmlFor="idTypeClient"
                                         className="mb-1 font-medium text-gray-700"
@@ -1048,11 +1123,9 @@ const selectPassenger = (p: any) => {
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     >
                                         <option value="passport">Passport</option>
-                                        <option value="nimu">NIMU</option>
-                                        <option value="licens">Licens</option>
-                                        
+                                        <option value="nimu">NINU</option>
+                                        <option value="licens">License</option>
                                     </select>
-                                    
                                 </div>
                                 {/* ID Type */}
                                 <div className="flex flex-col">
@@ -1060,27 +1133,25 @@ const selectPassenger = (p: any) => {
                                         htmlFor="idClient"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        {
-                                            formData.idTypeClient === "nimu" ? "ID NIMU" : formData.idTypeClient === "licens" ? "ID LICENS" : "ID PASSPORT"
-                                        }
+                                        {formData.idTypeClient === "nimu"
+                                            ? "ID NINU"
+                                            : formData.idTypeClient === "licens"
+                                              ? "ID LICENSE"
+                                              : "ID PASSPORT"}
                                     </label>
                                     <input
                                         type="text"
                                         id="idClient"
                                         name="idClient"
                                         placeholder={
-                                            formData.idTypeClient === "nimu" || formData.idTypeClient === "licens"
-                                            ? "000-000-000-0"
-                                            : "ID Number"
+                                            formData.idTypeClient === "nimu" ? "000-000-000-0" : formData.idTypeClient === "licens" ? "ID LICENSE" : "ID PASSPORT"
                                         }
                                         value={formData.idClient}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                        />
-
+                                    />
                                 </div>
-                                
 
                                 {/* Pays */}
                                 <div className="flex flex-col">
@@ -1096,6 +1167,7 @@ const selectPassenger = (p: any) => {
                                         name="country"
                                         placeholder="Country"
                                         required
+                                        value={formData.country}
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
@@ -1114,6 +1186,7 @@ const selectPassenger = (p: any) => {
                                         id="nationality"
                                         name="nationality"
                                         placeholder="Nationality"
+                                        value={formData.nationality}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1133,6 +1206,7 @@ const selectPassenger = (p: any) => {
                                         id="email"
                                         name="email"
                                         placeholder="E-mail"
+                                        value={formData.email}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1152,6 +1226,7 @@ const selectPassenger = (p: any) => {
                                         id="phone"
                                         name="phone"
                                         placeholder="Phone"
+                                        value={formData.phone}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1177,7 +1252,7 @@ const selectPassenger = (p: any) => {
                                         <option value="card">Card</option>
                                         <option value="cheque">Check</option>
                                         <option value="virement">Bank Transfer</option>
-                                        <option value="transfert">Transfer</option>
+                                        <option value="transfert">Deposit</option>
                                         <option value="contrat">Contrat</option>
                                     </select>
                                     {/* Nombre de passagers */}
@@ -1216,6 +1291,24 @@ const selectPassenger = (p: any) => {
                                         <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
                                     </label>
                                 </div>
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="companyName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Company Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="companyName"
+                                        name="companyName"
+                                        placeholder="Company Name"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
 
                                 {/* Téléphone */}
                                 <div className="flex flex-col">
@@ -1246,6 +1339,7 @@ const selectPassenger = (p: any) => {
                                         type="text"
                                         id="nom_urgence"
                                         name="nom_urgence"
+                                        value={formData.nom_urgence}
                                         placeholder="Emergency contact person name"
                                         required
                                         onChange={handleChange}
@@ -1263,6 +1357,7 @@ const selectPassenger = (p: any) => {
                                         type="text"
                                         id="email_urgence"
                                         name="email_urgence"
+                                        value={formData.email_urgence}
                                         placeholder="Emergency contact email"
                                         required
                                         onChange={handleChange}
@@ -1280,6 +1375,7 @@ const selectPassenger = (p: any) => {
                                         type="text"
                                         id="tel_urgence"
                                         name="tel_urgence"
+                                        value={formData.tel_urgence}
                                         placeholder="Emergency contact number"
                                         required
                                         onChange={handleChange}

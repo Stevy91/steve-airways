@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -17,22 +17,26 @@ type Flight = {
     arrival: string;
     price: number;
     type?: string;
+    totalPrice: number;
+    fromCity: string;
+    toCity: string;
 };
 
 type BookingCreatedModalProps = {
-    open: boolean;
     onTicketCreated?: () => void;
+    open: boolean;
     flight: Flight | null;
     onClose: () => void;
 };
 type Passenger = {
     firstName: string;
-    flightNumberReturn: string;
+    flightNumberReturn?: string;
     middleName?: string;
     lastName: string;
     idClient: string;
     idTypeClient: string;
     reference: string;
+    companyName: string;
     nom_urgence: string;
     email_urgence: string;
     tel_urgence: string;
@@ -47,7 +51,6 @@ type Passenger = {
     nationality?: string;
     phone?: string;
     email?: string;
-    paymentMethod?: string;
 };
 
 type BookingData = {
@@ -65,8 +68,6 @@ type BookingData = {
     tabType?: string;
     totalPrice: number;
 };
-
-
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
     const outboundFlight = bookingData.outbound;
@@ -475,17 +476,24 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
 };
 
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
-    const [createTicket, setCreateTicket] = useState(false);
     const [isRoundTrip, setIsRoundTrip] = useState(false);
-    const [formData, setFormData] = useState({
+    const [createTicket, setCreateTicket] = useState(false);
+
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
+    const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
+
+        const initialFormData = {
         firstName: "",
         flightNumberReturn: "",
         middleName: "",
         lastName: "",
         idClient: "",
         idTypeClient: "",
-        reference: "",
         unpaid: "",
+        reference: "",
+        companyName:"",
         nom_urgence: "",
         email_urgence: "",
         tel_urgence: "",
@@ -500,43 +508,83 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         passengerCount: 1,
         paymentMethod: "card",
         returnDate: "",
-    });
+    };
 
+   const [formData, setFormData] = useState(initialFormData);
+
+    useEffect(() => {
+        if (!open) {
+            setSuggestions([]);
+            setShowDropdown(false);
+        }
+    }, [open]);
+
+        // Réinitialiser le formulaire quand le modal s'ouvre ou se ferme
+    useEffect(() => {
+        if (open) {
+            // Réinitialiser le formulaire quand le modal s'ouvre
+            setFormData(initialFormData);
+            setIsRoundTrip(false);
+        }
+    }, [open]);
+
+    // Gérer les clics en dehors du dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            // Si le dropdown est ouvert
+            if (showDropdown && suggestions.length > 0) {
+                // Vérifier si le clic est en dehors du dropdown ET en dehors de l'input
+                if (dropdownRef && !dropdownRef.contains(event.target as Node) && inputRef && !inputRef.contains(event.target as Node)) {
+                    setShowDropdown(false);
+                    setSuggestions([]);
+                }
+            }
+        };
+
+        // Ajouter l'écouteur d'événement
+        document.addEventListener("mousedown", handleClickOutside);
+
+        // Nettoyer l'écouteur d'événement
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showDropdown, suggestions, dropdownRef, inputRef]);
+
+    // Only ONE early return, at the beginning
     if (!open || !flight) return null;
 
     const formatNimuLicens = (value: string) => {
-  // Supprimer tout sauf les chiffres
-  const numbers = value.replace(/\D/g, "");
+        // Supprimer tout sauf les chiffres
+        const numbers = value.replace(/\D/g, "");
 
-  // Limiter à 10 chiffres (000-000-000-0)
-  const trimmed = numbers.slice(0, 10);
+        // Limiter à 10 chiffres (000-000-000-0)
+        const trimmed = numbers.slice(0, 10);
 
-  // Appliquer le format
-  const parts = [];
-  if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
-  if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
-  if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
-  if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
+        // Appliquer le format
+        const parts = [];
+        if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
+        if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
+        if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
+        if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
 
-  return parts.join("-");
-};
+        return parts.join("-");
+    };
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value } = e.target;
+        // Si on modifie ID Number
+        if (name === "idClient") {
+            if (formData.idTypeClient === "nimu") {
+                setFormData((prev) => ({
+                    ...prev,
+                    idClient: formatNimuLicens(value),
+                }));
+                return;
+            }
+        }
 
-  // Si on modifie ID Number
-  if (name === "idClient") {
-    if (formData.idTypeClient === "nimu" || formData.idTypeClient === "licens") {
-      setFormData((prev) => ({
-        ...prev,
-        idClient: formatNimuLicens(value),
-      }));
-      return;
-    }
-  }
-
-          // Si c’est un checkbox → on cast pour accéder à checked
+        // Si c’est un checkbox → on cast pour accéder à checked
         if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
             setFormData({
                 ...formData,
@@ -545,15 +593,99 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
             return;
         }
 
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    //     const { name, value } = e.target;
+
+    //     // Si c’est un checkbox → on cast pour accéder à checked
+    //     if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+    //         setFormData({
+    //             ...formData,
+    //             [name]: e.target.checked ? value : "",
+    //         });
+    //         return;
+    //     }
+
+    //     // Sinon → input, select…
+    //     setFormData({
+    //         ...formData,
+    //         [name]: value,
+    //     });
+    // };
+
+    // Reset suggestions when modal closes
+
+    // Modifiez handleFirstNameChange pour mettre à jour formData
+    const handleFirstNameChange = async (e: any) => {
+        const value = e.target.value;
+
+        // Mettre à jour le champ firstName dans formData
+        setFormData((prev) => ({
+            ...prev,
+            firstName: value,
+        }));
+
+        // Recherche d'auto-complétion
+        if (value.length < 2) {
+            setSuggestions([]);
+            setShowDropdown(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/passengers/search?q=${value}`);
+            const data = await res.json();
+            setSuggestions(data);
+            setShowDropdown(data.length > 0); // Afficher le dropdown seulement s'il y a des suggestions
+        } catch (error) {
+            console.error("Erreur recherche passagers:", error);
+            setSuggestions([]);
+            setShowDropdown(false);
+        }
+    };
+
+    // Fonction pour quand l'input perd le focus (quand on clique ailleurs)
+    const handleFirstNameBlur = () => {
+        // Attendre un peu avant de fermer pour permettre la sélection
+        setTimeout(() => {
+            setShowDropdown(false);
+            setSuggestions([]);
+        }, 200);
+    };
+
+    const selectPassenger = (p: any) => {
+        // Mettre à jour tous les champs
+        setFormData((prev) => ({
+            ...prev,
+            firstName: p.first_name || "",
+            middleName: p.middle_name || "",
+            lastName: p.last_name || "",
+            dateOfBirth: p.date_of_birth || "",
+            idClient: p.idClient || "",
+            idTypeClient: p.idTypeClient || "",
+            address: p.address || "",
+            country: p.country || "",
+            nationality: p.nationality || "",
+            phone: p.phone || "",
+            email: p.email || "",
+            nom_urgence: p.nom_urgence || "",
+            email_urgence: p.email_urgence || "",
+            tel_urgence: p.tel_urgence || "",
+        }));
+
+        // Fermer le dropdown et vider les suggestions
+        setShowDropdown(false);
+        setSuggestions([]);
+    };
 
     const handleSubmit = async () => {
-        // 1️⃣ Validation des champs obligatoires
         setCreateTicket(true);
+        // 1️⃣ Validation des champs obligatoires
         if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
             toast.error(`Veuillez remplir tous les champs obligatoires`, {
                 style: {
@@ -575,9 +707,10 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                 flightNumberReturn: formData.flightNumberReturn || "",
                 middleName: formData.middleName,
                 lastName: formData.lastName,
+                reference: formData.reference,
+                companyName: formData.companyName,
                 idClient: formData.idClient,
                 idTypeClient: formData.idTypeClient,
-                reference: formData.reference,
                 nom_urgence: formData.nom_urgence,
                 email_urgence: formData.email_urgence,
                 tel_urgence: formData.tel_urgence,
@@ -599,15 +732,16 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
         const body = {
             flightId: flight.id,
             passengers,
-            referenceNumber: formData.reference,
             unpaid: formData.unpaid,
+            referenceNumber: formData.reference,
+            companyName: formData.companyName,
             contactInfo: { email: formData.email, phone: formData.phone },
             totalPrice: flight.price * passengerCount,
             departureDate: flight.departure.split("T")[0],
             returnDate: formData.returnDate,
             paymentMethod: formData.paymentMethod,
             idClient: formData.idClient,
-            idTypeClient: formData.idTypeClient
+            idTypeClient: formData.idTypeClient,
         };
 
         try {
@@ -672,7 +806,6 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                             const dataReturn = await resReturn.json();
 
                             if (resReturn.ok && dataReturn) {
-                                // dataReturn contient déjà le vol
                                 const flightData = dataReturn;
                                 returnFlight = {
                                     date: flightData.departure_time,
@@ -685,38 +818,48 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                     toCity: flightData.toCity,
                                 };
                             } else {
-                                toast.error("Vol retour introuvable !");
+                                console.warn("Vol retour introuvable, création sans vol retour");
+                                // Ne pas afficher d'erreur toast ici pour ne pas interrompre le processus
                             }
                         } catch (err) {
                             console.error("Erreur récupération vol retour:", err);
-                            toast.error("Impossible de récupérer le vol retour.");
+                            // Ne pas afficher d'erreur toast pour ne pas bloquer l'email
                         }
                     }
 
-                    await sendTicketByEmail(
-                        {
-                            from: flight.from || "",
-                            to: flight.to || "",
-                            outbound: {
-                                date: flight.departure,
-                                noflight: flight.flight_number,
-                                departure_time: flight.departure,
-                                arrival_time: flight.arrival,
+                    // Envoyer l'email même si returnFlight est null
+                    try {
+                        await sendTicketByEmail(
+                            {
+                                from: flight.from || "",
+                                to: flight.to || "",
+                                outbound: {
+                                    date: flight.departure,
+                                    noflight: flight.flight_number,
+                                    departure_time: flight.departure,
+                                    arrival_time: flight.arrival,
+                                },
+                                return: returnFlight, // Peut être null
+                                passengersData: { adults: passengers },
+                                totalPrice: body.totalPrice,
                             },
-                            return: returnFlight || null, // <--- vol retour créé
-                            passengersData: { adults: passengers },
-                            totalPrice: body.totalPrice,
-                        },
-                        data.bookingReference,
-                        formData.paymentMethod,
-                    );
+                            data.bookingReference,
+                            formData.paymentMethod,
+                        );
+
+                        console.log("✅ Email envoyé avec succès");
+                    } catch (emailError) {
+                        console.error("❌ Erreur détaillée envoi email:", emailError);
+                        // Afficher un warning plutôt qu'une erreur pour ne pas perturber l'utilisateur
+                        toast.error("Ticket créé mais email non envoyé");
+                    }
 
                     console.log("✅ Email envoyé avec succès");
                 } catch (emailError) {
                     console.error("❌ Erreur détaillée envoi email:", emailError);
                     toast.error("Ticket créé mais email non envoyé");
                 }
-                
+
                 // ✅ Réinitialiser le vol retour après succès
                 setIsRoundTrip(false);
 
@@ -726,6 +869,21 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                     returnDate: "",
                 }));
 
+             
+                setFormData(initialFormData);
+                setIsRoundTrip(false);
+                setSuggestions([]);
+                setShowDropdown(false);
+
+                // ✅ Réinitialiser aussi le checkbox UnPaid
+                setFormData(prev => ({
+                    ...initialFormData,
+                    // Conserver certaines valeurs par défaut si nécessaire
+                    paymentMethod: "card",
+                    gender: "other",
+                    title: "Mr",
+                }));
+
                 if (onTicketCreated) {
                     onTicketCreated();
                 }
@@ -733,6 +891,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                 onClose();
             } else {
                 console.error("Erreur création ticket:", data);
+
                 toast.error(`${data.message || "Le numéro saisi pour le vol de retour ne correspond à aucun vol."}`, {
                     style: {
                         background: "#fee2e2",
@@ -749,6 +908,17 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
             setCreateTicket(false);
         }
     };
+
+        // Fonction pour fermer et réinitialiser
+    const handleClose = () => {
+        // Réinitialiser les champs avant de fermer
+        setFormData(initialFormData);
+        setIsRoundTrip(false);
+        setSuggestions([]);
+        setShowDropdown(false);
+        onClose();
+    };
+
     return (
         <AnimatePresence>
             {open && (
@@ -758,7 +928,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={onClose}
+                        onClick={handleClose}
                     />
                     <motion.div
                         role="dialog"
@@ -770,7 +940,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                     >
                         <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                             <button
-                                onClick={onClose}
+                                onClick={handleClose}
                                 className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                                 aria-label="Close"
                             >
@@ -779,6 +949,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 
                             <div className="px-6 pt-6">
                                 <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.flight_number}</h2>
+
                                 <p className="text-sm text-slate-500">
                                     {flight.from} → {flight.to} | Departure: {flight.departure}
                                 </p>
@@ -819,22 +990,41 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 
                             <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
                                 {/* Prénom */}
-                                <div className="flex flex-col">
-                                    <label
-                                        htmlFor="firstName"
-                                        className="mb-1 font-medium text-gray-700"
-                                    >
-                                        First Name
-                                    </label>
+
+                                <div className="relative flex flex-col">
+                                    <label className="mb-1 font-medium text-gray-700">First Name</label>
+
                                     <input
                                         type="text"
-                                        id="firstName"
-                                        name="firstName"
+                                        ref={setInputRef}
+                                        id="firstName" // Ajout d'un id
+                                        name="firstName" // Ajout d'un name
+                                        value={formData.firstName} // Utiliser formData.firstName
+                                        onChange={handleFirstNameChange}
+                                        onBlur={handleFirstNameBlur} // Quand on perd le focus
                                         placeholder="First Name"
-                                        required
-                                        onChange={handleChange}
-                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
+
+                                    {showDropdown && suggestions.length > 0 && (
+                                        <div
+                                            ref={setDropdownRef}
+                                            className="absolute top-full z-50 w-full rounded-md border bg-white shadow-md"
+                                        >
+                                            {suggestions.map((p) => (
+                                                <div
+                                                    key={p.id}
+                                                    onClick={() => selectPassenger(p)}
+                                                    className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                                                >
+                                                    <p className="font-medium">
+                                                        {p.first_name} {p.last_name}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">{p.email || p.phone}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Deuxième prénom */}
@@ -850,6 +1040,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         id="middleName"
                                         name="middleName"
                                         placeholder="Middle Name"
+                                        value={formData.middleName}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -869,6 +1060,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         id="lastName"
                                         name="lastName"
                                         placeholder="Last Name"
+                                        value={formData.lastName}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -887,6 +1079,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         type="date"
                                         id="dateOfBirth"
                                         name="dateOfBirth"
+                                        value={formData.dateOfBirth}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -899,21 +1092,21 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         htmlFor="address"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Address
+                                        Adress
                                     </label>
                                     <input
                                         type="text"
                                         id="address"
                                         name="address"
-                                        placeholder="Address"
+                                        placeholder="Adress"
+                                        value={formData.address}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
-                                                                {/* ID Type */}
+                                {/* ID Type */}
                                 <div className="flex flex-col">
-                                    
                                     <label
                                         htmlFor="idTypeClient"
                                         className="mb-1 font-medium text-gray-700"
@@ -928,11 +1121,9 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     >
                                         <option value="passport">Passport</option>
-                                        <option value="nimu">NIMU</option>
-                                        <option value="licens">Licens</option>
-                                        
+                                        <option value="nimu">NINU</option>
+                                        <option value="licens">License</option>
                                     </select>
-                                    
                                 </div>
                                 {/* ID Type */}
                                 <div className="flex flex-col">
@@ -940,25 +1131,24 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         htmlFor="idClient"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        {
-                                            formData.idTypeClient === "nimu" ? "ID NIMU" : formData.idTypeClient === "licens" ? "ID LICENS" : "ID PASSPORT"
-                                        }
+                                        {formData.idTypeClient === "nimu"
+                                            ? "ID NINU"
+                                            : formData.idTypeClient === "licens"
+                                              ? "ID LICENSE"
+                                              : "ID PASSPORT"}
                                     </label>
                                     <input
                                         type="text"
                                         id="idClient"
                                         name="idClient"
                                         placeholder={
-                                            formData.idTypeClient === "nimu" || formData.idTypeClient === "licens"
-                                            ? "000-000-000-0"
-                                            : "ID Number"
+                                            formData.idTypeClient === "nimu" ? "000-000-000-0" : formData.idTypeClient === "licens" ? "ID LICENSE" : "ID PASSPORT"
                                         }
                                         value={formData.idClient}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                        />
-
+                                    />
                                 </div>
 
                                 {/* Pays */}
@@ -975,6 +1165,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         name="country"
                                         placeholder="Country"
                                         required
+                                        value={formData.country}
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
@@ -993,6 +1184,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         id="nationality"
                                         name="nationality"
                                         placeholder="Nationality"
+                                        value={formData.nationality}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1012,6 +1204,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         id="email"
                                         name="email"
                                         placeholder="E-mail"
+                                        value={formData.email}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1031,6 +1224,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         id="phone"
                                         name="phone"
                                         placeholder="Phone"
+                                        value={formData.phone}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -1043,7 +1237,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         htmlFor="paymentMethod"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Payment method
+                                        Payment Method
                                     </label>
                                     <select
                                         id="paymentMethod"
@@ -1055,8 +1249,8 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         <option value="cash">Cash</option>
                                         <option value="card">Card</option>
                                         <option value="cheque">Check</option>
-                                        <option value="virement">bank transfer</option>
-                                        <option value="transfert">Transfer</option>
+                                        <option value="virement">Bank Transfer</option>
+                                        <option value="transfert">Deposit</option>
                                         <option value="contrat">Contrat</option>
                                     </select>
                                     {/* Nombre de passagers */}
@@ -1076,7 +1270,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         htmlFor="unpaid"
                                         className="mb-1 font-medium text-gray-700"
                                     >
-                                        Unpaid
+                                        UnPaid
                                     </label>
 
                                     <label className="relative inline-flex cursor-pointer items-center">
@@ -1095,6 +1289,26 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
                                     </label>
                                 </div>
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="companyName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Company Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="companyName"
+                                        name="companyName"
+                                        placeholder="Company Name"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Téléphone */}
                                 <div className="flex flex-col">
                                     <label
                                         htmlFor="reference"
@@ -1123,6 +1337,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         type="text"
                                         id="nom_urgence"
                                         name="nom_urgence"
+                                        value={formData.nom_urgence}
                                         placeholder="Emergency contact person name"
                                         required
                                         onChange={handleChange}
@@ -1140,6 +1355,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         type="text"
                                         id="email_urgence"
                                         name="email_urgence"
+                                        value={formData.email_urgence}
                                         placeholder="Emergency contact email"
                                         required
                                         onChange={handleChange}
@@ -1157,6 +1373,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
                                         type="text"
                                         id="tel_urgence"
                                         name="tel_urgence"
+                                        value={formData.tel_urgence}
                                         placeholder="Emergency contact number"
                                         required
                                         onChange={handleChange}

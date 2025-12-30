@@ -187,8 +187,8 @@ const ViewBookingHelico = () => {
                                     <option value="cash">Cash</option>
                                     <option value="card">Bank Card</option>
                                     <option value="cheque">Check</option>
-                                    <option value="virement">bank transfer</option>
-                                    <option value="transfert">Transfer</option>
+                                    <option value="virement">Bank transfer</option>
+                                    <option value="transfert">Deposit</option>
 
                                     
                                 </select>

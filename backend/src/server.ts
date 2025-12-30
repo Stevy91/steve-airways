@@ -1383,6 +1383,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
       returnFlightId,
       departureDate,
       returnDate,
+      companyName,
       paymentMethod = "card",
     } = req.body;
 
@@ -1546,8 +1547,8 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
           type_vol, type_v, guest_user, guest_email,
           created_at, updated_at, departure_date,
           return_date, passenger_count, booking_reference, return_flight_id,
-          payment_method, user_created_booking
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          payment_method, companyName, user_created_booking
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         flightId,
         referenceNumber,
@@ -1567,6 +1568,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
         bookingReference,
         returnFlightIdResolved || null,
         paymentMethod,
+        companyName,
         userId,
       ],
     );
@@ -2103,7 +2105,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <div style="padding: 8px; text-align: center">
             <p style="margin: 0; color: #1a237e; font-size: 0.9em">
               <strong>Payment Method:</strong>
-              ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ? "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" : booking.payment_method === "transfert" ? "Transfer" : "Contract"}
+              ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ? "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" : booking.payment_method === "transfert" ? "Deposit" : "Contract"}
             </p>
             <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"}</p>
           </div>
@@ -2264,7 +2266,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <div style="padding: 8px; text-align: center">
             <p style="margin: 0; color: #1a237e; font-size: 0.9em">
               <strong>Mode de paiement:</strong>
-              ${booking.payment_method === "cash" ? "Espèces" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "Chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Transfert" : "Contrat"}
+              ${booking.payment_method === "cash" ? "Espèces" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "Chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Dépôt" : "Contrat"}
             </p>
             <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Hélicoptère" : "Avion"}</p>
           </div>
@@ -3248,7 +3250,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
             ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Credit/Debit Card" :
             payment_method === "cheque" ? "Bank Check" : payment_method === "virement" ? "Bank Transfer" :
-              payment_method === "transfert" ? "Transfer" : "Contract"}
+              payment_method === "transfert" ? "Deposit" : "Contract"}
           </p>
 
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter"
@@ -3524,7 +3526,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           <strong>Payment Method:</strong>
           ${payment_method === "cash" ? "Cash" : payment_method === "card" ? "Carte bancaire" :
             payment_method === "cheque" ? "Chèque bancaire" : payment_method === "virement" ? "Virement bancaire" :
-              payment_method === "transfert" ? "Transfert" : "Contrat"}
+              payment_method === "transfert" ? "Deposit" : "Contrat"}
         </p>
 
         <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${typeVol === "helicopter"
