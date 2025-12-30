@@ -509,10 +509,39 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
     if (!open || !flight) return null;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+    const formatNimuLicens = (value: string) => {
+  // Supprimer tout sauf les chiffres
+  const numbers = value.replace(/\D/g, "");
 
-        // Si c’est un checkbox → on cast pour accéder à checked
+  // Limiter à 10 chiffres (000-000-000-0)
+  const trimmed = numbers.slice(0, 10);
+
+  // Appliquer le format
+  const parts = [];
+  if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
+  if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
+  if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
+  if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
+
+  return parts.join("-");
+};
+
+
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+
+  // Si on modifie ID Number
+  if (name === "idClient") {
+    if (formData.idTypeClient === "nimu" || formData.idTypeClient === "licens") {
+      setFormData((prev) => ({
+        ...prev,
+        idClient: formatNimuLicens(value),
+      }));
+      return;
+    }
+  }
+
+          // Si c’est un checkbox → on cast pour accéder à checked
         if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
             setFormData({
                 ...formData,
@@ -521,12 +550,31 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
-        // Sinon → input, select…
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
-    };
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
+
+    // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    //     const { name, value } = e.target;
+
+    //     // Si c’est un checkbox → on cast pour accéder à checked
+    //     if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+    //         setFormData({
+    //             ...formData,
+    //             [name]: e.target.checked ? value : "",
+    //         });
+    //         return;
+    //     }
+
+    //     // Sinon → input, select…
+    //     setFormData({
+    //         ...formData,
+    //         [name]: value,
+    //     });
+    // };
 
 
 
@@ -938,11 +986,17 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         type="text"
                                         id="idClient"
                                         name="idClient"
-                                        placeholder="Id Number"
+                                        placeholder={
+                                            formData.idTypeClient === "nimu" || formData.idTypeClient === "licens"
+                                            ? "000-000-000-0"
+                                            : "ID Number"
+                                        }
+                                        value={formData.idClient}
                                         required
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                    />
+                                        />
+
                                 </div>
                                 
 

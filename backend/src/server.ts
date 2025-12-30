@@ -4740,7 +4740,9 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
               WHEN p.id IS NOT NULL THEN
                 JSON_OBJECT(
                   'first_name', p.first_name,
-                  'last_name', p.last_name
+                  'last_name', p.last_name,
+                  'idClient', p.idClient,
+                  'idTypeClient', p.idTypeClient,
                 )
             END
           ),
@@ -4839,7 +4841,7 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
               (ps: any) => `
                 <tr>
                   <td>${ps.first_name || ''} ${ps.last_name || ''}</td>
-                  <td></td>
+                  <td>${ps.idTypeClient === "passport" ? "Passport: " : ps.idTypeClient === "nimu" ? "NIMU: " : ps.idTypeClient === "licens" ? "Licens: " : ""}</td>
                 </tr>`
             )
             .join("")

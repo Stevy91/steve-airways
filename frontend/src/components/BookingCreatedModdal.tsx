@@ -30,6 +30,8 @@ type Passenger = {
     flightNumberReturn: string;
     middleName?: string;
     lastName: string;
+    idClient: string;
+    idTypeClient: string;
     reference: string;
     nom_urgence: string;
     email_urgence: string;
@@ -480,6 +482,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         flightNumberReturn: "",
         middleName: "",
         lastName: "",
+        idClient: "",
+        idTypeClient: "",
         reference: "",
         unpaid: "",
         nom_urgence: "",
@@ -543,6 +547,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 flightNumberReturn: formData.flightNumberReturn || "",
                 middleName: formData.middleName,
                 lastName: formData.lastName,
+                idClient: formData.idClient,
+                idTypeClient: formData.idTypeClient,
                 reference: formData.reference,
                 nom_urgence: formData.nom_urgence,
                 email_urgence: formData.email_urgence,
@@ -572,6 +578,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             departureDate: flight.departure.split("T")[0],
             returnDate: formData.returnDate,
             paymentMethod: formData.paymentMethod,
+            idClient: formData.idClient,
+            idTypeClient: formData.idTypeClient
         };
 
         try {
@@ -874,6 +882,53 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                                     />
+                                </div>
+                                                                {/* ID Type */}
+                                <div className="flex flex-col">
+                                    
+                                    <label
+                                        htmlFor="idTypeClient"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        ID Type
+                                    </label>
+                                    <select
+                                        id="idTypeClient"
+                                        name="idTypeClient"
+                                        value={formData.idTypeClient}
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    >
+                                        <option value="passport">Passport</option>
+                                        <option value="nimu">NIMU</option>
+                                        <option value="licens">Licens</option>
+                                        
+                                    </select>
+                                    
+                                </div>
+                                {/* ID Type */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="idClient"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        ID Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="idClient"
+                                        name="idClient"
+                                        placeholder={
+                                            formData.idTypeClient === "nimu" || formData.idTypeClient === "licens"
+                                            ? "000-000-000-0"
+                                            : "ID Number"
+                                        }
+                                        value={formData.idClient}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                        />
+
                                 </div>
 
                                 {/* Pays */}
