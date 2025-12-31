@@ -1728,6 +1728,7 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
       });
     }
 
+
     let returnFlightIdResolved = returnFlightId || null;
     let returnDateResolved = null; // CORRECTION : Déclarer cette variable
 
@@ -1786,6 +1787,14 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
       }
     }
 
+    console.log("📅 Dates récupérées:", {
+      departureDate,
+      returnDateResolved,
+      returnFlightIdResolved,
+      hasReturnFlight: !!returnFlightIdResolved,
+      hasReturnDate: !!returnDateResolved
+    });
+
     // Vérifier les vols
     const TotalPrice2 = returnFlightIdResolved ? totalPrice * 2 : totalPrice;
     const flightIds = returnFlightIdResolved ? [flightId, returnFlightIdResolved] : [flightId];
@@ -1793,7 +1802,7 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
       [flightIds],
     );
-const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
+    const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     const flights = flightsRows as mysql.RowDataPacket[];
 
     if (flights.length !== flightIds.length) {
@@ -1829,76 +1838,77 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
         });
       }
 
-
-
       // Normaliser le nom pour la comparaison
       const normalizedFirstName = passenger.firstName.trim().toLowerCase();
       const normalizedLastName = passenger.lastName.trim().toLowerCase();
 
-
-
       // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
+      // Construction dynamique de la requête en fonction de la présence d'un vol retour
+      
+      let duplicateCheckQuery = `
+        SELECT 
+          p.first_name,
+          p.last_name,
+          b.booking_reference,
+          b.status,
+          b.departure_date,
+          b.return_date,
+          f1.flight_number AS outbound_flight,
+          f2.flight_number AS return_flight
+        FROM passengers p
+        JOIN bookings b ON p.booking_id = b.id
+        LEFT JOIN flights f1 ON b.flight_id = f1.id
+        LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+        WHERE LOWER(p.first_name) = ?
+          AND LOWER(p.last_name) = ?
+          AND b.status NOT IN ('cancelled', 'refunded')
+          AND (
+            -- 🔹 DÉJÀ SUR LE VOL ALLER
+            (
+              b.flight_id = ?
+              AND DATE(b.departure_date) = DATE(?)
+            )
+      `;
+      
+      const queryParams = [
+        normalizedFirstName,
+        normalizedLastName,
+        flightId,
+        departureDate
+      ];
 
+      // Ajouter la condition pour le vol retour si disponible
+      if (returnFlightIdResolved && returnDateResolved) {
+        duplicateCheckQuery += `
+            -- 🔹 DÉJÀ SUR LE VOL RETOUR
+            OR (
+              b.return_flight_id = ?
+              AND DATE(b.return_date) = DATE(?)
+            )
 
-  const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
-  `
-  SELECT 
-    p.first_name,
-    p.last_name,
-    b.booking_reference,
-    b.status,
-    b.departure_date,
-    b.return_date,
-    f1.flight_number AS outbound_flight,
-    f2.flight_number AS return_flight
-  FROM passengers p
-  JOIN bookings b ON p.booking_id = b.id
-  LEFT JOIN flights f1 ON b.flight_id = f1.id
-  LEFT JOIN flights f2 ON b.return_flight_id = f2.id
-  WHERE LOWER(p.first_name) = ?
-    AND LOWER(p.last_name) = ?
-    AND b.status NOT IN ('cancelled', 'refunded')
-    AND (
-        -- 🔹 DÉJÀ SUR LE VOL ALLER
-        (
-          b.flight_id = ?
-          AND DATE(b.departure_date) = DATE(?)
-        )
+            -- 🔹 DÉJÀ SUR UN ROUNDTRIP COMPLET IDENTIQUE
+            OR (
+              b.flight_id = ?
+              AND b.return_flight_id = ?
+              AND DATE(b.departure_date) = DATE(?)
+            )
+        `;
+        
+        queryParams.push(
+          returnFlightIdResolved,
+          returnDateResolved,
+          flightId,
+          returnFlightIdResolved,
+          departureDate
+        );
+      }
 
-        -- 🔹 DÉJÀ SUR LE VOL RETOUR (LE VRAI CAS MANQUANT)
-        OR (
-          b.return_flight_id = ?
-          AND DATE(b.return_date) = DATE(?)
-        )
+      duplicateCheckQuery += `)`;
 
-        -- 🔹 DÉJÀ SUR UN ROUNDTRIP COMPLET IDENTIQUE
-        OR (
-          b.flight_id = ?
-          AND b.return_flight_id = ?
-          AND DATE(b.departure_date) = DATE(?)
-        )
-    )
-  `,
-  [
-    normalizedFirstName,
-    normalizedLastName,
-
-    // Aller
-    flightId,
-    departureDate,
-
-    // Retour (CORRECTION CRITIQUE)
-    returnFlightIdResolved,
-    returnDateResolved,
-
-    // Roundtrip complet
-    flightId,
-    returnFlightIdResolved,
-    departureDate
-  ]
-);
-
-
+      const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
+        duplicateCheckQuery,
+        queryParams
+      );
 
       if (existingBasic.length > 0) {
         duplicatePassengers.push({
@@ -1907,8 +1917,9 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
           existingBookings: existingBasic.map(b => ({
             bookingReference: b.booking_reference,
             status: b.status,
-            flightNumber: b.flight_number,
-            departureDate: b.departure_date
+            flightNumber: b.outbound_flight || b.return_flight,
+            departureDate: b.departure_date,
+            returnDate: b.return_date
           }))
         });
       }
@@ -1926,7 +1937,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
         error: "Duplicate booking detected",
         details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
         duplicatePassengers: duplicatePassengers,
-        message: `Impossible de créer le ticket. Le passager suivants ont déjà une réservation sur ce vol : ${duplicateNames}`
+        message: `Impossible de créer le ticket. Le(s) passager(s) suivant(s) ont déjà une réservation sur ce vol : ${duplicateNames}`
       });
     }
 
@@ -1936,7 +1947,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const depDate = formatDateToSQL(departureDate);
-    const retDate = formatDateToSQL(returnDateResolved,);
+    const retDate = returnDateResolved ? formatDateToSQL(returnDateResolved) : null; // CORRECTION : gérer le cas null
 
     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
       `INSERT INTO bookings (
@@ -1961,7 +1972,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
         now,
         now,
         depDate,
-        returnDateResolved,,
+        retDate, // Peut être null
         passengers.length,
         bookingReference,
         returnFlightIdResolved || null,

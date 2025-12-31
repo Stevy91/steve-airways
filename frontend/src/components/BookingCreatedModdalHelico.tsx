@@ -509,7 +509,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         phone: "",
         passengerCount: 1,
         paymentMethod: "card",
-        returnDate: "",
+       
     };
 
    const [formData, setFormData] = useState(initialFormData);
@@ -985,7 +985,6 @@ const handleSubmit = async () => {
         referenceNumber: formData.reference || "",
         companyName: formData.companyName || "",
         departureDate: flight.departure.split("T")[0],
-        returnDate: formData.returnDate || "",
         paymentMethod: formData.paymentMethod || "card",
         idClient: formData.idClient || "",
         idTypeClient: formData.idTypeClient || "passport",
