@@ -1730,14 +1730,15 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
 
 
     let returnFlightIdResolved = returnFlightId || null;
-    let returnDateResolved = null; // CORRECTION : Déclarer cette variable
+    let returnDateResolved = null;
 
     // Si le client a fourni un numéro de vol retour
     if (passengers[0]?.flightNumberReturn) {
       const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
 
+      // CORRECTION : Utiliser departure_time au lieu de departure_date
       const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
-        "SELECT id, departure_date FROM flights WHERE flight_number = ?",
+        "SELECT id, departure_time FROM flights WHERE flight_number = ?",
         [flightNumberReturn]
       );
 
@@ -1751,32 +1752,32 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
       }
 
       returnFlightIdResolved = returnFlightRows[0].id;
-      // CORRECTION : Récupérer la date de départ du vol retour comme returnDate
-      returnDateResolved = returnFlightRows[0].departure_date;
+      // CORRECTION : Récupérer departure_time
+      returnDateResolved = returnFlightRows[0].departure_time;
     }
 
     // SI returnFlightId est fourni directement mais pas returnDate, on le récupère de la DB
     if (returnFlightId && !returnDateResolved) {
       const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
-        "SELECT departure_date FROM flights WHERE id = ?",
+        "SELECT departure_time FROM flights WHERE id = ?",
         [returnFlightId]
       );
       
       if (flightRows.length > 0) {
         returnFlightIdResolved = returnFlightId;
-        returnDateResolved = flightRows[0].departure_date;
+        returnDateResolved = flightRows[0].departure_time;
       }
     }
 
     // SI returnFlightIdResolved existe mais pas returnDateResolved, on essaie de le trouver
     if (returnFlightIdResolved && !returnDateResolved) {
       const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
-        "SELECT departure_date FROM flights WHERE id = ?",
+        "SELECT departure_time FROM flights WHERE id = ?",
         [returnFlightIdResolved]
       );
       
       if (flightRows.length > 0) {
-        returnDateResolved = flightRows[0].departure_date;
+        returnDateResolved = flightRows[0].departure_time;
       } else {
         await connection.rollback();
         return res.status(404).json({
@@ -1947,7 +1948,7 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
     const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const depDate = formatDateToSQL(departureDate);
-    const retDate = returnDateResolved ? formatDateToSQL(returnDateResolved) : null; // CORRECTION : gérer le cas null
+    const retDate = returnDateResolved ? formatDateToSQL(returnDateResolved) : null;
 
     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
       `INSERT INTO bookings (
@@ -1972,7 +1973,7 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
         now,
         now,
         depDate,
-        retDate, // Peut être null
+        retDate,
         passengers.length,
         bookingReference,
         returnFlightIdResolved || null,
@@ -2093,7 +2094,6 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
     connection.release();
   }
 });
-
 
 
 
