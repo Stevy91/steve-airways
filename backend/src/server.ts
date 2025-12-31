@@ -1732,26 +1732,63 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
 
     let returnFlightIdResolved = returnFlightId || null;
     
-    // Si le client a fourni un numéro de vol retour
-    if (passengers[0]?.flightNumberReturn) {
-      const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
+ 
+let returnDateResolved = returnDate || null;
 
-      const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
-        "SELECT id FROM flights WHERE flight_number = ?",
-        [flightNumberReturn]
-      );
+// Si le client a fourni un numéro de vol retour
+if (passengers[0]?.flightNumberReturn) {
+  const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
 
-      if (returnFlightRows.length === 0) {
-        await connection.rollback();
-        return res.status(404).json({
-          success: false,
-          error: "Return flight not found",
-          details: `Aucun vol trouvé avec le numéro de vol ${flightNumberReturn}`
-        });
-      }
+  const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
+    "SELECT id, departure_date FROM flights WHERE flight_number = ?",
+    [flightNumberReturn]
+  );
 
-      returnFlightIdResolved = returnFlightRows[0].id;
-    }
+  if (returnFlightRows.length === 0) {
+    await connection.rollback();
+    return res.status(404).json({
+      success: false,
+      error: "Return flight not found",
+      details: `Aucun vol trouvé avec le numéro de vol ${flightNumberReturn}`
+    });
+  }
+
+  returnFlightIdResolved = returnFlightRows[0].id;
+  // CORRECTION : Récupérer la date de départ du vol retour comme returnDate
+  returnDateResolved = returnFlightRows[0].departure_date;
+}
+
+// SI returnFlightId est fourni directement mais pas returnDate, on le récupère de la DB
+if (returnFlightId && !returnDateResolved) {
+  const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+    "SELECT departure_date FROM flights WHERE id = ?",
+    [returnFlightId]
+  );
+  
+  if (flightRows.length > 0) {
+    returnFlightIdResolved = returnFlightId;
+    returnDateResolved = flightRows[0].departure_date;
+  }
+}
+
+// SI returnFlightIdResolved existe mais pas returnDateResolved, on essaie de le trouver
+if (returnFlightIdResolved && !returnDateResolved) {
+  const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+    "SELECT departure_date FROM flights WHERE id = ?",
+    [returnFlightIdResolved]
+  );
+  
+  if (flightRows.length > 0) {
+    returnDateResolved = flightRows[0].departure_date;
+  } else {
+    await connection.rollback();
+    return res.status(404).json({
+      success: false,
+      error: "Return flight not found in database",
+      details: `Aucun vol trouvé avec l'ID ${returnFlightIdResolved}`
+    });
+  }
+}
 
 
     // Vérifier les vols
