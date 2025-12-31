@@ -757,7 +757,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     //             return;
     //         }
 
-    //         const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+    //         const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
     //             method: "POST",
     //             headers: {
     //                 "Content-Type": "application/json",
@@ -775,6 +775,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     //             toast.error("❌ Réponse serveur invalide");
     //             return;
     //         }
+
+            
 
     //         // Vérifiez explicitement le statut HTTP ET le champ success
     //         if (res.status === 200 && data.success) {
@@ -911,9 +913,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     //     }
     // };
 
-        // Fonction pour fermer et réinitialiser
-    
-    const handleSubmit = async () => {
+const handleSubmit = async () => {
     setCreateTicket(true);
     
     // 1️⃣ Validation des champs obligatoires
@@ -964,7 +964,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             address: formData.address || "",
             type: "adult",
             typeVol: flight?.type || "plane",
-            typeVolV: isRoundTrip ? "roundtrip" : "onway", // Correction ici
+            typeVolV: isRoundTrip ? "roundtrip" : "onway",
             country: formData.country || "",
             nationality: formData.nationality || "",
             phone: formData.phone || "",
@@ -989,8 +989,16 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         paymentMethod: formData.paymentMethod || "card",
         idClient: formData.idClient || "",
         idTypeClient: formData.idTypeClient || "passport",
-        // Note: returnFlightId n'est pas envoyé ici, il sera résolu côté serveur
     };
+
+    console.log("📤 Envoi de la requête avec les données:", {
+        flightId: flight.id,
+        passengerCount: passengers.length,
+        totalPrice: flight.price * passengerCount,
+        email: formData.email,
+        flightNumberReturn: formData.flightNumberReturn,
+        isRoundTrip
+    });
 
     try {
         const token = localStorage.getItem("authToken");
@@ -1000,7 +1008,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
-        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
+        console.log("🔑 Token JWT présent, envoi de la requête...");
+
+        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -1009,11 +1019,20 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             body: JSON.stringify(body),
         });
 
+        console.log("📥 Réponse du serveur:", {
+            status: res.status,
+            statusText: res.statusText,
+            ok: res.ok
+        });
+
         let data: any;
         try {
             data = await res.json();
+            console.log("📄 Données de réponse:", data);
         } catch (jsonErr) {
-            console.error("Erreur parsing JSON:", jsonErr);
+            console.error("❌ Erreur parsing JSON:", jsonErr);
+            const text = await res.text();
+            console.error("📝 Réponse brute:", text);
             toast.error("❌ Réponse serveur invalide");
             setCreateTicket(false);
             return;
@@ -1076,8 +1095,40 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
+        // ERREUR 500 - Erreur interne du serveur
+        if (res.status === 500) {
+            console.error("❌ Erreur 500 détaillée:", data);
+            
+            let errorMessage = "Une erreur interne s'est produite lors de la création du ticket";
+            
+            // Si on a des détails en développement
+            if (data.details) {
+                errorMessage += ` (${data.details})`;
+                console.error("Détails de l'erreur:", data.details);
+            }
+            
+            if (data.error) {
+                console.error("Type d'erreur:", data.error);
+            }
+            
+            toast.error(errorMessage, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                duration: 5000,
+            });
+            
+            setCreateTicket(false);
+            return;
+        }
+
         // Vérifier le succès
         if (res.status === 200 && data.success) {
+            console.log("✅ Ticket créé avec succès:", data.bookingReference);
+            
             toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
                 style: {
                     background: "#28a745",
@@ -1114,7 +1165,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         }
                     } catch (err) {
                         console.error("Erreur récupération vol retour:", err);
-                        // Continuer sans vol retour pour l'email
                     }
                 }
 
@@ -1154,7 +1204,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             // ✅ RÉINITIALISER TOUS LES CHAMPS
             setFormData({
                 ...initialFormData,
-                // Conserver certaines valeurs par défaut
                 paymentMethod: "card",
                 gender: "other",
                 title: "Mr",
@@ -1169,16 +1218,18 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 onTicketCreated();
             }
 
-            // Fermer le modal après un délai pour que l'utilisateur voit le message de succès
+            // Fermer le modal
             setTimeout(() => {
                 onClose();
             }, 1500);
             
         } else {
             // Erreur générique du serveur
-            console.error("Erreur création ticket:", data);
+            console.error("❌ Erreur création ticket - Réponse:", data);
+            
             const errorMessage = data.message || 
                                data.details || 
+                               data.error ||
                                "Une erreur s'est produite lors de la création du ticket";
             
             toast.error(errorMessage, {
@@ -1191,9 +1242,22 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 duration: 5000,
             });
         }
-    } catch (err) {
-        console.error("Erreur réseau:", err);
-        toast.error("❌ Erreur de connexion au serveur. Veuillez vérifier votre connexion internet.", {
+    } catch (err: any) {
+        console.error("❌ Erreur réseau/fetch:", {
+            message: err.message,
+            stack: err.stack,
+            name: err.name
+        });
+        
+        let errorMsg = "❌ Erreur de connexion au serveur";
+        
+        if (err.message.includes("Failed to fetch")) {
+            errorMsg = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
+        } else if (err.message.includes("NetworkError")) {
+            errorMsg = "Erreur réseau. Vérifiez votre connexion.";
+        }
+        
+        toast.error(errorMsg, {
             duration: 5000,
         });
     } finally {
@@ -1201,9 +1265,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     }
 };
     
+
     
-    
-        const handleClose = () => {
+    const handleClose = () => {
         // Réinitialiser les champs avant de fermer
         setFormData(initialFormData);
         setIsRoundTrip(false);
