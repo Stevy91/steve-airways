@@ -1808,7 +1808,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
       // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
 
 
-   const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
+  const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
   `
   SELECT 
     p.first_name,
@@ -1827,12 +1827,23 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     AND LOWER(p.last_name) = ?
     AND b.status NOT IN ('cancelled', 'refunded')
     AND (
-        (b.flight_id = ? AND DATE(b.departure_date) = DATE(?))
-        OR (b.flight_id = ? AND DATE(b.departure_date) = DATE(?))
+        -- 🔹 DÉJÀ SUR LE VOL ALLER
+        (
+          b.flight_id = ?
+          AND DATE(b.departure_date) = DATE(?)
+        )
+
+        -- 🔹 DÉJÀ SUR LE VOL RETOUR (LE VRAI CAS MANQUANT)
         OR (
-            b.flight_id = ?
-            AND b.return_flight_id = ?
-            AND DATE(b.departure_date) = DATE(?)
+          b.return_flight_id = ?
+          AND DATE(b.return_date) = DATE(?)
+        )
+
+        -- 🔹 DÉJÀ SUR UN ROUNDTRIP COMPLET IDENTIQUE
+        OR (
+          b.flight_id = ?
+          AND b.return_flight_id = ?
+          AND DATE(b.departure_date) = DATE(?)
         )
     )
   `,
@@ -1840,11 +1851,11 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     normalizedFirstName,
     normalizedLastName,
 
-    // Vol aller
+    // Aller
     flightId,
     departureDate,
 
-    // Vol retour
+    // Retour (CORRECTION CRITIQUE)
     returnFlightIdResolved,
     returnDate,
 
@@ -1854,6 +1865,7 @@ const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
     departureDate
   ]
 );
+
 
 
       if (existingBasic.length > 0) {
