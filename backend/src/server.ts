@@ -1846,55 +1846,6 @@ if (!returnFlightIdResolved) {
         });
     }
 } 
-// Pour vérifier les doublons pour un aller-retour
-  else {
-    const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
-        `SELECT 
-            p.first_name, 
-            p.last_name,
-            b.booking_reference,
-            b.status,
-            b.departure_date,
-            f1.flight_number as outbound_flight,
-            f2.flight_number as return_flight
-         FROM passengers p
-         JOIN bookings b ON p.booking_id = b.id
-         JOIN flights f1 ON b.flight_id = f1.id
-         LEFT JOIN flights f2 ON b.return_flight_id = f2.id
-         WHERE LOWER(p.first_name) = ? 
-           AND LOWER(p.last_name) = ?
-           AND (
-               (b.flight_id = ? AND b.return_flight_id = ?) -- Même aller-retour
-               OR (b.flight_id = ? AND b.return_flight_id IS NULL) -- Déjà réservé l'aller seul
-               OR (b.flight_id = ? AND b.return_flight_id IS NULL) -- Déjà réservé le retour seul
-           )
-           AND b.status NOT IN ('cancelled', 'refunded')
-           AND DATE(b.departure_date) = DATE(?)`,
-        [
-            normalizedFirstName,
-            normalizedLastName,
-            flightId,
-            returnFlightIdResolved,
-            flightId,
-            returnFlightIdResolved,
-            departureDate
-        ]
-    );
-
-    if (existingBasic.length > 0) {
-        duplicatePassengers.push({
-            passenger: `${passenger.firstName} ${passenger.lastName}`,
-            reason: "Même nom et prénom sur même vol(s) et même date",
-            existingBookings: existingBasic.map(b => ({
-                bookingReference: b.booking_reference,
-                status: b.status,
-                outboundFlight: b.outbound_flight,
-                returnFlight: b.return_flight,
-                departureDate: b.departure_date
-            }))
-        });
-    }
-  }
 
     
     }
@@ -2225,28 +2176,52 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
 
       // Vérifier si le même passager est déjà sur le même vol et même date
       const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
-        `SELECT 
-            p.first_name, 
-            p.last_name,
-            b.booking_reference,
-            b.status,
-            b.departure_date,
-            f.flight_number
-         FROM passengers p
-         JOIN bookings b ON p.booking_id = b.id
-         JOIN flights f ON b.flight_id = f.id
-         WHERE LOWER(p.first_name) = ? 
-           AND LOWER(p.last_name) = ?
-           AND b.flight_id = ?
-           AND b.status NOT IN ('cancelled', 'refunded')
-           AND DATE(b.departure_date) = DATE(?)`,
-        [
-          normalizedFirstName,
-          normalizedLastName,
-          flightId,
-          departureDate
-        ]
-      );
+  `
+  SELECT 
+    p.first_name,
+    p.last_name,
+    b.booking_reference,
+    b.status,
+    b.departure_date,
+    b.return_date,
+    f1.flight_number AS outbound_flight,
+    f2.flight_number AS return_flight
+  FROM passengers p
+  JOIN bookings b ON p.booking_id = b.id
+  LEFT JOIN flights f1 ON b.flight_id = f1.id
+  LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+  WHERE LOWER(p.first_name) = ?
+    AND LOWER(p.last_name) = ?
+    AND b.status NOT IN ('cancelled', 'refunded')
+    AND (
+        (b.flight_id = ? AND DATE(b.departure_date) = DATE(?))
+        OR (b.flight_id = ? AND DATE(b.departure_date) = DATE(?))
+        OR (
+            b.flight_id = ?
+            AND b.return_flight_id = ?
+            AND DATE(b.departure_date) = DATE(?)
+        )
+    )
+  `,
+  [
+    normalizedFirstName,
+    normalizedLastName,
+
+    // Vol aller
+    flightId,
+    departureDate,
+
+    // Vol retour
+    returnFlightIdResolved,
+    returnDate,
+
+    // Roundtrip complet
+    flightId,
+    returnFlightIdResolved,
+    departureDate
+  ]
+);
+
 
       if (existingBasic.length > 0) {
         duplicatePassengers.push({
@@ -2527,7 +2502,7 @@ function authMiddleware(req: any, res: Response, next: any) {
   if (!token) return res.status(401).json({ error: "Token manquant" });
 
   jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: "Token invalide" });
+    if (err) return res.status(403).json({ error: "Vous n'êtes pas connecté. Vous devez vous connecter pour continuer." });
     req.user = user;
     next();
   });
