@@ -685,216 +685,355 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setSuggestions([]);
     };
 
+    // const handleSubmit = async () => {
+    //     setCreateTicket(true);
+    //     // 1️⃣ Validation des champs obligatoires
+    //     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
+    //         toast.error(`Veuillez remplir tous les champs obligatoires`, {
+    //             style: {
+    //                 background: "#fee2e2",
+    //                 color: "#991b1b",
+    //                 border: "1px solid #f87171",
+    //             },
+    //             iconTheme: { primary: "#fff", secondary: "#dc2626" },
+    //         });
+    //         return;
+    //     }
+
+    //     // 2️⃣ Préparer les passagers
+    //     const passengers: Passenger[] = [];
+    //     const passengerCount = Number(formData.passengerCount || 1);
+    //     for (let i = 0; i < passengerCount; i++) {
+    //         passengers.push({
+    //             firstName: formData.firstName,
+    //             flightNumberReturn: formData.flightNumberReturn || "",
+    //             middleName: formData.middleName,
+    //             lastName: formData.lastName,
+    //             reference: formData.reference,
+    //             companyName: formData.companyName,
+    //             idClient: formData.idClient,
+    //             idTypeClient: formData.idTypeClient,
+    //             nom_urgence: formData.nom_urgence,
+    //             email_urgence: formData.email_urgence,
+    //             tel_urgence: formData.tel_urgence,
+    //             dateOfBirth: formData.dateOfBirth,
+    //             gender: formData.gender,
+    //             title: formData.title,
+    //             address: formData.address,
+    //             type: "adult",
+    //             typeVol: flight?.type || "plane",
+    //             typeVolV: "onway",
+    //             country: formData.country,
+    //             nationality: formData.nationality,
+    //             phone: formData.phone,
+    //             email: formData.email,
+    //         });
+    //     }
+
+    //     // 3️⃣ Préparer le body à envoyer
+    //     const body = {
+    //         flightId: flight.id,
+    //         passengers,
+    //         unpaid: formData.unpaid,
+    //         referenceNumber: formData.reference,
+    //         companyName: formData.companyName,
+    //         contactInfo: { email: formData.email, phone: formData.phone },
+    //         totalPrice: flight.price * passengerCount,
+    //         departureDate: flight.departure.split("T")[0],
+    //         returnDate: formData.returnDate,
+    //         paymentMethod: formData.paymentMethod,
+    //         idClient: formData.idClient,
+    //         idTypeClient: formData.idTypeClient,
+    //     };
+
+    //     try {
+    //         // Récupérer le token depuis le localStorage ou le contexte d'authentification
+    //         const token = localStorage.getItem("authToken"); // ou depuis votre contexte/auth
+
+    //         if (!token) {
+    //             toast.error("❌ Vous devez être connecté pour créer un ticket");
+    //             // Rediriger vers la page de login si nécessaire
+    //             // window.location.href = '/login';
+    //             return;
+    //         }
+
+    //         const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 Authorization: `Bearer ${token}`, // AJOUT DU TOKEN
+    //             },
+    //             body: JSON.stringify(body),
+    //         });
+
+    //         let data: any;
+
+    //         try {
+    //             data = await res.json();
+    //         } catch (jsonErr) {
+    //             console.error("Erreur parsing JSON:", jsonErr);
+    //             toast.error("❌ Réponse serveur invalide");
+    //             return;
+    //         }
+
+    //         // Vérifiez explicitement le statut HTTP ET le champ success
+    //         if (res.status === 200 && data.success) {
+    //             toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+    //                 style: {
+    //                     background: "#28a745",
+    //                     color: "#fff",
+    //                     border: "1px solid #1e7e34",
+    //                 },
+
+    //                 iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+    //             });
+
+    //             try {
+    //                 console.log("📧 Tentative d'envoi d'email...");
+    //                 console.log("Données email:", {
+    //                     bookingReference: data.bookingReference,
+    //                     passengerCount: passengers.length,
+    //                     email: formData.email,
+    //                 });
+
+    //                 let returnFlight = null;
+
+    //                 if (isRoundTrip && formData.flightNumberReturn) {
+    //                     try {
+    //                         const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
+    //                             headers: {
+    //                                 Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+    //                             },
+    //                         });
+    //                         const dataReturn = await resReturn.json();
+
+    //                         if (resReturn.ok && dataReturn) {
+    //                             const flightData = dataReturn;
+    //                             returnFlight = {
+    //                                 date: flightData.departure_time,
+    //                                 noflight: flightData.flight_number,
+    //                                 departure_time: flightData.departure_time,
+    //                                 arrival_time: flightData.arrival_time,
+    //                                 from: flightData.from,
+    //                                 to: flightData.to,
+    //                                 fromCity: flightData.fromCity,
+    //                                 toCity: flightData.toCity,
+    //                             };
+    //                         } else {
+    //                             console.warn("Vol retour introuvable, création sans vol retour");
+    //                             // Ne pas afficher d'erreur toast ici pour ne pas interrompre le processus
+    //                         }
+    //                     } catch (err) {
+    //                         console.error("Erreur récupération vol retour:", err);
+    //                         // Ne pas afficher d'erreur toast pour ne pas bloquer l'email
+    //                     }
+    //                 }
+
+    //                 // Envoyer l'email même si returnFlight est null
+    //                 try {
+    //                     await sendTicketByEmail(
+    //                         {
+    //                             from: flight.from || "",
+    //                             to: flight.to || "",
+    //                             outbound: {
+    //                                 date: flight.departure,
+    //                                 noflight: flight.flight_number,
+    //                                 departure_time: flight.departure,
+    //                                 arrival_time: flight.arrival,
+    //                             },
+    //                             return: returnFlight, // Peut être null
+    //                             passengersData: { adults: passengers },
+    //                             totalPrice: body.totalPrice,
+    //                         },
+    //                         data.bookingReference,
+    //                         formData.paymentMethod,
+    //                     );
+
+    //                     console.log("✅ Email envoyé avec succès");
+    //                 } catch (emailError) {
+    //                     console.error("❌ Erreur détaillée envoi email:", emailError);
+    //                     // Afficher un warning plutôt qu'une erreur pour ne pas perturber l'utilisateur
+    //                     toast.error("Ticket créé mais email non envoyé");
+    //                 }
+
+    //                 console.log("✅ Email envoyé avec succès");
+    //             } catch (emailError) {
+    //                 console.error("❌ Erreur détaillée envoi email:", emailError);
+    //                 toast.error("Ticket créé mais email non envoyé");
+    //             }
+
+    //             // ✅ Réinitialiser le vol retour après succès
+    //             setIsRoundTrip(false);
+
+    //             setFormData((prev) => ({
+    //                 ...prev,
+    //                 flightNumberReturn: "",
+    //                 returnDate: "",
+    //             }));
+
+             
+    //             setFormData(initialFormData);
+    //             setIsRoundTrip(false);
+    //             setSuggestions([]);
+    //             setShowDropdown(false);
+
+    //             // ✅ Réinitialiser aussi le checkbox UnPaid
+    //             setFormData(prev => ({
+    //                 ...initialFormData,
+    //                 // Conserver certaines valeurs par défaut si nécessaire
+    //                 paymentMethod: "card",
+    //                 gender: "other",
+    //                 title: "Mr",
+    //             }));
+
+    //             if (onTicketCreated) {
+    //                 onTicketCreated();
+    //             }
+
+    //             onClose();
+    //         } else {
+    //             console.error("Erreur création ticket:", data);
+
+    //             toast.error(`${data.message || "Le numéro saisi pour le vol de retour ne correspond à aucun vol."}`, {
+    //                 style: {
+    //                     background: "#fee2e2",
+    //                     color: "#991b1b",
+    //                     border: "1px solid #f87171",
+    //                 },
+    //                 iconTheme: { primary: "#fff", secondary: "#dc2626" },
+    //             });
+    //         }
+    //     } catch (err) {
+    //         console.error("Erreur réseau:", err);
+    //         toast.error("❌ Erreur de connexion au serveur");
+    //     } finally {
+    //         setCreateTicket(false);
+    //     }
+    // };
+
+        // Fonction pour fermer et réinitialiser
+    
     const handleSubmit = async () => {
-        setCreateTicket(true);
-        // 1️⃣ Validation des champs obligatoires
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
-            toast.error(`Veuillez remplir tous les champs obligatoires`, {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: { primary: "#fff", secondary: "#dc2626" },
-            });
+    setCreateTicket(true);
+    
+    // 1️⃣ Validation des champs obligatoires
+    const requiredFields = [
+        { field: formData.firstName, name: "Prénom" },
+        { field: formData.lastName, name: "Nom" },
+        { field: formData.email, name: "Email" },
+        { field: formData.phone, name: "Téléphone" },
+        { field: formData.nationality, name: "Nationalité" },
+        { field: formData.dateOfBirth, name: "Date de naissance" }
+    ];
+    
+    const missingFields = requiredFields.filter(f => !f.field).map(f => f.name);
+    
+    if (missingFields.length > 0) {
+        toast.error(`Veuillez remplir tous les champs obligatoires : ${missingFields.join(", ")}`, {
+            style: {
+                background: "#fee2e2",
+                color: "#991b1b",
+                border: "1px solid #f87171",
+            },
+            iconTheme: { primary: "#fff", secondary: "#dc2626" },
+        });
+        setCreateTicket(false);
+        return;
+    }
+
+    // 2️⃣ Préparer les passagers
+    const passengers: Passenger[] = [];
+    const passengerCount = Number(formData.passengerCount || 1);
+    
+    for (let i = 0; i < passengerCount; i++) {
+        passengers.push({
+            firstName: formData.firstName,
+            flightNumberReturn: formData.flightNumberReturn || "",
+            middleName: formData.middleName || "",
+            lastName: formData.lastName,
+            reference: formData.reference || "",
+            companyName: formData.companyName || "",
+            idClient: formData.idClient || "",
+            idTypeClient: formData.idTypeClient || "passport",
+            nom_urgence: formData.nom_urgence || "",
+            email_urgence: formData.email_urgence || "",
+            tel_urgence: formData.tel_urgence || "",
+            dateOfBirth: formData.dateOfBirth,
+            gender: formData.gender || "other",
+            title: formData.title || "Mr",
+            address: formData.address || "",
+            type: "adult",
+            typeVol: flight?.type || "plane",
+            typeVolV: isRoundTrip ? "roundtrip" : "onway", // Correction ici
+            country: formData.country || "",
+            nationality: formData.nationality || "",
+            phone: formData.phone || "",
+            email: formData.email || "",
+        });
+    }
+
+    // 3️⃣ Préparer le body à envoyer selon l'API
+    const body = {
+        flightId: flight.id,
+        passengers,
+        contactInfo: { 
+            email: formData.email, 
+            phone: formData.phone 
+        },
+        totalPrice: flight.price * passengerCount,
+        unpaid: formData.unpaid || "confirmed",
+        referenceNumber: formData.reference || "",
+        companyName: formData.companyName || "",
+        departureDate: flight.departure.split("T")[0],
+        returnDate: formData.returnDate || "",
+        paymentMethod: formData.paymentMethod || "card",
+        idClient: formData.idClient || "",
+        idTypeClient: formData.idTypeClient || "passport",
+        // Note: returnFlightId n'est pas envoyé ici, il sera résolu côté serveur
+    };
+
+    try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+            toast.error("❌ Vous devez être connecté pour créer un ticket");
+            setCreateTicket(false);
             return;
         }
 
-        // 2️⃣ Préparer les passagers
-        const passengers: Passenger[] = [];
-        const passengerCount = Number(formData.passengerCount || 1);
-        for (let i = 0; i < passengerCount; i++) {
-            passengers.push({
-                firstName: formData.firstName,
-                flightNumberReturn: formData.flightNumberReturn || "",
-                middleName: formData.middleName,
-                lastName: formData.lastName,
-                reference: formData.reference,
-                companyName: formData.companyName,
-                idClient: formData.idClient,
-                idTypeClient: formData.idTypeClient,
-                nom_urgence: formData.nom_urgence,
-                email_urgence: formData.email_urgence,
-                tel_urgence: formData.tel_urgence,
-                dateOfBirth: formData.dateOfBirth,
-                gender: formData.gender,
-                title: formData.title,
-                address: formData.address,
-                type: "adult",
-                typeVol: flight?.type || "plane",
-                typeVolV: "onway",
-                country: formData.country,
-                nationality: formData.nationality,
-                phone: formData.phone,
-                email: formData.email,
-            });
+        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+        });
+
+        let data: any;
+        try {
+            data = await res.json();
+        } catch (jsonErr) {
+            console.error("Erreur parsing JSON:", jsonErr);
+            toast.error("❌ Réponse serveur invalide");
+            setCreateTicket(false);
+            return;
         }
 
-        // 3️⃣ Préparer le body à envoyer
-        const body = {
-            flightId: flight.id,
-            passengers,
-            unpaid: formData.unpaid,
-            referenceNumber: formData.reference,
-            companyName: formData.companyName,
-            contactInfo: { email: formData.email, phone: formData.phone },
-            totalPrice: flight.price * passengerCount,
-            departureDate: flight.departure.split("T")[0],
-            returnDate: formData.returnDate,
-            paymentMethod: formData.paymentMethod,
-            idClient: formData.idClient,
-            idTypeClient: formData.idTypeClient,
-        };
-
-        try {
-            // Récupérer le token depuis le localStorage ou le contexte d'authentification
-            const token = localStorage.getItem("authToken"); // ou depuis votre contexte/auth
-
-            if (!token) {
-                toast.error("❌ Vous devez être connecté pour créer un ticket");
-                // Rediriger vers la page de login si nécessaire
-                // window.location.href = '/login';
-                return;
-            }
-
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`, // AJOUT DU TOKEN
-                },
-                body: JSON.stringify(body),
-            });
-
-            let data: any;
-
-            try {
-                data = await res.json();
-            } catch (jsonErr) {
-                console.error("Erreur parsing JSON:", jsonErr);
-                toast.error("❌ Réponse serveur invalide");
-                return;
-            }
-
-            // Vérifiez explicitement le statut HTTP ET le champ success
-            if (res.status === 200 && data.success) {
-                toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+        // GÉRER LES RÉPONSES D'ERREUR SPÉCIFIQUES
+        if (res.status === 400) {
+            // Erreur de places disponibles
+            if (data.error === "No seats available" || data.error === "Not enough seats available") {
+                toast.error(data.message || "Plus de places disponibles pour ce vol", {
                     style: {
-                        background: "#28a745",
-                        color: "#fff",
-                        border: "1px solid #1e7e34",
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
                     },
-
-                    iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+                    iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                    duration: 5000,
                 });
-
-                try {
-                    console.log("📧 Tentative d'envoi d'email...");
-                    console.log("Données email:", {
-                        bookingReference: data.bookingReference,
-                        passengerCount: passengers.length,
-                        email: formData.email,
-                    });
-
-                    let returnFlight = null;
-
-                    if (isRoundTrip && formData.flightNumberReturn) {
-                        try {
-                            const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
-                                headers: {
-                                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-                                },
-                            });
-                            const dataReturn = await resReturn.json();
-
-                            if (resReturn.ok && dataReturn) {
-                                const flightData = dataReturn;
-                                returnFlight = {
-                                    date: flightData.departure_time,
-                                    noflight: flightData.flight_number,
-                                    departure_time: flightData.departure_time,
-                                    arrival_time: flightData.arrival_time,
-                                    from: flightData.from,
-                                    to: flightData.to,
-                                    fromCity: flightData.fromCity,
-                                    toCity: flightData.toCity,
-                                };
-                            } else {
-                                console.warn("Vol retour introuvable, création sans vol retour");
-                                // Ne pas afficher d'erreur toast ici pour ne pas interrompre le processus
-                            }
-                        } catch (err) {
-                            console.error("Erreur récupération vol retour:", err);
-                            // Ne pas afficher d'erreur toast pour ne pas bloquer l'email
-                        }
-                    }
-
-                    // Envoyer l'email même si returnFlight est null
-                    try {
-                        await sendTicketByEmail(
-                            {
-                                from: flight.from || "",
-                                to: flight.to || "",
-                                outbound: {
-                                    date: flight.departure,
-                                    noflight: flight.flight_number,
-                                    departure_time: flight.departure,
-                                    arrival_time: flight.arrival,
-                                },
-                                return: returnFlight, // Peut être null
-                                passengersData: { adults: passengers },
-                                totalPrice: body.totalPrice,
-                            },
-                            data.bookingReference,
-                            formData.paymentMethod,
-                        );
-
-                        console.log("✅ Email envoyé avec succès");
-                    } catch (emailError) {
-                        console.error("❌ Erreur détaillée envoi email:", emailError);
-                        // Afficher un warning plutôt qu'une erreur pour ne pas perturber l'utilisateur
-                        toast.error("Ticket créé mais email non envoyé");
-                    }
-
-                    console.log("✅ Email envoyé avec succès");
-                } catch (emailError) {
-                    console.error("❌ Erreur détaillée envoi email:", emailError);
-                    toast.error("Ticket créé mais email non envoyé");
-                }
-
-                // ✅ Réinitialiser le vol retour après succès
-                setIsRoundTrip(false);
-
-                setFormData((prev) => ({
-                    ...prev,
-                    flightNumberReturn: "",
-                    returnDate: "",
-                }));
-
-             
-                setFormData(initialFormData);
-                setIsRoundTrip(false);
-                setSuggestions([]);
-                setShowDropdown(false);
-
-                // ✅ Réinitialiser aussi le checkbox UnPaid
-                setFormData(prev => ({
-                    ...initialFormData,
-                    // Conserver certaines valeurs par défaut si nécessaire
-                    paymentMethod: "card",
-                    gender: "other",
-                    title: "Mr",
-                }));
-
-                if (onTicketCreated) {
-                    onTicketCreated();
-                }
-
-                onClose();
             } else {
-                console.error("Erreur création ticket:", data);
-
-                toast.error(`${data.message || "Le numéro saisi pour le vol de retour ne correspond à aucun vol."}`, {
+                toast.error(data.message || "Erreur de validation", {
                     style: {
                         background: "#fee2e2",
                         color: "#991b1b",
@@ -903,16 +1042,168 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                     iconTheme: { primary: "#fff", secondary: "#dc2626" },
                 });
             }
-        } catch (err) {
-            console.error("Erreur réseau:", err);
-            toast.error("❌ Erreur de connexion au serveur");
-        } finally {
             setCreateTicket(false);
+            return;
         }
-    };
 
-        // Fonction pour fermer et réinitialiser
-    const handleClose = () => {
+        // Erreur de doublon
+        if (res.status === 409) {
+            toast.error(data.message || "Ce passager a déjà une réservation sur ce vol", {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                duration: 5000,
+            });
+            setCreateTicket(false);
+            return;
+        }
+
+        // Erreur de vol non trouvé
+        if (res.status === 404) {
+            toast.error(data.message || "Le vol spécifié n'existe pas", {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                duration: 5000,
+            });
+            setCreateTicket(false);
+            return;
+        }
+
+        // Vérifier le succès
+        if (res.status === 200 && data.success) {
+            toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+                style: {
+                    background: "#28a745",
+                    color: "#fff",
+                    border: "1px solid #1e7e34",
+                },
+                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+            });
+
+            try {
+                // ENVOYER L'EMAIL DE CONFIRMATION
+                let returnFlight = null;
+
+                if (isRoundTrip && formData.flightNumberReturn) {
+                    try {
+                        const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
+                            headers: {
+                                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                            },
+                        });
+                        
+                        if (resReturn.ok) {
+                            const flightData = await resReturn.json();
+                            returnFlight = {
+                                date: flightData.departure_time,
+                                noflight: flightData.flight_number,
+                                departure_time: flightData.departure_time,
+                                arrival_time: flightData.arrival_time,
+                                from: flightData.from,
+                                to: flightData.to,
+                                fromCity: flightData.fromCity,
+                                toCity: flightData.toCity,
+                            };
+                        }
+                    } catch (err) {
+                        console.error("Erreur récupération vol retour:", err);
+                        // Continuer sans vol retour pour l'email
+                    }
+                }
+
+                // Préparer les données pour l'email
+                const bookingData = {
+                    from: flight.from || "",
+                    to: flight.to || "",
+                    fromCity: flight.fromCity || "",
+                    toCity: flight.toCity || "",
+                    outbound: {
+                        date: flight.departure,
+                        noflight: flight.flight_number,
+                        departure_time: flight.departure,
+                        arrival_time: flight.arrival,
+                    },
+                    return: returnFlight,
+                    passengersData: { adults: passengers },
+                    totalPrice: data.totalPrice || body.totalPrice,
+                    tabType: flight.type || "plane",
+                };
+
+                // Envoyer l'email
+                await sendTicketByEmail(
+                    bookingData,
+                    data.bookingReference,
+                    formData.paymentMethod,
+                );
+
+                console.log("✅ Email envoyé avec succès");
+            } catch (emailError) {
+                console.error("❌ Erreur détaillée envoi email:", emailError);
+                toast.error("Ticket créé mais email non envoyé", {
+                    duration: 3000,
+                });
+            }
+
+            // ✅ RÉINITIALISER TOUS LES CHAMPS
+            setFormData({
+                ...initialFormData,
+                // Conserver certaines valeurs par défaut
+                paymentMethod: "card",
+                gender: "other",
+                title: "Mr",
+                passengerCount: 1,
+            });
+            
+            setIsRoundTrip(false);
+            setSuggestions([]);
+            setShowDropdown(false);
+
+            if (onTicketCreated) {
+                onTicketCreated();
+            }
+
+            // Fermer le modal après un délai pour que l'utilisateur voit le message de succès
+            setTimeout(() => {
+                onClose();
+            }, 1500);
+            
+        } else {
+            // Erreur générique du serveur
+            console.error("Erreur création ticket:", data);
+            const errorMessage = data.message || 
+                               data.details || 
+                               "Une erreur s'est produite lors de la création du ticket";
+            
+            toast.error(errorMessage, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                duration: 5000,
+            });
+        }
+    } catch (err) {
+        console.error("Erreur réseau:", err);
+        toast.error("❌ Erreur de connexion au serveur. Veuillez vérifier votre connexion internet.", {
+            duration: 5000,
+        });
+    } finally {
+        setCreateTicket(false);
+    }
+};
+    
+    
+    
+        const handleClose = () => {
         // Réinitialiser les champs avant de fermer
         setFormData(initialFormData);
         setIsRoundTrip(false);
