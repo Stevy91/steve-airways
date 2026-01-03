@@ -6586,9 +6586,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     headerRow.height = 45;
 
-        sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
-    sheet.getColumn(8).alignment = { horizontal: 'right' };
-
+    
     // 3️⃣ Définition des colonnes
     sheet.columns = [
       { key: "booking_reference" },
@@ -6665,7 +6663,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
         `${row.first_name} ${row.last_name}`,
         row.companyName,
         row.contact_email,
-        row.total_price,
+        `${row.total_price} USD`,
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
@@ -6801,8 +6799,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     headerRow.height = 45;
 
-        sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
-    sheet.getColumn(8).alignment = { horizontal: 'right' };
+     
 
     // 3️⃣ Définition des colonnes
     sheet.columns = [
@@ -6880,7 +6877,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         `${row.first_name} ${row.last_name}`,
         row.companyName,
         row.contact_email,
-        Number(row.total_price),
+        `${row.total_price} USD`,
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
