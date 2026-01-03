@@ -1013,7 +1013,7 @@ const handleSubmit = async () => {
 
         console.log("🔑 Token JWT présent, envoi de la requête...");
 
-        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
+        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
