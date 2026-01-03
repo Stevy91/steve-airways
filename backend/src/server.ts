@@ -6792,29 +6792,9 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     const headerRow = sheet.getRow(1);
     headerRow.getCell(1).value = "TROGON HELICO TRANSACTIONS";
     headerRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: '2e2f8c' }};
+    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: 'FF2E2F8C' }};
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     headerRow.height = 45;
-
-
-
-
-    // 2️⃣ En-têtes
-    const headers = [
-      "Booking Reference",
-      "Payment Ref",
-      "Type",
-      "Trajet",
-      "Client",
-      "Company Name",
-      "Email",
-      "Total",
-      "Passagers",
-      "Status",
-      "Méthode",
-      "Créé par",
-      "Date"
-    ];
 
         sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
     sheet.getColumn(8).alignment = { horizontal: 'right' };
@@ -6836,10 +6816,34 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       { key: "created_at" }
     ];
 
+
+
+    // 2️⃣ En-têtes
+    const headers = [
+      "Booking Reference",
+      "Payment Ref",
+      "Type",
+      "Trajet",
+      "Client",
+      "Company Name",
+      "Email",
+      "Total",
+      "Passagers",
+      "Status",
+      "Méthode",
+      "Créé par",
+      "Date"
+    ];
+
+
     const titleRow = sheet.addRow(headers);
     titleRow.eachCell((cell) => {
-      cell.font = { bold: true };
-    });
+  cell.font = { bold: true };
+  cell.alignment = { horizontal: 'center' };
+});
+
+
+
 
     const columnColors = [
   'FFE3F2FD', // booking_reference - bleu clair
@@ -6876,7 +6880,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
         row.created_by_name,
-        row.created_at
+        row.created_attoISOString().split('T')[0]
       ]);
     });
 
