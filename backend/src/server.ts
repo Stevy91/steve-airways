@@ -6575,7 +6575,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
 
     // 🟩 Génération Excel
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Bookings");
+    const sheet = workbook.addWorksheet("TRANSACTIONS HELICO");
 
     // 1️⃣ Titre fusionné
 sheet.mergeCells('A1:M1');
@@ -6606,6 +6606,26 @@ sheet.mergeCells('A1:M1');
       "Date"
     ];
 
+        sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
+    sheet.getColumn(8).alignment = { horizontal: 'right' };
+
+    // 3️⃣ Définition des colonnes
+    sheet.columns = [
+      { key: "booking_reference" },
+      { key: "payment_intent_id" },
+      { key: "type_vol" },
+      { key: "type_v" },
+      { key: "first_name" },
+      { key: "companyName" },
+      { key: "contact_email" },
+      { key: "total_price" },
+      { key: "passenger_count" },
+      { key: "status" },
+      { key: "payment_method" },
+      { key: "created_by_name" },
+      { key: "created_at" }
+    ];
+
     const titleRow = sheet.addRow(headers);
     titleRow.eachCell((cell) => {
       cell.font = { bold: true };
@@ -6628,24 +6648,8 @@ sheet.mergeCells('A1:M1');
 ];
 
 
-    // 3️⃣ Définition des colonnes
-    sheet.columns = [
-      { key: "booking_reference" },
-      { key: "payment_intent_id" },
-      { key: "type_vol" },
-      { key: "type_v" },
-      { key: "first_name" },
-      { key: "companyName" },
-      { key: "contact_email" },
-      { key: "total_price" },
-      { key: "passenger_count" },
-      { key: "status" },
-      { key: "payment_method" },
-      { key: "created_by_name" },
-      { key: "created_at" }
-    ];
 
-    sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
+
 
     // 4️⃣ Ajout des données
     rows.forEach((row) => {
@@ -6781,12 +6785,12 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 
     // 🟩 Génération Excel
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Bookings");
+    const sheet = workbook.addWorksheet("TRANSACTIONS AVION");
 
     // 1️⃣ Titre fusionné
     sheet.mergeCells('A1:M1');
     const headerRow = sheet.getRow(1);
-    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
+    headerRow.getCell(1).value = "TROGON HELICO TRANSACTIONS";
     headerRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
     headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: '2e2f8c' }};
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
@@ -6812,6 +6816,26 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       "Date"
     ];
 
+        sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
+    sheet.getColumn(8).alignment = { horizontal: 'right' };
+
+    // 3️⃣ Définition des colonnes
+    sheet.columns = [
+      { key: "booking_reference" },
+      { key: "payment_intent_id" },
+      { key: "type_vol" },
+      { key: "type_v" },
+      { key: "first_name" },
+      { key: "companyName" },
+      { key: "contact_email" },
+      { key: "total_price" },
+      { key: "passenger_count" },
+      { key: "status" },
+      { key: "payment_method" },
+      { key: "created_by_name" },
+      { key: "created_at" }
+    ];
+
     const titleRow = sheet.addRow(headers);
     titleRow.eachCell((cell) => {
       cell.font = { bold: true };
@@ -6834,23 +6858,8 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
 ];
 
 
-    // 3️⃣ Définition des colonnes
-    sheet.columns = [
-      { key: "booking_reference" },
-      { key: "payment_intent_id" },
-      { key: "type_vol" },
-      { key: "type_v" },
-      { key: "first_name" },
-      { key: "companyName" },
-      { key: "contact_email" },
-      { key: "total_price" },
-      { key: "passenger_count" },
-      { key: "status" },
-      { key: "payment_method" },
-      { key: "created_by_name" },
-      { key: "created_at" }
-    ];
-sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
+
+
 
     // 4️⃣ Ajout des données
     rows.forEach((row) => {
@@ -6900,6 +6909,7 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
 
       }
     });
+
 
     
 
