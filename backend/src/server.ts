@@ -6647,7 +6647,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       if (column && column.eachCell) {
         let maxLength = 0;
         column.eachCell({ includeEmpty: true }, (cell) => {
-          const len = cell.value ? cell.value.toString().length : 10;
+          const len = cell.value ? cell.value.toString().length : 13;
           if (len > maxLength) maxLength = len;
         });
         column.width = maxLength + 2;
@@ -6811,7 +6811,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       if (column && column.eachCell) {
         let maxLength = 0;
         column.eachCell({ includeEmpty: true }, (cell) => {
-          const len = cell.value ? cell.value.toString().length : 10;
+          const len = cell.value ? cell.value.toString().length : 13;
           if (len > maxLength) maxLength = len;
         });
         column.width = maxLength + 2;
