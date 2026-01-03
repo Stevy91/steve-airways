@@ -6645,6 +6645,8 @@ sheet.mergeCells('A1:M1');
       { key: "created_at" }
     ];
 
+    sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
+
     // 4️⃣ Ajout des données
     rows.forEach((row) => {
       sheet.addRow([
@@ -6689,7 +6691,8 @@ sheet.mergeCells('A1:M1');
           const len = cell.value ? cell.value.toString().length : 10;
           if (len > maxLength) maxLength = len;
         });
-        column.width = maxLength + 2;
+        column.width = Math.min(Math.max(maxLength + 2, 12), 40);
+
       }
     });
 
@@ -6847,6 +6850,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       { key: "created_by_name" },
       { key: "created_at" }
     ];
+sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
 
     // 4️⃣ Ajout des données
     rows.forEach((row) => {
@@ -6892,7 +6896,8 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
           const len = cell.value ? cell.value.toString().length : 10;
           if (len > maxLength) maxLength = len;
         });
-        column.width = maxLength + 2;
+        column.width = Math.min(Math.max(maxLength + 2, 12), 40);
+
       }
     });
 
