@@ -6794,7 +6794,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     // 1️⃣ Titre fusionné
     sheet.mergeCells('A1:M1');
     const headerRow = sheet.getRow(1);
-    headerRow.getCell(1).value = "TROGON HELICO TRANSACTIONS";
+    headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
     headerRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
     headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: 'FF2E2F8C' }};
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
