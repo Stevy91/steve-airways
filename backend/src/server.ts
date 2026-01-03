@@ -6880,7 +6880,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         `${row.first_name} ${row.last_name}`,
         row.companyName,
         row.contact_email,
-        row.total_price,
+        Number(row.total_price),
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
