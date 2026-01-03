@@ -6578,11 +6578,16 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     const sheet = workbook.addWorksheet("Bookings");
 
     // 1️⃣ Titre fusionné
-    sheet.mergeCells('A1:K1');
+sheet.mergeCells('A1:M1');
     const headerRow = sheet.getRow(1);
     headerRow.getCell(1).value = "TROGON HELICO TRANSACTIONS";
-    headerRow.getCell(1).font = { bold: true, size: 14 };
+    headerRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: '2e2f8c' }};
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 45;
+
+
+
 
     // 2️⃣ En-têtes
     const headers = [
@@ -6605,6 +6610,23 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
     titleRow.eachCell((cell) => {
       cell.font = { bold: true };
     });
+
+    const columnColors = [
+  'FFE3F2FD', // booking_reference - bleu clair
+  'FFFCE4EC', // payment_intent_id - rose clair
+  'FFE8F5E9', // type_vol - vert clair
+  'FFFFFDE7', // type_v - jaune clair
+  'FFF3E5F5', // passenger name - violet clair
+  'FFE0F2F1', // company
+  'FFFFEBEE', // email
+  'FFE1F5FE', // total_price
+  'FFFFF3E0', // passenger_count
+  'FFE8EAF6', // status
+  'FFF1F8E9', // payment_method
+  'FFEDE7F6', // created_by
+  'FFF5F5F5', // created_at
+];
+
 
     // 3️⃣ Définition des colonnes
     sheet.columns = [
@@ -6642,12 +6664,29 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       ]);
     });
 
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // ignorer le header si besoin
+
+      row.eachCell((cell, colNumber) => {
+        const color = columnColors[colNumber - 1];
+
+        if (color) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: color },
+          };
+        }
+      });
+    });
+
+
     // 5️⃣ Auto-size colonnes
     sheet.columns.forEach((column) => {
       if (column && column.eachCell) {
         let maxLength = 0;
         column.eachCell({ includeEmpty: true }, (cell) => {
-          const len = cell.value ? cell.value.toString().length : 13;
+          const len = cell.value ? cell.value.toString().length : 10;
           if (len > maxLength) maxLength = len;
         });
         column.width = maxLength + 2;
@@ -6742,13 +6781,16 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     const sheet = workbook.addWorksheet("Bookings");
 
     // 1️⃣ Titre fusionné
-    sheet.mergeCells('A1:K1');
+    sheet.mergeCells('A1:M1');
     const headerRow = sheet.getRow(1);
     headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
-    headerRow.getCell(1).font = { bold: true, size: 14 };
-    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: 'FFFF0000' }};
+    headerRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: '2e2f8c' }};
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-    headerRow.height = 30;
+    headerRow.height = 45;
+
+
+
 
     // 2️⃣ En-têtes
     const headers = [
