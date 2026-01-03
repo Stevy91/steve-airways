@@ -5738,6 +5738,46 @@ app.get("/api/passengers/search", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/passengers/search2", async (req: Request, res: Response) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || String(q).length < 2) {
+      return res.json([]);
+    }
+
+    const search = `%${q}%`;
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `
+      SELECT p.*
+      FROM passengers p
+      INNER JOIN (
+          SELECT 
+              first_name,
+              last_name,
+              MAX(created_at) AS last_created
+          FROM passengers
+          WHERE first_name LIKE ? OR last_name LIKE ?
+          GROUP BY first_name, last_name
+      ) latest
+      ON p.first_name = latest.first_name
+      AND p.last_name = latest.last_name
+      AND p.created_at = latest.last_created
+      ORDER BY p.created_at DESC
+      LIMIT 10
+      `,
+      [search, search]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 
 app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
   try {
