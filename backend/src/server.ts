@@ -6711,27 +6711,29 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     }
 
     // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
-    const [rowsUntyped] = await pool.query(`
-            SELECT 
-                b.booking_reference,
-                b.payment_intent_id,
-                b.type_vol,
-                b.type_v,
-                b.contact_email,
-                b.total_price,
-                b.passenger_count,
-                b.status,
-                b.payment_method,
-                p.first_name,
-                p.last_name,
-                u.name AS created_by_name,
-                b.created_at
-            FROM bookings b
-            LEFT JOIN users u ON b.user_created_booking = u.id
-            LEFT JOIN passengers p ON b.id = p.booking_id
-            ${conditions}
-            ORDER BY b.created_at DESC
-        `, params);
+  const [rowsUntyped] = await pool.query(`
+    SELECT 
+        b.booking_reference,
+        b.payment_intent_id,
+        b.type_vol,
+        b.type_v,
+        b.contact_email,
+        b.total_price,
+        b.passenger_count,
+        b.status,
+        b.payment_method,
+        MIN(p.first_name) AS first_name,
+        MIN(p.last_name) AS last_name,
+        u.name AS created_by_name,
+        DATE(b.created_at) AS created_at
+    FROM bookings b
+    LEFT JOIN users u ON b.user_created_booking = u.id
+    LEFT JOIN passengers p ON b.id = p.booking_id
+    ${conditions}
+    GROUP BY b.id
+    ORDER BY b.created_at DESC
+`, params);
+
 
     const rows = rowsUntyped as mysql.RowDataPacket[];
 
