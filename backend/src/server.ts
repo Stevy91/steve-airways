@@ -6746,7 +6746,9 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
     const headerRow = sheet.getRow(1);
     headerRow.getCell(1).value = "TROGON AVION TRANSACTIONS";
     headerRow.getCell(1).font = { bold: true, size: 14 };
+    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: 'FFFF0000' }};
     headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 30;
 
     // 2️⃣ En-têtes
     const headers = [
@@ -6811,7 +6813,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       if (column && column.eachCell) {
         let maxLength = 0;
         column.eachCell({ includeEmpty: true }, (cell) => {
-          const len = cell.value ? cell.value.toString().length : 13;
+          const len = cell.value ? cell.value.toString().length : 10;
           if (len > maxLength) maxLength = len;
         });
         column.width = maxLength + 2;
