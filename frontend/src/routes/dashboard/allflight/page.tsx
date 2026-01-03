@@ -73,6 +73,7 @@ const FlightTable = () => {
 
 
 
+
     const fetchPassengers = async (flightId: number) => {
         setLoadingPassengers(true);
         try {
@@ -169,6 +170,9 @@ const FlightTable = () => {
     }, [openDropdown]);
 
     const { user, loading: authLoading, isAdmin } = useAuth();
+   
+
+ 
 
          // Pagination
     const [currentPage, setCurrentPage] = useState(1);

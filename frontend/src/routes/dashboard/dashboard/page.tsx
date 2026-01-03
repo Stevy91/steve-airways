@@ -60,6 +60,7 @@ const DashboardPage = () => {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [searchLoading, setSearchLoading] = useState(false);
+
     
     useAuth();
 

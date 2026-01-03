@@ -685,6 +685,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setSuggestions([]);
     };
 
+
+
     // const handleSubmit = async () => {
     //     setCreateTicket(true);
     //     // 1️⃣ Validation des champs obligatoires
@@ -912,6 +914,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     //         setCreateTicket(false);
     //     }
     // };
+
+
 
 const handleSubmit = async () => {
     setCreateTicket(true);

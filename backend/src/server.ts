@@ -1985,6 +1985,25 @@ app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) 
 
     const bookingResult = bookingResultRows as mysql.OkPacket;
 
+    const [pamentResultRows] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO payments (
+          booking_id, amount, currency,
+          payment_method, payment_status, transaction_reference, userId, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bookingResult.insertId,
+        TotalPrice2,
+        "USD",
+        paymentMethod,
+        unpaid || "confirmed",
+        referenceNumber,
+        userId,
+        now 
+      ],
+    );
+
+    const paymentgResult = pamentResultRows as mysql.OkPacket;
+
     // Enregistrer les passagers
     for (const passenger of passengers) {
       await connection.query(

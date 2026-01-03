@@ -1,14 +1,36 @@
 // hooks/useAuth.ts
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+const INACTIVITY_TIME = 58 * 60 * 1000; // 15 minutes
 
 export const useAuth = () => {
     const navigate = useNavigate();
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en";
+
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const logoutTimer = useRef<NodeJS.Timeout | null>(null);
+
+    // 🔐 Logout function
+    const logout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate(`/${currentLang}/login`);
+    };
+
+    // 🔄 Reset inactivity timer
+    const resetTimer = () => {
+        if (logoutTimer.current) {
+            clearTimeout(logoutTimer.current);
+        }
+
+        logoutTimer.current = setTimeout(() => {
+            console.log("⏰ Session expirée (inactivité)");
+            logout();
+        }, INACTIVITY_TIME);
+    };
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -22,24 +44,33 @@ export const useAuth = () => {
         if (userData) {
             try {
                 setUser(JSON.parse(userData));
-            } catch (error) {
-                console.error("Erreur parsing user data:", error);
-                localStorage.removeItem("user");
-                localStorage.removeItem("token");
-                navigate(`/${currentLang}/login`);
+            } catch {
+                logout();
+                return;
             }
         }
 
         setLoading(false);
+        resetTimer();
+
+        // 👂 Écoute activité utilisateur
+        const events = ["click", "mousemove", "keydown", "scroll"];
+        events.forEach(event =>
+            window.addEventListener(event, resetTimer)
+        );
+
+        return () => {
+            if (logoutTimer.current) clearTimeout(logoutTimer.current);
+            events.forEach(event =>
+                window.removeEventListener(event, resetTimer)
+            );
+        };
     }, [navigate, currentLang]);
 
-    const isAdmin = user?.role === "admin";
-    const isOperateur = user?.role === "operateur"; // <-- nouvelle vérification
-
-    return { 
-        user, 
-        loading, 
-        isAdmin,
-        isOperateur // <-- on retourne aussi ce booléen
+    return {
+        user,
+        loading,
+        isAdmin: user?.role === "admin",
+        isOperateur: user?.role === "operateur",
     };
 };
