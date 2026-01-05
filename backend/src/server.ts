@@ -2795,6 +2795,63 @@ app.post("/api/login", async (req: Request, res: Response) => {
   }
 });
 
+
+app.post("/api/login2", async (req: Request, res: Response) => {
+  const { identifier, password } = req.body; // email OU username
+
+  if (!identifier || !password) {
+    return res.status(400).json({ error: "Champs requis manquants" });
+  }
+
+  try {
+    // 🔐 Vérifier si l'utilisateur existe par email OU username
+    const [rows] = await pool.query<User[]>(
+      "SELECT * FROM users WHERE email = ? OR username = ? LIMIT 1",
+      [identifier, identifier]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "Identifiant ou mot de passe incorrect" });
+    }
+
+    const user = rows[0];
+
+    // 🔑 Vérifier le mot de passe
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+    if (!validPassword) {
+      return res.status(401).json({ error: "Identifiant ou mot de passe incorrect" });
+    }
+
+    // 🎫 Générer le JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || "secretKey",
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+
 //  Récupérer tous les utilisateurs (protégé)
 app.get("/api/users", authMiddleware, async (req: Request, res: Response) => {
   try {

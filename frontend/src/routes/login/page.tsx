@@ -20,7 +20,7 @@ export default function Login() {
         setError("");
 
         try {
-            const res = await fetch("https://steve-airways.onrender.com/api/login", {
+            const res = await fetch("https://steve-airways.onrender.com/api/login2", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -68,10 +68,10 @@ export default function Login() {
                     className="space-y-4"
                 >
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">E-mail</label>
+                        <label className="block text-sm font-medium text-gray-700">Username or E-mail</label>
                         <input
-                            type="email"
-                            placeholder="admin@trogonairways.com"
+                            type="text"
+                            placeholder="Username or E-mail"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"

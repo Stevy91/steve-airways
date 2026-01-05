@@ -68,12 +68,6 @@ const FlightTable = () => {
     const [loadingPassengers, setLoadingPassengers] = useState(false);
     const [stats, setStats] = useState<any>(null);
 
-
-
-
-
-
-
     const fetchPassengers = async (flightId: number) => {
         setLoadingPassengers(true);
         try {
@@ -87,8 +81,7 @@ const FlightTable = () => {
         }
     };
 
-
-   const generatePassengerPDF = async (flightId: number) => {
+    const generatePassengerPDF = async (flightId: number) => {
         if (!flightId) {
             toast.error("Aucun vol sélectionné");
             return;
@@ -113,7 +106,7 @@ const FlightTable = () => {
         }
     };
 
-          // Champs filtres
+    // Champs filtres
     const [flightNumb, setFlightNumb] = useState("");
     const [tailNumber, setTailNumber] = useState("");
     const [dateDeparture, setDateDeparture] = useState("");
@@ -143,6 +136,40 @@ const FlightTable = () => {
         setFlightNumber(generateFlightNumber());
     };
 
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+    const handleDropdownClick = (flightId: number, event: React.MouseEvent) => {
+        event.stopPropagation(); // Empêche la propagation du clic
+
+        const button = event.currentTarget as HTMLButtonElement;
+        const rect = button.getBoundingClientRect();
+
+        // Calculer la position du menu
+        const menuWidth = 192; // Largeur approximative du menu (48 * 4)
+        const menuHeight = 180; // Hauteur approximative du menu
+
+        let left = rect.right - menuWidth;
+        let top = rect.bottom + 5; // 5px de marge
+
+        // Ajuster si le menu dépasse à droite
+        if (left + menuWidth > window.innerWidth) {
+            left = window.innerWidth - menuWidth - 10;
+        }
+
+        // Ajuster si le menu dépasse en bas
+        if (top + menuHeight > window.innerHeight) {
+            top = rect.top - menuHeight - 5; // Afficher au-dessus
+        }
+
+        // Ajuster si le menu dépasse en haut
+        if (top < 0) {
+            top = 10;
+        }
+
+        setDropdownPosition({ top, left });
+        setOpenDropdown(openDropdown === flightId ? null : flightId);
+    };
+
     // Fermer le dropdown si clic/touch extérieur de l'élément ouvert
     useEffect(() => {
         function handleClickOutside(event: MouseEvent | TouchEvent) {
@@ -170,41 +197,33 @@ const FlightTable = () => {
     }, [openDropdown]);
 
     const { user, loading: authLoading, isAdmin } = useAuth();
-   
 
- 
-
-         // Pagination
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-   // Remplacer la ligne 69 (ou autour) où vous utilisez slice()
-const currentBookings = stats && stats.recentBookings 
-    ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) 
-    : [];
+    // Remplacer la ligne 69 (ou autour) où vous utilisez slice()
+    const currentBookings = stats && stats.recentBookings ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
 
-// Et pour totalPages
-const totalPages = stats && stats.recentBookings 
-    ? Math.ceil(stats.recentBookings.length / rowsPerPage) 
-    : 1;
+    // Et pour totalPages
+    const totalPages = stats && stats.recentBookings ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
 
     const [menuOpen, setMenuOpen] = useState(false);
-       // Fetch flights
-const fetchFlights = async () => {
-    try {
-        setLoading(true);
-        const res = await fetch("https://steve-airways.onrender.com/api/flighttableplane");
-        const data = await res.json();
+    // Fetch flights
+    const fetchFlights = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch("https://steve-airways.onrender.com/api/flighttableplane");
+            const data = await res.json();
             setStats(data);
-        
-    } catch {
-        setError("Erreur lors du chargement des vols");
-    } finally {
-        setLoading(false);
-    }
-};
+        } catch {
+            setError("Erreur lors du chargement des vols");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const refreshFlights = () => {
         fetchFlights();
@@ -390,7 +409,7 @@ const fetchFlights = async () => {
         if (!isAdmin) {
             toast.error("❌ Accès refusé - Admin uniquement");
             return;
-       }
+        }
         try {
             const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, { method: "DELETE" });
             const data = await res.json();
@@ -411,28 +430,27 @@ const fetchFlights = async () => {
     };
 
     const handleSearch = async () => {
-    try {
-        setLoading(true);
-        
-        const url = new URL("https://steve-airways.onrender.com/api/flight-plane-search");
-        if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
-        if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
-        if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
-        
-        const res = await fetch(url.toString());
-        const data = await res.json();
+        try {
+            setLoading(true);
 
-        setStats({ recentBookings: data.bookings });
-        setCurrentPage(1);
-    } catch (err) {
-        alert("Erreur lors de la recherche");
-    } finally {
-        setLoading(false);
-    }
-};
+            const url = new URL("https://steve-airways.onrender.com/api/flight-plane-search");
+            if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
+            if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
+            if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
 
+            const res = await fetch(url.toString());
+            const data = await res.json();
 
-     // API EXPORT EXCEL
+            setStats({ recentBookings: data.bookings });
+            setCurrentPage(1);
+        } catch (err) {
+            alert("Erreur lors de la recherche");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // API EXPORT EXCEL
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/flight-plane-export?" +
@@ -493,7 +511,7 @@ const fetchFlights = async () => {
                     </button>
                 )}
             </div>
-                       {/* Filtres */}
+            {/* Filtres */}
 
             <div className="mb-9 mt-16 grid grid-cols-1 gap-3 md:grid-cols-4">
                 <div className="flex flex-col">
@@ -535,12 +553,12 @@ const fetchFlights = async () => {
                     </button>
                 </div>
                 <button
-                                type="button"
-                                onClick={downloadExcel}
-                                className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
-                            >
-                                PDF
-                            </button>
+                    type="button"
+                    onClick={downloadExcel}
+                    className="w-24 rounded-md border-2 border-slate-50 bg-slate-200 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                >
+                    PDF
+                </button>
             </div>
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
@@ -548,10 +566,10 @@ const fetchFlights = async () => {
                 </div>
             )}
 
-            <div className="card col-span-1 md:col-span-2 lg:col-span-4">
-                <div className="card-body overflow-visible p-0">
-                    <div className="relative w-full flex-shrink-0 overflow-visible">
-                        <table className="table">
+            <div className="card relative col-span-1 overflow-visible md:col-span-2 lg:col-span-4">
+                <div className="card-body p-0">
+                    <div className="w-full overflow-x-auto">
+                        <table className="table min-w-full">
                             <thead className="table-header">
                                 <tr className="table-row">
                                     <th className="table-head text-center">Flight number</th>
@@ -590,13 +608,20 @@ const fetchFlights = async () => {
                                             >
                                                 <button
                                                     className="inline-flex w-full justify-center gap-2 rounded-lg p-2 px-4 py-2 text-center text-amber-500 hover:bg-amber-500"
-                                                    onClick={() => setOpenDropdown(openDropdown === flight.id ? null : flight.id)}
+                                                    onClick={(e) => handleDropdownClick(flight.id, e)}
                                                 >
                                                     <MoreVertical className="h-5 w-5 text-gray-700" />
                                                 </button>
 
                                                 {openDropdown === flight.id && (
-                                                    <div className="absolute right-0 z-[9999] mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                    <div
+                                                        className="fixed z-[9999] w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+                                                        style={{
+                                                            top: `${dropdownPosition.top}px`,
+                                                            left: `${dropdownPosition.left}px`,
+                                                            position: "fixed", // Assurez-vous que c'est fixed
+                                                        }}
+                                                    >
                                                         <div className="py-1">
                                                             {isAdmin && (
                                                                 <>
@@ -610,14 +635,14 @@ const fetchFlights = async () => {
                                                                         <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                                     </button>
                                                                     <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    deleteFlight(flight.id);
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-red-500" /> Delete
-                                                            </button>
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            deleteFlight(flight.id);
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                                                                    </button>
                                                                 </>
                                                             )}
 
@@ -631,19 +656,18 @@ const fetchFlights = async () => {
                                                             >
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
-                                                            
-                                                                    <button
+
+                                                            <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     fetchPassengers(flight.id);
-                                                                    setSelectedFlightId(flight.id); // Stocker l'ID du vol
+                                                                    setSelectedFlightId(flight.id);
                                                                     setShowModalPassager(true);
                                                                     setOpenDropdown(null);
                                                                 }}
                                                             >
                                                                 <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
                                                             </button>
-                                                            
                                                         </div>
                                                     </div>
                                                 )}
@@ -654,27 +678,27 @@ const fetchFlights = async () => {
                             </tbody>
                         </table>
                     </div>
-                </div>
-                {/* 🔹 Pagination */}
-                <div className="mt-4 flex justify-center gap-2">
-                    <span>
-                        Page {currentPage} / {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                    >
-                        Previous
-                    </button>
+                    {/* 🔹 Pagination */}
+                    <div className="mt-4 flex justify-center gap-2">
+                        <span>
+                            Page {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
+                        >
+                            Previous
+                        </button>
 
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                    >
-                        Next
-                    </button>
+                        <button
+                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -985,17 +1009,15 @@ const fetchFlights = async () => {
 
                                         <div className="md:col-span-2">
                                             <button
-                                                    type="submit"
-                                                    className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
-                                                    disabled={submitting}
-                                                    >
-                                                    {submitting && (
-                                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
-                                                    )}
+                                                type="submit"
+                                                className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
+                                                disabled={submitting}
+                                            >
+                                                {submitting && (
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
+                                                )}
 
-                                                    {editingFlight
-                                                        ? submitting ? "Updating..." : "Update"
-                                                        : submitting ? "Saving..." : "Save"}
+                                                {editingFlight ? (submitting ? "Updating..." : "Update") : submitting ? "Saving..." : "Save"}
                                             </button>
                                         </div>
                                     </div>
@@ -1007,120 +1029,119 @@ const fetchFlights = async () => {
             </AnimatePresence>
 
             {/* Modal list passager*/}
-                        {/* Modal list passager - Seulement accessible aux admins */}
-         
-                <AnimatePresence>
-                    {showModalPassager && (
-                        <div className="fixed inset-0 z-50">
-                            <motion.div
-                                className="absolute inset-0 bg-black/50"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => {
-                                    setShowModalPassager(false);
-                                }}
-                            />
-                            <motion.div
-                                role="dialog"
-                                aria-modal="true"
-                                className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
-                                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            >
-                                <div className="relative max-h-[90vh] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
-                                    <button
-                                        className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                                        aria-label="Close"
-                                        onClick={() => {
-                                            setShowModalPassager(false);
-                                        }}
-                                    >
-                                        <X className="h-5 w-5" />
-                                    </button>
+            {/* Modal list passager - Seulement accessible aux admins */}
 
-                                    <div className="px-6 pt-6">
-                                        <h2 className="text-xl font-semibold text-slate-800"> Number of passengers ({passengers.length})</h2>
+            <AnimatePresence>
+                {showModalPassager && (
+                    <div className="fixed inset-0 z-50">
+                        <motion.div
+                            className="absolute inset-0 bg-black/50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                setShowModalPassager(false);
+                            }}
+                        />
+                        <motion.div
+                            role="dialog"
+                            aria-modal="true"
+                            className="absolute inset-0 mx-auto my-6 flex max-w-6xl items-start justify-center p-4 sm:my-12"
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        >
+                            <div className="relative max-h-[90vh] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                                <button
+                                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Close"
+                                    onClick={() => {
+                                        setShowModalPassager(false);
+                                    }}
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+
+                                <div className="px-6 pt-6">
+                                    <h2 className="text-xl font-semibold text-slate-800"> Number of passengers ({passengers.length})</h2>
+                                </div>
+
+                                <div className="my-4 h-px w-full bg-slate-100" />
+                                {loadingPassengers ? (
+                                    <div className="flex items-center justify-center py-6">
+                                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
                                     </div>
-
-                                    <div className="my-4 h-px w-full bg-slate-100" />
-                                    {loadingPassengers ? (
-                                        <div className="flex items-center justify-center py-6">
-                                            <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
-                                        </div>
-                                    ) : (
-                                        <div className="max-h-[60vh] overflow-auto">
+                                ) : (
+                                    <div className="max-h-[60vh] overflow-auto">
+                                        {" "}
+                                        {/* Ajout d'un conteneur scrollable */}
+                                        <table className="table w-full">
                                             {" "}
-                                            {/* Ajout d'un conteneur scrollable */}
-                                            <table className="table w-full">
+                                            {/* Ajout de w-full */}
+                                            <thead className="sticky top-0 bg-white">
                                                 {" "}
-                                                {/* Ajout de w-full */}
-                                                <thead className="sticky top-0 bg-white">
-                                                    {" "}
-                                                    {/* Header fixe */}
-                                                    <tr>
-                                                        <th className="table-head px-6 py-4 text-left">FirstName</th> {/* Plus de padding */}
-                                                        <th className="table-head px-6 py-4 text-left">LastName</th>
-                                                        <th className="table-head px-6 py-4 text-left">Email Address</th>
-                                                        <th className="table-head px-6 py-4 text-left">Phone</th> {/* Nouvelle colonne */}
-                                                        <th className="table-head px-6 py-4 text-left">Booking Date</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="table-body">
-                                                    {passengers.length > 0 ? (
-                                                        passengers.map((p) => (
-                                                            <tr
-                                                                key={p.id}
-                                                                className="border-b hover:bg-gray-50"
-                                                            >
-                                                                <td className="table-cell px-6 py-4">{p.first_name}</td>
-                                                                <td className="table-cell px-6 py-4">{p.last_name}</td>
-                                                                <td className="table-cell px-6 py-4">{p.email}</td>
-                                                                <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td>{" "}
-                                                                {/* Nouvelle colonne */}
-                                                                <td className="table-cell px-6 py-4">
-                                                                    {format(parseISO(p.booking_date), "EEE, dd MMM yyyy")}
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    ) : (
-                                                        <tr>
-                                                            <td
-                                                                colSpan={5}
-                                                                className="py-8 text-center text-gray-500"
-                                                            >
-                                                                No passenger found
+                                                {/* Header fixe */}
+                                                <tr>
+                                                    <th className="table-head px-6 py-4 text-left">FirstName</th> {/* Plus de padding */}
+                                                    <th className="table-head px-6 py-4 text-left">LastName</th>
+                                                    <th className="table-head px-6 py-4 text-left">Email Address</th>
+                                                    <th className="table-head px-6 py-4 text-left">Phone</th> {/* Nouvelle colonne */}
+                                                    <th className="table-head px-6 py-4 text-left">Booking Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="table-body">
+                                                {passengers.length > 0 ? (
+                                                    passengers.map((p) => (
+                                                        <tr
+                                                            key={p.id}
+                                                            className="border-b hover:bg-gray-50"
+                                                        >
+                                                            <td className="table-cell px-6 py-4">{p.first_name}</td>
+                                                            <td className="table-cell px-6 py-4">{p.last_name}</td>
+                                                            <td className="table-cell px-6 py-4">{p.email}</td>
+                                                            <td className="table-cell px-6 py-4">{p.phone || "No Number"}</td>{" "}
+                                                            {/* Nouvelle colonne */}
+                                                            <td className="table-cell px-6 py-4">
+                                                                {format(parseISO(p.booking_date), "EEE, dd MMM yyyy")}
                                                             </td>
                                                         </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                            <div className="md:col-span-3">
-                                                <div className="flex items-center justify-center py-6">
-                                                    <button
-                                                        onClick={() => {
-                                                            if (selectedFlightId) {
-                                                                generatePassengerPDF(selectedFlightId);
-                                                            } else {
-                                                                toast.error("Aucun vol sélectionné");
-                                                            }
-                                                        }}
-                                                        className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
-                                                        disabled={!selectedFlightId}
-                                                    >
-                                                        {loadingPassengers ? "Chargement..." : "Download the passenger list"}
-                                                    </button>
-                                                </div>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={5}
+                                                            className="py-8 text-center text-gray-500"
+                                                        >
+                                                            No passenger found
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                        <div className="md:col-span-3">
+                                            <div className="flex items-center justify-center py-6">
+                                                <button
+                                                    onClick={() => {
+                                                        if (selectedFlightId) {
+                                                            generatePassengerPDF(selectedFlightId);
+                                                        } else {
+                                                            toast.error("Aucun vol sélectionné");
+                                                        }
+                                                    }}
+                                                    className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
+                                                    disabled={!selectedFlightId}
+                                                >
+                                                    {loadingPassengers ? "Chargement..." : "Download the passenger list"}
+                                                </button>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                   )}
-                </AnimatePresence>
-            
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

@@ -96,7 +96,39 @@ const FlightTableHelico = () => {
         setFlightNumber(generateFlightNumber());
     };
 
-  
+      const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+    const handleDropdownClick = (flightId: number, event: React.MouseEvent) => {
+        event.stopPropagation(); // Empêche la propagation du clic
+
+        const button = event.currentTarget as HTMLButtonElement;
+        const rect = button.getBoundingClientRect();
+
+        // Calculer la position du menu
+        const menuWidth = 192; // Largeur approximative du menu (48 * 4)
+        const menuHeight = 180; // Hauteur approximative du menu
+
+        let left = rect.right - menuWidth;
+        let top = rect.bottom + 5; // 5px de marge
+
+        // Ajuster si le menu dépasse à droite
+        if (left + menuWidth > window.innerWidth) {
+            left = window.innerWidth - menuWidth - 10;
+        }
+
+        // Ajuster si le menu dépasse en bas
+        if (top + menuHeight > window.innerHeight) {
+            top = rect.top - menuHeight - 5; // Afficher au-dessus
+        }
+
+        // Ajuster si le menu dépasse en haut
+        if (top < 0) {
+            top = 10;
+        }
+
+        setDropdownPosition({ top, left });
+        setOpenDropdown(openDropdown === flightId ? null : flightId);
+    };
 
     const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
   // 🔹 Pagination
@@ -562,10 +594,10 @@ const handleSearch = async () => {
                 </div>
             )}
 
-            <div className="card col-span-1 md:col-span-2 lg:col-span-4">
-                <div className="card-body overflow-visible p-0">
-                    <div className="relative w-full flex-shrink-0 overflow-visible">
-                        <table className="table">
+            <div className="card relative col-span-1 overflow-visible md:col-span-2 lg:col-span-4">
+                <div className="card-body p-0">
+                    <div className="w-full overflow-x-auto">
+                        <table className="table min-w-full">
                             <thead className="table-header">
                                 <tr className="table-row">
                                     <th className="table-head text-center">Flight number</th>
@@ -604,15 +636,21 @@ const handleSearch = async () => {
                                             >
                                                 <button
                                                     className="inline-flex w-full justify-center gap-2 rounded-lg p-2 px-4 py-2 text-center text-amber-500 hover:bg-amber-500"
-                                                    onClick={() => setOpenDropdown(openDropdown === flight.id ? null : flight.id)}
+                                                    onClick={(e) => handleDropdownClick(flight.id, e)}
                                                 >
                                                     <MoreVertical className="h-5 w-5 text-gray-700" />
                                                 </button>
 
                                                 {openDropdown === flight.id && (
-                                                    <div className="absolute right-0 z-[9999] mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                    <div
+                                                        className="fixed z-[9999] w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+                                                        style={{
+                                                            top: `${dropdownPosition.top}px`,
+                                                            left: `${dropdownPosition.left}px`,
+                                                            position: "fixed", // Assurez-vous que c'est fixed
+                                                        }}
+                                                    >
                                                         <div className="py-1">
-                                                            {/* Options Edit et Delete réservées aux admins */}
                                                             {isAdmin && (
                                                                 <>
                                                                     <button
@@ -636,7 +674,6 @@ const handleSearch = async () => {
                                                                 </>
                                                             )}
 
-                                                            {/* Option Create Ticket disponible pour tous */}
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
                                                                 onClick={() => {
@@ -652,7 +689,7 @@ const handleSearch = async () => {
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     fetchPassengers(flight.id);
-                                                                    setSelectedFlightId(flight.id); // Stocker l'ID du vol
+                                                                    setSelectedFlightId(flight.id);
                                                                     setShowModalPassager(true);
                                                                     setOpenDropdown(null);
                                                                 }}
@@ -669,28 +706,27 @@ const handleSearch = async () => {
                             </tbody>
                         </table>
                     </div>
-                </div>
+                    {/* 🔹 Pagination */}
+                    <div className="mt-4 flex justify-center gap-2">
+                        <span>
+                            Page {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
+                        >
+                            Previous
+                        </button>
 
-                {/* 🔹 Pagination */}
-                <div className="mt-4 flex justify-center gap-2">
-                    <span>
-                        Page {currentPage} / {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="hover:bg-amber-560 rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 disabled:bg-gray-200"
-                    >
-                        Previous
-                    </button>
-
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                    >
-                        Next
-                    </button>
+                        <button
+                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
 
