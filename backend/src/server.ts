@@ -25,6 +25,7 @@ import { format, parseISO, isValid, parse } from "date-fns";
 
 import { COUNTRIES } from "./constants/country";
 import { fr } from 'date-fns/locale'; // Optionnel: pour le format français
+import { printerService } from './printer-service';
 dotenv.config();
 
 const app = express();
@@ -1790,8 +1791,6 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 });
 
 
-
-
 app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
   const userId = req.user.id;
@@ -1823,6 +1822,7 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
 
     const typeVol = passengers[0]?.typeVol || "plane";
     
+
     // VÉRIFICATION : S'assurer qu'il y a au moins un passager
     if (!passengers || passengers.length === 0) {
       await connection.rollback();
@@ -1832,7 +1832,8 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
       });
     }
 
-     let returnFlightIdResolved = returnFlightId || null;
+
+    let returnFlightIdResolved = returnFlightId || null;
     let returnDateResolved = null;
 
     // Si le client a fourni un numéro de vol retour
@@ -2173,192 +2174,20 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
       console.error("⚠️ Notification error (non bloquant):", notifyErr);
     }
 
-
     // Commit final
     await connection.commit();
 
-    // ----- IMPRESSION DU REÇU DÉTAILLÉ POUR 80mm -----
-    try {
-      const escpos = require("escpos");
-      const USB = require("escpos-usb");
-      
-      // Récupérer les informations détaillées pour l'impression
-      const [bookingDetails] = await connection.query<mysql.RowDataPacket[]>(
-        `SELECT b.*, 
-                f1.flight_number as outbound_flight_number,
-                f1.departure_city as departure_city,
-                f1.arrival_city as arrival_city,
-                f1.departure_time as departure_time,
-                f1.arrival_time as arrival_time,
-                f2.flight_number as return_flight_number,
-                f2.departure_city as return_departure_city,
-                f2.arrival_city as return_arrival_city,
-                f2.departure_time as return_departure_time,
-                f2.arrival_time as return_arrival_time
-         FROM bookings b
-         LEFT JOIN flights f1 ON b.flight_id = f1.id
-         LEFT JOIN flights f2 ON b.return_flight_id = f2.id
-         WHERE b.id = ?`,
-        [bookingResult.insertId]
-      );
-
-      const booking = bookingDetails[0];
-      
-      // Récupérer la liste des passagers
-      const [passengerList] = await connection.query<mysql.RowDataPacket[]>(
-        "SELECT first_name, last_name, date_of_birth FROM passengers WHERE booking_id = ?",
-        [bookingResult.insertId]
-      );
-
-      const device = new USB();
-      const printer = new escpos.Printer(device);
-
-      device.open(function(error: any) {
-        if (error) {
-          console.error("❌ Erreur ouverture imprimante:", error);
-          return;
-        }
-
-        // Configuration pour 80mm
-        printer
-          .encode('UTF-8')
-          
-          // EN-TÊTE
-          .align('CT')
-          .style('B')
-          .size(2, 2)
-          .text('✈️ AGENCE DE VOYAGE ✈️')
-          .size(1, 1)
-          .style('NORMAL')
-          .text('----------------------------------------')
-          .feed(1)
-          
-          // TITRE PRINCIPAL
-          .align('CT')
-          .style('B')
-          .size(1, 2)
-          .text('RÉCUS DE RÉSERVATION')
-          .size(1, 1)
-          .feed(1)
-          
-          // INFORMATIONS GÉNÉRALES
-          .align('LT')
-          .style('B')
-          .text('INFORMATIONS GÉNÉRALES:')
-          .style('NORMAL')
-          .text('----------------------------------------')
-          .text(`Référence:     ${bookingReference}`)
-          .text(`Date émission: ${new Date().toLocaleDateString('fr-FR')}`)
-          .text(`Heure:         ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
-          .text(`N° Transaction:${referenceNumber || 'N/A'}`)
-          .text('----------------------------------------')
-          .feed(1)
-          
-          // VOL ALLER
-          .style('B')
-          .text('VOL ALLER:')
-          .style('NORMAL')
-          .text(`Vol:      ${booking.outbound_flight_number}`)
-          .text(`De:       ${booking.departure_city}`)
-          .text(`Vers:     ${booking.arrival_city}`)
-          .text(`Départ:   ${new Date(booking.departure_time).toLocaleDateString('fr-FR')}`)
-          .text(`Heure:    ${new Date(booking.departure_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
-          .text(`Arrivée:  ${new Date(booking.arrival_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
-          .text('----------------------------------------')
-          .feed(1);
-        
-        // VOL RETOUR (si existe)
-        if (booking.return_flight_number) {
-          printer
-            .style('B')
-            .text('VOL RETOUR:')
-            .style('NORMAL')
-            .text(`Vol:      ${booking.return_flight_number}`)
-            .text(`De:       ${booking.return_departure_city}`)
-            .text(`Vers:     ${booking.return_arrival_city}`)
-            .text(`Départ:   ${new Date(booking.return_departure_time).toLocaleDateString('fr-FR')}`)
-            .text(`Heure:    ${new Date(booking.return_departure_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
-            .text(`Arrivée:  ${new Date(booking.return_arrival_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
-            .text('----------------------------------------')
-            .feed(1);
-        }
-        
-        // LISTE DES PASSAGERS
-        printer
-          .style('B')
-          .text(`PASSAGERS (${passengerList.length}):`)
-          .style('NORMAL')
-          .text('----------------------------------------');
-        
-        passengerList.forEach((passenger: any, index: number) => {
-          const birthDate = passenger.date_of_birth ? 
-            new Date(passenger.date_of_birth).toLocaleDateString('fr-FR') : 'N/A';
-          
-          printer
-            .text(`Passager ${index + 1}:`)
-            .text(`  Nom: ${passenger.first_name} ${passenger.last_name}`)
-            .text(`  Né(e): ${birthDate}`);
-        });
-        
-        printer
-          .text('----------------------------------------')
-          .feed(1)
-          
-          // DÉTAILS DE PAIEMENT
-          .style('B')
-          .text('DÉTAILS DE PAIEMENT:')
-          .style('NORMAL')
-          .text('----------------------------------------')
-          .text(`Total:          ${booking.total_price} USD`)
-          .text(`Méthode:        ${getPaymentMethodText(booking.payment_method)}`)
-          .text(`Statut:         ${getStatusText(booking.status)}`)
-          .text(`Mode voyage:    ${booking.type_v === 'roundtrip' ? 'Aller-Retour' : 'Aller Simple'}`)
-          .text('----------------------------------------')
-          .feed(1)
-          
-          // INFORMATIONS DE CONTACT
-          .style('B')
-          .text('INFORMATIONS CLIENT:')
-          .style('NORMAL')
-          .text('----------------------------------------')
-          .text(`Email:     ${booking.contact_email}`)
-          .text(`Téléphone: ${booking.contact_phone}`)
-          .text(`Agence:    ${companyName || 'N/A'}`)
-          .text('----------------------------------------')
-          .feed(2)
-          
-          // PIED DE PAGE
-          .align('CT')
-          .style('B')
-          .size(1, 2)
-          .text('MERCI POUR VOTRE CONFIANCE !')
-          .size(1, 1)
-          .feed(1)
-          .text('****************************************')
-          .feed(1)
-          .style('NORMAL')
-          .text('IMPORTANT:')
-          .text('• Présentez ce reçu à l\'enregistrement')
-          .text('• Arrivez 2h avant le décollage')
-          .text('• Ayez vos papiers d\'identité')
-          .feed(1)
-          .text('ASSISTANCE:')
-          .text('📞 +XXX XX XXX XXX')
-          .text('📧 contact@agencevoyage.com')
-          .feed(1)
-          .text('⚠️ Conservez ce reçu précieusement')
-          .feed(3)
-          
-          .cut()
-          .close();
-          
-        console.log("✅ Reçu 80mm imprimé avec succès");
-      });
-
-    } catch (printError: any) {
-      console.error("⚠️ Erreur impression reçu:", printError);
-      // Ne pas bloquer la réponse en cas d'erreur d'impression
+      const printResult = await printerService.printReceipt({
+    bookingReference,
+    bookingId: bookingResult.insertId,
+    totalPrice: totalPrice,
+    passengers: passengers,
+    
+    contactInfo: {
+      email: contactInfo.email,
+      phone: contactInfo.phone
     }
+  });
 
     // ✅ Réponse succès
     res.status(200).json({
@@ -2368,9 +2197,12 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
       passengerCount: passengers.length,
       paymentMethod,
       createdBy: userId,
-      printedReceipt: true,
+      receiptPrinted: printResult.success,
+    receiptUrl: printResult.receiptUrl, // URL du PDF/HTML en cloud
       message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
     });
+
+  
 
   } catch (error: any) {
     await connection.rollback();
@@ -2401,6 +2233,9 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
     connection.release();
   }
 });
+
+
+
 
 // Fonctions utilitaires pour le texte avec types TypeScript
 function getPaymentMethodText(method: string): string {
