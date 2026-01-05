@@ -2759,9 +2759,9 @@ async function adminOnly(req: any, res: Response, next: any) {
 app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
   const { username, name, email, password, phone, role } = req.body;
 
-  if (!name || !password) {
+  if (!name || !password || !role) {
     return res.status(400).json({
-      error: "Username, nom, email et mot de passe requis",
+      error: "Role, nom, et mot de passe requis",
     });
   }
 
@@ -2807,50 +2807,50 @@ app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: R
 
 
 // Login
+// app.post("/api/login", async (req: Request, res: Response) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     // Vérifier si l'utilisateur existe
+//     const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
+//     if (rows.length === 0) {
+//       return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+//     }
+
+//     const user = rows[0];
+
+//     // Vérifier le mot de passe
+//     const validPassword = await bcrypt.compare(password, user.password_hash);
+//     if (!validPassword) {
+//       return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+//     }
+
+//     // Générer un JWT
+//     const token = jwt.sign(
+//       { id: user.id, email: user.email },
+//       process.env.JWT_SECRET || "secretKey",
+//       { expiresIn: "1d" }
+//     );
+
+//     res.json({
+//       success: true,
+//       token,
+//       user: {
+//         id: user.id,
+//         name: user.name,
+//         email: user.email,
+//         phone: user.phone,
+//         role: user.role,
+//       },
+//     });
+//   } catch (err) {
+//     console.error("Login error:", err);
+//     res.status(500).json({ error: "Erreur serveur" });
+//   }
+// });
+
+
 app.post("/api/login", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  try {
-    // Vérifier si l'utilisateur existe
-    const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
-    if (rows.length === 0) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
-
-    const user = rows[0];
-
-    // Vérifier le mot de passe
-    const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
-
-    // Générer un JWT
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET || "secretKey",
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      success: true,
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-
-
-app.post("/api/login2", async (req: Request, res: Response) => {
   const { identifier, password } = req.body; // email OU username
 
   if (!identifier || !password) {

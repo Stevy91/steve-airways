@@ -20,7 +20,7 @@ export default function Login() {
         setError("");
 
         try {
-            const res = await fetch("https://steve-airways.onrender.com/api/login2", {
+            const res = await fetch("https://steve-airways.onrender.com/api/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier, password }),

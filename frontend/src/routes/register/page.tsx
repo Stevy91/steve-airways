@@ -4,7 +4,7 @@ import { UserPlus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom"; // si tu utilises react-router
 
 export default function Register() {
-    const [userName, setUserName] = useState("");
+    const [username, setUserName] = useState("");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
@@ -33,7 +33,7 @@ export default function Register() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
                 },
-                body: JSON.stringify({userName, name, phone, email, password, role}),
+                body: JSON.stringify({username, name, phone, email, password, role}),
             });
 
             const data = await res.json();
@@ -73,7 +73,7 @@ export default function Register() {
                         <input
                             type="text"
                             placeholder="Dupont"
-                            value={userName}
+                            value={username}
                             onChange={(e) => setUserName(e.target.value)}
                             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                             required
