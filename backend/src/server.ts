@@ -2723,28 +2723,82 @@ async function adminOnly(req: any, res: Response, next: any) {
 }
 
 // Register (protégé)
-app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
-  const { name, email, password, phone, role } = req.body; // optionnel: permettre de créer admin
-  console.log("Register body:", req.body);
+// app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
+//   const { userName, name, email, password, phone, role } = req.body; // optionnel: permettre de créer admin
+//   console.log("Register body:", req.body);
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "Nom, email et mot de passe requis" });
+//   if (!userName || !name || !email || !password) {
+//     return res.status(400).json({ error: "Nom, email et mot de passe requis" });
+//   }
+
+//   try {
+//     const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
+//     if (rows.length > 0) {
+//       return res.status(400).json({ error: "Email déjà utilisé" });
+//     }
+
+//      const [rows2] = await pool.query<User[]>("SELECT * FROM users WHERE userName = ?", [userName]);
+//     if (rows2.length > 0) {
+//       return res.status(400).json({ error: "Nom utilisateur déjà utilisé" });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const [result] = await pool.execute<ResultSetHeader>(
+//       "INSERT INTO users (userName, name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?, ?)",
+//       [userName, name, email, hashedPassword, phone ?? null, role ?? "user"]
+//     );
+
+//     res.status(201).json({ success: true, id: (result as ResultSetHeader).insertId });
+//   } catch (err) {
+//     console.error("Register error:", err);
+//     res.status(500).json({ error: "Erreur serveur" });
+//   }
+// });
+
+app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
+  const { username, name, email, password, phone, role } = req.body;
+
+  if (!username || !name || !email || !password) {
+    return res.status(400).json({
+      error: "Username, nom, email et mot de passe requis",
+    });
   }
 
   try {
-    const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE email = ?", [email]);
-    if (rows.length > 0) {
+    const [emailExists] = await pool.query<User[]>(
+      "SELECT id FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (emailExists.length > 0) {
       return res.status(400).json({ error: "Email déjà utilisé" });
+    }
+
+    const [usernameExists] = await pool.query<User[]>(
+      "SELECT id FROM users WHERE username = ?",
+      [username]
+    );
+
+    if (usernameExists.length > 0) {
+      return res.status(400).json({ error: "Nom d'utilisateur déjà utilisé" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const allowedRoles = ["user", "agent", "admin"];
+    const finalRole = allowedRoles.includes(role) ? role : "user";
+
     const [result] = await pool.execute<ResultSetHeader>(
-      "INSERT INTO users (name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)",
-      [name, email, hashedPassword, phone ?? null, role ?? "user"]
+      `INSERT INTO users (username, name, email, password_hash, phone, role)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [username, name, email, hashedPassword, phone ?? null, finalRole]
     );
 
-    res.status(201).json({ success: true, id: (result as ResultSetHeader).insertId });
+    res.status(201).json({
+      success: true,
+      id: result.insertId,
+    });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ error: "Erreur serveur" });
