@@ -2759,7 +2759,7 @@ async function adminOnly(req: any, res: Response, next: any) {
 app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
   const { username, name, email, password, phone, role } = req.body;
 
-  if (!username || !name || !email || !password) {
+  if (!name || !password) {
     return res.status(400).json({
       error: "Username, nom, email et mot de passe requis",
     });
