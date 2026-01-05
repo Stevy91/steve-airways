@@ -1791,7 +1791,1103 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 
 
 
+
+app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) => {
+  const connection = await pool.getConnection();
+  const userId = req.user.id;
+
+  try {
+    await connection.beginTransaction();
+    console.log("✅ Transaction started");
+
+    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        console.error(`Missing field: ${field}`);
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    const {
+      flightId,
+      passengers,
+      contactInfo,
+      totalPrice,
+      referenceNumber,
+      unpaid,
+      returnFlightId,
+      departureDate,
+      companyName,
+      paymentMethod = "card",
+    } = req.body;
+
+    const typeVol = passengers[0]?.typeVol || "plane";
+    
+    // VÉRIFICATION : S'assurer qu'il y a au moins un passager
+    if (!passengers || passengers.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        error: "Au moins un passager est requis pour créer un ticket",
+        details: "La liste des passagers est vide"
+      });
+    }
+
+     let returnFlightIdResolved = returnFlightId || null;
+    let returnDateResolved = null;
+
+    // Si le client a fourni un numéro de vol retour
+    if (passengers[0]?.flightNumberReturn) {
+      const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
+
+      // CORRECTION : Utiliser departure_time au lieu de departure_date
+      const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT id, departure_time FROM flights WHERE flight_number = ?",
+        [flightNumberReturn]
+      );
+
+      if (returnFlightRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          error: "Return flight not found",
+          details: `Aucun vol trouvé avec le numéro de vol ${flightNumberReturn}`
+        });
+      }
+
+      returnFlightIdResolved = returnFlightRows[0].id;
+      // CORRECTION : Récupérer departure_time
+      returnDateResolved = returnFlightRows[0].departure_time;
+    }
+
+    // SI returnFlightId est fourni directement mais pas returnDate, on le récupère de la DB
+    if (returnFlightId && !returnDateResolved) {
+      const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT departure_time FROM flights WHERE id = ?",
+        [returnFlightId]
+      );
+      
+      if (flightRows.length > 0) {
+        returnFlightIdResolved = returnFlightId;
+        returnDateResolved = flightRows[0].departure_time;
+      }
+    }
+
+    // SI returnFlightIdResolved existe mais pas returnDateResolved, on essaie de le trouver
+    if (returnFlightIdResolved && !returnDateResolved) {
+      const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT departure_time FROM flights WHERE id = ?",
+        [returnFlightIdResolved]
+      );
+      
+      if (flightRows.length > 0) {
+        returnDateResolved = flightRows[0].departure_time;
+      } else {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          error: "Return flight not found in database",
+          details: `Aucun vol trouvé avec l'ID ${returnFlightIdResolved}`
+        });
+      }
+    }
+
+    console.log("📅 Dates récupérées:", {
+      departureDate,
+      returnDateResolved,
+      returnFlightIdResolved,
+      hasReturnFlight: !!returnFlightIdResolved,
+      hasReturnDate: !!returnDateResolved
+    });
+
+    // Vérifier les vols
+    const TotalPrice2 = returnFlightIdResolved ? totalPrice * 2 : totalPrice;
+    const flightIds = returnFlightIdResolved ? [flightId, returnFlightIdResolved] : [flightId];
+    const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+      [flightIds],
+    );
+    const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
+    const flights = flightsRows as mysql.RowDataPacket[];
+
+    if (flights.length !== flightIds.length) {
+      await connection.rollback();
+      throw new Error("One or more flights not found");
+    }
+
+    for (const flight of flights) {
+      if (flight.seats_available < passengers.length) {
+        await connection.rollback();
+        return res.status(400).json({
+          error: "Not enough seats available",
+          details: `Not enough seats available for flight ${flight.id}`,
+          flightId: flight.id,
+          seatsAvailable: flight.seats_available,
+          passengersNeeded: passengers.length
+        });
+      }
+    }
+
+    // VÉRIFICATION DES DOUBLONS : Version améliorée
+    console.log("🔍 Vérification des doublons de réservation...");
+
+    const duplicatePassengers = [];
+    const now = new Date();
+
+    for (const passenger of passengers) {
+      if (!passenger.firstName || !passenger.lastName) {
+        await connection.rollback();
+        return res.status(400).json({
+          error: "Informations passager incomplètes",
+          details: `Le passager doit avoir un prénom et un nom de famille`
+        });
+      }
+
+      // Normaliser le nom pour la comparaison
+      const normalizedFirstName = passenger.firstName.trim().toLowerCase();
+      const normalizedLastName = passenger.lastName.trim().toLowerCase();
+
+      // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
+      // Construction dynamique de la requête en fonction de la présence d'un vol retour
+      
+      let duplicateCheckQuery = `
+        SELECT 
+          p.first_name,
+          p.last_name,
+          b.booking_reference,
+          b.status,
+          b.departure_date,
+          b.return_date,
+          f1.flight_number AS outbound_flight,
+          f2.flight_number AS return_flight
+        FROM passengers p
+        JOIN bookings b ON p.booking_id = b.id
+        LEFT JOIN flights f1 ON b.flight_id = f1.id
+        LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+        WHERE LOWER(p.first_name) = ?
+          AND LOWER(p.last_name) = ?
+          AND b.status NOT IN ('cancelled', 'refunded')
+          AND (
+            -- 🔹 DÉJÀ SUR LE VOL ALLER
+            (
+              b.flight_id = ?
+              AND DATE(b.departure_date) = DATE(?)
+            )
+      `;
+      
+      const queryParams = [
+        normalizedFirstName,
+        normalizedLastName,
+        flightId,
+        departureDate
+      ];
+
+      // Ajouter la condition pour le vol retour si disponible
+      if (returnFlightIdResolved && returnDateResolved) {
+        duplicateCheckQuery += `
+            -- 🔹 DÉJÀ SUR LE VOL RETOUR
+            OR (
+              b.return_flight_id = ?
+              AND DATE(b.return_date) = DATE(?)
+            )
+
+            -- 🔹 DÉJÀ SUR UN ROUNDTRIP COMPLET IDENTIQUE
+            OR (
+              b.flight_id = ?
+              AND b.return_flight_id = ?
+              AND DATE(b.departure_date) = DATE(?)
+            )
+        `;
+        
+        queryParams.push(
+          returnFlightIdResolved,
+          returnDateResolved,
+          flightId,
+          returnFlightIdResolved,
+          departureDate
+        );
+      }
+
+      duplicateCheckQuery += `)`;
+
+      const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
+        duplicateCheckQuery,
+        queryParams
+      );
+
+      if (existingBasic.length > 0) {
+        duplicatePassengers.push({
+          passenger: `${passenger.firstName} ${passenger.lastName}`,
+          reason: "Même nom et prénom sur même vol et même date",
+          existingBookings: existingBasic.map(b => ({
+            bookingReference: b.booking_reference,
+            status: b.status,
+            flightNumber: b.outbound_flight || b.return_flight,
+            departureDate: b.departure_date,
+            returnDate: b.return_date
+          }))
+        });
+      }
+    }
+
+    // Si des doublons sont trouvés, annuler et retourner une erreur
+    if (duplicatePassengers.length > 0) {
+      await connection.rollback();
+      console.log("❌ Doublons détectés:", duplicatePassengers);
+
+      const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
+
+      return res.status(409).json({
+        success: false,
+        error: "Duplicate booking detected",
+        details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
+        duplicatePassengers: duplicatePassengers,
+        message: `Impossible de créer le ticket. Le(s) passager(s) suivant(s) ont déjà une réservation sur ce vol : ${duplicateNames}`
+      });
+    }
+
+    console.log("✅ Aucun doublon détecté, poursuite de la création du ticket");
+
+    // Création réservation
+    const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const depDate = formatDateToSQL(departureDate);
+    const retDate = returnDateResolved ? formatDateToSQL(returnDateResolved) : null;
+
+    const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO bookings (
+          flight_id, payment_intent_id, total_price,
+          contact_email, contact_phone, status,
+          type_vol, type_v, guest_user, guest_email,
+          created_at, updated_at, departure_date,
+          return_date, passenger_count, booking_reference, return_flight_id,
+          payment_method, companyName, user_created_booking
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        flightId,
+        referenceNumber,
+        TotalPrice2,
+        contactInfo.email,
+        contactInfo.phone,
+        unpaid || "confirmed",
+        typeVol,
+        typeVolV,
+        1,
+        contactInfo.email,
+        now,
+        now,
+        depDate,
+        retDate,
+        passengers.length,
+        bookingReference,
+        returnFlightIdResolved || null,
+        paymentMethod,
+        companyName,
+        userId,
+      ],
+    );
+
+    const bookingResult = bookingResultRows as mysql.OkPacket;
+
+    const [pamentResultRows] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO payments (
+          booking_id, amount, currency,
+          payment_method, payment_status, transaction_reference, userId, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bookingResult.insertId,
+        TotalPrice2,
+        "USD",
+        paymentMethod,
+        unpaid || "confirmed",
+        referenceNumber,
+        userId,
+        now 
+      ],
+    );
+
+    const paymentgResult = pamentResultRows as mysql.OkPacket;
+
+    // Enregistrer les passagers
+    for (const passenger of passengers) {
+      await connection.query(
+        `INSERT INTO passengers (
+          booking_id, first_name, middle_name, last_name, date_of_birth, idClient, idTypeClient, gender, title, address, type,
+          type_vol, type_v, country, nationality,
+          phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          bookingResult.insertId,
+          passenger.firstName,
+          passenger.middleName || null,
+          passenger.lastName,
+          passenger.dateOfBirth || null,
+          passenger.idClient || null,
+          passenger.idTypeClient || "passport",
+          passenger.gender || "other",
+          passenger.title || "Mr",
+          passenger.address || null,
+          passenger.type,
+          passenger.typeVol || "plane",
+          typeVolV,
+          passenger.country,
+          passenger.nationality || null,
+          passenger.phone || contactInfo.phone,
+          passenger.email || contactInfo.email,
+          passenger.nom_urgence || null,
+          passenger.email_urgence || null,
+          passenger.tel_urgence || null,
+          now,
+          now,
+        ],
+      );
+    }
+
+    // Mise à jour des sièges
+    for (const flight of flights) {
+      await connection.execute(
+        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+        [passengers.length, flight.id],
+      );
+    }
+
+    // Notification
+    try {
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          "ticket",
+          `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+          bookingResult.insertId,
+          false,
+          now,
+        ],
+      );
+
+      io.emit("new-notification", {
+        message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+        bookingId: bookingResult.insertId,
+        createdAt: now,
+      });
+    } catch (notifyErr) {
+      console.error("⚠️ Notification error (non bloquant):", notifyErr);
+    }
+
+
+    // Commit final
+    await connection.commit();
+
+    // ----- IMPRESSION DU REÇU DÉTAILLÉ POUR 80mm -----
+    try {
+      const escpos = require("escpos");
+      const USB = require("escpos-usb");
+      
+      // Récupérer les informations détaillées pour l'impression
+      const [bookingDetails] = await connection.query<mysql.RowDataPacket[]>(
+        `SELECT b.*, 
+                f1.flight_number as outbound_flight_number,
+                f1.departure_city as departure_city,
+                f1.arrival_city as arrival_city,
+                f1.departure_time as departure_time,
+                f1.arrival_time as arrival_time,
+                f2.flight_number as return_flight_number,
+                f2.departure_city as return_departure_city,
+                f2.arrival_city as return_arrival_city,
+                f2.departure_time as return_departure_time,
+                f2.arrival_time as return_arrival_time
+         FROM bookings b
+         LEFT JOIN flights f1 ON b.flight_id = f1.id
+         LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+         WHERE b.id = ?`,
+        [bookingResult.insertId]
+      );
+
+      const booking = bookingDetails[0];
+      
+      // Récupérer la liste des passagers
+      const [passengerList] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT first_name, last_name, date_of_birth FROM passengers WHERE booking_id = ?",
+        [bookingResult.insertId]
+      );
+
+      const device = new USB();
+      const printer = new escpos.Printer(device);
+
+      device.open(function(error: any) {
+        if (error) {
+          console.error("❌ Erreur ouverture imprimante:", error);
+          return;
+        }
+
+        // Configuration pour 80mm
+        printer
+          .encode('UTF-8')
+          
+          // EN-TÊTE
+          .align('CT')
+          .style('B')
+          .size(2, 2)
+          .text('✈️ AGENCE DE VOYAGE ✈️')
+          .size(1, 1)
+          .style('NORMAL')
+          .text('----------------------------------------')
+          .feed(1)
+          
+          // TITRE PRINCIPAL
+          .align('CT')
+          .style('B')
+          .size(1, 2)
+          .text('RÉCUS DE RÉSERVATION')
+          .size(1, 1)
+          .feed(1)
+          
+          // INFORMATIONS GÉNÉRALES
+          .align('LT')
+          .style('B')
+          .text('INFORMATIONS GÉNÉRALES:')
+          .style('NORMAL')
+          .text('----------------------------------------')
+          .text(`Référence:     ${bookingReference}`)
+          .text(`Date émission: ${new Date().toLocaleDateString('fr-FR')}`)
+          .text(`Heure:         ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
+          .text(`N° Transaction:${referenceNumber || 'N/A'}`)
+          .text('----------------------------------------')
+          .feed(1)
+          
+          // VOL ALLER
+          .style('B')
+          .text('VOL ALLER:')
+          .style('NORMAL')
+          .text(`Vol:      ${booking.outbound_flight_number}`)
+          .text(`De:       ${booking.departure_city}`)
+          .text(`Vers:     ${booking.arrival_city}`)
+          .text(`Départ:   ${new Date(booking.departure_time).toLocaleDateString('fr-FR')}`)
+          .text(`Heure:    ${new Date(booking.departure_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
+          .text(`Arrivée:  ${new Date(booking.arrival_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
+          .text('----------------------------------------')
+          .feed(1);
+        
+        // VOL RETOUR (si existe)
+        if (booking.return_flight_number) {
+          printer
+            .style('B')
+            .text('VOL RETOUR:')
+            .style('NORMAL')
+            .text(`Vol:      ${booking.return_flight_number}`)
+            .text(`De:       ${booking.return_departure_city}`)
+            .text(`Vers:     ${booking.return_arrival_city}`)
+            .text(`Départ:   ${new Date(booking.return_departure_time).toLocaleDateString('fr-FR')}`)
+            .text(`Heure:    ${new Date(booking.return_departure_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
+            .text(`Arrivée:  ${new Date(booking.return_arrival_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`)
+            .text('----------------------------------------')
+            .feed(1);
+        }
+        
+        // LISTE DES PASSAGERS
+        printer
+          .style('B')
+          .text(`PASSAGERS (${passengerList.length}):`)
+          .style('NORMAL')
+          .text('----------------------------------------');
+        
+        passengerList.forEach((passenger: any, index: number) => {
+          const birthDate = passenger.date_of_birth ? 
+            new Date(passenger.date_of_birth).toLocaleDateString('fr-FR') : 'N/A';
+          
+          printer
+            .text(`Passager ${index + 1}:`)
+            .text(`  Nom: ${passenger.first_name} ${passenger.last_name}`)
+            .text(`  Né(e): ${birthDate}`);
+        });
+        
+        printer
+          .text('----------------------------------------')
+          .feed(1)
+          
+          // DÉTAILS DE PAIEMENT
+          .style('B')
+          .text('DÉTAILS DE PAIEMENT:')
+          .style('NORMAL')
+          .text('----------------------------------------')
+          .text(`Total:          ${booking.total_price} USD`)
+          .text(`Méthode:        ${getPaymentMethodText(booking.payment_method)}`)
+          .text(`Statut:         ${getStatusText(booking.status)}`)
+          .text(`Mode voyage:    ${booking.type_v === 'roundtrip' ? 'Aller-Retour' : 'Aller Simple'}`)
+          .text('----------------------------------------')
+          .feed(1)
+          
+          // INFORMATIONS DE CONTACT
+          .style('B')
+          .text('INFORMATIONS CLIENT:')
+          .style('NORMAL')
+          .text('----------------------------------------')
+          .text(`Email:     ${booking.contact_email}`)
+          .text(`Téléphone: ${booking.contact_phone}`)
+          .text(`Agence:    ${companyName || 'N/A'}`)
+          .text('----------------------------------------')
+          .feed(2)
+          
+          // PIED DE PAGE
+          .align('CT')
+          .style('B')
+          .size(1, 2)
+          .text('MERCI POUR VOTRE CONFIANCE !')
+          .size(1, 1)
+          .feed(1)
+          .text('****************************************')
+          .feed(1)
+          .style('NORMAL')
+          .text('IMPORTANT:')
+          .text('• Présentez ce reçu à l\'enregistrement')
+          .text('• Arrivez 2h avant le décollage')
+          .text('• Ayez vos papiers d\'identité')
+          .feed(1)
+          .text('ASSISTANCE:')
+          .text('📞 +XXX XX XXX XXX')
+          .text('📧 contact@agencevoyage.com')
+          .feed(1)
+          .text('⚠️ Conservez ce reçu précieusement')
+          .feed(3)
+          
+          .cut()
+          .close();
+          
+        console.log("✅ Reçu 80mm imprimé avec succès");
+      });
+
+    } catch (printError: any) {
+      console.error("⚠️ Erreur impression reçu:", printError);
+      // Ne pas bloquer la réponse en cas d'erreur d'impression
+    }
+
+    // ✅ Réponse succès
+    res.status(200).json({
+      success: true,
+      bookingId: bookingResult.insertId,
+      bookingReference,
+      passengerCount: passengers.length,
+      paymentMethod,
+      createdBy: userId,
+      printedReceipt: true,
+      message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
+    });
+
+  } catch (error: any) {
+    await connection.rollback();
+    console.error("❌ ERREUR DÉTAILLÉE:", {
+      message: error.message,
+      stack: error.stack,
+      sqlMessage: error.sqlMessage,
+      code: error.code,
+      sql: error.sql
+    });
+
+    // Vérifier si c'est une erreur de doublon SQL
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      return res.status(409).json({
+        success: false,
+        error: "Duplicate entry",
+        details: "Une réservation similaire existe déjà",
+        message: "Impossible de créer le ticket : une réservation similaire existe déjà"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Ticket creation failed",
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+// Fonctions utilitaires pour le texte avec types TypeScript
+function getPaymentMethodText(method: string): string {
+  const methods: { [key: string]: string } = {
+    'card': 'Carte Bancaire',
+    'cash': 'Espèces',
+    'check': 'Chèque',
+    'transfer': 'Virement',
+    'mobile_money': 'Mobile Money',
+    'credit_card': 'Carte de Crédit',
+    'debit_card': 'Carte de Débit'
+  };
+  return methods[method] || method;
+}
+
+function getStatusText(status: string): string {
+  const statuses: { [key: string]: string } = {
+    'confirmed': 'Confirmé',
+    'pending': 'En attente',
+    'cancelled': 'Annulé',
+    'refunded': 'Remboursé',
+    'paid': 'Payé',
+    'unpaid': 'Non payé',
+    'expired': 'Expiré'
+  };
+  return statuses[status] || status;
+}
+
+
 app.post("/api/create-ticket2", authMiddleware, async (req: any, res: Response) => {
+  const connection = await pool.getConnection();
+  const userId = req.user.id;
+
+  try {
+    await connection.beginTransaction();
+    console.log("✅ Transaction started");
+
+    const requiredFields = ["flightId", "passengers", "contactInfo", "totalPrice"];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        console.error(`Missing field: ${field}`);
+        throw new Error(`Missing required field: ${field}`);
+      }
+    }
+
+    const {
+      flightId,
+      passengers,
+      contactInfo,
+      totalPrice,
+      referenceNumber,
+      unpaid,
+      returnFlightId,
+      departureDate,
+      companyName,
+      paymentMethod = "card",
+    } = req.body;
+
+    const typeVol = passengers[0]?.typeVol || "plane";
+    
+
+    // VÉRIFICATION : S'assurer qu'il y a au moins un passager
+    if (!passengers || passengers.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        error: "Au moins un passager est requis pour créer un ticket",
+        details: "La liste des passagers est vide"
+      });
+    }
+
+
+    let returnFlightIdResolved = returnFlightId || null;
+    let returnDateResolved = null;
+
+    // Si le client a fourni un numéro de vol retour
+    if (passengers[0]?.flightNumberReturn) {
+      const flightNumberReturn = passengers[0].flightNumberReturn.trim().toUpperCase();
+
+      // CORRECTION : Utiliser departure_time au lieu de departure_date
+      const [returnFlightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT id, departure_time FROM flights WHERE flight_number = ?",
+        [flightNumberReturn]
+      );
+
+      if (returnFlightRows.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          error: "Return flight not found",
+          details: `Aucun vol trouvé avec le numéro de vol ${flightNumberReturn}`
+        });
+      }
+
+      returnFlightIdResolved = returnFlightRows[0].id;
+      // CORRECTION : Récupérer departure_time
+      returnDateResolved = returnFlightRows[0].departure_time;
+    }
+
+    // SI returnFlightId est fourni directement mais pas returnDate, on le récupère de la DB
+    if (returnFlightId && !returnDateResolved) {
+      const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT departure_time FROM flights WHERE id = ?",
+        [returnFlightId]
+      );
+      
+      if (flightRows.length > 0) {
+        returnFlightIdResolved = returnFlightId;
+        returnDateResolved = flightRows[0].departure_time;
+      }
+    }
+
+    // SI returnFlightIdResolved existe mais pas returnDateResolved, on essaie de le trouver
+    if (returnFlightIdResolved && !returnDateResolved) {
+      const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT departure_time FROM flights WHERE id = ?",
+        [returnFlightIdResolved]
+      );
+      
+      if (flightRows.length > 0) {
+        returnDateResolved = flightRows[0].departure_time;
+      } else {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          error: "Return flight not found in database",
+          details: `Aucun vol trouvé avec l'ID ${returnFlightIdResolved}`
+        });
+      }
+    }
+
+    console.log("📅 Dates récupérées:", {
+      departureDate,
+      returnDateResolved,
+      returnFlightIdResolved,
+      hasReturnFlight: !!returnFlightIdResolved,
+      hasReturnDate: !!returnDateResolved
+    });
+
+    // Vérifier les vols
+    const TotalPrice2 = returnFlightIdResolved ? totalPrice * 2 : totalPrice;
+    const flightIds = returnFlightIdResolved ? [flightId, returnFlightIdResolved] : [flightId];
+    const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
+      [flightIds],
+    );
+    const typeVolV = returnFlightIdResolved ? "roundtrip" : "onway";
+    const flights = flightsRows as mysql.RowDataPacket[];
+
+    if (flights.length !== flightIds.length) {
+      await connection.rollback();
+      throw new Error("One or more flights not found");
+    }
+
+    for (const flight of flights) {
+      if (flight.seats_available < passengers.length) {
+        await connection.rollback();
+        return res.status(400).json({
+          error: "Not enough seats available",
+          details: `Not enough seats available for flight ${flight.id}`,
+          flightId: flight.id,
+          seatsAvailable: flight.seats_available,
+          passengersNeeded: passengers.length
+        });
+      }
+    }
+
+    // VÉRIFICATION DES DOUBLONS : Version améliorée
+    console.log("🔍 Vérification des doublons de réservation...");
+
+    const duplicatePassengers = [];
+    const now = new Date();
+
+    for (const passenger of passengers) {
+      if (!passenger.firstName || !passenger.lastName) {
+        await connection.rollback();
+        return res.status(400).json({
+          error: "Informations passager incomplètes",
+          details: `Le passager doit avoir un prénom et un nom de famille`
+        });
+      }
+
+      // Normaliser le nom pour la comparaison
+      const normalizedFirstName = passenger.firstName.trim().toLowerCase();
+      const normalizedLastName = passenger.lastName.trim().toLowerCase();
+
+      // OPTION 3: Vérification basique (nom + prénom) pour même vol et même date
+      // Construction dynamique de la requête en fonction de la présence d'un vol retour
+      
+      let duplicateCheckQuery = `
+        SELECT 
+          p.first_name,
+          p.last_name,
+          b.booking_reference,
+          b.status,
+          b.departure_date,
+          b.return_date,
+          f1.flight_number AS outbound_flight,
+          f2.flight_number AS return_flight
+        FROM passengers p
+        JOIN bookings b ON p.booking_id = b.id
+        LEFT JOIN flights f1 ON b.flight_id = f1.id
+        LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+        WHERE LOWER(p.first_name) = ?
+          AND LOWER(p.last_name) = ?
+          AND b.status NOT IN ('cancelled', 'refunded')
+          AND (
+            -- 🔹 DÉJÀ SUR LE VOL ALLER
+            (
+              b.flight_id = ?
+              AND DATE(b.departure_date) = DATE(?)
+            )
+      `;
+      
+      const queryParams = [
+        normalizedFirstName,
+        normalizedLastName,
+        flightId,
+        departureDate
+      ];
+
+      // Ajouter la condition pour le vol retour si disponible
+      if (returnFlightIdResolved && returnDateResolved) {
+        duplicateCheckQuery += `
+            -- 🔹 DÉJÀ SUR LE VOL RETOUR
+            OR (
+              b.return_flight_id = ?
+              AND DATE(b.return_date) = DATE(?)
+            )
+
+            -- 🔹 DÉJÀ SUR UN ROUNDTRIP COMPLET IDENTIQUE
+            OR (
+              b.flight_id = ?
+              AND b.return_flight_id = ?
+              AND DATE(b.departure_date) = DATE(?)
+            )
+        `;
+        
+        queryParams.push(
+          returnFlightIdResolved,
+          returnDateResolved,
+          flightId,
+          returnFlightIdResolved,
+          departureDate
+        );
+      }
+
+      duplicateCheckQuery += `)`;
+
+      const [existingBasic] = await connection.query<mysql.RowDataPacket[]>(
+        duplicateCheckQuery,
+        queryParams
+      );
+
+      if (existingBasic.length > 0) {
+        duplicatePassengers.push({
+          passenger: `${passenger.firstName} ${passenger.lastName}`,
+          reason: "Même nom et prénom sur même vol et même date",
+          existingBookings: existingBasic.map(b => ({
+            bookingReference: b.booking_reference,
+            status: b.status,
+            flightNumber: b.outbound_flight || b.return_flight,
+            departureDate: b.departure_date,
+            returnDate: b.return_date
+          }))
+        });
+      }
+    }
+
+    // Si des doublons sont trouvés, annuler et retourner une erreur
+    if (duplicatePassengers.length > 0) {
+      await connection.rollback();
+      console.log("❌ Doublons détectés:", duplicatePassengers);
+
+      const duplicateNames = duplicatePassengers.map(p => p.passenger).join(', ');
+
+      return res.status(409).json({
+        success: false,
+        error: "Duplicate booking detected",
+        details: "Un ou plusieurs passagers ont déjà une réservation sur ce vol pour cette date",
+        duplicatePassengers: duplicatePassengers,
+        message: `Impossible de créer le ticket. Le(s) passager(s) suivant(s) ont déjà une réservation sur ce vol : ${duplicateNames}`
+      });
+    }
+
+    console.log("✅ Aucun doublon détecté, poursuite de la création du ticket");
+
+    // Création réservation
+    const bookingReference = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const depDate = formatDateToSQL(departureDate);
+    const retDate = returnDateResolved ? formatDateToSQL(returnDateResolved) : null;
+
+    const [bookingResultRows] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO bookings (
+          flight_id, payment_intent_id, total_price,
+          contact_email, contact_phone, status,
+          type_vol, type_v, guest_user, guest_email,
+          created_at, updated_at, departure_date,
+          return_date, passenger_count, booking_reference, return_flight_id,
+          payment_method, companyName, user_created_booking
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        flightId,
+        referenceNumber,
+        TotalPrice2,
+        contactInfo.email,
+        contactInfo.phone,
+        unpaid || "confirmed",
+        typeVol,
+        typeVolV,
+        1,
+        contactInfo.email,
+        now,
+        now,
+        depDate,
+        retDate,
+        passengers.length,
+        bookingReference,
+        returnFlightIdResolved || null,
+        paymentMethod,
+        companyName,
+        userId,
+      ],
+    );
+
+    const bookingResult = bookingResultRows as mysql.OkPacket;
+
+    const [pamentResultRows] = await connection.query<mysql.OkPacket>(
+      `INSERT INTO payments (
+          booking_id, amount, currency,
+          payment_method, payment_status, transaction_reference, userId, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bookingResult.insertId,
+        TotalPrice2,
+        "USD",
+        paymentMethod,
+        unpaid || "confirmed",
+        referenceNumber,
+        userId,
+        now 
+      ],
+    );
+
+    const paymentgResult = pamentResultRows as mysql.OkPacket;
+
+    // Enregistrer les passagers
+    for (const passenger of passengers) {
+      await connection.query(
+        `INSERT INTO passengers (
+          booking_id, first_name, middle_name, last_name, date_of_birth, idClient, idTypeClient, gender, title, address, type,
+          type_vol, type_v, country, nationality,
+          phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          bookingResult.insertId,
+          passenger.firstName,
+          passenger.middleName || null,
+          passenger.lastName,
+          passenger.dateOfBirth || null,
+          passenger.idClient || null,
+          passenger.idTypeClient || "passport",
+          passenger.gender || "other",
+          passenger.title || "Mr",
+          passenger.address || null,
+          passenger.type,
+          passenger.typeVol || "plane",
+          typeVolV,
+          passenger.country,
+          passenger.nationality || null,
+          passenger.phone || contactInfo.phone,
+          passenger.email || contactInfo.email,
+          passenger.nom_urgence || null,
+          passenger.email_urgence || null,
+          passenger.tel_urgence || null,
+          now,
+          now,
+        ],
+      );
+    }
+
+    // Mise à jour des sièges
+    for (const flight of flights) {
+      await connection.execute(
+        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+        [passengers.length, flight.id],
+      );
+    }
+
+    
+
+    // Notification
+    try {
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          "ticket",
+          `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+          bookingResult.insertId,
+          false,
+          now,
+        ],
+      );
+
+      io.emit("new-notification", {
+        message: `Création d'un ticket ${bookingReference} (${passengers.length} passager(s)).`,
+        bookingId: bookingResult.insertId,
+        createdAt: now,
+      });
+    } catch (notifyErr) {
+      console.error("⚠️ Notification error (non bloquant):", notifyErr);
+    }
+
+    // Commit final
+    await connection.commit();
+    // ----- Impression du reçu sur l'imprimante thermique -----
+try {
+ const escpos = require("escpos");
+const USB = require("escpos-usb");
+
+const device = new USB();
+const printer = new escpos.Printer(device);
+
+  device.open(function () {
+    printer
+      .encode('UTF-8') // pour accents
+      .align('CT')
+      .text('*** Reçu Billet ***')
+      .text(`Référence: ${bookingReference}`)
+      .text(`Nombre de passagers: ${passengers.length}`)
+      .text(`Vol aller: ${flightId}${returnFlightIdResolved ? ` | Vol retour: ${returnFlightIdResolved}` : ''}`)
+      .text(`Prix total: ${TotalPrice2} USD`)
+      .text('Merci pour votre achat !')
+      .feed(2)
+      .cut()
+      .close();
+  });
+
+} catch (printError) {
+  console.error("⚠️ Erreur impression reçu:", printError);
+}
+
+    // ✅ Réponse succès
+    res.status(200).json({
+      success: true,
+      bookingId: bookingResult.insertId,
+      bookingReference,
+      passengerCount: passengers.length,
+      paymentMethod,
+      createdBy: userId,
+      message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
+    });
+
+  } catch (error: any) {
+    await connection.rollback();
+    console.error("❌ ERREUR DÉTAILLÉE:", {
+      message: error.message,
+      stack: error.stack,
+      sqlMessage: error.sqlMessage,
+      code: error.code,
+      sql: error.sql
+    });
+
+    // Vérifier si c'est une erreur de doublon SQL
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      return res.status(409).json({
+        success: false,
+        error: "Duplicate entry",
+        details: "Une réservation similaire existe déjà",
+        message: "Impossible de créer le ticket : une réservation similaire existe déjà"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Ticket creation failed",
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined,
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+
+
+app.post("/api/create-ticket3", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
   const userId = req.user.id;
 
