@@ -2766,15 +2766,7 @@ app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: R
   }
 
   try {
-    const [emailExists] = await pool.query<User[]>(
-      "SELECT id FROM users WHERE email = ?",
-      [email]
-    );
-
-    if (emailExists.length > 0) {
-      return res.status(400).json({ error: "Email déjà utilisé" });
-    }
-
+   
     const [usernameExists] = await pool.query<User[]>(
       "SELECT id FROM users WHERE username = ?",
       [username]
