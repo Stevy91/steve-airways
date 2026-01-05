@@ -68,7 +68,7 @@ export default function Login() {
                     className="space-y-4"
                 >
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Username or E-mail</label>
+                        <label className="block text-sm font-medium text-gray-700">Nom utilisateur ou E-mail</label>
                         <input
                             type="text"
                             placeholder="Username or E-mail"
