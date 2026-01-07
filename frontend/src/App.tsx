@@ -22,9 +22,10 @@ import Terms from "./routes/terms/page";
 import Cookies from "./routes/cookies/page";
 import Privacy from "./routes/privacy/page";
 import Login from "./routes/login/page";
-import Register from "./routes/register/page";
+
 import Users from "./routes/dashboard/user/page";
 import PermissionsPage from "./routes/dashboard/permission/page";
+import Register from "./routes/dashboard/register/page";
 
 // export default function App() {
 //   const router = createBrowserRouter([
@@ -144,10 +145,7 @@ const router = createBrowserRouter([
                 path: ":lang/login",
                 element: <Login />,
             },
-            {
-                path: ":lang/register",
-                element: <Register />,
-            },
+            
             {
                 path: ":lang/cookies",
                 element: <Cookies />,
@@ -189,6 +187,7 @@ const router = createBrowserRouter([
             { path: "flights-helico", element: <FlightTableHelico /> },
             { path: "bookings-plane", element: <ViewBookingPlane /> },
             { path: "bookings-helico", element: <ViewBookingHelico /> },
+            { path: "register", element: <Register /> },
 
             { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
             { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },

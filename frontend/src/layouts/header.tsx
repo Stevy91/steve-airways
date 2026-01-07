@@ -299,7 +299,7 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                                             Change your password
                                         </a>
                                         <button
-                                            onClick={() => navigate(`/${currentLang}/register`)}
+                                            onClick={() => navigate(`/${currentLang}/dashboard/register`)}
                                             className="block w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-blue-400"
                                         >
                                             Register new user

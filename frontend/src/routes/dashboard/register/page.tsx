@@ -44,7 +44,7 @@ export default function Register() {
             }
 
             setSuccess("Compte créé avec succès !");
-            setTimeout(() => navigate(`/${currentLang}/login`), 1500); // redirection vers Login après succès
+           
         } catch (err: any) {
             setError(err.message);
         } finally {
