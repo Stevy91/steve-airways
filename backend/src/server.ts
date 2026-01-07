@@ -3688,11 +3688,11 @@ async function adminOnly(req: any, res: Response, next: any) {
 // });
 
 app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
-  const { username, name, email, password, phone, role } = req.body;
+  const { username, name, password, phone, role } = req.body;
 
-  if (!name || !password || !role) {
+  if (!username || !name || !password || !role) {
     return res.status(400).json({
-      error: "Role, nom, et mot de passe requis",
+      error: "Username, nom, rôle et mot de passe requis",
     });
   }
 
@@ -3713,9 +3713,9 @@ app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: R
     const finalRole = allowedRoles.includes(role) ? role : "user";
 
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO users (username, name, email, password_hash, phone, role)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [username, name, email, hashedPassword, phone ?? null, finalRole]
+      `INSERT INTO users (username, name, password_hash, phone, role)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, name, hashedPassword, phone ?? null, finalRole]
     );
 
     res.status(201).json({
@@ -4316,7 +4316,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
               <tr>
                 <td colspan="2" style="padding-top: 8px">
                   <div style="padding: 20px; text-align: center">
-                    <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Vol Simple"}</h3>
+                    <h3 style="color: #1a237e; margin: 0">${booking.return_flight_id ? "Vol Aller-Retour" : "Aller Simple"}</h3>
                   </div>
                   <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
                   <table width="100%" cellpadding="0" cellspacing="0">

@@ -33,7 +33,7 @@ export default function Register() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
                 },
-                body: JSON.stringify({username, name, phone, email, password, role}),
+                body: JSON.stringify({username, name, phone, password, role}),
             });
 
             const data = await res.json();
@@ -103,7 +103,7 @@ export default function Register() {
                         />
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className="block text-sm font-medium text-gray-700">E-mail</label>
                         <input
                             type="email"
@@ -113,7 +113,7 @@ export default function Register() {
                             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                           
                         />
-                    </div>
+                    </div> */}
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Role</label>
