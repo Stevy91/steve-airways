@@ -1613,7 +1613,7 @@ const handleSubmit = async () => {
                                     }
                                     .receipt-container {
                                         box-shadow: none;
-                                        border: 1px solid #ccc;
+                                       
                                         max-width: 80mm;
                                     }
                                     .controls {
@@ -1690,6 +1690,7 @@ const handleSubmit = async () => {
                                         ${formData.paymentMethod === "cash" ? "Espèces" : 
                                          formData.paymentMethod === "card" ? "Carte" :
                                          formData.paymentMethod === "cheque" ? "Chèque" :
+                                         formData.paymentMethod === "transfert" ? "dépôt" :
                                          formData.paymentMethod === "virement" ? "Virement" : "Contrat"}
                                     </span>
                                 </div>

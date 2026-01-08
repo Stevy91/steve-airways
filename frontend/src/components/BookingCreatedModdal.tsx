@@ -1610,7 +1610,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                     }
                                     .receipt-container {
                                         box-shadow: none;
-                                        border: 1px solid #ccc;
+                                       
                                         max-width: 80mm;
                                     }
                                     .controls {
@@ -1687,7 +1687,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         ${formData.paymentMethod === "cash" ? "Espèces" : 
                                          formData.paymentMethod === "card" ? "Carte" :
                                          formData.paymentMethod === "cheque" ? "Chèque" :
+                                         formData.paymentMethod === "transfert" ? "dépôt" :
                                          formData.paymentMethod === "virement" ? "Virement" : "Contrat"}
+                                         
                                     </span>
                                 </div>
                                 <div class="info-line">
