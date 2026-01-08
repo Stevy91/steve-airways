@@ -8254,6 +8254,11 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
       [0, reference]
     );
 
+      await connection.query(
+      `UPDATE payments SET amount = ? WHERE booking_id = ?`,
+      [0, booking.id]
+    );
+
       console.log(`📊 DEBUG - Données annulation:`, {
         bookingId,
         flight_id,
