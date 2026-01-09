@@ -38,6 +38,7 @@ const ViewBookingPlane = () => {
     const [endDate, setEndDate] = useState("");
     const [transactionType, setTransactionType] = useState("");
     const [status, setStatus] = useState("");
+    const [currency, setCurrency] = useState("");
     const [name, setName] = useState("");
 
     // Pagination
@@ -68,7 +69,6 @@ const ViewBookingPlane = () => {
 
     // API recherche
     
-
     const handleSearch = async () => {
     try {
         setLoading(true);
@@ -78,6 +78,7 @@ const ViewBookingPlane = () => {
         if (endDate) url.searchParams.append("endDate", endDate);
         if (transactionType) url.searchParams.append("transactionType", transactionType);
         if (status) url.searchParams.append("status", status);
+        if (currency) url.searchParams.append("currency", currency);
         if (name) url.searchParams.append("name", name);
 
         const res = await fetch(url.toString());
@@ -93,11 +94,12 @@ const ViewBookingPlane = () => {
 };
 
 
+
     // API EXPORT EXCEL
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/booking-plane-export?" +
-            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&status=${status}&name=${name}`;
+            `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&currency=${currency}&status=${status}&name=${name}`;
 
         window.open(url, "_blank");
     };
@@ -138,25 +140,25 @@ const ViewBookingPlane = () => {
             <h1 className="title">View Booking Air Plane</h1>
             {/* Filtres */}
             
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-6 mt-16 mb-6">
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Start date</label>
-                    <input
-                        type="date"
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    />
-                </div>
+             <div className="grid grid-cols-1 gap-3 md:grid-cols-7 mt-16 mb-6">
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Start date</label>
+                                <input
+                                    type="date"
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                />
+                            </div>
 
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">End date</label>
-                    <input
-                        type="date"
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    />
-                </div>
-                <div className="flex flex-col">
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">End date</label>
+                                <input
+                                    type="date"
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                />
+                            </div>
+                            <div className="flex flex-col">
                                 <label className="mb-1 font-medium text-gray-700">Name</label>
                                 <input
                                     type="text"
@@ -165,57 +167,73 @@ const ViewBookingPlane = () => {
                                     className="rounded border px-4 py-2 text-sm"
                                 />
                             </div>
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Status</label>
-                    <select
-                       onChange={(e) => setStatus(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    >
-                        <option value="">All</option>
-                        <option value="confirmed">Paid</option>
-                        <option value="pending">UnPaid</option>
-                        <option value="cancelled">Cancelled</option>
-                       
-                        
-                    </select>
-                </div>
 
-                <div className="flex flex-col">
-                    <label className="mb-1 font-medium text-gray-700">Transaction type</label>
-                    <select
-                        onChange={(e) => setTransactionType(e.target.value)}
-                        className="rounded border px-4 py-2 text-sm"
-                    >
-                        <option value="">All</option>
-                        <option value="cash">Cash</option>
-                        <option value="card">Bank Card</option>
-                        <option value="cheque">Check</option>
-                        <option value="virement">bank transfer</option>
-                        <option value="contrat">Contrat</option>
-                        <option value="transfert">Deposit</option>
-                    </select>
-                </div>
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Currency</label>
+                                <select
+                                    onChange={(e) => setCurrency(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                >
+                                    <option value="">All</option>
+                                    <option value="usd">USD</option>
+                                    <option value="htg">HTG</option>
+                                   
+                                </select>
+                            </div>
+                            
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Status</label>
+                                <select
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                >
+                                    <option value="">All</option>
+                                    <option value="confirmed">Paid</option>
+                                    <option value="pending">UnPaid</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
 
-                <div className="flex flex-col">
-                    <label className="mb-7 font-medium text-gray-700"></label>
-                    <button
-                        type="button"
-                        onClick={handleSearch}
-                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
-                    >
-                        Search
-                    </button>
-                </div>
+                            <div className="flex flex-col">
+                                <label className="mb-1 font-medium text-gray-700">Transaction type</label>
+                                <select
+                                    onChange={(e) => setTransactionType(e.target.value)}
+                                    className="rounded border px-4 py-2 text-sm"
+                                >
+                                    <option value="">All</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Bank Card</option>
+                                    <option value="cheque">Check</option>
+                                    <option value="virement">Bank transfer</option>
+                                    <option value="contrat">Contrat</option>
+                                    
+                                    <option value="transfert">Deposit</option>
 
-                <button
-                    type="button"
-                    onClick={downloadExcel}
-                    className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
-                >
-                    Excel
-                </button>
-                
-            </div>
+                                    
+                                </select>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label className="mb-7 font-medium text-gray-700"></label>
+                                <button
+                                    type="button"
+                                    onClick={handleSearch}
+                                    className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                                >
+                                    Search
+                                </button>
+                            </div>
+
+                            {(isAdmin || isOperateur) && (
+                                <button
+                                    type="button"
+                                    onClick={downloadExcel}
+                                    className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                                >
+                                    Excel
+                                </button>
+                            )}
+                        </div>
            
             {/* TABLEAU BOOKINGS */}
             <div className="card col-span-1 md:col-span-2 lg:col-span-4">

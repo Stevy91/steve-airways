@@ -167,7 +167,7 @@ const ViewBookingHelico = () => {
                             </div>
 
                             <div className="flex flex-col">
-                                <label className="mb-1 font-medium text-gray-700">Current</label>
+                                <label className="mb-1 font-medium text-gray-700">Currency</label>
                                 <select
                                     onChange={(e) => setCurrency(e.target.value)}
                                     className="rounded border px-4 py-2 text-sm"
@@ -222,13 +222,15 @@ const ViewBookingHelico = () => {
                                 </button>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={downloadExcel}
-                                className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
-                            >
-                                Excel
-                            </button>
+                            {(isAdmin || isOperateur) && (
+                                <button
+                                    type="button"
+                                    onClick={downloadExcel}
+                                    className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                                >
+                                    Excel
+                                </button>
+                            )}
                         </div>
            
             {/* TABLEAU BOOKINGS */}
