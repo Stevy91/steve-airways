@@ -3324,9 +3324,9 @@ app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
     
     // Séparer les revenus par devise
     bookings.forEach(booking => {
-      if (booking.currency === 'USD' || booking.currency === 'usd') {
+      if (booking.currency === 'usd') {
         totalRevenueUSD += booking.total_price;
-      } else if (booking.currency === 'HTG' || booking.currency === 'htg') {
+      } else if (booking.currency === 'htg') {
         totalRevenueHTG += booking.total_price;
       } else {
         // Par défaut, considérer comme USD
@@ -3371,9 +3371,9 @@ app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
         acc[month] = { usd: 0, htg: 0 };
       }
       
-      if (booking.currency === 'USD' || booking.currency === 'usd') {
+      if (booking.currency === 'usd') {
         acc[month].usd += booking.total_price;
-      } else if (booking.currency === 'HTG' || booking.currency === 'htg') {
+      } else if (booking.currency === 'htg') {
         acc[month].htg += booking.total_price;
       } else {
         acc[month].usd += booking.total_price;

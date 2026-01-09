@@ -27,7 +27,7 @@ interface ChartData {
     value: number;
 }
 
-interface DashboardStats {
+interface DashboardStats2 {
     totalRevenueUSD: number;
     totalRevenueHTG: number;
     totalBookings: number;
@@ -53,7 +53,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const DashboardPage = () => {
     const { theme } = useTheme();
-    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [stats, setStats] = useState<DashboardStats2 | null>(null);
     const [filteredStats, setFilteredStats] = useState<FilteredStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
