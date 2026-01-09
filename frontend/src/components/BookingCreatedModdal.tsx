@@ -21,6 +21,7 @@ type Flight = {
     totalPrice: number;
     fromCity: string;
     toCity: string;
+    status: string;
 };
 
 type BookingCreatedModalProps = {
@@ -52,6 +53,9 @@ type Passenger = {
     nationality?: string;
     phone?: string;
     email?: string;
+    devisePayment?: string;
+    taux_jour?: string;
+    price?: string;
 };
 
 type BookingData = {
@@ -69,6 +73,7 @@ type BookingData = {
     tabType?: string;
     totalPrice: number;
 };
+
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
     const outboundFlight = bookingData.outbound;
@@ -510,7 +515,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         passengerCount: 1,
 
         paymentMethod: "card",
-
+        price: "",
         devisePayment: "usd",
         taux_jour: "",
     };
@@ -1358,9 +1363,16 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 nationality: formData.nationality || "",
                 phone: formData.phone || "",
                 email: formData.email || "",
+                devisePayment: formData.devisePayment || "",
+                price: formData.price || "",
+                taux_jour: formData.taux_jour || "",
             });
         }
 
+
+
+
+        const numericPrice = isRoundTrip ? calculatedPrice * 2 : calculatedPrice;
         // 3️⃣ Préparer le body à envoyer selon l'API
         const body = {
             flightId: flight.id,
@@ -1372,22 +1384,17 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             totalPrice: flight.price * passengerCount,
             unpaid: formData.unpaid || "confirmed",
             referenceNumber: formData.reference || "",
-            companyName: formData.companyName || "",
             currency: formData.devisePayment || "",
+            price: numericPrice || "",
+            taux_jour: formData.taux_jour || "",
+            companyName: formData.companyName || "",
             departureDate: flight.departure.split("T")[0],
             paymentMethod: formData.paymentMethod || "card",
             idClient: formData.idClient || "",
             idTypeClient: formData.idTypeClient || "passport",
         };
 
-        console.log("📤 Envoi de la requête avec les données:", {
-            flightId: flight.id,
-            passengerCount: passengers.length,
-            totalPrice: flight.price * passengerCount,
-            email: formData.email,
-            flightNumberReturn: formData.flightNumberReturn,
-            isRoundTrip,
-        });
+      
 
         try {
             const token = localStorage.getItem("authToken");
@@ -1399,7 +1406,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
             console.log("🔑 Token JWT présent, envoi de la requête...");
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket6", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

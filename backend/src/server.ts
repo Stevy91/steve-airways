@@ -4662,14 +4662,14 @@ LEFT JOIN passengers p
 // 🔍 Recherche avancée sur les bookings avion
 app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
+    const { startDate, endDate, transactionType, currency, status, name } = req.query;
 
     // Conditions dynamiques
     let conditions = " WHERE b.type_vol = 'plane' ";
     const params: any[] = [];
 
     // 🔹 Aucun filtre → date du jour
-    if (!startDate && !endDate && !transactionType && !status && !name) {
+    if (!startDate && !endDate && !transactionType && !currency && !status && !name) {
       conditions += " AND DATE(b.created_at) = CURDATE() ";
     }
 
@@ -4695,6 +4695,13 @@ app.get("/api/booking-plane-search", async (req: Request, res: Response) => {
     if (status) {
       conditions += " AND b.status = ? ";
       params.push(status);
+    }
+
+    
+    // 🔹 Avec type de status
+    if (currency) {
+      conditions += " AND b.currency = ? ";
+      params.push(currency);
     }
 
     // 🔹 Avec nom du client
@@ -4804,14 +4811,14 @@ LEFT JOIN passengers p
 
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
+    const { startDate, endDate, transactionType, currency, status, name } = req.query;
 
     // Conditions dynamiques
     let conditions = " WHERE b.type_vol = 'helicopter' ";
     const params: any[] = [];
 
     // 🔹 Aucun filtre → date du jour
-    if (!startDate && !endDate && !transactionType && !status && !name) {
+    if (!startDate && !endDate && !transactionType && !currency && !status && !name) {
       conditions += " AND DATE(b.created_at) = CURDATE() ";
     }
 
@@ -4838,6 +4845,13 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
       conditions += " AND b.status = ? ";
       params.push(status);
     }
+
+        // 🔹 Avec type de status
+    if (currency) {
+      conditions += " AND b.currency = ? ";
+      params.push(currency);
+    }
+
 
     if (name) {
   conditions += " AND (p.first_name LIKE ? OR p.last_name LIKE ?) ";
@@ -6156,7 +6170,7 @@ ORDER BY f.departure_time;
 
 app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
+    const { startDate, endDate, transactionType, currency, status, name } = req.query;
 
     let conditions = " WHERE b.type_vol = 'helicopter' ";
     const params: any[] = [];
@@ -6184,6 +6198,12 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       params.push(status);
     }
 
+        // Filtre currency
+    if (currency) {
+      conditions += " AND b.currency = ? ";
+      params.push(currency);
+    }
+
     // Filtre name
     if (name) {
       conditions += " AND p.first_name LIKE ? ";
@@ -6199,6 +6219,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
         b.type_v,
         b.contact_email,
         b.total_price,
+        b.currency,
         b.passenger_count,
         b.status,
         b.payment_method,
@@ -6240,6 +6261,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       { key: "companyName" },
       { key: "contact_email" },
       { key: "total_price" },
+      { key: "currency" },
       { key: "passenger_count" },
       { key: "status" },
       { key: "payment_method" },
@@ -6259,6 +6281,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       "Company Name",
       "Email",
       "Total",
+      "Currency",
       "Passagers",
       "Status",
       "Méthode",
@@ -6285,6 +6308,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   'FFE0F2F1', // company
   'FFFFEBEE', // email
   'FFE1F5FE', // total_price
+  'FFFFFDE7', // currency
   'FFFFF3E0', // passenger_count
   'FFE8EAF6', // status
   'FFF1F8E9', // payment_method
@@ -6307,6 +6331,7 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
         row.companyName,
         row.contact_email,
         Number(row.total_price),
+        row.currency,
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
@@ -6369,7 +6394,7 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
 
 app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, transactionType, status, name } = req.query;
+    const { startDate, endDate, transactionType, currency, status, name } = req.query;
 
     let conditions = " WHERE b.type_vol = 'plane' ";
     const params: any[] = [];
@@ -6396,6 +6421,11 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       conditions += " AND b.status = ? ";
       params.push(status);
     }
+          // Filtre currency
+    if (currency) {
+      conditions += " AND b.currency = ? ";
+      params.push(currency);
+    }
 
     // Filtre name
     if (name) {
@@ -6412,6 +6442,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
         b.type_v,
         b.contact_email,
         b.total_price,
+        b.currency,
         b.passenger_count,
         b.status,
         b.payment_method,
@@ -6455,6 +6486,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       { key: "companyName" },
       { key: "contact_email" },
       { key: "total_price" },
+      { key: "currency" },
       { key: "passenger_count" },
       { key: "status" },
       { key: "payment_method" },
@@ -6474,6 +6506,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       "Company Name",
       "Email",
       "Total",
+      "Currency",
       "Passagers",
       "Status",
       "Méthode",
@@ -6500,6 +6533,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
   'FFE0F2F1', // company
   'FFFFEBEE', // email
   'FFE1F5FE', // total_price
+  'FFFFFDE7', // currency
   'FFFFF3E0', // passenger_count
   'FFE8EAF6', // status
   'FFF1F8E9', // payment_method
@@ -6522,6 +6556,7 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
         row.companyName,
         row.contact_email,
         Number(row.total_price),
+        row.currency,
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",

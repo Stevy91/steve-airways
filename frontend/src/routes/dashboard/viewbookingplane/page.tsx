@@ -263,7 +263,7 @@ const ViewBookingPlane = () => {
                                         </td>
 
                                         <td className="table-cell text-center">{booking.first_name} {booking.last_name}</td>
-                                        <td className="table-cell text-center">${booking.total_price}</td>
+                                        <td className="table-cell text-center">{booking.total_price}{" "}{booking.currency === "htg" ? "HTG" : "USD"}</td>
                                         <td className="table-cell text-center">{booking.passenger_count}</td>
 
                                         <td className="table-cell text-center">
