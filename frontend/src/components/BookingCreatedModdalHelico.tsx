@@ -1370,6 +1370,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             });
         }
 
+
+
+
         const numericPrice = isRoundTrip ? calculatedPrice * 2 : calculatedPrice;
         // 3️⃣ Préparer le body à envoyer selon l'API
         const body = {
@@ -1383,7 +1386,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             unpaid: formData.unpaid || "confirmed",
             referenceNumber: formData.reference || "",
             currency: formData.devisePayment || "",
-            price: formData.price || "",
+            price: numericPrice || "",
             taux_jour: formData.taux_jour || "",
             companyName: formData.companyName || "",
             departureDate: flight.departure.split("T")[0],
