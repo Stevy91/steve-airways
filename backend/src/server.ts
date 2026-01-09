@@ -2219,16 +2219,6 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
 
 
 
-
-
-
-
-
-
-
-// Middleware général pour vérifier le token
-
-
 function authMiddleware(req: any, res: Response, next: any) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -3251,45 +3241,32 @@ app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
     const { startDate, endDate, currency } = req.query;
 
     let whereClauses: string[] = [];
-    let params: any[] = [];
+let params: any[] = [];
 
-    // 📅 Filtre date
-    if (startDate && endDate) {
-      whereClauses.push("DATE(created_at) BETWEEN ? AND ?");
-      params.push(startDate, endDate);
-    }
+// Filtre date
+if (startDate && endDate) {
+  whereClauses.push("DATE(created_at) BETWEEN ? AND ?");
+  params.push(startDate, endDate);
+}
 
-    // 💱 Filtre currency
-    if (currency) {
-      whereClauses.push("currency = ?");
-      params.push(currency);
-    }
+// Filtre currency
+if (currency) {
+  whereClauses.push("currency = ?");
+  params.push(currency);
+}
 
-    
+// Construire la clause WHERE seulement si nécessaire
+const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    const whereSQL = whereClauses.length > 0
-      ? `WHERE ${whereClauses.join(" AND ")}`
-      : "";
+// Requête SQL finale
+const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
+  SELECT 
+    id, booking_reference, total_price, currency, status, created_at, passenger_count, contact_email, type_vol, type_v
+  FROM bookings
+  ${whereSQL}
+  ORDER BY created_at DESC
+`, params);
 
-      
-
-    // 1️⃣ BOOKINGS filtrés par currency
-    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
-      SELECT 
-        id, 
-        booking_reference, 
-        total_price, 
-        currency,
-        status, 
-        created_at, 
-        passenger_count, 
-        contact_email,
-        type_vol,
-        type_v
-      FROM bookings
-      ${whereClauses}
-      ORDER BY created_at DESC
-    `, params);
 
     const bookings: Booking[] = bookingRows.map((row) => ({
       id: row.id,

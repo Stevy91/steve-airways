@@ -19,6 +19,7 @@ type Booking = {
     contact_email: string;
     type_vol: string;
     type_v: string;
+    
 };
 
 interface ChartData {
@@ -37,10 +38,21 @@ interface DashboardStats {
     flightsAvailable: number;
     averageBookingValue: number;
     bookingsByStatus: { name: string; value: number }[];
-    revenueByMonth: { name: string; total: number }[];
+    revenueByMonth: { name: string; total: number;usd: number; htg: number; }[];
     bookingsByFlightType: { name: string; value: number }[];
     recentBookings: Booking[];
+    totalRevenueUSD: number;
+  totalRevenueHTG: number;
+   
+
+
+
+
 }
+
+
+
+
 
 interface FilteredStats {
     totalRevenue: number;
@@ -48,6 +60,8 @@ interface FilteredStats {
     flightsAvailable: number;
     averageBookingValue: number;
 }
+
+
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -66,6 +80,8 @@ const currencySymbol = currency === "USD" ? "$" : "HTG";
 
     
     useAuth();
+
+    
 
     // Fonction pour formater la date en YYYY-MM-DD
     const formatDateForInput = (date: Date) => {
@@ -119,21 +135,14 @@ const fetchDashboardData = async () => {
   try {
     setLoading(true);
 
-    const response = await fetch(
-      `https://steve-airways.onrender.com/api/dashboard-stats8?currency=${currency}`
+    const res = await fetch(
+      "https://steve-airways.onrender.com/api/dashboard-stats8"
     );
 
-    if (!response.ok) throw new Error();
+    if (!res.ok) throw new Error();
 
-    const data = await response.json();
-
+    const data = await res.json();
     setStats(data);
-    setFilteredStats({
-      totalRevenue: data.totalRevenue,
-      totalBookings: data.totalBookings,
-      flightsAvailable: data.flightsAvailable,
-      averageBookingValue: data.averageBookingValue,
-    });
 
   } catch {
     setError("Impossible de charger les données du dashboard");
@@ -143,33 +152,23 @@ const fetchDashboardData = async () => {
 };
 
     // Fonction pour charger les données filtrées par date
-  const fetchFilteredData = async (start: string, end: string) => {
+const fetchFilteredData = async (start: string, end: string) => {
   try {
     setSearchLoading(true);
 
-    const params = new URLSearchParams({
-      startDate: start,
-      endDate: end,
-      currency,
-    });
+    const params = new URLSearchParams({ startDate: start, endDate: end });
 
-    const response = await fetch(
+    const res = await fetch(
       `https://steve-airways.onrender.com/api/dashboard-stats8?${params}`
     );
 
-    if (!response.ok) throw new Error();
+    if (!res.ok) throw new Error();
 
-    const data = await response.json();
-
-    setFilteredStats({
-      totalRevenue: data.totalRevenue,
-      totalBookings: data.totalBookings,
-      flightsAvailable: data.flightsAvailable,
-      averageBookingValue: data.averageBookingValue,
-    });
+    const data = await res.json();
+    setStats(data);
 
   } catch {
-    alert("Impossible de charger les données filtrées");
+    alert("Erreur chargement données");
   } finally {
     setSearchLoading(false);
   }
@@ -197,6 +196,21 @@ const fetchDashboardData = async () => {
         // Recharger les données globales
         fetchDashboardData();
     };
+
+    const RevenueTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+
+  const { usd, htg } = payload[0].payload;
+
+  return (
+    <div className="rounded-lg bg-white p-3 shadow">
+      <p className="font-semibold">{label}</p>
+      <p className="text-sm text-green-600">$ {usd.toLocaleString()}</p>
+      <p className="text-sm text-blue-600">HTG {htg.toLocaleString()}</p>
+    </div>
+  );
+};
+
 
     if (loading) {
         return (
@@ -268,8 +282,8 @@ const fetchDashboardData = async () => {
                                 onChange={(e) => setCurrency(e.target.value as "USD" | "HTG")}
                                 className="rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
                             >
-                                <option value="USD">USD</option>
-                                <option value="HTG">HTG</option>
+                                <option value="usd">USD</option>
+                                <option value="htg">HTG</option>
                             </select>
                             </div>
 
@@ -305,23 +319,33 @@ const fetchDashboardData = async () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Carte Revenu Total */}
                 <div className="card-1">
-                    <p className="card-title text-slate-50">REVENU TOTAL</p>
-                    <div className="card-body transition-colors dark:bg-slate-950">
-                        <div className="flex w-full items-center justify-between">
-                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">
-                                {currencySymbol} {filteredStats.totalRevenue.toLocaleString()}
+  <p className="card-title text-slate-50">REVENU TOTAL</p>
 
-                            </p>
-                            <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
-                                <ShoppingCart
-                                    color="#ffffff"
-                                    size={40}
-                                />
-                            </div>
-                        </div>
-                        <p className="pt-7 text-xl font-bold text-slate-50 transition-colors dark:text-slate-50">Revenu total</p>
-                    </div>
-                </div>
+  <div className="card-body transition-colors dark:bg-slate-950">
+    <div className="flex w-full items-center justify-between">
+      <div>
+        {/* USD */}
+        <p className="text-4xl font-bold text-slate-50">
+          $ {stats.totalRevenueUSD.toLocaleString()}
+        </p>
+
+        {/* HTG */}
+        <p className="mt-2 text-xl font-semibold text-slate-300">
+          HTG {stats.totalRevenueHTG.toLocaleString()}
+        </p>
+      </div>
+
+      <div className="h-[90px] w-[90px] rounded-full bg-slate-50/20 p-6">
+        <ShoppingCart color="#ffffff" size={40} />
+      </div>
+    </div>
+
+    <p className="pt-7 text-xl font-bold text-slate-50">
+      Revenu total
+    </p>
+  </div>
+</div>
+
 
                 {/* Carte Réservations */}
                 <div className="card-2">
@@ -390,48 +414,26 @@ const fetchDashboardData = async () => {
                             height={300}
                         >
                             <AreaChart data={stats.revenueByMonth}>
-                                <defs>
-                                    <linearGradient
-                                        id="colorTotal"
-                                        x1="0"
-                                        y1="0"
-                                        x2="0"
-                                        y2="1"
-                                    >
-                                        <stop
-                                            offset="5%"
-                                            stopColor="#22a89f"
-                                            stopOpacity={0.8}
-                                        />
-                                        <stop
-                                            offset="95%"
-                                            stopColor="#eb2525"
-                                            stopOpacity={0}
-                                        />
-                                    </linearGradient>
-                                </defs>
-                                <Tooltip
-  formatter={(value) => [`${currencySymbol} ${value}`, "Revenu"]}
-/>
+  <defs>
+    <linearGradient id="colorUSD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="5%" stopColor="#22a89f" stopOpacity={0.8} />
+      <stop offset="95%" stopColor="#22a89f" stopOpacity={0} />
+    </linearGradient>
+  </defs>
 
+  <XAxis dataKey="name" />
+  <YAxis />
 
+  <Tooltip content={<RevenueTooltip />} />
 
-                                <XAxis
-                                    dataKey="name"
-                                    strokeWidth={0}
-                                    stroke={theme === "light" ? "#475569" : "#94a3b8"}
-                                />
-                                <YAxis
-  tickFormatter={(value) => `${currencySymbol}${value}`}
-/>
-                                <Area
-                                    type="monotone"
-                                    dataKey="total"
-                                    stroke="#2563eb"
-                                    fillOpacity={1}
-                                    fill="url(#colorTotal)"
-                                />
-                            </AreaChart>
+  <Area
+    type="monotone"
+    dataKey="usd"
+    stroke="#22a89f"
+    fill="url(#colorUSD)"
+  />
+</AreaChart>
+
                         </ResponsiveContainer>
                     </div>
                 </div>
