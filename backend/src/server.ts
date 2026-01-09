@@ -1791,7 +1791,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 });
 
 
-app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) => {
+app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
   const userId = req.user.id;
 
@@ -1810,6 +1810,9 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
     const {
       flightId,
       passengers,
+      currency,
+      price,
+      taux_jour,
       contactInfo,
       totalPrice,
       referenceNumber,
@@ -2056,7 +2059,7 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
 
     const [bookingResultRows] = await connection.query<mysql.OkPacket>(
       `INSERT INTO bookings (
-          flight_id, payment_intent_id, total_price,
+          flight_id, payment_intent_id, total_price, currency,
           contact_email, contact_phone, status,
           type_vol, type_v, guest_user, guest_email,
           created_at, updated_at, departure_date,
@@ -2066,7 +2069,8 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
       [
         flightId,
         referenceNumber,
-        TotalPrice2,
+        price,
+        currency,
         contactInfo.email,
         contactInfo.phone,
         unpaid || "confirmed",
@@ -2096,8 +2100,8 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingResult.insertId,
-        TotalPrice2,
-        "USD",
+        price,
+        currency,
         paymentMethod,
         unpaid || "confirmed",
         referenceNumber,
@@ -2177,18 +2181,6 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
     // Commit final
     await connection.commit();
 
-      const printResult = await printerService.printReceipt({
-    bookingReference,
-    bookingId: bookingResult.insertId,
-    totalPrice: totalPrice,
-    passengers: passengers,
-    
-    contactInfo: {
-      email: contactInfo.email,
-      phone: contactInfo.phone
-    }
-  });
-
     // ✅ Réponse succès
     res.status(200).json({
       success: true,
@@ -2197,12 +2189,8 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
       passengerCount: passengers.length,
       paymentMethod,
       createdBy: userId,
-      receiptPrinted: printResult.success,
-    receiptUrl: printResult.receiptUrl, // URL du PDF/HTML en cloud
       message: `Ticket créé avec succès pour ${passengers.length} passager(s)`
     });
-
-  
 
   } catch (error: any) {
     await connection.rollback();
@@ -2233,6 +2221,7 @@ app.post("/api/create-ticket4", authMiddleware, async (req: any, res: Response) 
     connection.release();
   }
 });
+
 
 
 

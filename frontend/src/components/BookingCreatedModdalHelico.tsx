@@ -53,6 +53,9 @@ type Passenger = {
     nationality?: string;
     phone?: string;
     email?: string;
+    devisePayment?: string;
+    taux_jour?: string;
+    price?: string;
 };
 
 type BookingData = {
@@ -69,7 +72,6 @@ type BookingData = {
     };
     tabType?: string;
     totalPrice: number;
-
 };
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
@@ -512,9 +514,12 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         email: "",
         phone: "",
         passengerCount: 1,
-        paymentMethod: "card",
-    };
 
+        paymentMethod: "card",
+        price: "",
+        devisePayment: "usd",
+        taux_jour: "",
+    };
 
     const [formData, setFormData] = useState(initialFormData);
 
@@ -576,18 +581,46 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         return parts.join("-");
     };
 
+    // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    //     const { name, value } = e.target;
+
+    //     // Si on modifie ID Number
+    //     if (name === "idClient") {
+    //         if (formData.idTypeClient === "nimu") {
+    //             setFormData((prev) => ({
+    //                 ...prev,
+
+    //                 idClient: formatNimuLicens(value),
+    //             }));
+    //             return;
+    //         }
+    //     }
+
+    //     // Si c’est un checkbox → on cast pour accéder à checked
+    //     if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+    //         setFormData({
+    //             ...formData,
+    //             [name]: e.target.checked ? value : "",
+    //         });
+    //         return;
+    //     }
+
+    //     setFormData((prev) => ({
+    //         ...prev,
+    //         [name]: value,
+    //     }));
+    // };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
-        // Si on modifie ID Number
-        if (name === "idClient") {
-            if (formData.idTypeClient === "nimu") {
-                setFormData((prev) => ({
-                    ...prev,
-                    idClient: formatNimuLicens(value),
-                }));
-                return;
-            }
+        // 🔹 Format spécial pour NIMU
+        if (name === "idClient" && formData.idTypeClient === "nimu") {
+            setFormData((prev) => ({
+                ...prev,
+                idClient: formatNimuLicens(value),
+            }));
+            return;
         }
 
         // Si c’est un checkbox → on cast pour accéder à checked
@@ -599,10 +632,22 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        // 🔹 Mise à jour normale
+        setFormData((prev) => {
+            const updatedData = {
+                ...prev,
+                [name]: value,
+                ...(name === "devisePayment" && value !== "htg" ? { taux_jour: "" } : {}),
+            };
+
+            // 🔹 Si on change Payment Method et que ce n’est PAS cash
+            if (name === "paymentMethod" && value !== "cash") {
+                updatedData.devisePayment = "";
+                updatedData.taux_jour = "";
+            }
+
+            return updatedData;
+        });
     };
 
     // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -1257,137 +1302,171 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     //     }
     // };
 
-    
-    
-    
-const handleSubmit = async () => {
-    setCreateTicket(true);
+    const baseFlightPrice = flight.price; // prix USD venant du backend
 
-    // 1️⃣ Validation des champs obligatoires
-    const requiredFields = [
-        { field: formData.firstName, name: "Prénom" },
-        { field: formData.lastName, name: "Nom" },
-        { field: formData.email, name: "Email" },
-        { field: formData.phone, name: "Téléphone" },
-        { field: formData.nationality, name: "Nationalité" },
-        { field: formData.dateOfBirth, name: "Date de naissance" },
-    ];
+    const calculatedPrice =
+        formData.devisePayment === "htg" && formData.taux_jour ? baseFlightPrice * Number(formData.taux_jour) : baseFlightPrice;
+    const priceCurrency = formData.devisePayment === "htg" ? "HTG" : "USD";
 
-    const missingFields = requiredFields.filter((f) => !f.field).map((f) => f.name);
+    const handleSubmit = async () => {
+        setCreateTicket(true);
 
-    if (missingFields.length > 0) {
-        toast.error(`Veuillez remplir tous les champs obligatoires : ${missingFields.join(", ")}`, {
-            style: {
-                background: "#fee2e2",
-                color: "#991b1b",
-                border: "1px solid #f87171",
+        // 1️⃣ Validation des champs obligatoires
+        const requiredFields = [
+            { field: formData.firstName, name: "Prénom" },
+            { field: formData.lastName, name: "Nom" },
+            { field: formData.email, name: "Email" },
+            { field: formData.phone, name: "Téléphone" },
+            { field: formData.nationality, name: "Nationalité" },
+            { field: formData.dateOfBirth, name: "Date de naissance" },
+        ];
+
+        const missingFields = requiredFields.filter((f) => !f.field).map((f) => f.name);
+
+        if (missingFields.length > 0) {
+            toast.error(`Veuillez remplir tous les champs obligatoires : ${missingFields.join(", ")}`, {
+                style: {
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #f87171",
+                },
+                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+            });
+            setCreateTicket(false);
+            return;
+        }
+
+        // 2️⃣ Préparer les passagers
+        const passengers: Passenger[] = [];
+        const passengerCount = Number(formData.passengerCount || 1);
+
+        for (let i = 0; i < passengerCount; i++) {
+            passengers.push({
+                firstName: formData.firstName,
+                flightNumberReturn: formData.flightNumberReturn || "",
+                middleName: formData.middleName || "",
+                lastName: formData.lastName,
+                reference: formData.reference || "",
+                companyName: formData.companyName || "",
+                idClient: formData.idClient || "",
+                idTypeClient: formData.idTypeClient || "passport",
+                nom_urgence: formData.nom_urgence || "",
+                email_urgence: formData.email_urgence || "",
+                tel_urgence: formData.tel_urgence || "",
+                dateOfBirth: formData.dateOfBirth,
+                gender: formData.gender || "other",
+                title: formData.title || "Mr",
+                address: formData.address || "",
+                type: "adult",
+                typeVol: flight?.type || "plane",
+                typeVolV: isRoundTrip ? "roundtrip" : "onway",
+                country: formData.country || "",
+                nationality: formData.nationality || "",
+                phone: formData.phone || "",
+                email: formData.email || "",
+                devisePayment: formData.devisePayment || "",
+                price: formData.price || "",
+                taux_jour: formData.taux_jour || "",
+            });
+        }
+
+        // 3️⃣ Préparer le body à envoyer selon l'API
+        const body = {
+            flightId: flight.id,
+            passengers,
+            contactInfo: {
+                email: formData.email,
+                phone: formData.phone,
             },
-            iconTheme: { primary: "#fff", secondary: "#dc2626" },
-        });
-        setCreateTicket(false);
-        return;
-    }
-
-    // 2️⃣ Préparer les passagers
-    const passengers: Passenger[] = [];
-    const passengerCount = Number(formData.passengerCount || 1);
-
-    for (let i = 0; i < passengerCount; i++) {
-        passengers.push({
-            firstName: formData.firstName,
-            flightNumberReturn: formData.flightNumberReturn || "",
-            middleName: formData.middleName || "",
-            lastName: formData.lastName,
-            reference: formData.reference || "",
+            totalPrice: flight.price * passengerCount,
+            unpaid: formData.unpaid || "confirmed",
+            referenceNumber: formData.reference || "",
+            currency: formData.devisePayment || "",
+            price: formData.price || "",
+            taux_jour: formData.taux_jour || "",
             companyName: formData.companyName || "",
+            departureDate: flight.departure.split("T")[0],
+            paymentMethod: formData.paymentMethod || "card",
             idClient: formData.idClient || "",
             idTypeClient: formData.idTypeClient || "passport",
-            nom_urgence: formData.nom_urgence || "",
-            email_urgence: formData.email_urgence || "",
-            tel_urgence: formData.tel_urgence || "",
-            dateOfBirth: formData.dateOfBirth,
-            gender: formData.gender || "other",
-            title: formData.title || "Mr",
-            address: formData.address || "",
-            type: "adult",
-            typeVol: flight?.type || "plane",
-            typeVolV: isRoundTrip ? "roundtrip" : "onway",
-            country: formData.country || "",
-            nationality: formData.nationality || "",
-            phone: formData.phone || "",
-            email: formData.email || "",
-        });
-    }
+        };
 
-    // 3️⃣ Préparer le body à envoyer selon l'API
-    const body = {
-        flightId: flight.id,
-        passengers,
-        contactInfo: {
-            email: formData.email,
-            phone: formData.phone,
-        },
-        totalPrice: flight.price * passengerCount,
-        unpaid: formData.unpaid || "confirmed",
-        referenceNumber: formData.reference || "",
-        companyName: formData.companyName || "",
-        departureDate: flight.departure.split("T")[0],
-        paymentMethod: formData.paymentMethod || "card",
-        idClient: formData.idClient || "",
-        idTypeClient: formData.idTypeClient || "passport",
-    };
+        // console.log("📤 Envoi de la requête avec les données:", {
+        //     flightId: flight.id,
+        //     passengerCount: passengers.length,
+        //     totalPrice: flight.price * passengerCount,
+        //     email: formData.email,
+        //     flightNumberReturn: formData.flightNumberReturn,
+        //     isRoundTrip,
+        // });
 
-    console.log("📤 Envoi de la requête avec les données:", {
-        flightId: flight.id,
-        passengerCount: passengers.length,
-        totalPrice: flight.price * passengerCount,
-        email: formData.email,
-        flightNumberReturn: formData.flightNumberReturn,
-        isRoundTrip,
-    });
-
-    try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-            toast.error("❌ Vous devez être connecté pour créer un ticket");
-            setCreateTicket(false);
-            return;
-        }
-
-        console.log("🔑 Token JWT présent, envoi de la requête...");
-
-        const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(body),
-        });
-
-        console.log("📥 Réponse du serveur:", {
-            status: res.status,
-            statusText: res.statusText,
-            ok: res.ok,
-        });
-
-        let data: any;
         try {
-            data = await res.json();
-            console.log("📄 Données de réponse:", data);
-        } catch (jsonErr) {
-            console.error("❌ Erreur parsing JSON:", jsonErr);
-            const text = await res.text();
-            console.error("📝 Réponse brute:", text);
-            toast.error("❌ Réponse serveur invalide");
-            setCreateTicket(false);
-            return;
-        }
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                toast.error("❌ Vous devez être connecté pour créer un ticket");
+                setCreateTicket(false);
+                return;
+            }
 
-        // GÉRER LES RÉPONSES D'ERREUR SPÉCIFIQUES
-        if (res.status === 400) {
-            if (data.error === "No seats available" || data.error === "Not enough seats available") {
-                toast.error(data.message || "Plus de places disponibles pour ce vol", {
+            console.log("🔑 Token JWT présent, envoi de la requête...");
+
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(body),
+            });
+
+            console.log("📥 Réponse du serveur:", {
+                status: res.status,
+                statusText: res.statusText,
+                ok: res.ok,
+            });
+
+            let data: any;
+            try {
+                data = await res.json();
+                console.log("📄 Données de réponse:", data);
+            } catch (jsonErr) {
+                console.error("❌ Erreur parsing JSON:", jsonErr);
+                const text = await res.text();
+                console.error("📝 Réponse brute:", text);
+                toast.error("❌ Réponse serveur invalide");
+                setCreateTicket(false);
+                return;
+            }
+
+            // GÉRER LES RÉPONSES D'ERREUR SPÉCIFIQUES
+            if (res.status === 400) {
+                if (data.error === "No seats available" || data.error === "Not enough seats available") {
+                    toast.error(data.message || "Plus de places disponibles pour ce vol", {
+                        style: {
+                            background: "#fee2e2",
+                            color: "#991b1b",
+                            border: "1px solid #f87171",
+                        },
+                        iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                        duration: 5000,
+                    });
+                } else {
+                    toast.error(data.message || "Erreur de validation", {
+                        style: {
+                            background: "#fee2e2",
+                            color: "#991b1b",
+                            border: "1px solid #f87171",
+                        },
+                        iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                    });
+                }
+                setCreateTicket(false);
+                return;
+            }
+
+            // Erreur de doublon
+            if (res.status === 409) {
+                toast.error(data.message || "Ce passager a déjà une réservation sur ce vol", {
                     style: {
                         background: "#fee2e2",
                         color: "#991b1b",
@@ -1396,148 +1475,123 @@ const handleSubmit = async () => {
                     iconTheme: { primary: "#fff", secondary: "#dc2626" },
                     duration: 5000,
                 });
-            } else {
-                toast.error(data.message || "Erreur de validation", {
+                setCreateTicket(false);
+                return;
+            }
+
+            // Erreur de vol non trouvé
+            if (res.status === 404) {
+                toast.error(data.message || "Le vol spécifié n'existe pas", {
                     style: {
                         background: "#fee2e2",
                         color: "#991b1b",
                         border: "1px solid #f87171",
                     },
                     iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                    duration: 5000,
                 });
-            }
-            setCreateTicket(false);
-            return;
-        }
-
-        // Erreur de doublon
-        if (res.status === 409) {
-            toast.error(data.message || "Ce passager a déjà une réservation sur ce vol", {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: { primary: "#fff", secondary: "#dc2626" },
-                duration: 5000,
-            });
-            setCreateTicket(false);
-            return;
-        }
-
-        // Erreur de vol non trouvé
-        if (res.status === 404) {
-            toast.error(data.message || "Le vol spécifié n'existe pas", {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: { primary: "#fff", secondary: "#dc2626" },
-                duration: 5000,
-            });
-            setCreateTicket(false);
-            return;
-        }
-
-        // ERREUR 500 - Erreur interne du serveur
-        if (res.status === 500) {
-            console.error("❌ Erreur 500 détaillée:", data);
-
-            let errorMessage = "Une erreur interne s'est produite lors de la création du ticket";
-
-            if (data.details) {
-                errorMessage += ` (${data.details})`;
-                console.error("Détails de l'erreur:", data.details);
+                setCreateTicket(false);
+                return;
             }
 
-            if (data.error) {
-                console.error("Type d'erreur:", data.error);
-            }
+            // ERREUR 500 - Erreur interne du serveur
+            if (res.status === 500) {
+                console.error("❌ Erreur 500 détaillée:", data);
 
-            toast.error(errorMessage, {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: { primary: "#fff", secondary: "#dc2626" },
-                duration: 5000,
-            });
+                let errorMessage = "Une erreur interne s'est produite lors de la création du ticket";
 
-            setCreateTicket(false);
-            return;
-        }
-
-        // Vérifier le succès
-        if (res.status === 200 && data.success) {
-            console.log("✅ Ticket créé avec succès:", data.bookingReference);
-
-            toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
-                style: {
-                    background: "#28a745",
-                    color: "#fff",
-                    border: "1px solid #1e7e34",
-                },
-                iconTheme: { primary: "#fff", secondary: "#1e7e34" },
-            });
-
-            try {
-                // ENVOYER L'EMAIL DE CONFIRMATION
-                let returnFlight = null;
-
-                if (isRoundTrip && formData.flightNumberReturn) {
-                    try {
-                        const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
-                            headers: {
-                                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-                            },
-                        });
-
-                        if (resReturn.ok) {
-                            const flightData = await resReturn.json();
-                            returnFlight = {
-                                date: flightData.departure_time,
-                                noflight: flightData.flight_number,
-                                departure_time: flightData.departure_time,
-                                arrival_time: flightData.arrival_time,
-                                from: flightData.from,
-                                to: flightData.to,
-                                fromCity: flightData.fromCity,
-                                toCity: flightData.toCity,
-                            };
-                        }
-                    } catch (err) {
-                        console.error("Erreur récupération vol retour:", err);
-                    }
+                if (data.details) {
+                    errorMessage += ` (${data.details})`;
+                    console.error("Détails de l'erreur:", data.details);
                 }
 
-                // Préparer les données pour l'email ET l'impression
-                const bookingData = {
-                    from: flight.from || "",
-                    to: flight.to || "",
-                    fromCity: flight.fromCity || "",
-                    toCity: flight.toCity || "",
-                    outbound: {
-                        date: flight.departure,
-                        noflight: flight.flight_number,
-                        departure_time: flight.departure,
-                        arrival_time: flight.arrival,
+                if (data.error) {
+                    console.error("Type d'erreur:", data.error);
+                }
+
+                toast.error(errorMessage, {
+                    style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
                     },
-                    return: returnFlight,
-                    passengersData: { adults: passengers },
-                    totalPrice: data.totalPrice || body.totalPrice,
-                    tabType: flight.type || "plane",
-                    status: data.status || "pending",
-                };
+                    iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                    duration: 5000,
+                });
 
-                // 1️⃣ ENVOYER L'EMAIL
-                await sendTicketByEmail(bookingData, data.bookingReference, formData.paymentMethod);
-                console.log("✅ Email envoyé avec succès");
+                setCreateTicket(false);
+                return;
+            }
 
-                // 4️⃣ AFFICHER UN REÇU HTML POUR BACKUP
-                const showHTMLReceipt = () => {
-                    const htmlContent = `
+            // Vérifier le succès
+            if (res.status === 200 && data.success) {
+                console.log("✅ Ticket créé avec succès:", data.bookingReference);
+
+                toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
+                    style: {
+                        background: "#28a745",
+                        color: "#fff",
+                        border: "1px solid #1e7e34",
+                    },
+                    iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+                });
+
+                try {
+                    // ENVOYER L'EMAIL DE CONFIRMATION
+                    let returnFlight = null;
+
+                    if (isRoundTrip && formData.flightNumberReturn) {
+                        try {
+                            const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                                },
+                            });
+
+                            if (resReturn.ok) {
+                                const flightData = await resReturn.json();
+                                returnFlight = {
+                                    date: flightData.departure_time,
+                                    noflight: flightData.flight_number,
+                                    departure_time: flightData.departure_time,
+                                    arrival_time: flightData.arrival_time,
+                                    from: flightData.from,
+                                    to: flightData.to,
+                                    fromCity: flightData.fromCity,
+                                    toCity: flightData.toCity,
+                                };
+                            }
+                        } catch (err) {
+                            console.error("Erreur récupération vol retour:", err);
+                        }
+                    }
+
+                    // Préparer les données pour l'email ET l'impression
+                    const bookingData = {
+                        from: flight.from || "",
+                        to: flight.to || "",
+                        fromCity: flight.fromCity || "",
+                        toCity: flight.toCity || "",
+                        outbound: {
+                            date: flight.departure,
+                            noflight: flight.flight_number,
+                            departure_time: flight.departure,
+                            arrival_time: flight.arrival,
+                        },
+                        return: returnFlight,
+                        passengersData: { adults: passengers },
+                        totalPrice: data.totalPrice || body.totalPrice,
+                        tabType: flight.type || "plane",
+                        status: data.status || "pending",
+                    };
+
+                    // 1️⃣ ENVOYER L'EMAIL
+                    await sendTicketByEmail(bookingData, data.bookingReference, formData.paymentMethod);
+                    console.log("✅ Email envoyé avec succès");
+
+                    // 4️⃣ AFFICHER UN REÇU HTML POUR BACKUP
+                    const showHTMLReceipt = () => {
+                        const htmlContent = `
                         <!DOCTYPE html>
                         <html>
                         <head>
@@ -1632,13 +1686,13 @@ const handleSubmit = async () => {
                                 </div>
                                 <div style="text-align: center; font-size: 12px; color: #666;">
                                     Reçu de réservation<br>
-                                    ${new Date().toLocaleDateString('fr-FR', { 
-                                        weekday: 'long', 
-                                        year: 'numeric', 
-                                        month: 'long', 
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
+                                    ${new Date().toLocaleDateString("fr-FR", {
+                                        weekday: "long",
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
                                     })}
                                 </div>
                                 
@@ -1658,40 +1712,58 @@ const handleSubmit = async () => {
                                 <div class="section-title">VOL ALLER</div>
                                 <div class="info-line">${bookingData.from} → ${bookingData.to}</div>
                                 <div class="info-line">Vol: ${bookingData.outbound.noflight}</div>
-                                <div class="info-line">Départ: ${new Date(bookingData.outbound.departure_time).toLocaleString('fr-FR')}</div>
-                                <div class="info-line">Arrivée: ${new Date(bookingData.outbound.arrival_time).toLocaleString('fr-FR')}</div>
+                                <div class="info-line">Départ: ${new Date(bookingData.outbound.departure_time).toLocaleString("fr-FR")}</div>
+                                <div class="info-line">Arrivée: ${new Date(bookingData.outbound.arrival_time).toLocaleString("fr-FR")}</div>
                                 
-                                ${bookingData.return ? `
+                                ${
+                                    bookingData.return
+                                        ? `
                                     <div class="divider"></div>
                                     <div class="section-title">VOL RETOUR</div>
                                     <div class="info-line">${bookingData.to} → ${bookingData.from}</div>
                                     <div class="info-line">Vol: ${bookingData.return.noflight}</div>
-                                    <div class="info-line">Départ: ${new Date(bookingData.return.departure_time).toLocaleString('fr-FR')}</div>
-                                    <div class="info-line">Arrivée: ${new Date(bookingData.return.arrival_time).toLocaleString('fr-FR')}</div>
-                                ` : ''}
+                                    <div class="info-line">Départ: ${new Date(bookingData.return.departure_time).toLocaleString("fr-FR")}</div>
+                                    <div class="info-line">Arrivée: ${new Date(bookingData.return.arrival_time).toLocaleString("fr-FR")}</div>
+                                `
+                                        : ""
+                                }
                                 
                                 <div class="divider"></div>
                                 
                                 <div class="section-title">Client</div>
-                                ${bookingData.passengersData.adults.map((p: Passenger, i: number) => 
-                                    `<div class="info-line">${p.firstName} ${p.lastName}</div>`
-                                ).join('')}
+                                ${bookingData.passengersData.adults
+                                    .map((p: Passenger, i: number) => `<div class="info-line">${p.firstName} ${p.lastName}</div>`)
+                                    .join("")}
                                 
                                 <div class="divider"></div>
                                 
                                 <div class="section-title">PAIEMENT</div>
                                 <div class="info-line">
                                     <span>TOTAL:</span>
-                                    <span style="float: right;" class="total">${bookingData.return ? `${(bookingData.totalPrice * 2).toFixed(2)} USD` : `${bookingData.totalPrice.toFixed(2)} USD`}</span>
+                                <span style="float: right;" class="total">
+${
+    bookingData.return
+        ? `${formData.devisePayment === "htg" ? (calculatedPrice * 2).toFixed(2) + " HTG" : (bookingData.totalPrice * 2).toFixed(2) + " USD"}`
+        : `${formData.devisePayment === "htg" ? calculatedPrice.toFixed(2) + " HTG" : bookingData.totalPrice.toFixed(2) + " USD"}`
+}
+</span>
                                 </div>
                                 <div class="info-line">
                                     <span>Mode de paiment:</span>
                                     <span style="float: right;">
-                                        ${formData.paymentMethod === "cash" ? "Espèces" : 
-                                         formData.paymentMethod === "card" ? "Carte" :
-                                         formData.paymentMethod === "cheque" ? "Chèque" :
-                                         formData.paymentMethod === "transfert" ? "dépôt" :
-                                         formData.paymentMethod === "virement" ? "Virement" : "Contrat"}
+                                        ${
+                                            formData.paymentMethod === "cash"
+                                                ? "Espèces"
+                                                : formData.paymentMethod === "card"
+                                                  ? "Carte"
+                                                  : formData.paymentMethod === "cheque"
+                                                    ? "Chèque"
+                                                    : formData.paymentMethod === "transfert"
+                                                      ? "dépôt"
+                                                      : formData.paymentMethod === "virement"
+                                                        ? "Virement"
+                                                        : "Contrat"
+                                        }
                                     </span>
                                 </div>
                                 <div class="info-line">
@@ -1726,86 +1798,82 @@ const handleSubmit = async () => {
                         </body>
                         </html>
                     `;
-                    
-                    const receiptWindow = window.open('', '_blank', 'width=500,height=800');
-                    if (receiptWindow) {
-                        receiptWindow.document.write(htmlContent);
-                        receiptWindow.document.close();
-                    }
-                };
 
-                // Afficher le reçu HTML en backup
-                showHTMLReceipt();
+                        const receiptWindow = window.open("", "_blank", "width=500,height=800");
+                        if (receiptWindow) {
+                            receiptWindow.document.write(htmlContent);
+                            receiptWindow.document.close();
+                        }
+                    };
 
-            } catch (emailError) {
-                console.error("❌ Erreur détaillée envoi email:", emailError);
-                toast.error("Ticket créé mais email non envoyé", {
-                    duration: 3000,
+                    // Afficher le reçu HTML en backup
+                    showHTMLReceipt();
+                } catch (emailError) {
+                    console.error("❌ Erreur détaillée envoi email:", emailError);
+                    toast.error("Ticket créé mais email non envoyé", {
+                        duration: 3000,
+                    });
+                }
+
+                // ✅ RÉINITIALISER TOUS LES CHAMPS
+                setFormData({
+                    ...initialFormData,
+                    paymentMethod: "card",
+                    gender: "other",
+                    title: "Mr",
+                    passengerCount: 1,
+                });
+
+                setIsRoundTrip(false);
+                setSuggestions([]);
+                setShowDropdown(false);
+
+                if (onTicketCreated) {
+                    onTicketCreated();
+                }
+
+                // Fermer le modal après un délai
+                setTimeout(() => {
+                    onClose();
+                }, 3000); // Augmenté à 3s pour laisser le temps d'imprimer
+            } else {
+                // Erreur générique du serveur
+                console.error("❌ Erreur création ticket - Réponse:", data);
+
+                const errorMessage = data.message || data.details || data.error || "Une erreur s'est produite lors de la création du ticket";
+
+                toast.error(errorMessage, {
+                    style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
+                    },
+                    iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                    duration: 5000,
                 });
             }
-
-            // ✅ RÉINITIALISER TOUS LES CHAMPS
-            setFormData({
-                ...initialFormData,
-                paymentMethod: "card",
-                gender: "other",
-                title: "Mr",
-                passengerCount: 1,
+        } catch (err: any) {
+            console.error("❌ Erreur réseau/fetch:", {
+                message: err.message,
+                stack: err.stack,
+                name: err.name,
             });
 
-            setIsRoundTrip(false);
-            setSuggestions([]);
-            setShowDropdown(false);
+            let errorMsg = "❌ Erreur de connexion au serveur";
 
-            if (onTicketCreated) {
-                onTicketCreated();
+            if (err.message.includes("Failed to fetch")) {
+                errorMsg = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
+            } else if (err.message.includes("NetworkError")) {
+                errorMsg = "Erreur réseau. Vérifiez votre connexion.";
             }
 
-            // Fermer le modal après un délai
-            setTimeout(() => {
-                onClose();
-            }, 3000); // Augmenté à 3s pour laisser le temps d'imprimer
-        } else {
-            // Erreur générique du serveur
-            console.error("❌ Erreur création ticket - Réponse:", data);
-
-            const errorMessage = data.message || data.details || data.error || "Une erreur s'est produite lors de la création du ticket";
-
-            toast.error(errorMessage, {
-                style: {
-                    background: "#fee2e2",
-                    color: "#991b1b",
-                    border: "1px solid #f87171",
-                },
-                iconTheme: { primary: "#fff", secondary: "#dc2626" },
+            toast.error(errorMsg, {
                 duration: 5000,
             });
+        } finally {
+            setCreateTicket(false);
         }
-    } catch (err: any) {
-        console.error("❌ Erreur réseau/fetch:", {
-            message: err.message,
-            stack: err.stack,
-            name: err.name,
-        });
-
-        let errorMsg = "❌ Erreur de connexion au serveur";
-
-        if (err.message.includes("Failed to fetch")) {
-            errorMsg = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
-        } else if (err.message.includes("NetworkError")) {
-            errorMsg = "Erreur réseau. Vérifiez votre connexion.";
-        }
-
-        toast.error(errorMsg, {
-            duration: 5000,
-        });
-    } finally {
-        setCreateTicket(false);
-    }
-};
-
-
-
+    };
 
     const handleClose = () => {
         // Réinitialiser les champs avant de fermer
@@ -1836,9 +1904,6 @@ const handleSubmit = async () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                     >
-
-
-                      
                         <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                             <button
                                 onClick={handleClose}
@@ -2196,6 +2261,59 @@ const handleSubmit = async () => {
                                         <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
                                     </label>
                                 </div>
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="price"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Flight Price
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="price"
+                                        name="price"
+                                        value={`${isRoundTrip ? calculatedPrice * 2 : calculatedPrice} ${priceCurrency}`}
+                                        readOnly
+                                        className="w-full rounded-md border border-gray-300 bg-gray-100 px-4 py-2 outline-none"
+                                    />
+                                </div>
+
+                                {formData.paymentMethod === "cash" && (
+                                    <>
+                                        <div className="flex flex-col">
+                                            <label className="mb-1 font-medium text-gray-700">Devise de paiement</label>
+
+                                            <select
+                                                name="devisePayment"
+                                                value={formData.devisePayment}
+                                                onChange={handleChange}
+                                                className="w-full rounded-md border px-4 py-2"
+                                            >
+                                                <option value="usd">USD</option>
+                                                <option value="htg">GOURDE</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Taux du jour */}
+                                        <div className="flex flex-col">
+                                            <label className="mb-1 font-medium text-gray-700">Taux du jour</label>
+
+                                            <input
+                                                type="number"
+                                                name="taux_jour"
+                                                value={formData.taux_jour}
+                                                onChange={handleChange}
+                                                disabled={formData.devisePayment !== "htg"}
+                                                placeholder="Ex: 135"
+                                                className={`w-full rounded-md border px-4 py-2 outline-none ${
+                                                    formData.devisePayment !== "htg" ? "cursor-not-allowed bg-gray-100" : ""
+                                                }`}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
                                 {/* Téléphone */}
                                 <div className="flex flex-col">
                                     <label
