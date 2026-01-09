@@ -6261,7 +6261,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       { key: "companyName" },
       { key: "contact_email" },
       { key: "total_price" },
-      { key: "currency" },
+ 
       { key: "passenger_count" },
       { key: "status" },
       { key: "payment_method" },
@@ -6281,7 +6281,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
       "Company Name",
       "Email",
       "Total",
-      "Currency",
+
       "Passagers",
       "Status",
       "Méthode",
@@ -6308,7 +6308,7 @@ app.get("/api/booking-helico-export", async (req: Request, res: Response) => {
   'FFE0F2F1', // company
   'FFFFEBEE', // email
   'FFE1F5FE', // total_price
-  'FFFFFDE7', // currency
+
   'FFFFF3E0', // passenger_count
   'FFE8EAF6', // status
   'FFF1F8E9', // payment_method
@@ -6330,8 +6330,7 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
         `${row.first_name} ${row.last_name}`,
         row.companyName,
         row.contact_email,
-        Number(row.total_price),
-        row.currency,
+        row.currency === "htg" ? Number(row.total_price) + " HTG" : Number(row.total_price) + " USD",
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
         row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
@@ -6486,7 +6485,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       { key: "companyName" },
       { key: "contact_email" },
       { key: "total_price" },
-      { key: "currency" },
+     
       { key: "passenger_count" },
       { key: "status" },
       { key: "payment_method" },
@@ -6506,7 +6505,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
       "Company Name",
       "Email",
       "Total",
-      "Currency",
+    
       "Passagers",
       "Status",
       "Méthode",
@@ -6533,7 +6532,7 @@ app.get("/api/booking-plane-export", async (req: Request, res: Response) => {
   'FFE0F2F1', // company
   'FFFFEBEE', // email
   'FFE1F5FE', // total_price
-  'FFFFFDE7', // currency
+ 
   'FFFFF3E0', // passenger_count
   'FFE8EAF6', // status
   'FFF1F8E9', // payment_method
@@ -6555,7 +6554,7 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
         `${row.first_name} ${row.last_name}`,
         row.companyName,
         row.contact_email,
-        Number(row.total_price),
+         row.currency === "htg" ? Number(row.total_price) + " HTG" : Number(row.total_price) + " USD",
         row.currency,
         row.passenger_count,
         row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
