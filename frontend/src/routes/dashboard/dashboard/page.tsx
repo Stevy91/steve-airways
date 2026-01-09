@@ -60,6 +60,9 @@ const DashboardPage = () => {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [searchLoading, setSearchLoading] = useState(false);
+const [currency, setCurrency] = useState<"USD" | "HTG">("USD");
+const currencySymbol = currency === "USD" ? "$" : "HTG";
+
 
     
     useAuth();
@@ -112,80 +115,66 @@ const DashboardPage = () => {
     }, []);
 
     // Fonction pour charger les données globales (sans filtre de date)
-    const fetchDashboardData = async () => {
-        try {
-            setLoading(true);
+const fetchDashboardData = async () => {
+  try {
+    setLoading(true);
 
-            const response = await fetch("https://steve-airways.onrender.com/api/dashboard-stats");
+    const response = await fetch(
+      `https://steve-airways.onrender.com/api/dashboard-stats8?currency=${currency}`
+    );
 
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
-            }
+    if (!response.ok) throw new Error();
 
-            const data = await response.json();
+    const data = await response.json();
 
-            setStats({
-                totalRevenue: data.totalRevenue || 0,
-                totalBookings: data.totalBookings || 0,
-                flightsAvailable: data.flightsAvailable || 0,
-                averageBookingValue: data.averageBookingValue || 0,
-                bookingsByStatus: data.bookingsByStatus || [],
-                revenueByMonth: data.revenueByMonth || [],
-                bookingsByFlightType: data.bookingsByFlightType || [],
-                recentBookings: data.recentBookings || [],
-            });
+    setStats(data);
+    setFilteredStats({
+      totalRevenue: data.totalRevenue,
+      totalBookings: data.totalBookings,
+      flightsAvailable: data.flightsAvailable,
+      averageBookingValue: data.averageBookingValue,
+    });
 
-            // Initialiser les stats filtrées avec les mêmes données globales
-            setFilteredStats({
-                totalRevenue: data.totalRevenue || 0,
-                totalBookings: data.totalBookings || 0,
-                flightsAvailable: data.flightsAvailable || 0,
-                averageBookingValue: data.averageBookingValue || 0,
-            });
-        } catch (err) {
-            console.error("Erreur de récupération des données:", err);
-            setError("Impossible de charger les données du dashboard");
-        } finally {
-            setLoading(false);
-        }
-    };
+  } catch {
+    setError("Impossible de charger les données du dashboard");
+  } finally {
+    setLoading(false);
+  }
+};
 
     // Fonction pour charger les données filtrées par date
-    const fetchFilteredData = async (start: string, end: string) => {
-        try {
-            setSearchLoading(true);
+  const fetchFilteredData = async (start: string, end: string) => {
+  try {
+    setSearchLoading(true);
 
-            // Construire l'URL avec les paramètres de date
-            let url = "https://steve-airways.onrender.com/api/dashboard-stats";
-            const params = new URLSearchParams();
-            
-            params.append('startDate', start);
-            params.append('endDate', end);
-            
-            url += `?${params.toString()}`;
+    const params = new URLSearchParams({
+      startDate: start,
+      endDate: end,
+      currency,
+    });
 
-            const response = await fetch(url);
+    const response = await fetch(
+      `https://steve-airways.onrender.com/api/dashboard-stats8?${params}`
+    );
 
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
-            }
+    if (!response.ok) throw new Error();
 
-            const data = await response.json();
+    const data = await response.json();
 
-            // Mettre à jour seulement les stats filtrées
-            setFilteredStats({
-                totalRevenue: data.totalRevenue || 0,
-                totalBookings: data.totalBookings || 0,
-                flightsAvailable: data.flightsAvailable || 0,
-                averageBookingValue: data.averageBookingValue || 0,
-            });
-        } catch (err) {
-            console.error("Erreur de récupération des données filtrées:", err);
-            alert("Impossible de charger les données filtrées");
-        } finally {
-            setSearchLoading(false);
-        }
-    };
+    setFilteredStats({
+      totalRevenue: data.totalRevenue,
+      totalBookings: data.totalBookings,
+      flightsAvailable: data.flightsAvailable,
+      averageBookingValue: data.averageBookingValue,
+    });
+
+  } catch {
+    alert("Impossible de charger les données filtrées");
+  } finally {
+    setSearchLoading(false);
+  }
+};
+
 
     const handleSearch = () => {
         if (!startDate || !endDate) {
@@ -270,6 +259,20 @@ const DashboardPage = () => {
                                 />
                             </div>
                         </div>
+                        <div className="flex flex-col">
+                            <label className="mb-2 font-medium text-gray-700">
+                                Devise
+                            </label>
+                            <select
+                                value={currency}
+                                onChange={(e) => setCurrency(e.target.value as "USD" | "HTG")}
+                                className="rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
+                            >
+                                <option value="USD">USD</option>
+                                <option value="HTG">HTG</option>
+                            </select>
+                            </div>
+
                         
                         <div className="flex gap-2">
                             <button
@@ -306,7 +309,8 @@ const DashboardPage = () => {
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
                             <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">
-                                ${filteredStats.totalRevenue.toLocaleString()}
+                                {currencySymbol} {filteredStats.totalRevenue.toLocaleString()}
+
                             </p>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <ShoppingCart
@@ -407,20 +411,19 @@ const DashboardPage = () => {
                                     </linearGradient>
                                 </defs>
                                 <Tooltip
-                                    cursor={false}
-                                    formatter={(value) => [`$${value}`, "Revenu"]}
-                                    labelFormatter={(label) => `Mois: ${label}`}
-                                />
+  formatter={(value) => [`${currencySymbol} ${value}`, "Revenu"]}
+/>
+
+
+
                                 <XAxis
                                     dataKey="name"
                                     strokeWidth={0}
                                     stroke={theme === "light" ? "#475569" : "#94a3b8"}
                                 />
                                 <YAxis
-                                    strokeWidth={0}
-                                    stroke={theme === "light" ? "#475569" : "#94a3b8"}
-                                    tickFormatter={(value) => `$${value}`}
-                                />
+  tickFormatter={(value) => `${currencySymbol}${value}`}
+/>
                                 <Area
                                     type="monotone"
                                     dataKey="total"
@@ -553,7 +556,10 @@ const DashboardPage = () => {
                                                 <p className="text-sky-700">{booking.type_v}</p>
                                             </td>
                                             <td className="table-cell text-center">{booking.contact_email}</td>
-                                            <td className="table-cell text-center">${booking.total_price}</td>
+                                            <td className="table-cell text-center">
+  {booking.total_price} {currency}
+</td>
+
                                             <td className="table-cell text-center">{booking.passenger_count}</td>
                                             <td className="table-cell text-center">
                                                 <p

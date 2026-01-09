@@ -3265,9 +3265,13 @@ app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
       params.push(currency);
     }
 
+    
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
+
+      
 
     // 1️⃣ BOOKINGS filtrés par currency
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
@@ -3283,7 +3287,7 @@ app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
         type_vol,
         type_v
       FROM bookings
-      ${whereSQL}
+      ${whereClauses}
       ORDER BY created_at DESC
     `, params);
 
