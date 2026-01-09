@@ -35,7 +35,7 @@ interface DashboardStats2 {
     averageBookingValueUSD: number;
     averageBookingValueHTG: number;
     bookingsByStatus: { name: string; value: number }[];
-    revenueByMonth: { name: string; usd: number; htg: number }[];
+    revenueByMonthDetailed: { name: string; usd: number; htg: number }[];
     bookingsByFlightType: { name: string; value: number }[];
     recentBookings: Booking[];
 }
@@ -112,7 +112,7 @@ const DashboardPage = () => {
                 averageBookingValueUSD: data.averageBookingValueUSD || 0,
                 averageBookingValueHTG: data.averageBookingValueHTG || 0,
                 bookingsByStatus: data.bookingsByStatus || [],
-                revenueByMonth: data.revenueByMonth || [],
+                revenueByMonthDetailed: data.revenueByMonthDetailed || [],
                 bookingsByFlightType: data.bookingsByFlightType || [],
                 recentBookings: data.recentBookings || [],
             });
@@ -293,9 +293,9 @@ const DashboardPage = () => {
                         <div className="flex w-full items-center justify-between">
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
-                                    <DollarSign size={20} className="text-green-400" />
+                                    
                                     <p className="text-3xl font-bold text-slate-50 transition-colors dark:text-slate-50">
-                                        ${filteredStats.totalRevenueUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        {filteredStats.totalRevenueUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD
                                     </p>
                                 </div>
                                 <p className="mt-2 text-sm text-slate-200">Revenu en dollars américains</p>
@@ -318,7 +318,7 @@ const DashboardPage = () => {
                         <div className="flex w-full items-center justify-between">
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
-                                    <TrendingUp size={20} className="text-yellow-400" />
+                                    
                                     <p className="text-3xl font-bold text-yellow-400 transition-colors dark:text-yellow-400">
                                         {filteredStats.totalRevenueHTG.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} HTG
                                     </p>
@@ -326,7 +326,7 @@ const DashboardPage = () => {
                                 <p className="mt-2 text-sm text-slate-200">Revenu en gourdes haïtiennes</p>
                             </div>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
-                                <Tags
+                                <ShoppingCart
                                     color="#ffffff"
                                     size={40}
                                 />
@@ -386,7 +386,7 @@ const DashboardPage = () => {
                             width="100%"
                             height={300}
                         >
-                            <AreaChart data={stats.revenueByMonth}>
+                            <AreaChart data={stats.revenueByMonthDetailed}>
                                 <defs>
                                     {/* Gradient pour USD */}
                                     <linearGradient
@@ -592,12 +592,12 @@ const DashboardPage = () => {
                                             </td>
                                             <td className="table-cell text-center">{booking.contact_email}</td>
                                             <td className="table-cell text-center">
-                                                {booking.currency === 'USD' ? '$' : ''}
+                                                {booking.currency === 'usd' ? 'USD' : ''}
                                                 {booking.total_price.toFixed(2)}
-                                                {booking.currency === 'HTG' ? ' HTG' : ''}
+                                                {booking.currency === 'htg' ? ' HTG' : ''}
                                             </td>
                                             <td className="table-cell text-center">
-                                                <span className={`px-2 py-1 rounded ${booking.currency === 'USD' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                                <span className={`px-2 py-1 rounded ${booking.currency === 'usd' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
                                                     {booking.currency}
                                                 </span>
                                             </td>
