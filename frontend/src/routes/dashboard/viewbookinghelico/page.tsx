@@ -378,6 +378,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         paymentStatus: apiData.status,
         payment_method: apiData.payment_method,
         totalPrice: `${apiData.total_price}`,
+        currency: apiData.currency,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,
         adminNotes: apiData.adminNotes || "",

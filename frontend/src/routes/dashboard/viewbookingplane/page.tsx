@@ -10,6 +10,7 @@ type Booking = {
     booking_reference: string;
     payment_intent_id: string;
     total_price: number;
+    currency: string;
     status: string;
     created_at: string;
     updated_at: string;
@@ -375,6 +376,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         bookedOn: new Date(apiData.created_at).toLocaleDateString(),
         paymentStatus: apiData.status,
         payment_method: apiData.payment_method,
+        currency: apiData.currency,
         totalPrice: `${apiData.total_price}`,
         typeVol: apiData.type_vol,
         typeV: apiData.type_v,

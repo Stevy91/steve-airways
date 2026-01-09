@@ -49,6 +49,7 @@ export type BookingDetails = {
     flights: Flight[];
     passengers: Passenger[];
     totalPrice: string;
+    currency: string;
     id?: string;
     typeVol?: string;
     typeV?: string;
@@ -926,7 +927,7 @@ const birth = (dateString: string, formatString: string) => {
                                 {/* Total Price - Version calcul automatique seulement */}
                                 <section className="space-y-2">
                                     <div className="text-lg font-bold text-amber-500">
-                                        Total Price: ${calculateTotalPrice(editedBooking.passengers, basePassengerPrice).replace("$", "")}
+                                        Total Price: {booking?.currency === 'htg' || editedBooking.currency === 'htg' ? `${calculateTotalPrice(editedBooking.passengers, basePassengerPrice).replace("$", "")}  HTG` : `${calculateTotalPrice(editedBooking.passengers, basePassengerPrice).replace("$", "")}  USD`}
                                         {/* <div className="text-sm font-normal text-gray-500">
                                             ({editedBooking.passengers.length} passenger(s) × ${basePassengerPrice.toFixed(2)})
                                         </div> */}

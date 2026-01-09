@@ -3140,6 +3140,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
         id, 
         booking_reference, 
         total_price, 
+        currency,
         status, 
         created_at, 
         passenger_count, 
@@ -3156,6 +3157,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
       id: row.id,
       booking_reference: row.booking_reference,
       total_price: Number(row.total_price),
+      currency: row.currency,
       status: row.status,
       created_at: new Date(row.created_at).toISOString(),
       passenger_count: row.passenger_count,
@@ -3242,6 +3244,153 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
   }
 });
+
+
+app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, currency } = req.query;
+
+    let whereClauses: string[] = [];
+    let params: any[] = [];
+
+    // 📅 Filtre date
+    if (startDate && endDate) {
+      whereClauses.push("DATE(created_at) BETWEEN ? AND ?");
+      params.push(startDate, endDate);
+    }
+
+    // 💱 Filtre currency
+    if (currency) {
+      whereClauses.push("currency = ?");
+      params.push(currency);
+    }
+
+    const whereSQL = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(" AND ")}`
+      : "";
+
+    // 1️⃣ BOOKINGS filtrés par currency
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
+      SELECT 
+        id, 
+        booking_reference, 
+        total_price, 
+        currency,
+        status, 
+        created_at, 
+        passenger_count, 
+        contact_email,
+        type_vol,
+        type_v
+      FROM bookings
+      ${whereSQL}
+      ORDER BY created_at DESC
+    `, params);
+
+    const bookings: Booking[] = bookingRows.map((row) => ({
+      id: row.id,
+      booking_reference: row.booking_reference,
+      total_price: Number(row.total_price),
+      currency: row.currency,
+      status: row.status,
+      created_at: new Date(row.created_at).toISOString(),
+      passenger_count: row.passenger_count,
+      contact_email: row.contact_email,
+      type_vol: row.type_vol,
+      type_v: row.type_v,
+    }));
+
+    // 2️⃣ Vols (pas besoin de currency ici)
+    const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
+      SELECT id, type, departure_time, price, seats_available 
+      FROM flights
+    `);
+
+    const flights: Flights[] = flightRows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      departure_time: new Date(row.departure_time).toISOString(),
+      price: Number(row.price),
+      seats_available: row.seats_available,
+    }));
+
+    // 3️⃣ STATS (basées UNIQUEMENT sur bookings filtrés)
+    const totalRevenue = bookings.reduce(
+      (sum, booking) => sum + booking.total_price,
+      0
+    );
+
+    const totalBookings = bookings.length;
+    const flightsAvailable = flights.length;
+    const averageBookingValue =
+      totalBookings > 0 ? totalRevenue / totalBookings : 0;
+
+    // 4️⃣ Par statut
+    const statusCounts = bookings.reduce(
+      (acc: Record<string, number>, booking) => {
+        acc[booking.status] = (acc[booking.status] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+
+    const bookingsByStatus = Object.entries(statusCounts).map(
+      ([name, value]) => ({ name, value })
+    );
+
+    // 5️⃣ Par type de vol
+    const flightTypeCounts = bookings.reduce(
+      (acc: Record<string, number>, booking) => {
+        const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+
+    const bookingsByFlightType = Object.entries(flightTypeCounts).map(
+      ([name, value]) => ({ name, value })
+    );
+
+    // 6️⃣ Revenu par mois (filtré currency)
+    const monthlyRevenue = bookings.reduce(
+      (acc: Record<string, number>, booking) => {
+        const date = new Date(booking.created_at);
+        const month = date.toLocaleString("fr-FR", { month: "short" });
+        acc[month] = (acc[month] || 0) + booking.total_price;
+        return acc;
+      },
+      {}
+    );
+
+    const revenueByMonth = Object.entries(monthlyRevenue).map(
+      ([name, total]) => ({ name, total })
+    );
+
+    // 7️⃣ Dernières réservations
+    const recentBookings = bookings.slice(0, 10);
+
+    // 8️⃣ Réponse finale
+    res.json({
+      currency: currency || "ALL",
+      totalRevenue,
+      totalBookings,
+      flightsAvailable,
+      averageBookingValue,
+      bookingsByStatus,
+      revenueByMonth,
+      bookingsByFlightType,
+      recentBookings,
+    });
+
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({
+      error: "Erreur lors de la récupération des statistiques"
+    });
+  }
+});
+
 
 // API pour rechercher un vol par son code
 
