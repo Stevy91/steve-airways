@@ -1382,7 +1382,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             unpaid: formData.unpaid || "confirmed",
             referenceNumber: formData.reference || "",
             currency: formData.devisePayment || "",
-            price: formData.price || "",
+            price: `${isRoundTrip ? calculatedPrice * 2 : calculatedPrice} ${priceCurrency}` || "",
             taux_jour: formData.taux_jour || "",
             companyName: formData.companyName || "",
             departureDate: flight.departure.split("T")[0],

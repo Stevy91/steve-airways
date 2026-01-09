@@ -1895,16 +1895,10 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
       }
     }
 
-    console.log("📅 Dates récupérées:", {
-      departureDate,
-      returnDateResolved,
-      returnFlightIdResolved,
-      hasReturnFlight: !!returnFlightIdResolved,
-      hasReturnDate: !!returnDateResolved
-    });
+  
 
     // Vérifier les vols
-    const TotalPrice2 = returnFlightIdResolved ? totalPrice * 2 : totalPrice;
+    const TotalPrice2 = returnFlightIdResolved ? price * 2 : price;
     const flightIds = returnFlightIdResolved ? [flightId, returnFlightIdResolved] : [flightId];
     const [flightsRows] = await connection.query<mysql.RowDataPacket[]>(
       "SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE",
@@ -2069,7 +2063,7 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
       [
         flightId,
         referenceNumber,
-        price,
+        TotalPrice2,
         currency,
         contactInfo.email,
         contactInfo.phone,
@@ -2097,10 +2091,10 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
       `INSERT INTO payments (
           booking_id, amount, currency,
           payment_method, payment_status, transaction_reference, userId, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingResult.insertId,
-        price,
+        TotalPrice2,
         currency,
         paymentMethod,
         unpaid || "confirmed",
