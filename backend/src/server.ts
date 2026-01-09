@@ -2065,7 +2065,7 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
           created_at, updated_at, departure_date,
           return_date, passenger_count, booking_reference, return_flight_id,
           payment_method, companyName, user_created_booking
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         flightId,
         referenceNumber,
@@ -2097,7 +2097,7 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
       `INSERT INTO payments (
           booking_id, amount, currency,
           payment_method, payment_status, transaction_reference, userId, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingResult.insertId,
         price,

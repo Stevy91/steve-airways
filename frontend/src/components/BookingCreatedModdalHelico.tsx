@@ -1410,7 +1410,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
             console.log("🔑 Token JWT présent, envoi de la requête...");
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket6", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
