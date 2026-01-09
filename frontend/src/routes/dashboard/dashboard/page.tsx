@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
 import { useTheme } from "../../../contexts/theme-context";
-import { ShoppingCart, Gift, Tags, Plane, Search } from "lucide-react";
+import { ShoppingCart, Gift, Tags, Plane, Search, DollarSign, TrendingUp } from "lucide-react";
 import { Footer } from "../../../layouts/footer";
 
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
@@ -12,6 +12,7 @@ type Booking = {
     id: number;
     booking_reference: string;
     total_price: number;
+    currency: string;
     status: string;
     created_at: string;
     updated_at: string;
@@ -19,7 +20,6 @@ type Booking = {
     contact_email: string;
     type_vol: string;
     type_v: string;
-    
 };
 
 interface ChartData {
@@ -27,41 +27,27 @@ interface ChartData {
     value: number;
 }
 
-const data: ChartData[] = [
-    { name: "Avion", value: 400 },
-    { name: "Hélicoptère", value: 300 },
-];
-
 interface DashboardStats {
-    totalRevenue: number;
+    totalRevenueUSD: number;
+    totalRevenueHTG: number;
     totalBookings: number;
     flightsAvailable: number;
-    averageBookingValue: number;
+    averageBookingValueUSD: number;
+    averageBookingValueHTG: number;
     bookingsByStatus: { name: string; value: number }[];
-    revenueByMonth: { name: string; total: number;usd: number; htg: number; }[];
+    revenueByMonth: { name: string; usd: number; htg: number }[];
     bookingsByFlightType: { name: string; value: number }[];
     recentBookings: Booking[];
-    totalRevenueUSD: number;
-  totalRevenueHTG: number;
-   
-
-
-
-
 }
-
-
-
-
 
 interface FilteredStats {
-    totalRevenue: number;
+    totalRevenueUSD: number;
+    totalRevenueHTG: number;
     totalBookings: number;
     flightsAvailable: number;
-    averageBookingValue: number;
+    averageBookingValueUSD: number;
+    averageBookingValueHTG: number;
 }
-
-
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -74,42 +60,17 @@ const DashboardPage = () => {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [searchLoading, setSearchLoading] = useState(false);
-const [currency, setCurrency] = useState<"USD" | "HTG">("USD");
-const currencySymbol = currency === "USD" ? "$" : "HTG";
-
 
     
     useAuth();
-
-    
 
     // Fonction pour formater la date en YYYY-MM-DD
     const formatDateForInput = (date: Date) => {
         return date.toISOString().split('T')[0];
     };
 
-    // Fonction pour obtenir le premier jour du mois
-    const getFirstDayOfMonth = () => {
-        const date = new Date();
-        return new Date(date.getFullYear(), date.getMonth(), 1);
-    };
-
-    // Fonction pour obtenir la date du jour
-    const getCurrentDate = () => {
-        return new Date();
-    };
-
-    // Fonction pour initialiser les dates par défaut (premier du mois jusqu'à aujourd'hui)
-    // const initializeDefaultDates = () => {
-    //     const start = getFirstDayOfMonth();
-    //     const end = getCurrentDate();
-        
-    //     return {
-    //         start: formatDateForInput(start),
-    //         end: formatDateForInput(end)
-    //     };
-    // };
-       const initializeDefaultDates = () => {
+    // Fonction pour initialiser les dates par défaut
+    const initializeDefaultDates = () => {
         const end = new Date();
         const start = new Date();
         start.setDate(start.getDate() - 30);
@@ -131,49 +92,86 @@ const currencySymbol = currency === "USD" ? "$" : "HTG";
     }, []);
 
     // Fonction pour charger les données globales (sans filtre de date)
-const fetchDashboardData = async () => {
-  try {
-    setLoading(true);
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
 
-    const res = await fetch(
-      "https://steve-airways.onrender.com/api/dashboard-stats8"
-    );
+            const response = await fetch("https://steve-airways.onrender.com/api/dashboard-stats");
 
-    if (!res.ok) throw new Error();
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
 
-    const data = await res.json();
-    setStats(data);
+            const data = await response.json();
 
-  } catch {
-    setError("Impossible de charger les données du dashboard");
-  } finally {
-    setLoading(false);
-  }
-};
+            setStats({
+                totalRevenueUSD: data.totalRevenueUSD || 0,
+                totalRevenueHTG: data.totalRevenueHTG || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValueUSD: data.averageBookingValueUSD || 0,
+                averageBookingValueHTG: data.averageBookingValueHTG || 0,
+                bookingsByStatus: data.bookingsByStatus || [],
+                revenueByMonth: data.revenueByMonth || [],
+                bookingsByFlightType: data.bookingsByFlightType || [],
+                recentBookings: data.recentBookings || [],
+            });
+
+            // Initialiser les stats filtrées avec les mêmes données globales
+            setFilteredStats({
+                totalRevenueUSD: data.totalRevenueUSD || 0,
+                totalRevenueHTG: data.totalRevenueHTG || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValueUSD: data.averageBookingValueUSD || 0,
+                averageBookingValueHTG: data.averageBookingValueHTG || 0,
+            });
+        } catch (err) {
+            console.error("Erreur de récupération des données:", err);
+            setError("Impossible de charger les données du dashboard");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Fonction pour charger les données filtrées par date
-const fetchFilteredData = async (start: string, end: string) => {
-  try {
-    setSearchLoading(true);
+    const fetchFilteredData = async (start: string, end: string) => {
+        try {
+            setSearchLoading(true);
 
-    const params = new URLSearchParams({ startDate: start, endDate: end });
+            // Construire l'URL avec les paramètres de date
+            let url = "https://steve-airways.onrender.com/api/dashboard-stats";
+            const params = new URLSearchParams();
+            
+            params.append('startDate', start);
+            params.append('endDate', end);
+            
+            url += `?${params.toString()}`;
 
-    const res = await fetch(
-      `https://steve-airways.onrender.com/api/dashboard-stats8?${params}`
-    );
+            const response = await fetch(url);
 
-    if (!res.ok) throw new Error();
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
 
-    const data = await res.json();
-    setStats(data);
+            const data = await response.json();
 
-  } catch {
-    alert("Erreur chargement données");
-  } finally {
-    setSearchLoading(false);
-  }
-};
-
+            // Mettre à jour seulement les stats filtrées
+            setFilteredStats({
+                totalRevenueUSD: data.totalRevenueUSD || 0,
+                totalRevenueHTG: data.totalRevenueHTG || 0,
+                totalBookings: data.totalBookings || 0,
+                flightsAvailable: data.flightsAvailable || 0,
+                averageBookingValueUSD: data.averageBookingValueUSD || 0,
+                averageBookingValueHTG: data.averageBookingValueHTG || 0,
+            });
+        } catch (err) {
+            console.error("Erreur de récupération des données filtrées:", err);
+            alert("Impossible de charger les données filtrées");
+        } finally {
+            setSearchLoading(false);
+        }
+    };
 
     const handleSearch = () => {
         if (!startDate || !endDate) {
@@ -196,21 +194,6 @@ const fetchFilteredData = async (start: string, end: string) => {
         // Recharger les données globales
         fetchDashboardData();
     };
-
-    const RevenueTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload || !payload.length) return null;
-
-  const { usd, htg } = payload[0].payload;
-
-  return (
-    <div className="rounded-lg bg-white p-3 shadow">
-      <p className="font-semibold">{label}</p>
-      <p className="text-sm text-green-600">$ {usd.toLocaleString()}</p>
-      <p className="text-sm text-blue-600">HTG {htg.toLocaleString()}</p>
-    </div>
-  );
-};
-
 
     if (loading) {
         return (
@@ -273,20 +256,6 @@ const fetchFilteredData = async (start: string, end: string) => {
                                 />
                             </div>
                         </div>
-                        <div className="flex flex-col">
-                            <label className="mb-2 font-medium text-gray-700">
-                                Devise
-                            </label>
-                            <select
-                                value={currency}
-                                onChange={(e) => setCurrency(e.target.value as "USD" | "HTG")}
-                                className="rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-500"
-                            >
-                                <option value="usd">USD</option>
-                                <option value="htg">HTG</option>
-                            </select>
-                            </div>
-
                         
                         <div className="flex gap-2">
                             <button
@@ -317,42 +286,45 @@ const fetchFilteredData = async (start: string, end: string) => {
 
             {/* Cartes de statistiques (affectées par la recherche) */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {/* Carte Revenu Total */}
+                {/* Carte Revenu Total USD */}
                 <div className="card-1">
-  <p className="card-title text-slate-50">REVENU TOTAL</p>
-
-  <div className="card-body transition-colors dark:bg-slate-950">
-    <div className="flex w-full items-center justify-between">
-      <div>
-        {/* USD */}
-        <p className="text-4xl font-bold text-slate-50">
-          $ {stats.totalRevenueUSD.toLocaleString()}
-        </p>
-
-        {/* HTG */}
-        <p className="mt-2 text-xl font-semibold text-slate-300">
-          HTG {stats.totalRevenueHTG.toLocaleString()}
-        </p>
-      </div>
-
-      <div className="h-[90px] w-[90px] rounded-full bg-slate-50/20 p-6">
-        <ShoppingCart color="#ffffff" size={40} />
-      </div>
-    </div>
-
-    <p className="pt-7 text-xl font-bold text-slate-50">
-      Revenu total
-    </p>
-  </div>
-</div>
-
-
-                {/* Carte Réservations */}
-                <div className="card-2">
-                    <p className="card-title text-slate-50">RÉSERVATIONS</p>
+                    <p className="card-title text-slate-50">REVENU TOTAL USD</p>
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
-                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">{filteredStats.totalBookings}</p>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <DollarSign size={20} className="text-green-400" />
+                                    <p className="text-3xl font-bold text-slate-50 transition-colors dark:text-slate-50">
+                                        ${filteredStats.totalRevenueUSD.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    </p>
+                                </div>
+                                <p className="mt-2 text-sm text-slate-200">Revenu en dollars américains</p>
+                            </div>
+                            <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
+                                <ShoppingCart
+                                    color="#ffffff"
+                                    size={40}
+                                />
+                            </div>
+                        </div>
+                        <p className="pt-4 text-xl font-bold text-slate-50 transition-colors dark:text-slate-50">Revenu total USD</p>
+                    </div>
+                </div>
+
+                {/* Carte Revenu Total HTG */}
+                <div className="card-2">
+                    <p className="card-title text-slate-50">REVENU TOTAL HTG</p>
+                    <div className="card-body transition-colors dark:bg-slate-950">
+                        <div className="flex w-full items-center justify-between">
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp size={20} className="text-yellow-400" />
+                                    <p className="text-3xl font-bold text-yellow-400 transition-colors dark:text-yellow-400">
+                                        {filteredStats.totalRevenueHTG.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} HTG
+                                    </p>
+                                </div>
+                                <p className="mt-2 text-sm text-slate-200">Revenu en gourdes haïtiennes</p>
+                            </div>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Tags
                                     color="#ffffff"
@@ -360,7 +332,7 @@ const fetchFilteredData = async (start: string, end: string) => {
                                 />
                             </div>
                         </div>
-                        <p className="pt-7 text-xl font-bold text-slate-50 transition-colors dark:text-slate-50">Total réservations</p>
+                        <p className="pt-4 text-xl font-bold text-slate-50 transition-colors dark:text-slate-50">Revenu total HTG</p>
                     </div>
                 </div>
 
@@ -381,14 +353,15 @@ const fetchFilteredData = async (start: string, end: string) => {
                     </div>
                 </div>
 
-                {/* Carte Valeur Moyenne */}
+                {/* Carte Réservations */}
                 <div className="card-4">
-                    <p className="card-title text-slate-50">MOYENNE/RÉSERVATION</p>
+                    <p className="card-title text-slate-50">RÉSERVATIONS</p>
                     <div className="card-body transition-colors dark:bg-slate-950">
                         <div className="flex w-full items-center justify-between">
-                            <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">
-                                ${filteredStats.averageBookingValue.toFixed(2)}
-                            </p>
+                            <div className="flex flex-col">
+                                <p className="text-4xl font-bold text-slate-50 transition-colors dark:text-slate-50">{filteredStats.totalBookings}</p>
+                                <p className="mt-2 text-sm text-slate-200">Total des réservations</p>
+                            </div>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <Gift
                                     color="#ffffff"
@@ -396,17 +369,17 @@ const fetchFilteredData = async (start: string, end: string) => {
                                 />
                             </div>
                         </div>
-                        <p className="pt-7 text-xl font-bold text-slate-50 transition-colors dark:text-slate-50">Valeur moyenne</p>
+                        <p className="pt-4 text-xl font-bold text-slate-50 transition-colors dark:text-slate-50">Nombre de réservations</p>
                     </div>
                 </div>
             </div>
 
             {/* Graphiques (données globales, non affectées par la recherche) */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8">
-                {/* Graphique Revenu par Mois */}
+                {/* Graphique Revenu par Mois (USD et HTG) */}
                 <div className="card col-span-1 md:col-span-2 lg:col-span-4">
                     <div className="card-header border-b p-3">
-                        <p className="card-title">Revenu par mois</p>
+                        <p className="card-title">Revenu par mois (USD & HTG)</p>
                     </div>
                     <div className="card-body p-0">
                         <ResponsiveContainer
@@ -414,26 +387,88 @@ const fetchFilteredData = async (start: string, end: string) => {
                             height={300}
                         >
                             <AreaChart data={stats.revenueByMonth}>
-  <defs>
-    <linearGradient id="colorUSD" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor="#22a89f" stopOpacity={0.8} />
-      <stop offset="95%" stopColor="#22a89f" stopOpacity={0} />
-    </linearGradient>
-  </defs>
-
-  <XAxis dataKey="name" />
-  <YAxis />
-
-  <Tooltip content={<RevenueTooltip />} />
-
-  <Area
-    type="monotone"
-    dataKey="usd"
-    stroke="#22a89f"
-    fill="url(#colorUSD)"
-  />
-</AreaChart>
-
+                                <defs>
+                                    {/* Gradient pour USD */}
+                                    <linearGradient
+                                        id="colorUSD"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#22a89f"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#22a89f"
+                                            stopOpacity={0}
+                                        />
+                                    </linearGradient>
+                                    
+                                    {/* Gradient pour HTG */}
+                                    <linearGradient
+                                        id="colorHTG"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="5%"
+                                            stopColor="#FFBB28"
+                                            stopOpacity={0.8}
+                                        />
+                                        <stop
+                                            offset="95%"
+                                            stopColor="#FFBB28"
+                                            stopOpacity={0}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <Tooltip
+                                    cursor={false}
+                                    formatter={(value: number, name: string) => {
+                                        if (name === "USD") {
+                                            return [`$${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, "USD"];
+                                        } else {
+                                            return [`${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} HTG`, "HTG"];
+                                        }
+                                    }}
+                                    labelFormatter={(label) => `Mois: ${label}`}
+                                />
+                                <XAxis
+                                    dataKey="name"
+                                    strokeWidth={0}
+                                    stroke={theme === "light" ? "#475569" : "#94a3b8"}
+                                />
+                                <YAxis
+                                    strokeWidth={0}
+                                    stroke={theme === "light" ? "#475569" : "#94a3b8"}
+                                    tickFormatter={(value) => `$${value}`}
+                                />
+                                <Legend />
+                                <Area
+                                    type="monotone"
+                                    dataKey="usd"
+                                    name="USD"
+                                    stroke="#22a89f"
+                                    strokeWidth={2}
+                                    fillOpacity={0.6}
+                                    fill="url(#colorUSD)"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="htg"
+                                    name="HTG"
+                                    stroke="#FFBB28"
+                                    strokeWidth={2}
+                                    fillOpacity={0.6}
+                                    fill="url(#colorHTG)"
+                                />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
@@ -453,14 +488,15 @@ const fetchFilteredData = async (start: string, end: string) => {
                                 height={400}
                             >
                                 <Pie
-                                    data={data}
+                                    data={stats.bookingsByFlightType}
                                     dataKey="value"
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={80}
+                                    label={(entry) => `${entry.name}: ${entry.value}`}
                                 >
-                                    {data.map((_, index) => (
+                                    {stats.bookingsByFlightType.map((_, index) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={COLORS[index % COLORS.length]}
@@ -468,9 +504,9 @@ const fetchFilteredData = async (start: string, end: string) => {
                                     ))}
                                 </Pie>
                                 <Tooltip
-                                    formatter={(value: number, name: string, payload: Payload<number, string>) => [
-                                        `$${value.toFixed(2)}`,
-                                        payload.payload?.name || name,
+                                    formatter={(value: number, name: string) => [
+                                        `${value} réservations`,
+                                        name,
                                     ]}
                                 />
                             </PieChart>
@@ -510,7 +546,7 @@ const fetchFilteredData = async (start: string, end: string) => {
                                     fill="#8884d8"
                                     radius={[4, 4, 0, 0]}
                                 >
-                                    {stats.bookingsByFlightType.map((_, index) => (
+                                    {stats.bookingsByStatus.map((_, index) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={COLORS[index % COLORS.length]}
@@ -533,10 +569,10 @@ const fetchFilteredData = async (start: string, end: string) => {
                                 <thead className="table-header">
                                     <tr className="table-row ">
                                         <th className="table-head text-center">Référence</th>
-                                        <th className="table-head text-center">Type</th>
                                         <th className="table-head text-center">Type Vol</th>
                                         <th className="table-head text-center">Email</th>
-                                        <th className="table-head text-center">Total</th>
+                                        <th className="table-head text-center">Montant</th>
+                                        <th className="table-head text-center">Devise</th>
                                         <th className="table-head text-center">Passagers</th>
                                         <th className="table-head text-center">Statut</th>
                                         <th className="table-head text-center">Date</th>
@@ -552,16 +588,19 @@ const fetchFilteredData = async (start: string, end: string) => {
                                                 <p className="text-sky-700">{booking.booking_reference}</p>
                                             </td>
                                             <td className="table-cell text-center">
-                                                <p className="text-sky-700">{booking.type_vol}</p>
-                                            </td>
-                                            <td className="table-cell text-center">
-                                                <p className="text-sky-700">{booking.type_v}</p>
+                                                <p className="text-sky-700">{booking.type_vol === "plane" ? "Avion" : "Hélicoptère"}</p>
                                             </td>
                                             <td className="table-cell text-center">{booking.contact_email}</td>
                                             <td className="table-cell text-center">
-  {booking.total_price} {currency}
-</td>
-
+                                                {booking.currency === 'USD' ? '$' : ''}
+                                                {booking.total_price.toFixed(2)}
+                                                {booking.currency === 'HTG' ? ' HTG' : ''}
+                                            </td>
+                                            <td className="table-cell text-center">
+                                                <span className={`px-2 py-1 rounded ${booking.currency === 'USD' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                                    {booking.currency}
+                                                </span>
+                                            </td>
                                             <td className="table-cell text-center">{booking.passenger_count}</td>
                                             <td className="table-cell text-center">
                                                 <p

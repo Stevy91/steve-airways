@@ -93,6 +93,7 @@ export interface Booking {
   total_price: number;
   status: string;
   created_at: string;
+  currency: string;
   passenger_count: number;
   contact_email: string;
   type_vol: "plane" | "helicopter";
@@ -113,12 +114,32 @@ export interface DashboardStats {
   totalRevenue: number;
   totalBookings: number;
   flightsAvailable: number;
+  revenueByMonth: { name: string; total: number }[];
   averageBookingValue: number;
   bookingsByStatus: { name: string; value: number }[];
-  revenueByMonth: { name: string; total: number }[];
+ 
+  
   bookingsByFlightType: { name: string; value: number }[];
   recentBookings: Booking[];
 }
+
+
+// Dans votre fichier de types ou dans le même fichier
+interface DashboardStats2 {
+    totalRevenueUSD: number;
+    totalRevenueHTG: number;
+    totalBookings: number;
+    flightsAvailable: number;
+    averageBookingValueUSD: number;
+    averageBookingValueHTG: number;
+    bookingsByStatus: { name: string; value: number }[];
+    revenueByMonth: { name: string; total: number }[]; // Garder comme avant
+    revenueByMonthDetailed: { name: string; usd: number; htg: number }[]; // Nouveau pour détail USD/HTG
+    bookingsByFlightType: { name: string; value: number }[];
+    recentBookings: Booking[];
+}
+
+
 
 export interface BookingStats {
   recentBookings: Booking[];
@@ -3237,37 +3258,38 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
 
 
 app.get("/api/dashboard-stats8", async (req: Request, res: Response) => {
+  let connection;
   try {
-    const { startDate, endDate, currency } = req.query;
+    const { startDate, endDate } = req.query;
 
-    let whereClauses: string[] = [];
-let params: any[] = [];
+    // Construire la clause WHERE pour les dates
+    let dateWhereClause = "";
+    let dateParams: any[] = [];
 
-// Filtre date
-if (startDate && endDate) {
-  whereClauses.push("DATE(created_at) BETWEEN ? AND ?");
-  params.push(startDate, endDate);
-}
+    if (startDate && endDate) {
+      dateWhereClause = "WHERE DATE(created_at) BETWEEN ? AND ?";
+      dateParams = [startDate, endDate];
+    }
 
-// Filtre currency
-if (currency) {
-  whereClauses.push("currency = ?");
-  params.push(currency);
-}
+    // 1. Récupérer les réservations avec un typage explicite
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
+      SELECT 
+        id, 
+        booking_reference, 
+        total_price, 
+        currency,
+        status, 
+        created_at, 
+        passenger_count, 
+        contact_email,
+        type_vol,
+        type_v
+      FROM bookings
+      ${dateWhereClause}
+      ORDER BY created_at DESC
+    `, dateParams);
 
-// Construire la clause WHERE seulement si nécessaire
-const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-
-// Requête SQL finale
-const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
-  SELECT 
-    id, booking_reference, total_price, currency, status, created_at, passenger_count, contact_email, type_vol, type_v
-  FROM bookings
-  ${whereSQL}
-  ORDER BY created_at DESC
-`, params);
-
-
+    // Convertir en type Booking[]
     const bookings: Booking[] = bookingRows.map((row) => ({
       id: row.id,
       booking_reference: row.booking_reference,
@@ -3281,12 +3303,13 @@ const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
       type_v: row.type_v,
     }));
 
-    // 2️⃣ Vols (pas besoin de currency ici)
+    // 2. Récupérer les vols avec un typage explicite
     const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
       SELECT id, type, departure_time, price, seats_available 
       FROM flights
     `);
 
+    // Convertir en type Flight[]
     const flights: Flights[] = flightRows.map((row) => ({
       id: row.id,
       type: row.type,
@@ -3295,82 +3318,104 @@ const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
       seats_available: row.seats_available,
     }));
 
-    // 3️⃣ STATS (basées UNIQUEMENT sur bookings filtrés)
-    const totalRevenue = bookings.reduce(
-      (sum, booking) => sum + booking.total_price,
-      0
-    );
-
+    // 3. Calcul des statistiques avec typage fort
+    let totalRevenueUSD = 0;
+    let totalRevenueHTG = 0;
+    
+    // Séparer les revenus par devise
+    bookings.forEach(booking => {
+      if (booking.currency === 'USD' || booking.currency === 'usd') {
+        totalRevenueUSD += booking.total_price;
+      } else if (booking.currency === 'HTG' || booking.currency === 'htg') {
+        totalRevenueHTG += booking.total_price;
+      } else {
+        // Par défaut, considérer comme USD
+        totalRevenueUSD += booking.total_price;
+      }
+    });
+    
     const totalBookings = bookings.length;
     const flightsAvailable = flights.length;
-    const averageBookingValue =
-      totalBookings > 0 ? totalRevenue / totalBookings : 0;
+    const averageBookingValueUSD = totalBookings > 0 ? totalRevenueUSD / totalBookings : 0;
+    const averageBookingValueHTG = totalBookings > 0 ? totalRevenueHTG / totalBookings : 0;
 
-    // 4️⃣ Par statut
-    const statusCounts = bookings.reduce(
-      (acc: Record<string, number>, booking) => {
-        acc[booking.status] = (acc[booking.status] || 0) + 1;
-        return acc;
-      },
-      {}
-    );
+    // 4. Statistiques par statut
+    const statusCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+      acc[booking.status] = (acc[booking.status] || 0) + 1;
+      return acc;
+    }, {});
 
-    const bookingsByStatus = Object.entries(statusCounts).map(
-      ([name, value]) => ({ name, value })
-    );
+    const bookingsByStatus = Object.entries(statusCounts).map(([name, value]) => ({
+      name,
+      value,
+    }));
 
-    // 5️⃣ Par type de vol
-    const flightTypeCounts = bookings.reduce(
-      (acc: Record<string, number>, booking) => {
-        const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      },
-      {}
-    );
+    // 5. Statistiques par type de vol
+    const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+      const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
 
-    const bookingsByFlightType = Object.entries(flightTypeCounts).map(
-      ([name, value]) => ({ name, value })
-    );
+    const bookingsByFlightType = Object.entries(flightTypeCounts).map(([name, value]) => ({
+      name,
+      value,
+    }));
 
-    // 6️⃣ Revenu par mois (filtré currency)
-    const monthlyRevenue = bookings.reduce(
-      (acc: Record<string, number>, booking) => {
-        const date = new Date(booking.created_at);
-        const month = date.toLocaleString("fr-FR", { month: "short" });
-        acc[month] = (acc[month] || 0) + booking.total_price;
-        return acc;
-      },
-      {}
-    );
+    // 6. Revenu par mois (USD et HTG séparés)
+    const monthlyRevenue = bookings.reduce((acc: Record<string, { usd: number, htg: number }>, booking) => {
+      const date = new Date(booking.created_at);
+      const month = date.toLocaleString("fr-FR", { month: "short" });
+      
+      if (!acc[month]) {
+        acc[month] = { usd: 0, htg: 0 };
+      }
+      
+      if (booking.currency === 'USD' || booking.currency === 'usd') {
+        acc[month].usd += booking.total_price;
+      } else if (booking.currency === 'HTG' || booking.currency === 'htg') {
+        acc[month].htg += booking.total_price;
+      } else {
+        acc[month].usd += booking.total_price;
+      }
+      
+      return acc;
+    }, {});
 
-    const revenueByMonth = Object.entries(monthlyRevenue).map(
-      ([name, total]) => ({ name, total })
-    );
+    const revenueByMonth = Object.entries(monthlyRevenue).map(([name, totals]) => ({
+      name,
+      usd: totals.usd,
+      htg: totals.htg,
+    }));
 
-    // 7️⃣ Dernières réservations
+    // 7. Récupérer les 10 dernières réservations
     const recentBookings = bookings.slice(0, 10);
 
-    // 8️⃣ Réponse finale
-    res.json({
-      currency: currency || "ALL",
-      totalRevenue,
-      totalBookings,
-      flightsAvailable,
-      averageBookingValue,
-      bookingsByStatus,
-      revenueByMonth,
-      bookingsByFlightType,
-      recentBookings,
-    });
+    // Puis dans votre route API, mettez à jour :
+const response: DashboardStats2 = {
+  totalRevenueUSD,
+  totalRevenueHTG,
+  totalBookings,
+  flightsAvailable,
+  averageBookingValueUSD,
+  averageBookingValueHTG,
+  bookingsByStatus,
+  revenueByMonth: revenueByMonth.map(month => ({
+    name: month.name,
+    total: month.usd + month.htg // Total combiné
+  })),
+  revenueByMonthDetailed: revenueByMonth, // Détail séparé USD/HTG
+  bookingsByFlightType,
+  recentBookings,
+};
 
+    res.json(response);
   } catch (error) {
     console.error("Dashboard error:", error);
-    res.status(500).json({
-      error: "Erreur lors de la récupération des statistiques"
-    });
+    res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
   }
 });
+
 
 
 // API pour rechercher un vol par son code
