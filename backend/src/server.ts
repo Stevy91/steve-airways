@@ -2062,7 +2062,7 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
       [
         flightId,
         referenceNumber,
-        TotalPrice2,
+        price,
         currency,
         contactInfo.email,
         contactInfo.phone,
@@ -2093,7 +2093,7 @@ app.post("/api/create-ticket6", authMiddleware, async (req: any, res: Response) 
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingResult.insertId,
-        TotalPrice2,
+        price,
         currency,
         paymentMethod,
         unpaid || "confirmed",
