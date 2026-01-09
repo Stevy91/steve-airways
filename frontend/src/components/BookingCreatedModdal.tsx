@@ -320,7 +320,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Mode de paiement:</strong> 
           
        
-          ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Dépôt" : "Contrat"}
+          ${paymentMethod === "cash" ? "Espèces" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Dépôt" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
               bookingData.tabType === "helicopter" ? "Helicopter" : "Avion"
@@ -2278,7 +2278,7 @@ ${
                                 {formData.paymentMethod === "cash" && (
                                     <>
                                         <div className="flex flex-col">
-                                            <label className="mb-1 font-medium text-gray-700">Devise de paiement</label>
+                                            <label className="mb-1 font-medium text-gray-700">Payment currency</label>
 
                                             <select
                                                 name="devisePayment"

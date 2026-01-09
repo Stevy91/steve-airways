@@ -2237,7 +2237,50 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
 });
 
 
+// Route pour récupérer uniquement le prix d'un vol
+app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Response) => {
+  try {
+    const { flightNumber } = req.params;
 
+    if (!flightNumber || flightNumber.trim() === "") {
+      return res.status(400).json({ 
+        success: false,
+        message: "Le numéro de vol est requis"
+      });
+    }
+
+    // Rechercher uniquement le prix du vol
+    const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
+      SELECT 
+        price,
+        currency
+      FROM flights
+      WHERE flight_number = ? OR id = ?
+      LIMIT 1
+    `, [flightNumber.trim().toUpperCase(), flightNumber]);
+
+    if (flightRows.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: `Vol ${flightNumber} non trouvé`
+      });
+    }
+
+    const flight = flightRows[0];
+
+    res.json({
+      success: true,
+      price: Number(flight.price),
+      currency: flight.currency || 'USD'
+    });
+  } catch (error) {
+    console.error("Erreur récupération prix:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Erreur serveur"
+    });
+  }
+});
 
 
 function authMiddleware(req: any, res: Response, next: any) {
