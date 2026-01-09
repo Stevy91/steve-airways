@@ -1391,14 +1391,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             idTypeClient: formData.idTypeClient || "passport",
         };
 
-        // console.log("📤 Envoi de la requête avec les données:", {
-        //     flightId: flight.id,
-        //     passengerCount: passengers.length,
-        //     totalPrice: flight.price * passengerCount,
-        //     email: formData.email,
-        //     flightNumberReturn: formData.flightNumberReturn,
-        //     isRoundTrip,
-        // });
+      
 
         try {
             const token = localStorage.getItem("authToken");
