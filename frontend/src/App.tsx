@@ -26,6 +26,9 @@ import Login from "./routes/login/page";
 import Users from "./routes/dashboard/user/page";
 import PermissionsPage from "./routes/dashboard/permission/page";
 import Register from "./routes/dashboard/register/page";
+import ViewBookingCharter from "./routes/dashboard/viewbookingchaeter/page";
+import FlightTableCharter from "./routes/dashboard/charter/page";
+
 
 // export default function App() {
 //   const router = createBrowserRouter([
@@ -187,6 +190,8 @@ const router = createBrowserRouter([
             { path: "flights-helico", element: <FlightTableHelico /> },
             { path: "bookings-plane", element: <ViewBookingPlane /> },
             { path: "bookings-helico", element: <ViewBookingHelico /> },
+            { path: "flights-charter", element: <FlightTableCharter /> },
+            { path: "bookings-charter", element: <ViewBookingCharter /> },
             { path: "register", element: <Register /> },
 
             { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
