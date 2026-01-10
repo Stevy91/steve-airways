@@ -447,7 +447,7 @@ const DashboardPage = () => {
                                 <YAxis
                                     strokeWidth={0}
                                     stroke={theme === "light" ? "#475569" : "#94a3b8"}
-                                    tickFormatter={(value) => `$${value}`}
+                                    tickFormatter={(value) => `${value}`}
                                 />
                                 <Legend />
                                 <Area
