@@ -3156,7 +3156,7 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
       `INSERT INTO flights 
              (flight_number, type, typecharter, airline, departure_location_id, arrival_location_id, 
               departure_time, arrival_time, price, seats_available, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.body.flight_number ?? null,
         req.body.type ?? null,
