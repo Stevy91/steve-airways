@@ -3136,7 +3136,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 app.post("/api/addflighttable", async (req: Request, res: Response) => {
   console.log("Données reçues:", req.body); // Ajouté pour le debug
   // Vérifier que toutes les valeurs requises sont présentes
-  const requiredFields = ["flight_number", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
+  const requiredFields = ["flight_number", "typecharter", "type", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
 
   for (const field of requiredFields) {
     if (req.body[field] === undefined) {
@@ -3154,12 +3154,13 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
 
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO flights 
-             (flight_number, type, airline, departure_location_id, arrival_location_id, 
+             (flight_number, type, typecharter, airline, departure_location_id, arrival_location_id, 
               departure_time, arrival_time, price, seats_available, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.body.flight_number ?? null,
         req.body.type ?? null,
+        req.body.typecharter ?? null,
         req.body.airline ?? null,
         req.body.departure_location_id ?? null,
         req.body.arrival_location_id ?? null,

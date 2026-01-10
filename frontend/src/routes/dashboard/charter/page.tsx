@@ -58,6 +58,7 @@ const FlightTableCharter = () => {
     const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
     const [locations, setLocations] = useState<Location[]>([]);
     const [selectedDeparture, setSelectedDeparture] = useState("");
+    const [selectedCharter, setSelectedCharter] = useState("");
     const [selectedDestination, setSelectedDestination] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [notification, setNotification] = useState<Notification | null>(null);
@@ -527,6 +528,7 @@ const handleSearch = async () => {
                         onClick={() => {
                             setEditingFlight(null);
                             setSelectedDeparture("");
+                            setSelectedCharter("");
                             setSelectedDestination("");
                             setShowModal(true);
                             handleGenerate();
@@ -619,7 +621,7 @@ const handleSearch = async () => {
                                         className="border-b hover:bg-gray-50"
                                     >
                                         <td className="table-cell text-center">{flight.flight_number}</td>
-                                        <td className="table-cell text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
+                                        <td className="table-cell text-center">{flight.typecharter === "plane" ? "Avion" : "Hélicoptère"}</td>
                                         <td className="table-cell text-center">{flight.airline}</td>
                                         <td className="table-cell text-center">{flight.from}</td>
                                         <td className="table-cell text-center">{flight.to}</td>
@@ -751,6 +753,7 @@ const handleSearch = async () => {
                                     setShowModal(false);
                                     setEditingFlight(null);
                                     setSelectedDeparture("");
+                                    setSelectedCharter("");
                                     setSelectedDestination("");
                                 }}
                             />
@@ -770,6 +773,7 @@ const handleSearch = async () => {
                                             setShowModal(false);
                                             setEditingFlight(null);
                                             setSelectedDeparture("");
+                                            setSelectedCharter("");
                                             setSelectedDestination("");
                                         }}
                                     >
@@ -778,7 +782,7 @@ const handleSearch = async () => {
 
                                     <div className="px-6 pt-6">
                                         <h2 className="text-xl font-semibold text-slate-800">
-                                            {editingFlight ? "Update the flight" : "Add a flight"}
+                                            {editingFlight ? "Update the flight" : "Add a flight Charter"}
                                         </h2>
                                     </div>
 
@@ -792,7 +796,7 @@ const handleSearch = async () => {
 
                                             const flightData = {
                                                 flight_number: formData.get("flight_number") as string,
-                                                type: formData.get("type") || null,
+                                                typecharter: formData.get("typecharter") as string,
                                                 airline: formData.get("airline") as string,
                                                 departure_location_id: selectedDeparture,
                                                 arrival_location_id: selectedDestination,
@@ -818,7 +822,39 @@ const handleSearch = async () => {
                                         }}
                                         className="space-y-4"
                                     >
+                                        
                                         <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-2">
+                                             <div className="flex flex-col">
+                                                <label
+                                                    htmlFor="firstName"
+                                                    className="mb-1 font-medium text-gray-700"
+                                                >
+                                                    Type de charter
+                                                </label>
+                                                <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                                                    <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
+                                                    <select
+                                                        value={selectedCharter}
+                                                        name= "typecharter"
+                                                        onChange={(e) => setSelectedCharter(e.target.value)}
+                                                        className="w-full bg-transparent outline-none disabled:text-gray-400"
+                                                        required
+                                                        
+                                                    >
+                                                        <option
+                                                            value=""
+                                                            disabled
+                                                        >
+                                                            Select Type de charter
+                                                        </option>
+                                                        <option value="plane">Plane</option>
+                                                        <option value="helicopter">Helico</option>
+                                                        
+                                                    </select>
+
+                                                   
+                                                </div>
+                                            </div>
                                             <div className="flex flex-col">
                                                 <label
                                                     htmlFor="firstName"
@@ -826,15 +862,7 @@ const handleSearch = async () => {
                                                 >
                                                     Flight number
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    name="type"
-                                                    placeholder="Numéro de vol"
-                                                    className="w-full rounded-full border px-3 py-2"
-                                                    value="helicopter"
-                                                    required
-                                                    hidden
-                                                />
+                                                
                                                 <input
                                                     type="text"
                                                     name="flight_number"
