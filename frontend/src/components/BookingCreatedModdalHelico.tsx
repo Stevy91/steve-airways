@@ -346,7 +346,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <tr>
             <td colspan="2" style="padding-top: 20px;">
               <div style="padding: 20px; text-align: center;">
-                    <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Vol Aller Retour" : "Aller Simple"}</h3>
+                    <h3 style="color: #1A237E; margin: 0;"> ${isRoundTrip ? "Vol Aller-Retour" : "Aller Simple"}</h3>
                     </div>
                 <h3 style="color: #1A237E; margin: 0;">Itinéraire</h3>
                 

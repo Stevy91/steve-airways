@@ -4437,7 +4437,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             <tr>
               <td colspan="2" style="padding-top: 8px">
                 <div style="padding: 20px; text-align: center">
-                  <h3 style="color: #1a237e; margin: 0">${hasReturnFlight ? "Aller-Retour" : "Simple Aller"}</h3>
+                  <h3 style="color: #1a237e; margin: 0">${hasReturnFlight ? "Vol Aller-Retour" : "Aller Simple"}</h3>
                 </div>
                 <h3 style="color: #1a237e; margin: 0">Itinéraire</h3>
                     <table width="100%" cellpadding="0" cellspacing="0">
