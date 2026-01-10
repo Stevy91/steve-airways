@@ -834,7 +834,7 @@ const handleSearch = async () => {
                                                     charter type
                                                 </label>
                                                 <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
-                                                    <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
+                                                    
                                                     <select
                                                         value={selectedCharter}
                                                         name= "typecharter"

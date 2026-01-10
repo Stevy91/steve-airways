@@ -3136,7 +3136,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 app.post("/api/addflighttable", async (req: Request, res: Response) => {
   console.log("Données reçues:", req.body); // Ajouté pour le debug
   // Vérifier que toutes les valeurs requises sont présentes
-  const requiredFields = ["flight_number", "typecharter", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
+  const requiredFields = ["flight_number", "departure_location_id", "arrival_location_id", "departure_time", "arrival_time"];
 
   for (const field of requiredFields) {
     if (req.body[field] === undefined) {
