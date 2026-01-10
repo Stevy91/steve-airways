@@ -2249,20 +2249,25 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
       });
     }
 
-    // Rechercher uniquement le prix du vol
+    const searchTerm = flightNumber.trim();
+    
     const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
       SELECT 
         price,
         currency
       FROM flights
-      WHERE flight_number = ? OR id = ?
+      WHERE 
+        flight_number = ? OR
+        flight_number LIKE CONCAT(?, '%') OR
+        flight_number LIKE CONCAT('%', ?) OR
+        id = ?
       LIMIT 1
-    `, [flightNumber.trim().toUpperCase(), flightNumber]);
+    `, [searchTerm, searchTerm, searchTerm, searchTerm]);
 
     if (flightRows.length === 0) {
       return res.status(404).json({ 
         success: false,
-        message: `Vol ${flightNumber} non trouvé`
+        message: `Vol "${flightNumber}" non trouvé`
       });
     }
 
