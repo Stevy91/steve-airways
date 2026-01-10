@@ -3154,12 +3154,15 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
 
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO flights 
-             (flight_number, type, typecharter, airline, departure_location_id, arrival_location_id, 
+             (flight_number, type, charter, typecharter, airline, departure_location_id, arrival_location_id, 
               departure_time, arrival_time, price, seats_available, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.body.flight_number ?? null,
         req.body.type ?? null,
+        req.body.charter ?? null,
+        req.body.typecharter ?? null,
+        req.body.airline ?? null,
         req.body.typecharter ?? null,
         req.body.airline ?? null,
         req.body.departure_location_id ?? null,
