@@ -233,7 +233,7 @@ const totalPages = stats && stats.recentBookings
 const fetchFlights = async () => {
     try {
         setLoading(true);
-        const res = await fetch("https://steve-airways.onrender.com/api/flighttablehelico");
+        const res = await fetch("https://steve-airways.onrender.com/api/flighttablecharter");
         const data = await res.json();
             setStats(data);
         
