@@ -26,6 +26,7 @@ interface Flight {
     arrival_location_id?: string;
     arrival_time: string;
     departure_time: string;
+    typecharter: string;
 }
 
 type Location = {
@@ -829,24 +830,19 @@ const handleSearch = async () => {
                                                     htmlFor="firstName"
                                                     className="mb-1 font-medium text-gray-700"
                                                 >
-                                                    Type de charter
+                                                    charter type
                                                 </label>
                                                 <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
                                                     <MapPinIcon className="mr-2 h-4 w-4 text-red-500" />
                                                     <select
                                                         value={selectedCharter}
                                                         name= "typecharter"
+                                                        defaultValue={editingFlight?.typecharter}
                                                         onChange={(e) => setSelectedCharter(e.target.value)}
                                                         className="w-full bg-transparent outline-none disabled:text-gray-400"
                                                         required
                                                         
                                                     >
-                                                        <option
-                                                            value=""
-                                                            disabled
-                                                        >
-                                                            Select Type de charter
-                                                        </option>
                                                         <option value="plane">Plane</option>
                                                         <option value="helicopter">Helico</option>
                                                         
