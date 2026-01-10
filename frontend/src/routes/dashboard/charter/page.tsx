@@ -798,6 +798,7 @@ const handleSearch = async () => {
                                             const flightData = {
                                                 flight_number: formData.get("flight_number") as string,
                                                 typecharter: formData.get("typecharter") as string,
+                                                charter: formData.get("charter") as string,
                                                 airline: formData.get("airline") as string,
                                                 departure_location_id: selectedDeparture,
                                                 arrival_location_id: selectedDestination,
@@ -847,6 +848,16 @@ const handleSearch = async () => {
                                                         <option value="helicopter">Helico</option>
                                                         
                                                     </select>
+
+                                                    <input
+                                                    type="text"
+                                                    name="charter"
+                                                    placeholder="Numéro de vol"
+                                                    className="w-full rounded-full border px-3 py-2"
+                                                    value="charter"
+                                                    required
+                                                    hidden
+                                                />
 
                                                    
                                                 </div>

@@ -3163,8 +3163,6 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
         req.body.charter ?? null,
         req.body.typecharter ?? null,
         req.body.airline ?? null,
-        req.body.typecharter ?? null,
-        req.body.airline ?? null,
         req.body.departure_location_id ?? null,
         req.body.arrival_location_id ?? null,
         req.body.departure_time ?? null,
