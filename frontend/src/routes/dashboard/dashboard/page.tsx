@@ -327,7 +327,7 @@ const DashboardPage = () => {
                             </div>
                             <div className="h-[90px] w-[90px] items-center justify-center rounded-full bg-slate-50/20 p-6 text-blue-500 transition-colors dark:bg-blue-600/20 dark:text-blue-600">
                                 <ShoppingCart
-                                    color="#ffffff"
+                                    color="#ffcb1c"
                                     size={40}
                                 />
                             </div>

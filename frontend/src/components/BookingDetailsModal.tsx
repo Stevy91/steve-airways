@@ -279,60 +279,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         });
     };
 
-    // const handleSaveChanges = async () => {
-    //     if (!editedBooking) return;
-
-    //     setSaving(true);
-    //     try {
-    //         // Utiliser directement le prix total depuis editedBooking au lieu de le recalculer
-    //         const totalPriceForAPI = editedBooking.totalPrice.replace("$", "");
-
-    //         // Sauvegarder les modifications via API
-    //         const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${editedBooking.reference}`, {
-    //             method: "PUT",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify({
-    //                 passengers: editedBooking.passengers,
-    //                 flights: editedBooking.flights,
-    //                 contactEmail: editedBooking.contactEmail,
-    //                 contactPhone: editedBooking.contactPhone,
-    //                 totalPrice: totalPriceForAPI, // Utiliser la valeur directement depuis l'input
-    //                 paymentStatus: paymentStatus,
-    //                 adminNotes: editedBooking.adminNotes,
-    //                 bookingReference:booking.reference,
-    //                 typeVol:booking.typeVol,
-    //                 payment_method:booking.payment_method,
-    //             }),
-    //         });
-
-    //         if (!res.ok) {
-    //             const errorData = await res.json();
-    //             throw new Error(errorData.error || "Erreur lors de la mise à jour");
-    //         }
-
-    //         const updatedData = await res.json();
-
-    //         // Mettre à jour le state local avec le prix formaté ($)
-    //         const updatedBookingWithFormattedPrice = {
-    //             ...editedBooking,
-    //             totalPrice: `$${totalPriceForAPI}`,
-    //         };
-
-    //         setBooking(updatedBookingWithFormattedPrice);
-    //         setIsEditing(false);
-
-    //         // Callback pour le parent
-    //         onSave && onSave(updatedBookingWithFormattedPrice);
-    //          if (bookingModify) {
-    //             bookingModify();
-    //         }
-    //     } catch (err) {
-    //         console.error("❌ Failed to update booking", err);
-    //         alert("Impossible de mettre à jour la réservation.");
-    //     } finally {
-    //         setSaving(false);
-    //     }
-    // };
+  
 
    // Dans le composant BookingDetailsModal, modifier la fonction handleSaveChanges :
 
@@ -389,6 +336,7 @@ const handleSaveChanges = async () => {
                 paymentStatus: paymentStatus,
                 adminNotes: editedBooking.adminNotes,
                 bookingReference: booking.reference,
+                currency: booking.currency,
                 typeVol: booking.typeVol,
                 payment_method: booking.payment_method,
                 flightId: flightIdToUpdate, // Envoyer le nouvel ID de vol si changement

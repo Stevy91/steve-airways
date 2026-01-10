@@ -63,6 +63,7 @@ type BookingData = {
     from: string;
     to: string;
     fromCity?: string;
+    currency: string;
     toCity?: string;
     outbound: any;
     return?: any;
@@ -86,9 +87,13 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         if (!dateString) return "N/A";
 
         try {
-            const [datePart] = dateString.split(" ");
+            const [datePart] = dateString.split(" "); // Prend juste la date
             const parsedDate = parse(datePart, "yyyy-MM-dd", new Date());
+
+            // Convertir en fuseau horaire Haïti
             const zonedDate = toZonedTime(parsedDate, timeZone);
+
+            // Formater sans passer timeZone dans options
             return format(zonedDate, "EEE, dd MMM");
         } catch (err) {
             console.error("Erreur formatDate:", err, dateString);
@@ -101,9 +106,11 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         return format(now, "EEE, dd MMM");
     };
 
+    // Extraire les dates et heures du vol aller
     const [departureDate, departureTime] = outboundFlight.departure_time.split(" ");
     const [arrivalDate, arrivalTime] = outboundFlight.arrival_time.split(" ");
 
+    // Extraire les dates et heures du vol retour SI IL EXISTE
     let returnDepartureDate = "N/A";
     let returnDepartureTime = "N/A";
     let returnArrivalDate = "N/A";
@@ -117,6 +124,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         [returnArrivalDate, returnArrivalTime] = returnFlight.arrival_time.split(" ");
     }
 
+    // Formater la date de départ
     let formattedDepartureDate = "N/A";
     try {
         const [departureDateStr] = outboundFlight.departure_time.split(" ");
@@ -127,6 +135,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         console.error("Erreur formatDate départ:", err);
     }
 
+    // Formater la date d'arrivée
     let formattedArrivalDate = "N/A";
     try {
         const [arrivalDateStr] = outboundFlight.arrival_time.split(" ");
@@ -137,6 +146,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         console.error("Erreur formatDate arrivée:", err);
     }
 
+    // Vérifier si c'est un aller-retour
     const isRoundTrip = returnFlight && returnFlight.noflight;
 
     return `
@@ -269,7 +279,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${isRoundTrip ? (bookingData.totalPrice * 2).toFixed(2) : bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total: </strong>${bookingData.totalPrice.toFixed(2)}${" "}${bookingData.currency === "htg" ? "HTG" : "USD"}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
                       ${paymentMethod === "cash" ? "Paid" : paymentMethod === "card" ? "Paid" : paymentMethod === "cheque" ? "Paid" : paymentMethod === "virement" ? "Paid" : paymentMethod === "transfert" ? "Paid" : "UnPaid"}
                       </p>
@@ -416,7 +426,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${isRoundTrip ? (bookingData.totalPrice * 2).toFixed(2) : bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total: </strong>${bookingData.totalPrice.toFixed(2)}${" "}${bookingData.currency === "htg" ? "HTG" : "USD"}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
 
                       ${paymentMethod === "cash" ? "Payé" : paymentMethod === "card" ? "Payé" : paymentMethod === "cheque" ? "Payé" : paymentMethod === "virement" ? "Payé" : paymentMethod === "transfert" ? "Payé" : "Non rémunéré"}
@@ -448,7 +458,7 @@ pour ces raisons.</p>
 };
 
 const sendTicketByEmail = async (bookingData: BookingData, bookingReference: string, paymentMethod: string) => {
-    const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B";
+    const apiKey = "api-F876F566C8754DB299476B9DF6E9B82B"; // ou process.env.SMTP2GO_API_KEY
     const recipientEmail = bookingData.passengersData.adults[0].email;
 
     const emailContent = generateEmailContent(bookingData, bookingReference, paymentMethod);
@@ -473,16 +483,15 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
     }
     console.log("✅ Email sent", data);
 };
-
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
     const [isRoundTrip, setIsRoundTrip] = useState(false);
     const [createTicket, setCreateTicket] = useState(false);
     const [loadingReturnFlight, setLoadingReturnFlight] = useState(false);
-    
+
     // États pour le prix du vol retour
     const [calculatedPrice2, setCalculatedPrice2] = useState<number>(0);
-    const [priceCurrency2, setPriceCurrency2] = useState<string>('USD');
-    
+    const [priceCurrency2, setPriceCurrency2] = useState<string>("USD");
+
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
@@ -525,7 +534,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             setSuggestions([]);
             setShowDropdown(false);
             setCalculatedPrice2(0);
-            setPriceCurrency2('USD');
+            setPriceCurrency2("USD");
         }
     }, [open]);
 
@@ -569,21 +578,18 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     };
 
     // Fonction pour rechercher le prix du vol retour
-    const fetchReturnFlightPrice = async (flightNumber: string): Promise<{price: number, currency: string} | null> => {
+    const fetchReturnFlightPrice = async (flightNumber: string): Promise<{ price: number; currency: string } | null> => {
         if (!flightNumber || flightNumber.trim().length < 2) {
             return null;
         }
 
         try {
             const token = localStorage.getItem("authToken");
-            const response = await fetch(
-                `https://steve-airways.onrender.com/api/flights/get-price/${flightNumber.trim().toUpperCase()}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
+            const response = await fetch(`https://steve-airways.onrender.com/api/flights/get-price/${flightNumber.trim().toUpperCase()}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
             if (!response.ok) {
                 if (response.status === 404) {
@@ -594,14 +600,14 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             }
 
             const data = await response.json();
-            
+
             if (data.success && data.price) {
                 return {
-                    price: data.price,
-                    currency: data.currency
+                    price: Number(data.price) || 0,
+                    currency: data.currency || "USD",
                 };
             }
-            
+
             return null;
         } catch (error) {
             console.error("Erreur lors de la récupération du prix:", error);
@@ -613,41 +619,41 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     // Gestion du changement du numéro de vol retour
     const handleFlightNumberReturnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const flightNumber = e.target.value;
-        
+
         // Mettre à jour l'état du champ
-        setFormData(prev => ({ 
-            ...prev, 
-            flightNumberReturn: flightNumber 
+        setFormData((prev) => ({
+            ...prev,
+            flightNumberReturn: flightNumber,
         }));
-        
+
         // Réinitialiser le prix du vol retour si le champ est vide
         if (!flightNumber || flightNumber.trim().length < 2) {
             setCalculatedPrice2(0);
-            setPriceCurrency2('USD');
+            setPriceCurrency2("USD");
             return;
         }
-        
+
         // Annuler le timeout précédent
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
-        
+
         // Rechercher le prix après un délai (debounce)
         timeoutRef.current = setTimeout(async () => {
             if (flightNumber && flightNumber.trim().length >= 3) {
                 setLoadingReturnFlight(true);
                 try {
                     const flightData = await fetchReturnFlightPrice(flightNumber.trim());
-                    
+
                     if (flightData) {
                         // Mettre à jour le prix du vol retour
                         setCalculatedPrice2(flightData.price);
                         setPriceCurrency2(flightData.currency);
-                        
+
                         // Afficher un message de succès
                         toast.success(
-                            `Prix du vol retour trouvé: ${flightData.currency === 'USD' ? '$' : ''}${flightData.price} ${flightData.currency}`,
-                            { duration: 3000 }
+                            `Prix du vol retour trouvé: ${flightData.currency === "USD" ? "$" : ""}${flightData.price} ${flightData.currency}`,
+                            { duration: 3000 },
                         );
                     } else if (flightNumber.trim().length >= 5) {
                         // Si le numéro est complet mais pas trouvé
@@ -655,6 +661,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                             duration: 3000,
                         });
                         setCalculatedPrice2(0);
+                        setPriceCurrency2("USD");
                     }
                 } catch (error) {
                     console.error("Erreur recherche vol retour:", error);
@@ -669,9 +676,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const handleRoundTripToggle = (checked: boolean) => {
         setIsRoundTrip(checked);
         if (!checked) {
-            setFormData(prev => ({ ...prev, flightNumberReturn: "" }));
+            setFormData((prev) => ({ ...prev, flightNumberReturn: "" }));
             setCalculatedPrice2(0);
-            setPriceCurrency2('USD');
+            setPriceCurrency2("USD");
         }
     };
 
@@ -773,19 +780,20 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setSuggestions([]);
     };
 
-    // Calcul du prix du vol aller
-    const baseFlightPrice = flight.price;
-    const calculatedPrice =
-        formData.devisePayment === "htg" && formData.taux_jour 
-            ? baseFlightPrice * Number(formData.taux_jour) 
-            : baseFlightPrice;
-    
+    // Calcul du prix du vol aller - CORRIGÉ
+    const baseFlightPrice = Number(flight.price) || 0;
+    const tauxJourNumber = Number(formData.taux_jour) || 0;
+
+    const calculatedPrice = formData.devisePayment === "htg" && tauxJourNumber > 0 ? baseFlightPrice * tauxJourNumber : baseFlightPrice;
+
+    const calculatedPrice3 = formData.devisePayment === "htg" && tauxJourNumber > 0 ? calculatedPrice2 * tauxJourNumber : calculatedPrice2;
+
     const priceCurrency = formData.devisePayment === "htg" ? "HTG" : "USD";
-    
-    // Calcul du prix total
-    const totalPrice = isRoundTrip 
-        ? calculatedPrice + calculatedPrice2 
-        : calculatedPrice;
+
+    // Calcul du prix total - CORRIGÉ
+    const price2 = Number(calculatedPrice3) || 0;
+    const price1 = Number(calculatedPrice) || 0;
+    const totalPrice = isRoundTrip ? price1 + price2 : price1;
 
     const handleSubmit = async () => {
         setCreateTicket(true);
@@ -816,7 +824,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         }
 
         // Si aller-retour mais pas de vol retour trouvé
-        if (isRoundTrip && calculatedPrice2 <= 0) {
+        if (isRoundTrip && price2 <= 0) {
             toast.error("Veuillez entrer un numéro de vol retour valide", {
                 duration: 3000,
             });
@@ -968,7 +976,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 console.error("❌ Erreur 500 détaillée:", data);
                 let errorMessage = "Une erreur interne s'est produite lors de la création du ticket";
                 if (data.details) errorMessage += ` (${data.details})`;
-                
+
                 toast.error(errorMessage, {
                     style: {
                         background: "#fee2e2",
@@ -999,16 +1007,29 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 try {
                     let returnFlight = null;
                     if (isRoundTrip && formData.flightNumberReturn) {
-                        returnFlight = {
-                            date: "",
-                            noflight: formData.flightNumberReturn,
-                            departure_time: "",
-                            arrival_time: "",
-                            from: "",
-                            to: "",
-                            fromCity: "",
-                            toCity: "",
-                        };
+                        try {
+                            const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                                },
+                            });
+
+                            if (resReturn.ok) {
+                                const flightData = await resReturn.json();
+                                returnFlight = {
+                                    date: flightData.departure_time,
+                                    noflight: flightData.flight_number,
+                                    departure_time: flightData.departure_time,
+                                    arrival_time: flightData.arrival_time,
+                                    from: flightData.from,
+                                    to: flightData.to,
+                                    fromCity: flightData.fromCity,
+                                    toCity: flightData.toCity,
+                                };
+                            }
+                        } catch (err) {
+                            console.error("Erreur récupération vol retour:", err);
+                        }
                     }
 
                     const bookingData = {
@@ -1024,13 +1045,229 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         },
                         return: returnFlight,
                         passengersData: { adults: passengers },
-                        totalPrice: data.totalPrice || body.totalPrice,
+                        totalPrice: data.totalPrice || totalPrice,
                         tabType: flight.type || "plane",
                         status: data.status || "pending",
+                        currency: formData.devisePayment,
                     };
 
                     await sendTicketByEmail(bookingData, data.bookingReference, formData.paymentMethod);
                     console.log("✅ Email envoyé avec succès");
+                    // 4️⃣ AFFICHER UN REÇU HTML POUR BACKUP
+                    const showHTMLReceipt = () => {
+                        const htmlContent = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Reçu - ${data.bookingReference}</title>
+                            <meta charset="UTF-8">
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    margin: 0;
+                                    padding: 20px;
+                                    background: #f5f5f5;
+                                }
+                                .receipt-container {
+                                    max-width: 320px;
+                                    margin: 0 auto;
+                                    background: white;
+                                    padding: 20px;
+                                   
+                                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                }
+                                .header {
+                                    text-align: center;
+                                    font-weight: bold;
+                                    font-size: 18px;
+                                    margin-bottom: 10px;
+                                    color: #1A237E;
+                                }
+                                .divider {
+                                    margin: 20px 0;
+                                }
+
+                                .section-title {
+                                    font-weight: bold;
+                                    margin: 10px 0 5px 0;
+                                    color: #333;
+                                }
+                                .barcode {
+                                    text-align: center;
+                                    margin: 20px 0;
+                                }
+                                .controls {
+                                    text-align: center;
+                                    margin-top: 20px;
+                                    padding-top: 20px;
+                                    border-top: 1px solid #eee;
+                                }
+                                button {
+                                    padding: 10px 20px;
+                                    margin: 0 10px;
+                                    background: #1A237E;
+                                    color: white;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                }
+                                button:hover {
+                                    background: #283593;
+                                }
+                                .info-line {
+                                    margin: 5px 0;
+                                    font-size: 13px;
+                                }
+                                .total {
+                                    font-weight: bold;
+                                    font-size: 16px;
+                                    color: #d32f2f;
+                                }
+                                @media print {
+                                    body {
+                                        background: white;
+                                        padding: 0;
+                                    }
+                                    .receipt-container {
+                                        box-shadow: none;
+                                       
+                                        max-width: 80mm;
+                                    }
+                                    .controls {
+                                        display: none;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="receipt-container">
+                                 <div class="header" style="text-align: center; margin-bottom: 15px;">
+                                    <img src="https://trogonairways.com/assets/logo/trogon-bird-color.svg" alt="" style="height: 40px; vertical-align: middle;">
+                                    <div id="logoText" class="logo-fallback">
+                                        TROGON AIRWAYS
+                                    </div>
+                                </div>
+                                <div style="text-align: center; font-size: 12px; color: #666;">
+                                    Reçu de réservation<br>
+                                    ${new Date().toLocaleDateString("fr-FR", {
+                                        weekday: "long",
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })}
+                                </div>
+                                
+                                <div class="divider"></div> 
+                                
+                                <div style=" font-weight: bold; font-size: 14px;">Caissier: ${user ? user.name : "..."}</div>
+                                <div class="divider"></div>
+                               
+                                <div class="divider"></div>
+
+                                <div style="text-align: center; font-weight: bold; font-size: 14px;">
+                                   ${bookingData.return ? `Billet Aller-Retour` : `Billet Simple`}
+                                </div>
+                                
+                                <div class="divider"></div>
+                                
+                                <div class="section-title">VOL ALLER</div>
+                                <div class="info-line">${bookingData.from} → ${bookingData.to}</div>
+                                <div class="info-line">Vol: ${bookingData.outbound.noflight}</div>
+                                <div class="info-line">Départ: ${new Date(bookingData.outbound.departure_time).toLocaleString("fr-FR")}</div>
+                                <div class="info-line">Arrivée: ${new Date(bookingData.outbound.arrival_time).toLocaleString("fr-FR")}</div>
+                                
+                                ${
+                                    bookingData.return
+                                        ? `
+                                    <div class="divider"></div>
+                                    <div class="section-title">VOL RETOUR</div>
+                                    <div class="info-line">${bookingData.to} → ${bookingData.from}</div>
+                                    <div class="info-line">Vol: ${bookingData.return.noflight}</div>
+                                    <div class="info-line">Départ: ${new Date(bookingData.return.departure_time).toLocaleString("fr-FR")}</div>
+                                    <div class="info-line">Arrivée: ${new Date(bookingData.return.arrival_time).toLocaleString("fr-FR")}</div>
+                                `
+                                        : ""
+                                }
+                                
+                                <div class="divider"></div>
+                                
+                                <div class="section-title">Client</div>
+                                ${bookingData.passengersData.adults
+                                    .map((p: Passenger, i: number) => `<div class="info-line">${p.firstName} ${p.lastName}</div>`)
+                                    .join("")}
+                                
+                                <div class="divider"></div>
+                                
+                                <div class="section-title">PAIEMENT</div>
+                                <div class="info-line">
+                                    <span>TOTAL:</span>
+                                <span style="float: right;" class="total">
+${totalPrice.toFixed(2)} ${priceCurrency}
+</span>
+                                </div>
+                                <div class="info-line">
+                                    <span>Mode de paiment:</span>
+                                    <span style="float: right;">
+                                        ${
+                                            formData.paymentMethod === "cash"
+                                                ? "Espèces"
+                                                : formData.paymentMethod === "card"
+                                                  ? "Carte"
+                                                  : formData.paymentMethod === "cheque"
+                                                    ? "Chèque"
+                                                    : formData.paymentMethod === "transfert"
+                                                      ? "dépôt"
+                                                      : formData.paymentMethod === "virement"
+                                                        ? "Virement"
+                                                        : "Contrat"
+                                        }
+                                    </span>
+                                </div>
+                                <div class="info-line">
+                                    <span>Statut:</span>
+                                    <span style="float: right; color: green; font-weight: bold;">${formData.paymentMethod === "cash" ? "Confirmé" : formData.paymentMethod === "card" ? "Confirmé" : formData.paymentMethod === "cheque" ? "Confirmé" : formData.paymentMethod === "virement" ? "Confirmé" : formData.paymentMethod === "transfert" ? "Confirmé" : "Non Confirmé"}</span>
+                                </div>
+                                
+                             
+                                
+                                <div class="barcode">
+                                    <img src="https://barcode.tec-it.com/barcode.ashx?data=${data.bookingReference}&code=Code128&dpi=96&dataseparator=" 
+                                         alt="Barcode ${data.bookingReference}" 
+                                         style="max-width: 100%; height: auto;">
+                                </div>
+                                
+                                <div style="font-size: 11px; text-align: center; color: #666; margin-top: 15px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">IMPORTANT</div>
+                                    <div>• Présentez ce reçu à l'enregistrement</div>
+                                    <div>• Arrivez 2h avant le départ</div>
+                                    <div>• Pièces d'identité obligatoires</div>
+                                    <div style="margin-top: 10px;">Tél: +509 3341 0404 / +509 2995 0404</div>
+                                    <div>www.trogonairways.com</div>
+                                </div>
+                                
+                                <div class="controls">
+                                    <button onclick="window.print()">🖨️ Imprimer ce reçu</button>
+                                    <button onclick="window.close()">Fermer</button>
+                                </div>
+                            </div>
+                            
+                           
+                        </body>
+                        </html>
+                    `;
+
+                        const receiptWindow = window.open("", "_blank", "width=500,height=800");
+                        if (receiptWindow) {
+                            receiptWindow.document.write(htmlContent);
+                            receiptWindow.document.close();
+                        }
+                    };
+
+                    // Afficher le reçu HTML en backup
+                    showHTMLReceipt();
                 } catch (emailError) {
                     console.error("❌ Erreur détaillée envoi email:", emailError);
                     toast.error("Ticket créé mais email non envoyé", {
@@ -1049,7 +1286,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
 
                 setIsRoundTrip(false);
                 setCalculatedPrice2(0);
-                setPriceCurrency2('USD');
+                setPriceCurrency2("USD");
                 setSuggestions([]);
                 setShowDropdown(false);
 
@@ -1063,7 +1300,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             } else {
                 console.error("❌ Erreur création ticket - Réponse:", data);
                 const errorMessage = data.message || data.details || data.error || "Une erreur s'est produite";
-                
+
                 toast.error(errorMessage, {
                     style: {
                         background: "#fee2e2",
@@ -1100,7 +1337,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setFormData(initialFormData);
         setIsRoundTrip(false);
         setCalculatedPrice2(0);
-        setPriceCurrency2('USD');
+        setPriceCurrency2("USD");
         setSuggestions([]);
         setShowDropdown(false);
         onClose();
@@ -1173,17 +1410,17 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                                     : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
                                             }`}
                                         />
-                                        
+
                                         {loadingReturnFlight && (
                                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500"></div>
                                             </div>
                                         )}
-                                        
-                                        {!loadingReturnFlight && calculatedPrice2 > 0 && (
+
+                                        {!loadingReturnFlight && price2 > 0 && (
                                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                                 <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                                    ${calculatedPrice2}
+                                                    {price2} {priceCurrency}
                                                 </span>
                                             </div>
                                         )}
@@ -1191,21 +1428,47 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                 </div>
 
                                 {/* Affichage des infos du vol retour trouvé */}
-                                {calculatedPrice2 > 0 && (
+                                {price2 > 0 ? (
                                     <div className="mt-2 rounded-lg bg-green-50 p-3">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="font-medium text-green-800">Vol retour trouvé ✓</p>
-                                                <p className="text-sm text-green-700">
-                                                    Numéro: <span className="font-bold">{formData.flightNumberReturn}</span>
-                                                </p>
+                                                <div className="flex flex-wrap gap-6">
+                                                    <div className="text-green-800">
+                                                        Return flight number: <span className="font-bold">{formData.flightNumberReturn}</span>
+                                                    </div>
+
+                                                    <div className="text-green-800">
+                                                        Return flight price:{" "}
+                                                        <span className="font-bold">
+                                                            {price2} {priceCurrency}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm text-green-700">
-                                                    Prix: <span className="font-bold">${calculatedPrice2} {priceCurrency2}</span>
+                                                    Total amount to pay:{" "}
+                                                    <span className="font-bold">
+                                                        {totalPrice.toFixed(2)} {priceCurrency}
+                                                    </span>
                                                 </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2 rounded-lg bg-green-50 p-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="font-medium text-green-800">Vol aller ✓</p>
+                                                
+                                            </div>
+                                            <div className="text-right">
                                                 <p className="text-sm text-green-700">
-                                                    Total: <span className="font-bold">${(calculatedPrice + calculatedPrice2).toFixed(2)} {priceCurrency}</span>
+                                                    Total amount to pay:{" "}
+                                                    <span className="font-bold">
+                                                        {totalPrice.toFixed(2)} {priceCurrency}
+                                                    </span>
                                                 </p>
                                             </div>
                                         </div>
@@ -1535,13 +1798,13 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                         type="text"
                                         id="price"
                                         name="price"
-                                        value={`${Number(totalPrice).toFixed(2)} ${priceCurrency}`}
+                                        value={`${totalPrice.toFixed(2)} ${priceCurrency}`}
                                         readOnly
                                         className="w-full rounded-md border border-gray-300 bg-gray-100 px-4 py-2 outline-none"
                                     />
-                                    {isRoundTrip && calculatedPrice2 > 0 && (
+                                    {isRoundTrip && price2 > 0 && (
                                         <p className="mt-1 text-xs text-gray-500">
-                                            Aller: ${calculatedPrice.toFixed(2)} + Retour: ${calculatedPrice2.toFixed(2)} {priceCurrency2}
+                                            Aller: {price1.toFixed(2)} {priceCurrency} + Retour: {price2.toFixed(2)} {priceCurrency}
                                         </p>
                                     )}
                                 </div>

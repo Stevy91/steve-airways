@@ -2914,7 +2914,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                       <td style="text-align: right">
                         <h3 style="color: #1a237e; margin: 0">Payment</h3>
                         <p style="margin: 0; font-size: 1.1em">
-                          <strong>Total:</strong> $${booking.total_price || '0.00'}
+                          <strong>Total:</strong> ${booking.total_price$}${" "}${booking.currency === "htg" ? "HTG" : "USD"}
+                          
                         </p>
                         <p style="margin: 0; font-size: 0.9em">
                           <strong>Status: </strong>
@@ -3075,7 +3076,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                       <td style="text-align: right">
                         <h3 style="color: #1a237e; margin: 0">Paiement</h3>
                         <p style="margin: 0; font-size: 1.1em">
-                          <strong>Total:</strong> $${booking.total_price || '0.00'}
+                          <strong>Total:</strong> ${booking.total_price$}${" "}${booking.currency === "htg" ? "HTG" : "USD"}
                         </p>
                         <p style="margin: 0; font-size: 0.9em">
                           <strong>Statut: </strong>
@@ -3494,6 +3495,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     bookingReference,
     typeVol,
     payment_method,
+    currency,
     flightId,
     returnFlightId
   } = req.body;
@@ -4216,7 +4218,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                     <td style="text-align: right">
                       <h3 style="color: #1a237e; margin: 0">Payment</h3>
                       <p style="margin: 0; font-size: 1.1em">
-                        <strong>Total:</strong> $${totalPrice}
+                        <strong>Total:</strong>  ${totalPrice}${" "}${currency === "htg" ? "HTG" : "USD"}
+                       
                       </p>
                       <p style="margin: 0; font-size: 0.9em">
                         <strong>Status: </strong>
@@ -4492,7 +4495,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
                   <td style="text-align: right">
                     <h3 style="color: #1a237e; margin: 0">Paiement</h3>
                     <p style="margin: 0; font-size: 1.1em">
-                      <strong>Total:</strong> $${totalPrice}
+                      <strong>Total:</strong>  ${totalPrice}${" "}${currency === "htg" ? "HTG" : "USD"}
                     </p>
                     <p style="margin: 0; font-size: 0.9em">
                       <strong>Status: </strong>

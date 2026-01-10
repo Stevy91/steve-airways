@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Plane, Search } from "lucide-react";
 import toast from "react-hot-toast";
-import { format, parseISO, isValid, parse } from "date-fns";
+import { format, parse } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { useProfile } from "../hooks/useProfile";
 
-const SENDER_EMAIL = "booking@trogonairways.com"; // adresse "from"
+const SENDER_EMAIL = "booking@trogonairways.com";
 
 type Flight = {
     id: number;
@@ -30,6 +30,7 @@ type BookingCreatedModalProps = {
     flight: Flight | null;
     onClose: () => void;
 };
+
 type Passenger = {
     firstName: string;
     flightNumberReturn?: string;
@@ -62,6 +63,7 @@ type BookingData = {
     from: string;
     to: string;
     fromCity?: string;
+    currency: string;
     toCity?: string;
     outbound: any;
     return?: any;
@@ -73,7 +75,6 @@ type BookingData = {
     tabType?: string;
     totalPrice: number;
 };
-
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
     const outboundFlight = bookingData.outbound;
@@ -278,7 +279,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Payment</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${isRoundTrip ? (bookingData.totalPrice * 2).toFixed(2) : bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total: </strong>${bookingData.totalPrice.toFixed(2)}${" "}${bookingData.currency === "htg" ? "HTG" : "USD"}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
                       ${paymentMethod === "cash" ? "Paid" : paymentMethod === "card" ? "Paid" : paymentMethod === "cheque" ? "Paid" : paymentMethod === "virement" ? "Paid" : paymentMethod === "transfert" ? "Paid" : "UnPaid"}
                       </p>
@@ -425,7 +426,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
                     </td>
                     <td style="text-align: right;">
                       <h3 style="color: #1A237E; margin: 0;">Paiement</h3>
-                      <p style="margin: 0; font-size: 1.1em;"><strong>Total:</strong> $${isRoundTrip ? (bookingData.totalPrice * 2).toFixed(2) : bookingData.totalPrice.toFixed(2)}</p>
+                      <p style="margin: 0; font-size: 1.1em;"><strong>Total: </strong>${bookingData.totalPrice.toFixed(2)}${" "}${bookingData.currency === "htg" ? "HTG" : "USD"}</p>
                       <p style="margin: 0; font-size: 0.9em;"><strong>Status: </strong>
 
                       ${paymentMethod === "cash" ? "Payé" : paymentMethod === "card" ? "Payé" : paymentMethod === "cheque" ? "Payé" : paymentMethod === "virement" ? "Payé" : paymentMethod === "transfert" ? "Payé" : "Non rémunéré"}
@@ -484,12 +485,18 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
 const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose, flight, onTicketCreated }) => {
     const [isRoundTrip, setIsRoundTrip] = useState(false);
     const [createTicket, setCreateTicket] = useState(false);
+    const [loadingReturnFlight, setLoadingReturnFlight] = useState(false);
+
+    // États pour le prix du vol retour
+    const [calculatedPrice2, setCalculatedPrice2] = useState<number>(0);
+    const [priceCurrency2, setPriceCurrency2] = useState<string>("USD");
 
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const user = useProfile();
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const initialFormData = {
         firstName: "",
@@ -513,7 +520,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         email: "",
         phone: "",
         passengerCount: 1,
-
         paymentMethod: "card",
         price: "",
         devisePayment: "usd",
@@ -526,24 +532,15 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         if (!open) {
             setSuggestions([]);
             setShowDropdown(false);
-        }
-    }, [open]);
-
-    // Réinitialiser le formulaire quand le modal s'ouvre ou se ferme
-    useEffect(() => {
-        if (open) {
-            // Réinitialiser le formulaire quand le modal s'ouvre
-            setFormData(initialFormData);
-            setIsRoundTrip(false);
+            setCalculatedPrice2(0);
+            setPriceCurrency2("USD");
         }
     }, [open]);
 
     // Gérer les clics en dehors du dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            // Si le dropdown est ouvert
             if (showDropdown && suggestions.length > 0) {
-                // Vérifier si le clic est en dehors du dropdown ET en dehors de l'input
                 if (dropdownRef && !dropdownRef.contains(event.target as Node) && inputRef && !inputRef.contains(event.target as Node)) {
                     setShowDropdown(false);
                     setSuggestions([]);
@@ -551,69 +548,147 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             }
         };
 
-        // Ajouter l'écouteur d'événement
         document.addEventListener("mousedown", handleClickOutside);
-
-        // Nettoyer l'écouteur d'événement
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [showDropdown, suggestions, dropdownRef, inputRef]);
 
-    // Only ONE early return, at the beginning
+    // Nettoyer le timeout
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
     if (!open || !flight) return null;
 
     const formatNimuLicens = (value: string) => {
-        // Supprimer tout sauf les chiffres
         const numbers = value.replace(/\D/g, "");
-
-        // Limiter à 10 chiffres (000-000-000-0)
         const trimmed = numbers.slice(0, 10);
-
-        // Appliquer le format
         const parts = [];
         if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
         if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
         if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
         if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
-
         return parts.join("-");
     };
 
-    // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    //     const { name, value } = e.target;
+    // Fonction pour rechercher le prix du vol retour
+    const fetchReturnFlightPrice = async (flightNumber: string): Promise<{ price: number; currency: string } | null> => {
+        if (!flightNumber || flightNumber.trim().length < 2) {
+            return null;
+        }
 
-    //     // Si on modifie ID Number
-    //     if (name === "idClient") {
-    //         if (formData.idTypeClient === "nimu") {
-    //             setFormData((prev) => ({
-    //                 ...prev,
+        try {
+            const token = localStorage.getItem("authToken");
+            const response = await fetch(`https://steve-airways.onrender.com/api/flights/get-price/${flightNumber.trim().toUpperCase()}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-    //                 idClient: formatNimuLicens(value),
-    //             }));
-    //             return;
-    //         }
-    //     }
+            if (!response.ok) {
+                if (response.status === 404) {
+                    toast.error(`Vol ${flightNumber} non trouvé`, { duration: 3000 });
+                    return null;
+                }
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
 
-    //     // Si c’est un checkbox → on cast pour accéder à checked
-    //     if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
-    //         setFormData({
-    //             ...formData,
-    //             [name]: e.target.checked ? value : "",
-    //         });
-    //         return;
-    //     }
+            const data = await response.json();
 
-    //     setFormData((prev) => ({
-    //         ...prev,
-    //         [name]: value,
-    //     }));
-    // };
+            if (data.success && data.price) {
+                return {
+                    price: Number(data.price) || 0,
+                    currency: data.currency || "USD",
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Erreur lors de la récupération du prix:", error);
+            toast.error("Erreur de connexion au serveur", { duration: 3000 });
+            return null;
+        }
+    };
+
+    // Gestion du changement du numéro de vol retour
+    const handleFlightNumberReturnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const flightNumber = e.target.value;
+
+        // Mettre à jour l'état du champ
+        setFormData((prev) => ({
+            ...prev,
+            flightNumberReturn: flightNumber,
+        }));
+
+        // Réinitialiser le prix du vol retour si le champ est vide
+        if (!flightNumber || flightNumber.trim().length < 2) {
+            setCalculatedPrice2(0);
+            setPriceCurrency2("USD");
+            return;
+        }
+
+        // Annuler le timeout précédent
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        // Rechercher le prix après un délai (debounce)
+        timeoutRef.current = setTimeout(async () => {
+            if (flightNumber && flightNumber.trim().length >= 3) {
+                setLoadingReturnFlight(true);
+                try {
+                    const flightData = await fetchReturnFlightPrice(flightNumber.trim());
+
+                    if (flightData) {
+                        // Mettre à jour le prix du vol retour
+                        setCalculatedPrice2(flightData.price);
+                        setPriceCurrency2(flightData.currency);
+
+                        // Afficher un message de succès
+                        toast.success(
+                            `Prix du vol retour trouvé: ${flightData.currency === "USD" ? "$" : ""}${flightData.price} ${flightData.currency}`,
+                            { duration: 3000 },
+                        );
+                    } else if (flightNumber.trim().length >= 5) {
+                        // Si le numéro est complet mais pas trouvé
+                        toast.error(`Vol ${flightNumber} non trouvé`, {
+                            duration: 3000,
+                        });
+                        setCalculatedPrice2(0);
+                        setPriceCurrency2("USD");
+                    }
+                } catch (error) {
+                    console.error("Erreur recherche vol retour:", error);
+                } finally {
+                    setLoadingReturnFlight(false);
+                }
+            }
+        }, 500);
+    };
+
+    // Fonction pour réinitialiser quand on désactive "Round-Trip"
+    const handleRoundTripToggle = (checked: boolean) => {
+        setIsRoundTrip(checked);
+        if (!checked) {
+            setFormData((prev) => ({ ...prev, flightNumberReturn: "" }));
+            setCalculatedPrice2(0);
+            setPriceCurrency2("USD");
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
-        // 🔹 Format spécial pour NIMU
+        if (name === "flightNumberReturn") {
+            handleFlightNumberReturnChange(e as React.ChangeEvent<HTMLInputElement>);
+            return;
+        }
+
         if (name === "idClient" && formData.idTypeClient === "nimu") {
             setFormData((prev) => ({
                 ...prev,
@@ -622,7 +697,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
-        // Si c’est un checkbox → on cast pour accéder à checked
         if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
             setFormData({
                 ...formData,
@@ -631,7 +705,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
-        // 🔹 Mise à jour normale
         setFormData((prev) => {
             const updatedData = {
                 ...prev,
@@ -639,7 +712,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 ...(name === "devisePayment" && value !== "htg" ? { taux_jour: "" } : {}),
             };
 
-            // 🔹 Si on change Payment Method et que ce n’est PAS cash
             if (name === "paymentMethod" && value !== "cash") {
                 updatedData.devisePayment = "";
                 updatedData.taux_jour = "";
@@ -649,38 +721,15 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         });
     };
 
-    // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    //     const { name, value } = e.target;
-
-    //     // Si c’est un checkbox → on cast pour accéder à checked
-    //     if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
-    //         setFormData({
-    //             ...formData,
-    //             [name]: e.target.checked ? value : "",
-    //         });
-    //         return;
-    //     }
-
-    //     // Sinon → input, select…
-    //     setFormData({
-    //         ...formData,
-    //         [name]: value,
-    //     });
-    // };
-
-    // Reset suggestions when modal closes
-
-    // Modifiez handleFirstNameChange pour mettre à jour formData
+    // Fonction pour gérer le changement du prénom
     const handleFirstNameChange = async (e: any) => {
         const value = e.target.value;
 
-        // Mettre à jour le champ firstName dans formData
         setFormData((prev) => ({
             ...prev,
             firstName: value,
         }));
 
-        // Recherche d'auto-complétion
         if (value.length < 2) {
             setSuggestions([]);
             setShowDropdown(false);
@@ -691,7 +740,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             const res = await fetch(`https://steve-airways.onrender.com/api/passengers/search?q=${value}`);
             const data = await res.json();
             setSuggestions(data);
-            setShowDropdown(data.length > 0); // Afficher le dropdown seulement s'il y a des suggestions
+            setShowDropdown(data.length > 0);
         } catch (error) {
             console.error("Erreur recherche passagers:", error);
             setSuggestions([]);
@@ -699,9 +748,8 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         }
     };
 
-    // Fonction pour quand l'input perd le focus (quand on clique ailleurs)
+    // Fonction pour quand l'input perd le focus
     const handleFirstNameBlur = () => {
-        // Attendre un peu avant de fermer pour permettre la sélection
         setTimeout(() => {
             setShowDropdown(false);
             setSuggestions([]);
@@ -709,7 +757,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     };
 
     const selectPassenger = (p: any) => {
-        // Mettre à jour tous les champs
         setFormData((prev) => ({
             ...prev,
             firstName: p.first_name || "",
@@ -728,589 +775,29 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             tel_urgence: p.tel_urgence || "",
         }));
 
-        // Fermer le dropdown et vider les suggestions
         setShowDropdown(false);
         setSuggestions([]);
     };
 
-    // const handleSubmit = async () => {
-    //     setCreateTicket(true);
-    //     // 1️⃣ Validation des champs obligatoires
-    //     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.nationality || !formData.dateOfBirth) {
-    //         toast.error(`Veuillez remplir tous les champs obligatoires`, {
-    //             style: {
-    //                 background: "#fee2e2",
-    //                 color: "#991b1b",
-    //                 border: "1px solid #f87171",
-    //             },
-    //             iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //         });
-    //         return;
-    //     }
+    // Calcul du prix du vol aller - CORRIGÉ
+    const baseFlightPrice = Number(flight.price) || 0;
+    const tauxJourNumber = Number(formData.taux_jour) || 0;
 
-    //     // 2️⃣ Préparer les passagers
-    //     const passengers: Passenger[] = [];
-    //     const passengerCount = Number(formData.passengerCount || 1);
-    //     for (let i = 0; i < passengerCount; i++) {
-    //         passengers.push({
-    //             firstName: formData.firstName,
-    //             flightNumberReturn: formData.flightNumberReturn || "",
-    //             middleName: formData.middleName,
-    //             lastName: formData.lastName,
-    //             reference: formData.reference,
-    //             companyName: formData.companyName,
-    //             idClient: formData.idClient,
-    //             idTypeClient: formData.idTypeClient,
-    //             nom_urgence: formData.nom_urgence,
-    //             email_urgence: formData.email_urgence,
-    //             tel_urgence: formData.tel_urgence,
-    //             dateOfBirth: formData.dateOfBirth,
-    //             gender: formData.gender,
-    //             title: formData.title,
-    //             address: formData.address,
-    //             type: "adult",
-    //             typeVol: flight?.type || "plane",
-    //             typeVolV: "onway",
-    //             country: formData.country,
-    //             nationality: formData.nationality,
-    //             phone: formData.phone,
-    //             email: formData.email,
-    //         });
-    //     }
+    const calculatedPrice = formData.devisePayment === "htg" && tauxJourNumber > 0 ? baseFlightPrice * tauxJourNumber : baseFlightPrice;
 
-    //     // 3️⃣ Préparer le body à envoyer
-    //     const body = {
-    //         flightId: flight.id,
-    //         passengers,
-    //         unpaid: formData.unpaid,
-    //         referenceNumber: formData.reference,
-    //         companyName: formData.companyName,
-    //         contactInfo: { email: formData.email, phone: formData.phone },
-    //         totalPrice: flight.price * passengerCount,
-    //         departureDate: flight.departure.split("T")[0],
-    //         returnDate: formData.returnDate,
-    //         paymentMethod: formData.paymentMethod,
-    //         idClient: formData.idClient,
-    //         idTypeClient: formData.idTypeClient,
-    //     };
+    const calculatedPrice3 = formData.devisePayment === "htg" && tauxJourNumber > 0 ? calculatedPrice2 * tauxJourNumber : calculatedPrice2;
 
-    //     try {
-    //         // Récupérer le token depuis le localStorage ou le contexte d'authentification
-    //         const token = localStorage.getItem("authToken"); // ou depuis votre contexte/auth
-
-    //         if (!token) {
-    //             toast.error("❌ Vous devez être connecté pour créer un ticket");
-    //             // Rediriger vers la page de login si nécessaire
-    //             // window.location.href = '/login';
-    //             return;
-    //         }
-
-    //         const res = await fetch("https://steve-airways.onrender.com/api/create-ticket2", {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //                 Authorization: `Bearer ${token}`, // AJOUT DU TOKEN
-    //             },
-    //             body: JSON.stringify(body),
-    //         });
-
-    //         let data: any;
-
-    //         try {
-    //             data = await res.json();
-    //         } catch (jsonErr) {
-    //             console.error("Erreur parsing JSON:", jsonErr);
-    //             toast.error("❌ Réponse serveur invalide");
-    //             return;
-    //         }
-
-    //         // Vérifiez explicitement le statut HTTP ET le champ success
-    //         if (res.status === 200 && data.success) {
-    //             toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
-    //                 style: {
-    //                     background: "#28a745",
-    //                     color: "#fff",
-    //                     border: "1px solid #1e7e34",
-    //                 },
-
-    //                 iconTheme: { primary: "#fff", secondary: "#1e7e34" },
-    //             });
-
-    //             try {
-    //                 console.log("📧 Tentative d'envoi d'email...");
-    //                 console.log("Données email:", {
-    //                     bookingReference: data.bookingReference,
-    //                     passengerCount: passengers.length,
-    //                     email: formData.email,
-    //                 });
-
-    //                 let returnFlight = null;
-
-    //                 if (isRoundTrip && formData.flightNumberReturn) {
-    //                     try {
-    //                         const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
-    //                             headers: {
-    //                                 Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-    //                             },
-    //                         });
-    //                         const dataReturn = await resReturn.json();
-
-    //                         if (resReturn.ok && dataReturn) {
-    //                             const flightData = dataReturn;
-    //                             returnFlight = {
-    //                                 date: flightData.departure_time,
-    //                                 noflight: flightData.flight_number,
-    //                                 departure_time: flightData.departure_time,
-    //                                 arrival_time: flightData.arrival_time,
-    //                                 from: flightData.from,
-    //                                 to: flightData.to,
-    //                                 fromCity: flightData.fromCity,
-    //                                 toCity: flightData.toCity,
-    //                             };
-    //                         } else {
-    //                             console.warn("Vol retour introuvable, création sans vol retour");
-    //                             // Ne pas afficher d'erreur toast ici pour ne pas interrompre le processus
-    //                         }
-    //                     } catch (err) {
-    //                         console.error("Erreur récupération vol retour:", err);
-    //                         // Ne pas afficher d'erreur toast pour ne pas bloquer l'email
-    //                     }
-    //                 }
-
-    //                 // Envoyer l'email même si returnFlight est null
-    //                 try {
-    //                     await sendTicketByEmail(
-    //                         {
-    //                             from: flight.from || "",
-    //                             to: flight.to || "",
-    //                             outbound: {
-    //                                 date: flight.departure,
-    //                                 noflight: flight.flight_number,
-    //                                 departure_time: flight.departure,
-    //                                 arrival_time: flight.arrival,
-    //                             },
-    //                             return: returnFlight, // Peut être null
-    //                             passengersData: { adults: passengers },
-    //                             totalPrice: body.totalPrice,
-    //                         },
-    //                         data.bookingReference,
-    //                         formData.paymentMethod,
-    //                     );
-
-    //                     console.log("✅ Email envoyé avec succès");
-    //                 } catch (emailError) {
-    //                     console.error("❌ Erreur détaillée envoi email:", emailError);
-    //                     // Afficher un warning plutôt qu'une erreur pour ne pas perturber l'utilisateur
-    //                     toast.error("Ticket créé mais email non envoyé");
-    //                 }
-
-    //                 console.log("✅ Email envoyé avec succès");
-    //             } catch (emailError) {
-    //                 console.error("❌ Erreur détaillée envoi email:", emailError);
-    //                 toast.error("Ticket créé mais email non envoyé");
-    //             }
-
-    //             // ✅ Réinitialiser le vol retour après succès
-    //             setIsRoundTrip(false);
-
-    //             setFormData((prev) => ({
-    //                 ...prev,
-    //                 flightNumberReturn: "",
-    //                 returnDate: "",
-    //             }));
-
-    //             setFormData(initialFormData);
-    //             setIsRoundTrip(false);
-    //             setSuggestions([]);
-    //             setShowDropdown(false);
-
-    //             // ✅ Réinitialiser aussi le checkbox UnPaid
-    //             setFormData(prev => ({
-    //                 ...initialFormData,
-    //                 // Conserver certaines valeurs par défaut si nécessaire
-    //                 paymentMethod: "card",
-    //                 gender: "other",
-    //                 title: "Mr",
-    //             }));
-
-    //             if (onTicketCreated) {
-    //                 onTicketCreated();
-    //             }
-
-    //             onClose();
-    //         } else {
-    //             console.error("Erreur création ticket:", data);
-
-    //             toast.error(`${data.message || "Le numéro saisi pour le vol de retour ne correspond à aucun vol."}`, {
-    //                 style: {
-    //                     background: "#fee2e2",
-    //                     color: "#991b1b",
-    //                     border: "1px solid #f87171",
-    //                 },
-    //                 iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //             });
-    //         }
-    //     } catch (err) {
-    //         console.error("Erreur réseau:", err);
-    //         toast.error("❌ Erreur de connexion au serveur");
-    //     } finally {
-    //         setCreateTicket(false);
-    //     }
-    // };
-
-    // const handleSubmit = async () => {
-    //     setCreateTicket(true);
-
-    //     // 1️⃣ Validation des champs obligatoires
-    //     const requiredFields = [
-    //         { field: formData.firstName, name: "Prénom" },
-    //         { field: formData.lastName, name: "Nom" },
-    //         { field: formData.email, name: "Email" },
-    //         { field: formData.phone, name: "Téléphone" },
-    //         { field: formData.nationality, name: "Nationalité" },
-    //         { field: formData.dateOfBirth, name: "Date de naissance" },
-    //     ];
-
-    //     const missingFields = requiredFields.filter((f) => !f.field).map((f) => f.name);
-
-    //     if (missingFields.length > 0) {
-    //         toast.error(`Veuillez remplir tous les champs obligatoires : ${missingFields.join(", ")}`, {
-    //             style: {
-    //                 background: "#fee2e2",
-    //                 color: "#991b1b",
-    //                 border: "1px solid #f87171",
-    //             },
-    //             iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //         });
-    //         setCreateTicket(false);
-    //         return;
-    //     }
-
-    //     // 2️⃣ Préparer les passagers
-    //     const passengers: Passenger[] = [];
-    //     const passengerCount = Number(formData.passengerCount || 1);
-
-    //     for (let i = 0; i < passengerCount; i++) {
-    //         passengers.push({
-    //             firstName: formData.firstName,
-    //             flightNumberReturn: formData.flightNumberReturn || "",
-    //             middleName: formData.middleName || "",
-    //             lastName: formData.lastName,
-    //             reference: formData.reference || "",
-    //             companyName: formData.companyName || "",
-    //             idClient: formData.idClient || "",
-    //             idTypeClient: formData.idTypeClient || "passport",
-    //             nom_urgence: formData.nom_urgence || "",
-    //             email_urgence: formData.email_urgence || "",
-    //             tel_urgence: formData.tel_urgence || "",
-    //             dateOfBirth: formData.dateOfBirth,
-    //             gender: formData.gender || "other",
-    //             title: formData.title || "Mr",
-    //             address: formData.address || "",
-    //             type: "adult",
-    //             typeVol: flight?.type || "plane",
-    //             typeVolV: isRoundTrip ? "roundtrip" : "onway",
-    //             country: formData.country || "",
-    //             nationality: formData.nationality || "",
-    //             phone: formData.phone || "",
-    //             email: formData.email || "",
-    //         });
-    //     }
-
-    //     // 3️⃣ Préparer le body à envoyer selon l'API
-    //     const body = {
-    //         flightId: flight.id,
-    //         passengers,
-    //         contactInfo: {
-    //             email: formData.email,
-    //             phone: formData.phone,
-    //         },
-    //         totalPrice: flight.price * passengerCount,
-    //         unpaid: formData.unpaid || "confirmed",
-    //         referenceNumber: formData.reference || "",
-    //         companyName: formData.companyName || "",
-    //         departureDate: flight.departure.split("T")[0],
-    //         paymentMethod: formData.paymentMethod || "card",
-    //         idClient: formData.idClient || "",
-    //         idTypeClient: formData.idTypeClient || "passport",
-    //     };
-
-    //     console.log("📤 Envoi de la requête avec les données:", {
-    //         flightId: flight.id,
-    //         passengerCount: passengers.length,
-    //         totalPrice: flight.price * passengerCount,
-    //         email: formData.email,
-    //         flightNumberReturn: formData.flightNumberReturn,
-    //         isRoundTrip,
-    //     });
-
-    //     try {
-    //         const token = localStorage.getItem("authToken");
-    //         if (!token) {
-    //             toast.error("❌ Vous devez être connecté pour créer un ticket");
-    //             setCreateTicket(false);
-    //             return;
-    //         }
-
-    //         console.log("🔑 Token JWT présent, envoi de la requête...");
-
-    //         const res = await fetch("https://steve-airways.onrender.com/api/create-ticket4", {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //                 Authorization: `Bearer ${token}`,
-    //             },
-    //             body: JSON.stringify(body),
-    //         });
-
-    //         console.log("📥 Réponse du serveur:", {
-    //             status: res.status,
-    //             statusText: res.statusText,
-    //             ok: res.ok,
-    //         });
-
-    //         let data: any;
-    //         try {
-    //             data = await res.json();
-    //             console.log("📄 Données de réponse:", data);
-    //         } catch (jsonErr) {
-    //             console.error("❌ Erreur parsing JSON:", jsonErr);
-    //             const text = await res.text();
-    //             console.error("📝 Réponse brute:", text);
-    //             toast.error("❌ Réponse serveur invalide");
-    //             setCreateTicket(false);
-    //             return;
-    //         }
-
-    //         // GÉRER LES RÉPONSES D'ERREUR SPÉCIFIQUES
-    //         if (res.status === 400) {
-    //             // Erreur de places disponibles
-    //             if (data.error === "No seats available" || data.error === "Not enough seats available") {
-    //                 toast.error(data.message || "Plus de places disponibles pour ce vol", {
-    //                     style: {
-    //                         background: "#fee2e2",
-    //                         color: "#991b1b",
-    //                         border: "1px solid #f87171",
-    //                     },
-    //                     iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //                     duration: 5000,
-    //                 });
-    //             } else {
-    //                 toast.error(data.message || "Erreur de validation", {
-    //                     style: {
-    //                         background: "#fee2e2",
-    //                         color: "#991b1b",
-    //                         border: "1px solid #f87171",
-    //                     },
-    //                     iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //                 });
-    //             }
-    //             setCreateTicket(false);
-    //             return;
-    //         }
-
-    //         // Erreur de doublon
-    //         if (res.status === 409) {
-    //             toast.error(data.message || "Ce passager a déjà une réservation sur ce vol", {
-    //                 style: {
-    //                     background: "#fee2e2",
-    //                     color: "#991b1b",
-    //                     border: "1px solid #f87171",
-    //                 },
-    //                 iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //                 duration: 5000,
-    //             });
-    //             setCreateTicket(false);
-    //             return;
-    //         }
-
-    //         // Erreur de vol non trouvé
-    //         if (res.status === 404) {
-    //             toast.error(data.message || "Le vol spécifié n'existe pas", {
-    //                 style: {
-    //                     background: "#fee2e2",
-    //                     color: "#991b1b",
-    //                     border: "1px solid #f87171",
-    //                 },
-    //                 iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //                 duration: 5000,
-    //             });
-    //             setCreateTicket(false);
-    //             return;
-    //         }
-
-    //         // ERREUR 500 - Erreur interne du serveur
-    //         if (res.status === 500) {
-    //             console.error("❌ Erreur 500 détaillée:", data);
-
-    //             let errorMessage = "Une erreur interne s'est produite lors de la création du ticket";
-
-    //             // Si on a des détails en développement
-    //             if (data.details) {
-    //                 errorMessage += ` (${data.details})`;
-    //                 console.error("Détails de l'erreur:", data.details);
-    //             }
-
-    //             if (data.error) {
-    //                 console.error("Type d'erreur:", data.error);
-    //             }
-
-    //             toast.error(errorMessage, {
-    //                 style: {
-    //                     background: "#fee2e2",
-    //                     color: "#991b1b",
-    //                     border: "1px solid #f87171",
-    //                 },
-    //                 iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //                 duration: 5000,
-    //             });
-
-    //             setCreateTicket(false);
-    //             return;
-    //         }
-
-    //         // Vérifier le succès
-    //         if (res.status === 200 && data.success) {
-    //             console.log("✅ Ticket créé avec succès:", data.bookingReference);
-
-    //             toast.success(`Ticket créé avec succès ! Référence: ${data.bookingReference}`, {
-    //                 style: {
-    //                     background: "#28a745",
-    //                     color: "#fff",
-    //                     border: "1px solid #1e7e34",
-    //                 },
-    //                 iconTheme: { primary: "#fff", secondary: "#1e7e34" },
-    //             });
-
-    //             try {
-    //                 // ENVOYER L'EMAIL DE CONFIRMATION
-    //                 let returnFlight = null;
-
-    //                 if (isRoundTrip && formData.flightNumberReturn) {
-    //                     try {
-    //                         const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
-    //                             headers: {
-    //                                 Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-    //                             },
-    //                         });
-
-    //                         if (resReturn.ok) {
-    //                             const flightData = await resReturn.json();
-    //                             returnFlight = {
-    //                                 date: flightData.departure_time,
-    //                                 noflight: flightData.flight_number,
-    //                                 departure_time: flightData.departure_time,
-    //                                 arrival_time: flightData.arrival_time,
-    //                                 from: flightData.from,
-    //                                 to: flightData.to,
-    //                                 fromCity: flightData.fromCity,
-    //                                 toCity: flightData.toCity,
-    //                             };
-    //                         }
-    //                     } catch (err) {
-    //                         console.error("Erreur récupération vol retour:", err);
-    //                     }
-    //                 }
-
-    //                 // Préparer les données pour l'email
-    //                 const bookingData = {
-    //                     from: flight.from || "",
-    //                     to: flight.to || "",
-    //                     fromCity: flight.fromCity || "",
-    //                     toCity: flight.toCity || "",
-    //                     outbound: {
-    //                         date: flight.departure,
-    //                         noflight: flight.flight_number,
-    //                         departure_time: flight.departure,
-    //                         arrival_time: flight.arrival,
-    //                     },
-    //                     return: returnFlight,
-    //                     passengersData: { adults: passengers },
-    //                     totalPrice: data.totalPrice || body.totalPrice,
-    //                     tabType: flight.type || "plane",
-    //                 };
-
-    //                 // Envoyer l'email
-    //                 await sendTicketByEmail(bookingData, data.bookingReference, formData.paymentMethod);
-
-    //                 console.log("✅ Email envoyé avec succès");
-    //             } catch (emailError) {
-    //                 console.error("❌ Erreur détaillée envoi email:", emailError);
-    //                 toast.error("Ticket créé mais email non envoyé", {
-    //                     duration: 3000,
-    //                 });
-    //             }
-
-    //             // ✅ RÉINITIALISER TOUS LES CHAMPS
-    //             setFormData({
-    //                 ...initialFormData,
-    //                 paymentMethod: "card",
-    //                 gender: "other",
-    //                 title: "Mr",
-    //                 passengerCount: 1,
-    //             });
-
-    //             setIsRoundTrip(false);
-    //             setSuggestions([]);
-    //             setShowDropdown(false);
-
-    //             if (onTicketCreated) {
-    //                 onTicketCreated();
-    //             }
-
-    //             // Fermer le modal
-    //             setTimeout(() => {
-    //                 onClose();
-    //             }, 1500);
-    //         } else {
-    //             // Erreur générique du serveur
-    //             console.error("❌ Erreur création ticket - Réponse:", data);
-
-    //             const errorMessage = data.message || data.details || data.error || "Une erreur s'est produite lors de la création du ticket";
-
-    //             toast.error(errorMessage, {
-    //                 style: {
-    //                     background: "#fee2e2",
-    //                     color: "#991b1b",
-    //                     border: "1px solid #f87171",
-    //                 },
-    //                 iconTheme: { primary: "#fff", secondary: "#dc2626" },
-    //                 duration: 5000,
-    //             });
-    //         }
-    //     } catch (err: any) {
-    //         console.error("❌ Erreur réseau/fetch:", {
-    //             message: err.message,
-    //             stack: err.stack,
-    //             name: err.name,
-    //         });
-
-    //         let errorMsg = "❌ Erreur de connexion au serveur";
-
-    //         if (err.message.includes("Failed to fetch")) {
-    //             errorMsg = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
-    //         } else if (err.message.includes("NetworkError")) {
-    //             errorMsg = "Erreur réseau. Vérifiez votre connexion.";
-    //         }
-
-    //         toast.error(errorMsg, {
-    //             duration: 5000,
-    //         });
-    //     } finally {
-    //         setCreateTicket(false);
-    //     }
-    // };
-
-    const baseFlightPrice = flight.price; // prix USD venant du backend
-
-    const calculatedPrice =
-        formData.devisePayment === "htg" && formData.taux_jour ? baseFlightPrice * Number(formData.taux_jour) : baseFlightPrice;
     const priceCurrency = formData.devisePayment === "htg" ? "HTG" : "USD";
+
+    // Calcul du prix total - CORRIGÉ
+    const price2 = Number(calculatedPrice3) || 0;
+    const price1 = Number(calculatedPrice) || 0;
+    const totalPrice = isRoundTrip ? price1 + price2 : price1;
 
     const handleSubmit = async () => {
         setCreateTicket(true);
 
-        // 1️⃣ Validation des champs obligatoires
+        // Validation des champs obligatoires
         const requiredFields = [
             { field: formData.firstName, name: "Prénom" },
             { field: formData.lastName, name: "Nom" },
@@ -1335,7 +822,16 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             return;
         }
 
-        // 2️⃣ Préparer les passagers
+        // Si aller-retour mais pas de vol retour trouvé
+        if (isRoundTrip && price2 <= 0) {
+            toast.error("Veuillez entrer un numéro de vol retour valide", {
+                duration: 3000,
+            });
+            setCreateTicket(false);
+            return;
+        }
+
+        // Préparer les passagers
         const passengers: Passenger[] = [];
         const passengerCount = Number(formData.passengerCount || 1);
 
@@ -1364,16 +860,12 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 phone: formData.phone || "",
                 email: formData.email || "",
                 devisePayment: formData.devisePayment || "",
-                price: formData.price || "",
+                price: totalPrice.toString(),
                 taux_jour: formData.taux_jour || "",
             });
         }
 
-
-
-
-        const numericPrice = isRoundTrip ? calculatedPrice * 2 : calculatedPrice;
-        // 3️⃣ Préparer le body à envoyer selon l'API
+        // Préparer le body
         const body = {
             flightId: flight.id,
             passengers,
@@ -1381,20 +873,20 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 email: formData.email,
                 phone: formData.phone,
             },
-            totalPrice: flight.price * passengerCount,
+            totalPrice: totalPrice,
             unpaid: formData.unpaid || "confirmed",
             referenceNumber: formData.reference || "",
-            currency: formData.devisePayment || "",
-            price: numericPrice || "",
+            currency: formData.devisePayment || "usd",
+            price: totalPrice,
             taux_jour: formData.taux_jour || "",
             companyName: formData.companyName || "",
             departureDate: flight.departure.split("T")[0],
             paymentMethod: formData.paymentMethod || "card",
             idClient: formData.idClient || "",
             idTypeClient: formData.idTypeClient || "passport",
+            returnFlightNumber: formData.flightNumberReturn || null,
+            isRoundTrip: isRoundTrip,
         };
-
-      
 
         try {
             const token = localStorage.getItem("authToken");
@@ -1403,8 +895,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 setCreateTicket(false);
                 return;
             }
-
-            console.log("🔑 Token JWT présent, envoi de la requête...");
 
             const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
                 method: "POST",
@@ -1415,16 +905,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 body: JSON.stringify(body),
             });
 
-            console.log("📥 Réponse du serveur:", {
-                status: res.status,
-                statusText: res.statusText,
-                ok: res.ok,
-            });
-
             let data: any;
             try {
                 data = await res.json();
-                console.log("📄 Données de réponse:", data);
             } catch (jsonErr) {
                 console.error("❌ Erreur parsing JSON:", jsonErr);
                 const text = await res.text();
@@ -1434,7 +917,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            // GÉRER LES RÉPONSES D'ERREUR SPÉCIFIQUES
+            // Gestion des erreurs
             if (res.status === 400) {
                 if (data.error === "No seats available" || data.error === "Not enough seats available") {
                     toast.error(data.message || "Plus de places disponibles pour ce vol", {
@@ -1460,7 +943,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            // Erreur de doublon
             if (res.status === 409) {
                 toast.error(data.message || "Ce passager a déjà une réservation sur ce vol", {
                     style: {
@@ -1475,7 +957,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            // Erreur de vol non trouvé
             if (res.status === 404) {
                 toast.error(data.message || "Le vol spécifié n'existe pas", {
                     style: {
@@ -1490,20 +971,10 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            // ERREUR 500 - Erreur interne du serveur
             if (res.status === 500) {
                 console.error("❌ Erreur 500 détaillée:", data);
-
                 let errorMessage = "Une erreur interne s'est produite lors de la création du ticket";
-
-                if (data.details) {
-                    errorMessage += ` (${data.details})`;
-                    console.error("Détails de l'erreur:", data.details);
-                }
-
-                if (data.error) {
-                    console.error("Type d'erreur:", data.error);
-                }
+                if (data.details) errorMessage += ` (${data.details})`;
 
                 toast.error(errorMessage, {
                     style: {
@@ -1514,12 +985,11 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                     iconTheme: { primary: "#fff", secondary: "#dc2626" },
                     duration: 5000,
                 });
-
                 setCreateTicket(false);
                 return;
             }
 
-            // Vérifier le succès
+            // Succès
             if (res.status === 200 && data.success) {
                 console.log("✅ Ticket créé avec succès:", data.bookingReference);
 
@@ -1532,10 +1002,9 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                     iconTheme: { primary: "#fff", secondary: "#1e7e34" },
                 });
 
+                // Envoyer l'email
                 try {
-                    // ENVOYER L'EMAIL DE CONFIRMATION
                     let returnFlight = null;
-
                     if (isRoundTrip && formData.flightNumberReturn) {
                         try {
                             const resReturn = await fetch(`https://steve-airways.onrender.com/api/flights/${formData.flightNumberReturn}`, {
@@ -1562,7 +1031,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         }
                     }
 
-                    // Préparer les données pour l'email ET l'impression
                     const bookingData = {
                         from: flight.from || "",
                         to: flight.to || "",
@@ -1576,15 +1044,14 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         },
                         return: returnFlight,
                         passengersData: { adults: passengers },
-                        totalPrice: data.totalPrice || body.totalPrice,
+                        totalPrice: data.totalPrice || totalPrice,
                         tabType: flight.type || "plane",
                         status: data.status || "pending",
+                        currency: formData.devisePayment,
                     };
 
-                    // 1️⃣ ENVOYER L'EMAIL
                     await sendTicketByEmail(bookingData, data.bookingReference, formData.paymentMethod);
                     console.log("✅ Email envoyé avec succès");
-
                     // 4️⃣ AFFICHER UN REÇU HTML POUR BACKUP
                     const showHTMLReceipt = () => {
                         const htmlContent = `
@@ -1737,11 +1204,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                                 <div class="info-line">
                                     <span>TOTAL:</span>
                                 <span style="float: right;" class="total">
-${
-    bookingData.return
-        ? `${formData.devisePayment === "htg" ? (calculatedPrice * 2).toFixed(2) + " HTG" : (bookingData.totalPrice * 2).toFixed(2) + " USD"}`
-        : `${formData.devisePayment === "htg" ? calculatedPrice.toFixed(2) + " HTG" : bookingData.totalPrice.toFixed(2) + " USD"}`
-}
+${totalPrice.toFixed(2)} ${priceCurrency}
 </span>
                                 </div>
                                 <div class="info-line">
@@ -1811,7 +1274,7 @@ ${
                     });
                 }
 
-                // ✅ RÉINITIALISER TOUS LES CHAMPS
+                // Réinitialiser
                 setFormData({
                     ...initialFormData,
                     paymentMethod: "card",
@@ -1821,6 +1284,8 @@ ${
                 });
 
                 setIsRoundTrip(false);
+                setCalculatedPrice2(0);
+                setPriceCurrency2("USD");
                 setSuggestions([]);
                 setShowDropdown(false);
 
@@ -1828,15 +1293,12 @@ ${
                     onTicketCreated();
                 }
 
-                // Fermer le modal après un délai
                 setTimeout(() => {
                     onClose();
-                }, 3000); // Augmenté à 3s pour laisser le temps d'imprimer
+                }, 2000);
             } else {
-                // Erreur générique du serveur
                 console.error("❌ Erreur création ticket - Réponse:", data);
-
-                const errorMessage = data.message || data.details || data.error || "Une erreur s'est produite lors de la création du ticket";
+                const errorMessage = data.message || data.details || data.error || "Une erreur s'est produite";
 
                 toast.error(errorMessage, {
                     style: {
@@ -1856,7 +1318,6 @@ ${
             });
 
             let errorMsg = "❌ Erreur de connexion au serveur";
-
             if (err.message.includes("Failed to fetch")) {
                 errorMsg = "Impossible de se connecter au serveur. Vérifiez votre connexion internet.";
             } else if (err.message.includes("NetworkError")) {
@@ -1872,9 +1333,10 @@ ${
     };
 
     const handleClose = () => {
-        // Réinitialiser les champs avant de fermer
         setFormData(initialFormData);
         setIsRoundTrip(false);
+        setCalculatedPrice2(0);
+        setPriceCurrency2("USD");
         setSuggestions([]);
         setShowDropdown(false);
         onClose();
@@ -1924,46 +1386,110 @@ ${
                                             type="checkbox"
                                             className="peer sr-only"
                                             checked={isRoundTrip}
-                                            onChange={(e) => setIsRoundTrip(e.target.checked)}
+                                            onChange={(e) => handleRoundTripToggle(e.target.checked)}
                                         />
 
                                         <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
                                         <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        id="flightNumberReturn"
-                                        name="flightNumberReturn"
-                                        placeholder="Return flight number"
-                                        disabled={!isRoundTrip}
-                                        required={isRoundTrip}
-                                        onChange={handleChange}
-                                        className={`w-full rounded-md border px-4 py-2 outline-none transition ${
-                                            isRoundTrip
-                                                ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                                : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                                        } `}
-                                    />
-                                </div>
-                            </div>
+                                    <div className="relative flex-1">
+                                        <input
+                                            type="text"
+                                            id="flightNumberReturn"
+                                            name="flightNumberReturn"
+                                            placeholder="Return flight number"
+                                            disabled={!isRoundTrip}
+                                            required={isRoundTrip}
+                                            value={formData.flightNumberReturn}
+                                            onChange={handleChange}
+                                            className={`w-full rounded-md border px-4 py-2 outline-none transition ${
+                                                isRoundTrip
+                                                    ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                                            }`}
+                                        />
 
-                            <div className="my-4 h-px w-full bg-slate-100" />
+                                        {loadingReturnFlight && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500"></div>
+                                            </div>
+                                        )}
+
+                                        {!loadingReturnFlight && price2 > 0 && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                                                    {price2} {priceCurrency}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Affichage des infos du vol retour trouvé */}
+                                {price2 > 0 ? (
+                                    <div className="mt-2 rounded-lg bg-green-50 p-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="font-medium text-green-800">Vol retour trouvé ✓</p>
+                                                <div className="flex flex-wrap gap-6">
+                                                    <div className="text-green-800">
+                                                        Return flight number: <span className="font-bold">{formData.flightNumberReturn}</span>
+                                                    </div>
+
+                                                    <div className="text-green-800">
+                                                        Return flight price:{" "}
+                                                        <span className="font-bold">
+                                                            {price2} {priceCurrency}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm text-green-700">
+                                                    Total amount to pay:{" "}
+                                                    <span className="font-bold">
+                                                        {totalPrice.toFixed(2)} {priceCurrency}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2 rounded-lg bg-green-50 p-3">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="font-medium text-green-800">Vol aller ✓</p>
+                                                
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm text-green-700">
+                                                    Total amount to pay:{" "}
+                                                    <span className="font-bold">
+                                                        {totalPrice.toFixed(2)} {priceCurrency}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="my-4 h-px w-full bg-slate-100" />
+                            </div>
 
                             <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
                                 {/* Prénom */}
-
                                 <div className="relative flex flex-col">
                                     <label className="mb-1 font-medium text-gray-700">First Name</label>
 
                                     <input
                                         type="text"
                                         ref={setInputRef}
-                                        id="firstName" // Ajout d'un id
-                                        name="firstName" // Ajout d'un name
-                                        value={formData.firstName} // Utiliser formData.firstName
+                                        id="firstName"
+                                        name="firstName"
+                                        value={formData.firstName}
                                         onChange={handleFirstNameChange}
-                                        onBlur={handleFirstNameBlur} // Quand on perd le focus
+                                        onBlur={handleFirstNameBlur}
                                         autoComplete="off"
                                         placeholder="First Name"
                                         className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
@@ -2089,7 +1615,8 @@ ${
                                         <option value="licens">License</option>
                                     </select>
                                 </div>
-                                {/* ID Type */}
+
+                                {/* ID Number */}
                                 <div className="flex flex-col">
                                     <label
                                         htmlFor="idClient"
@@ -2199,8 +1726,8 @@ ${
                                     />
                                 </div>
 
+                                {/* Méthode de paiement */}
                                 <div className="flex flex-col">
-                                    {/* Méthode de paiement */}
                                     <label
                                         htmlFor="paymentMethod"
                                         className="mb-1 font-medium text-gray-700"
@@ -2257,6 +1784,8 @@ ${
                                         <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
                                     </label>
                                 </div>
+
+                                {/* Prix du vol */}
                                 <div className="flex flex-col">
                                     <label
                                         htmlFor="price"
@@ -2264,15 +1793,19 @@ ${
                                     >
                                         Flight Price
                                     </label>
-
                                     <input
                                         type="text"
                                         id="price"
                                         name="price"
-                                        value={`${isRoundTrip ? calculatedPrice * 2 : calculatedPrice} ${priceCurrency}`}
+                                        value={`${totalPrice.toFixed(2)} ${priceCurrency}`}
                                         readOnly
                                         className="w-full rounded-md border border-gray-300 bg-gray-100 px-4 py-2 outline-none"
                                     />
+                                    {isRoundTrip && price2 > 0 && (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Aller: {price1.toFixed(2)} {priceCurrency} + Retour: {price2.toFixed(2)} {priceCurrency}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {formData.paymentMethod === "cash" && (
