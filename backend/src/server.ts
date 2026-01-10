@@ -2251,10 +2251,14 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
 
     const searchTerm = flightNumber.trim();
     
+    // Vérifiez d'abord quelles colonnes existent dans votre table
+    console.log("🔍 Recherche du vol:", searchTerm);
+    
     const [flightRows] = await pool.query<mysql.RowDataPacket[]>(`
       SELECT 
-        price,
-        currency
+        id,
+        flight_number,
+        price
       FROM flights
       WHERE 
         flight_number = ? OR
@@ -2264,6 +2268,8 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
       LIMIT 1
     `, [searchTerm, searchTerm, searchTerm, searchTerm]);
 
+    console.log("📊 Résultats trouvés:", flightRows.length);
+
     if (flightRows.length === 0) {
       return res.status(404).json({ 
         success: false,
@@ -2272,11 +2278,18 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
     }
 
     const flight = flightRows[0];
+    
+    console.log("✅ Vol trouvé:", {
+      id: flight.id,
+      flight_number: flight.flight_number,
+      price: flight.price
+    });
 
+    // Retournez simplement le prix, sans currency
     res.json({
       success: true,
-      price: Number(flight.price),
-      currency: flight.currency || 'USD'
+      price: Number(flight.price)
+      // Ne pas inclure currency si la colonne n'existe pas
     });
   } catch (error) {
     console.error("Erreur récupération prix:", error);
@@ -2286,7 +2299,6 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
     });
   }
 });
-
 
 function authMiddleware(req: any, res: Response, next: any) {
   const authHeader = req.headers["authorization"];
