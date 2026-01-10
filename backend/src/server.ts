@@ -2914,7 +2914,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                       <td style="text-align: right">
                         <h3 style="color: #1a237e; margin: 0">Payment</h3>
                         <p style="margin: 0; font-size: 1.1em">
-                          <strong>Total:</strong> ${booking.total_price$}${" "}${booking.currency === "htg" ? "HTG" : "USD"}
+                          <strong>Total:</strong> ${booking.total_price}${" "}${booking.currency === "htg" ? "HTG" : "USD"}
                           
                         </p>
                         <p style="margin: 0; font-size: 0.9em">
@@ -3076,7 +3076,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
                       <td style="text-align: right">
                         <h3 style="color: #1a237e; margin: 0">Paiement</h3>
                         <p style="margin: 0; font-size: 1.1em">
-                          <strong>Total:</strong> ${booking.total_price$}${" "}${booking.currency === "htg" ? "HTG" : "USD"}
+                          <strong>Total:</strong> ${booking.total_price}${" "}${booking.currency === "htg" ? "HTG" : "USD"}
                         </p>
                         <p style="margin: 0; font-size: 0.9em">
                           <strong>Statut: </strong>
