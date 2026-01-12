@@ -26,7 +26,7 @@ import Login from "./routes/login/page";
 import Users from "./routes/dashboard/user/page";
 import PermissionsPage from "./routes/dashboard/permission/page";
 import Register from "./routes/dashboard/register/page";
-import ViewBookingCharter from "./routes/dashboard/viewbookingchaeter/page";
+import ViewBookingCharter from "./routes/dashboard/viewbookingcharter/page";
 import FlightTableCharter from "./routes/dashboard/charter/page";
 
 

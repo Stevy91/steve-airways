@@ -5475,6 +5475,9 @@ LEFT JOIN passengers p
 });
 
 
+
+
+
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, transactionType, currency, status, name } = req.query;
@@ -5556,6 +5559,8 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la recherche" });
   }
 });
+
+
 
 
 // app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
@@ -5699,80 +5704,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/api/flighttablecharter", async (req: Request, res: Response) => {
-  let connection;
-  try {
 
-
-    const query = `
-            SELECT 
-                f.id,
-                f.flight_number,
-                f.type,
-                f.charter,
-                f.typecharter,
-                f.airline,
-                f.departure_time,
-                f.arrival_time,
-                f.price,
-                f.seats_available,
-                dep.name AS departure_airport_name,
-                dep.city AS departure_city,
-                dep.code AS departure_code,
-                arr.name AS arrival_airport_name,
-                arr.city AS arrival_city,
-                arr.code AS arrival_code
-            FROM 
-                flights f
-            JOIN 
-                locations dep ON f.departure_location_id = dep.id
-            JOIN 
-                locations arr ON f.arrival_location_id = arr.id
-            WHERE 
-                f.charter = 'charter'    
-            ORDER BY 
-                f.departure_time DESC
-        `;
-
-    console.log("Exécution de la requête SQL...");
-    const [flights] = await pool.query<FlightWithAirports[]>(query);
-    console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
-
-    // Formater les données
-    const formattedFlights = flights.map((flight) => ({
-      id: flight.id,
-      flight_number: flight.flight_number,
-      type: flight.type,
-      typecharter: flight.typecharter,
-      charter: flight.charter,
-      airline: flight.airline,
-      from: `${flight.departure_airport_name} (${flight.departure_code})`,
-      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
-      departure: flight.departure_time,
-      arrival: flight.arrival_time,
-      price: flight.price,
-      seats_available: flight.seats_available.toString(),
-      departure_city: flight.departure_city,
-      arrival_city: flight.arrival_city,
-    }));
-
-
-     // 👉 IMPORTANT : envoyer TOUTES les réservations
-    res.json({ recentBookings: formattedFlights });
-  } catch (err) {
-    console.error("ERREUR DÉTAILLÉE:", {
-      message: err instanceof Error ? err.message : "Erreur inconnue",
-      stack: err instanceof Error ? err.stack : undefined,
-
-    });
-
-    if (connection)
-      res.status(500).json({
-        error: "Erreur serveur",
-        details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
-      });
-  }
-});
 
 // app.get("/api/flighttableplane", async (req: Request, res: Response) => {
 //   let connection;
@@ -6003,6 +5935,317 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/booking-charter", async (req: Request, res: Response) => {
+  try {
+    const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+  b.id,
+  b.booking_reference, 
+  b.payment_intent_id,
+  b.total_price,
+  b.currency,
+  b.status,
+  b.created_at,
+  b.passenger_count,
+  b.payment_method,
+  b.contact_email,
+  b.type_vol,
+  b.typecharter,
+  b.type_v,
+  u.name AS created_by_name,
+  u.email AS created_by_email,
+  p.first_name,
+  p.last_name
+FROM bookings b
+LEFT JOIN users u ON b.user_created_booking = u.id
+LEFT JOIN passengers p 
+  ON p.id = (
+    SELECT id FROM passengers
+    WHERE booking_id = b.id
+    ORDER BY id ASC
+    LIMIT 1
+  )
+           
+            WHERE b.type_vol = ?
+            ORDER BY b.created_at DESC`,
+      ["helicopter"]
+    );
+
+    const bookings: Booking[] = bookingRows.map((row) => ({
+      id: row.id,
+      booking_reference: row.booking_reference,
+      payment_intent_id: row.payment_intent_id,
+      total_price: Number(row.total_price),
+      currency: row.currency,
+      status: row.status,
+      created_at: row.created_at,
+      passenger_count: row.passenger_count,
+      payment_method: row.payment_method,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      contact_email: row.contact_email,
+      type_vol: row.type_vol,
+      typecharter: row.typecharter,
+      type_v: row.type_v,
+      created_by_name: row.created_by_name,
+      created_by_email: row.created_by_email
+    }));
+
+    // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ recentBookings: bookings });
+
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération" });
+  }
+});
+app.get("/api/booking-charter-search", async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, transactionType, currency, status, name } = req.query;
+
+    // Conditions dynamiques
+    let conditions = " WHERE b.typecharter IN ('helicopter', 'plane') ";
+    const params: any[] = [];
+
+    // 🔹 Aucun filtre → date du jour
+    if (!startDate && !endDate && !transactionType && !currency && !status && !name) {
+      conditions += " AND DATE(b.created_at) = CURDATE() ";
+    }
+
+    // 🔹 Avec Date Début
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
+
+    // 🔹 Avec Date Fin
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
+
+    // 🔹 Avec type de transaction
+    if (transactionType) {
+      conditions += " AND b.payment_method = ? ";
+      params.push(transactionType);
+    }
+
+    // 🔹 Avec type de status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
+
+        // 🔹 Avec type de status
+    if (currency) {
+      conditions += " AND b.currency = ? ";
+      params.push(currency);
+    }
+
+
+    if (name) {
+  conditions += " AND (p.first_name LIKE ? OR p.last_name LIKE ?) ";
+  params.push(`%${name}%`, `%${name}%`);
+}
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+                b.id, 
+                b.booking_reference, 
+                b.payment_intent_id, 
+                b.total_price, 
+                b.currency, 
+                b.status, 
+                b.created_at, 
+                b.passenger_count, 
+                b.payment_method, 
+                b.contact_email, 
+                b.type_vol, 
+                b.typecharter,
+                b.type_v,
+                p.first_name,
+                u.name AS created_by_name,
+                u.email AS created_by_email
+            FROM bookings b
+            LEFT JOIN users u ON b.user_created_booking = u.id
+            LEFT JOIN passengers p ON b.id = p.booking_id
+            ${conditions}
+            ORDER BY b.created_at DESC`,
+      params
+    );
+
+    res.json({ bookings: rows });
+
+  } catch (error) {
+    console.error("Erreur recherche booking:", error);
+    res.status(500).json({ error: "Erreur lors de la recherche" });
+  }
+});
+
+app.get("/api/flighttablecharter", async (req: Request, res: Response) => {
+  let connection;
+  try {
+
+
+    const query = `
+            SELECT 
+                f.id,
+                f.flight_number,
+                f.type,
+                f.charter,
+                f.typecharter,
+                f.airline,
+                f.departure_time,
+                f.arrival_time,
+                f.price,
+                f.seats_available,
+                dep.name AS departure_airport_name,
+                dep.city AS departure_city,
+                dep.code AS departure_code,
+                arr.name AS arrival_airport_name,
+                arr.city AS arrival_city,
+                arr.code AS arrival_code
+            FROM 
+                flights f
+            JOIN 
+                locations dep ON f.departure_location_id = dep.id
+            JOIN 
+                locations arr ON f.arrival_location_id = arr.id
+            WHERE 
+                f.charter = 'charter'    
+            ORDER BY 
+                f.departure_time DESC
+        `;
+
+    console.log("Exécution de la requête SQL...");
+    const [flights] = await pool.query<FlightWithAirports[]>(query);
+    console.log("Requête exécutée avec succès. Nombre de vols:", flights.length);
+
+    // Formater les données
+    const formattedFlights = flights.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      typecharter: flight.typecharter,
+      charter: flight.charter,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
+
+
+     // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ recentBookings: formattedFlights });
+  } catch (err) {
+    console.error("ERREUR DÉTAILLÉE:", {
+      message: err instanceof Error ? err.message : "Erreur inconnue",
+      stack: err instanceof Error ? err.stack : undefined,
+
+    });
+
+    if (connection)
+      res.status(500).json({
+        error: "Erreur serveur",
+        details: process.env.NODE_ENV !== "production" ? (err instanceof Error ? err.message : "Erreur inconnue") : undefined,
+      });
+  }
+});
+
+app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
+  try {
+    // const { startDate, endDate, transactionType, status, name } = req.query;
+    const { flightNumb, tailNumber, dateDeparture } = req.query;
+
+    // Conditions dynamiques
+    let conditions = " WHERE f.type IN ('helicopter', 'plane') ";
+    const params: any[] = [];
+
+  
+    if (flightNumb) {
+      conditions += "  AND f.flight_number = ? ";
+      params.push(flightNumb);
+    }
+
+   
+    if (tailNumber) {
+      conditions += "  AND f.airline = ? ";
+      params.push(tailNumber);
+    }
+
+   
+    if (dateDeparture) {
+     
+      conditions += " AND DATE(f.departure_time) = ? ";
+      params.push(dateDeparture);
+    }
+
+   
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+                f.id,
+                f.flight_number,
+                f.type,
+                f.typecharter,
+                f.airline,
+                f.departure_time,
+                f.arrival_time,
+                f.price,
+                f.seats_available,
+                dep.name AS departure_airport_name,
+                dep.city AS departure_city,
+                dep.code AS departure_code,
+                arr.name AS arrival_airport_name,
+                arr.city AS arrival_city,
+                arr.code AS arrival_code
+            FROM 
+                flights f
+            JOIN 
+                locations dep ON f.departure_location_id = dep.id
+            JOIN 
+                locations arr ON f.arrival_location_id = arr.id
+            ${conditions}
+            ORDER BY f.created_at DESC`,
+      params
+    );
+
+       
+
+    // Formater les données
+    const formattedFlights = rows.map((flight) => ({
+      id: flight.id,
+      flight_number: flight.flight_number,
+      type: flight.type,
+      typecharter: flight.typecharter,
+      airline: flight.airline,
+      from: `${flight.departure_airport_name} (${flight.departure_code})`,
+      to: `${flight.arrival_airport_name} (${flight.arrival_code})`,
+      departure: flight.departure_time,
+      arrival: flight.arrival_time,
+      price: flight.price,
+      seats_available: flight.seats_available.toString(),
+      departure_city: flight.departure_city,
+      arrival_city: flight.arrival_city,
+    }));
+
+
+     // 👉 IMPORTANT : envoyer TOUTES les réservations
+    res.json({ bookings: formattedFlights });
+
+   
+
+  } catch (error) {
+    console.error("Erreur recherche booking:", error);
+    res.status(500).json({ error: "Erreur lors de la recherche" });
+  }
+});
+
 
 app.get("/api/flight-plane-search", async (req: Request, res: Response) => {
   try {
@@ -6177,6 +6420,393 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
     f.id,
     f.flight_number,
     f.type,
+    f.airline,
+    f.departure_time,
+    f.arrival_time,
+    f.price,
+    f.seats_available,
+
+    COALESCE(
+      JSON_ARRAYAGG(
+        DISTINCT CASE 
+          WHEN p.id IS NOT NULL THEN
+            JSON_OBJECT(
+              'first_name', p.first_name,
+              'last_name', p.last_name,
+              'idClient', p.idClient,
+              'idTypeClient', p.idTypeClient
+            )
+        END
+      ),
+      JSON_ARRAY()
+    ) AS passengers,
+
+    dep.name AS departure_airport_name,
+    dep.city AS departure_city,
+    dep.code AS departure_code,
+
+    arr.name AS arrival_airport_name,
+    arr.city AS arrival_city,
+    arr.code AS arrival_code
+
+FROM flights f
+
+LEFT JOIN bookings b_out ON f.id = b_out.flight_id
+LEFT JOIN bookings b_ret ON f.id = b_ret.return_flight_id
+LEFT JOIN passengers p 
+       ON p.booking_id IN (b_out.id, b_ret.id)
+
+JOIN locations dep ON f.departure_location_id = dep.id
+JOIN locations arr ON f.arrival_location_id = arr.id
+
+${conditions}
+GROUP BY f.id
+ORDER BY f.departure_time
+;
+    `, params);
+
+    const rows = rowsUntyped as mysql.RowDataPacket[];
+
+    // Si aucune donnée trouvée
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ 
+        error: "Aucune donnée trouvée avec les critères spécifiés" 
+      });
+    }
+
+    const passengerRowsHTML = rows.map((p) => {
+      // Parse les passagers si nécessaire
+      let passengers = [];
+      try {
+        passengers = typeof p.passengers === "string" 
+          ? JSON.parse(p.passengers) 
+          : p.passengers || [];
+        
+        // Filtrer les entrées null
+        passengers = passengers.filter((ps: any) => ps !== null);
+      } catch (error) {
+        console.error("Erreur parsing passagers:", error);
+        passengers = [];
+      }
+
+      const seatsAvailable = Number(p.seats_available) || 0;
+      const totalReservations = passengers.length;
+      const capacity = totalReservations + seatsAvailable;
+
+      // Formater l'heure de départ
+      let departureTimeFormatted = 'N/A';
+      if (p.departure_time) {
+        try {
+          const departureDate = new Date(p.departure_time);
+          // Format: "HH:mm" (ex: "14:30")
+          departureTimeFormatted = format(departureDate, "HH:mm");
+        } catch (error) {
+          console.error("Erreur formatage heure départ:", error);
+          departureTimeFormatted = String(p.departure_time);
+        }
+      }
+
+            // Formater l'heure de départ
+      let arrivalTimeFormatted = 'N/A';
+      if (p.departure_time) {
+        try {
+          const arrivalDate = new Date(p.arrival_time);
+          // Format: "HH:mm" (ex: "14:30")
+          arrivalTimeFormatted = format(arrivalDate, "HH:mm");
+        } catch (error) {
+          console.error("Erreur formatage heure départ:", error);
+          arrivalTimeFormatted = String(p.arrival_time);
+        }
+      }
+
+
+            // Formater la date complète pour le vol (optionnel)
+      let departureDateFormatted = '';
+      if (p.departure_time) {
+        try {
+          const departureDate = new Date(p.departure_time);
+          // Format: "dd/MM/yyyy" (ex: "15/01/2024")
+          departureDateFormatted = format(departureDate, "EEE, dd MMM", { locale: fr });
+        } catch (error) {
+          departureDateFormatted = '';
+        }
+      }
+
+      const passengerRows = passengers.length > 0
+        ? passengers
+            .map(
+              (ps: any) => `
+                <tr>
+                  <td><Strong>${ps.first_name || ''} ${ps.last_name || ''}</Strong></td>
+                  <td><Strong>${ps.idTypeClient === "passport" ? "Passport: " : ps.idTypeClient === "nimu" ? "NIMU: " : ps.idTypeClient === "licens" ? "Licens: " : ""}</Strong> ${ps.idClient ? ps.idClient : ""}</td>
+                </tr>`
+            )
+            .join("")
+        : `
+            <tr>
+              <td colspan="2" class="center">Aucun passager</td>
+            </tr>
+          `;
+
+      return `
+        <div class="flight-section">
+          <h2>${p.departure_code || ''} → ${p.arrival_code || ''} | ${p.airline || ''}</h2>
+          
+          <div class="flight-info">
+            <span class="flight-number">Vol ${p.flight_number || ''}</span>
+         
+          </div>
+          
+          <table class="two-cols">
+            <tr>
+              <th>Départ</th>
+              <td class="red">${departureDateFormatted} ${departureTimeFormatted} - ${arrivalTimeFormatted}</td>
+            </tr>
+            <tr>
+              <th>Réservations</th>
+              <td class="center">${totalReservations}</td>
+            </tr>
+            <tr>
+              <th>Capacité</th>
+              <td class="center">${capacity}</td>
+            </tr>
+            <tr>
+              <th>Places disponibles</th>
+              <td class="center">${seatsAvailable}</td>
+            </tr>
+          </table>
+          
+          <table class="names-table">
+            <tr>
+              <th>Nom complet</th>
+              <th>Identifiant</th>
+            </tr>
+            ${passengerRows}
+          </table>
+          
+          <div class="spacer"></div>
+        </div>
+      `;
+    }).join("");
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Manifeste Hélicoptère</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 0.5in;
+          }
+          
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+            margin: 0;
+            padding: 0.5in;
+            font-size: 12px;
+          }
+          
+          h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: #1f4e79;
+            border-bottom: 2px solid #1f4e79;
+            padding-bottom: 10px;
+          }
+          
+          h2 {
+            font-size: 16px;
+            color: #1f4e79;
+            margin: 0 0 5px 0;
+          }
+          
+          .flight-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #666;
+          }
+          
+          .flight-number {
+            font-weight: bold;
+          }
+          
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+          }
+          
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+          }
+          
+          th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+          }
+          
+          .center {
+            text-align: center;
+          }
+          
+          .red {
+            color: #d9534f;
+            font-weight: bold;
+          }
+          
+          .two-cols th,
+          .two-cols td {
+            width: 50%;
+          }
+          
+          .names-table th {
+            background: #e9ecef;
+            text-align: center;
+          }
+          
+          .names-table td {
+            text-align: left;
+          }
+          
+          .spacer {
+            height: 15px;
+            border-bottom: 1px dashed #eee;
+            margin: 20px 0;
+          }
+          
+          .flight-section {
+            page-break-inside: avoid;
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background: #fff;
+          }
+          
+          .header-info {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #666;
+          }
+          
+          .date-display {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f4e79;
+            margin-top: 5px;
+          }
+          
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-info">
+          <h1>MANIFESTE DE VOL - HÉLICOPTÈRE</h1>
+          <div class="date-display">${formattedDate}</div>
+          
+        </div>
+        
+        ${passengerRowsHTML}
+        
+      
+      </body>
+      </html>
+    `;
+
+    // Générer le PDF
+    const file = { content: htmlContent };
+    const options = { 
+      format: 'A4', 
+      printBackground: true,
+      displayHeaderFooter: false,
+      margin: { 
+        top: '0.5in', 
+        right: '0.5in', 
+        bottom: '0.5in', 
+        left: '0.5in' 
+      }
+    };
+
+    const pdfBuffer = await pdf.generatePdf(file, options);
+
+    // Nom du fichier avec la date formatée
+    const fileNameDate = dateDeparture 
+      ? format(new Date(dateDeparture as string), 'yyyy-MM-dd')
+      : 'all';
+    
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=manifeste-helico-${fileNameDate}.pdf`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error("Erreur génération PDF:", error);
+    res.status(500).json({ 
+      error: "Erreur lors de la génération du PDF",
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    });
+  }
+});
+
+app.get("/api/flight-charter-export", async (req: Request, res: Response) => {
+  try {
+    const { flightNumb, tailNumber, dateDeparture } = req.query;
+
+    // Formatage de la date pour l'affichage
+    let formattedDate = "Toutes dates";
+    if (dateDeparture) {
+      try {
+        // Convertir la chaîne en objet Date
+        const dateObj = new Date(dateDeparture as string);
+        // Formater la date (ex: "Lun, 15 Janv")
+        formattedDate = format(dateObj, "EEE, dd MMM", { locale: fr });
+      } catch (error) {
+        console.error("Erreur formatage date:", error);
+        formattedDate = dateDeparture as string;
+      }
+    }
+
+    // Conditions dynamiques
+    let conditions = " WHERE f.type IN ('helicopter', 'plane') ";
+    const params: any[] = [];
+
+    if (flightNumb) {
+      conditions += " AND f.flight_number = ? ";
+      params.push(flightNumb);
+    }
+
+    if (tailNumber) {
+      conditions += " AND f.airline = ? ";
+      params.push(tailNumber);
+    }
+
+    if (dateDeparture) {
+      conditions += " AND DATE(f.departure_time) = ? ";
+      params.push(dateDeparture);
+    }
+
+    // 🟦 EXÉCUTION SQL
+    const [rowsUntyped] = await pool.query(`
+      SELECT 
+    f.id,
+    f.flight_number,
+    f.typecharter,
     f.airline,
     f.departure_time,
     f.arrival_time,
@@ -7067,6 +7697,227 @@ sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
         row.booking_reference,
         row.payment_intent_id,
         row.type_vol,
+        row.type_v,
+        `${row.first_name} ${row.last_name}`,
+        row.companyName,
+        row.contact_email,
+        row.currency === "htg" ? Number(row.total_price) + " HTG" : Number(row.total_price) + " USD",
+        row.passenger_count,
+        row.status === "confirmed" ? "Paid" : row.status === "pending" ? "Unpaid" : "Cancelled",
+        row.payment_method === "card" ? "Card" : row.payment_method === "cash" ? "Cash" : row.payment_method === "cheque" ? "Check" : row.payment_method === "virement" ? "Bank Transfer" : row.payment_method === "transfert" ? "Deposit" : "Contrat",
+        row.created_by_name,
+        row.created_at
+      ]);
+    });
+
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // ignorer le header si besoin
+
+      row.eachCell((cell, colNumber) => {
+        const color = columnColors[colNumber - 1];
+
+        if (color) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: color },
+          };
+        }
+      });
+    });
+
+
+    // 5️⃣ Auto-size colonnes
+    sheet.columns.forEach((column) => {
+      if (column && column.eachCell) {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const len = cell.value ? cell.value.toString().length : 10;
+          if (len > maxLength) maxLength = len;
+        });
+        column.width = Math.min(Math.max(maxLength + 2, 12), 40);
+
+      }
+    });
+
+
+
+    // 6️⃣ Headers HTTP
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Trogon Transactions Helico.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error("Erreur Excel:", error);
+    res.status(500).json({ error: "Erreur export Excel" });
+  }
+});
+
+
+app.get("/api/booking-charter-export", async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, transactionType, currency, status, name } = req.query;
+
+    let conditions = " WHERE b.type_vol IN ('helicopter', 'plane') ";
+    const params: any[] = [];
+
+    // Filtre dates
+    if (startDate) {
+      conditions += " AND DATE(b.created_at) >= ? ";
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      conditions += " AND DATE(b.created_at) <= ? ";
+      params.push(endDate);
+    }
+
+    // Filtre payment_method (insensible à la casse + espaces)
+    if (transactionType) {
+      conditions += " AND LOWER(TRIM(b.payment_method)) = LOWER(TRIM(?)) ";
+      params.push(transactionType);
+    }
+
+    // Filtre status
+    if (status) {
+      conditions += " AND b.status = ? ";
+      params.push(status);
+    }
+
+        // Filtre currency
+    if (currency) {
+      conditions += " AND b.currency = ? ";
+      params.push(currency);
+    }
+
+    // Filtre name
+    if (name) {
+      conditions += " AND p.first_name LIKE ? ";
+      params.push(`%${name}%`);
+    }
+
+    // 🟦 EXÉCUTION SQL + typage RowDataPacket[]
+    const [rowsUntyped] = await pool.query(`
+    SELECT 
+        b.booking_reference,
+        b.payment_intent_id,
+        b.typecharter,
+        b.type_v,
+        b.contact_email,
+        b.total_price,
+        b.currency,
+        b.passenger_count,
+        b.status,
+        b.payment_method,
+        MIN(p.first_name) AS first_name,
+        MIN(p.last_name) AS last_name,
+        u.name AS created_by_name,
+        DATE(b.created_at) AS created_at
+    FROM bookings b
+    LEFT JOIN users u ON b.user_created_booking = u.id
+    LEFT JOIN passengers p ON b.id = p.booking_id
+    ${conditions}
+    GROUP BY b.id
+    ORDER BY b.created_at DESC
+`, params);
+
+    const rows = rowsUntyped as mysql.RowDataPacket[];
+
+    // 🟩 Génération Excel
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("TRANSACTIONS HELICO");
+   // 1️⃣ Titre fusionné
+    sheet.mergeCells('A1:M1');
+    const headerRow = sheet.getRow(1);
+    headerRow.getCell(1).value = "TROGON HELICO TRANSACTIONS";
+    headerRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    headerRow.getCell(1).fill = { type: 'pattern',pattern: 'solid',fgColor: { argb: 'FF2E2F8C' }};
+    headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 45;
+
+     
+
+    // 3️⃣ Définition des colonnes
+    sheet.columns = [
+      { key: "booking_reference" },
+      { key: "payment_intent_id" },
+      { key: "typecharter" },
+      { key: "type_v" },
+      { key: "first_name" },
+      { key: "companyName" },
+      { key: "contact_email" },
+      { key: "total_price" },
+      { key: "passenger_count" },
+      { key: "status" },
+      { key: "payment_method" },
+      { key: "created_by_name" },
+      { key: "created_at" }
+    ];
+
+
+
+    // 2️⃣ En-têtes
+    const headers = [
+      "Booking Reference",
+      "Payment Ref",
+      "Type",
+      "Trajet",
+      "Client",
+      "Company Name",
+      "Email",
+      "Total",
+      "Passagers",
+      "Status",
+      "Méthode",
+      "Créé par",
+      "Date"
+    ];
+
+
+    const titleRow = sheet.addRow(headers);
+    titleRow.eachCell((cell) => {
+  cell.font = { bold: true };
+  cell.alignment = { horizontal: 'center' };
+});
+
+
+
+
+    const columnColors = [
+  'FFE3F2FD', // booking_reference - bleu clair
+  'FFFCE4EC', // payment_intent_id - rose clair
+  'FFE8F5E9', // type_vol - vert clair
+  'FFFFFDE7', // type_v - jaune clair
+  'FFF3E5F5', // passenger name - violet clair
+  'FFE0F2F1', // company
+  'FFFFEBEE', // email
+  'FFE1F5FE', // total_price
+
+  'FFFFF3E0', // passenger_count
+  'FFE8EAF6', // status
+  'FFF1F8E9', // payment_method
+  'FFEDE7F6', // created_by
+  'FFF5F5F5', // created_at
+];
+
+
+
+sheet.getColumn(8).numFmt = '#,##0.00 "USD"';
+
+    // 4️⃣ Ajout des données
+    rows.forEach((row) => {
+      sheet.addRow([
+        row.booking_reference,
+        row.payment_intent_id,
+        row.typecharter,
         row.type_v,
         `${row.first_name} ${row.last_name}`,
         row.companyName,

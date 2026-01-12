@@ -183,7 +183,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Deposit" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
-              bookingData.tabType === "helicopter" ? "Helicopter" : "Helicopter"
+              bookingData.tabType === "helicopter" ? "Charter helicopter" : "Charter plane"
           }</p>
         </div>
 
@@ -326,7 +326,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           ${paymentMethod === "cash" ? "Espèces" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Dépôt" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
-              bookingData.tabType === "helicopter" ? "Hélicoptère" : "Hélicoptère"
+              bookingData.tabType === "helicopter" ? "Charter hélicoptère" : "Charter avion"
           }</p>
         </div>
 
@@ -469,7 +469,7 @@ const sendTicketByEmail = async (bookingData: BookingData, bookingReference: str
         api_key: apiKey,
         to: [recipientEmail],
         sender: "Booking Trogon Airways <booking@trogonairways.com>",
-        subject: `Your Trogon Airways E-Ticket - Booking ID: ${bookingReference}`,
+        subject: `Your Trogon Airways E-Ticket Charter - Booking ID: ${bookingReference}`,
         html_body: emailContent,
     };
 
@@ -1463,7 +1463,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                     <div className="mt-2 rounded-lg bg-green-50 p-3">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="font-medium text-green-800">Vol aller ✓</p>
+                                                <p className="font-medium text-green-800"></p>
                                                 
                                             </div>
                                             <div className="text-right">

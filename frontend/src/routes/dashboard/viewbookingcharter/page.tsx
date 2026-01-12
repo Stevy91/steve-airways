@@ -54,7 +54,7 @@ const ViewBookingCharter = () => {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`https://steve-airways.onrender.com/api/booking-helico`);
+            const response = await fetch(`https://steve-airways.onrender.com/api/booking-charter`);
             const data = await response.json();
             setStats(data);
         } catch (err) {
@@ -71,7 +71,7 @@ const ViewBookingCharter = () => {
     try {
         setLoading(true);
 
-        const url = new URL("https://steve-airways.onrender.com/api/booking-helico-search");
+        const url = new URL("https://steve-airways.onrender.com/api/booking-charter-search");
         if (startDate) url.searchParams.append("startDate", startDate);
         if (endDate) url.searchParams.append("endDate", endDate);
         if (transactionType) url.searchParams.append("transactionType", transactionType);
@@ -95,7 +95,7 @@ const ViewBookingCharter = () => {
     // API EXPORT EXCEL
     const downloadExcel = () => {
         let url =
-            "https://steve-airways.onrender.com/api/booking-helico-export?" +
+            "https://steve-airways.onrender.com/api/booking-charter-export?" +
             `startDate=${startDate}&endDate=${endDate}&transactionType=${transactionType}&currency=${currency}&status=${status}&name=${name}`;
 
         window.open(url, "_blank");
