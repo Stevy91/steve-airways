@@ -900,7 +900,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 return;
             }
 
-            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket", {
+            const res = await fetch("https://steve-airways.onrender.com/api/create-ticket10", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

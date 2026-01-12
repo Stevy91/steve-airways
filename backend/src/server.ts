@@ -2499,7 +2499,7 @@ app.post("/api/create-ticket10", authMiddleware, async (req: any, res: Response)
       `INSERT INTO bookings (
           flight_id, payment_intent_id, total_price, currency,
           contact_email, contact_phone, status,
-          type_vol, type_charter type_v, guest_user, guest_email,
+          type_vol, typecharter, type_v, guest_user, guest_email,
           created_at, updated_at, departure_date,
           return_date, passenger_count, booking_reference, return_flight_id,
           payment_method, companyName, user_created_booking
@@ -2556,7 +2556,7 @@ app.post("/api/create-ticket10", authMiddleware, async (req: any, res: Response)
       await connection.query(
         `INSERT INTO passengers (
           booking_id, first_name, middle_name, last_name, date_of_birth, idClient, idTypeClient, gender, title, address, type,
-          type_vol, type_v, country, nationality,
+          type_vol, typecharter, type_v, country, nationality,
           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -2571,7 +2571,8 @@ app.post("/api/create-ticket10", authMiddleware, async (req: any, res: Response)
           passenger.title || "Mr",
           passenger.address || null,
           passenger.type,
-          passenger.typeVol || "plane",
+          passenger.typeVol || "",
+          passenger.typecharter || "",
           typeVolV,
           passenger.country,
           passenger.nationality || null,
