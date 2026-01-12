@@ -4743,7 +4743,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>
-      ` : passenger.typeVol === "plane" ? `
+      ` : typeVol === "plane" ? `
       <div style="padding: 8px; font-size: 0.9em; color: #555">
         <p>
           <strong>Important:</strong> Please arrive at the airport at least 1 hour
@@ -5053,7 +5053,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         retenue de 50% du montant total à titre de frais d'annulation.</p>
       <p>Nous nous réjouissons de vous accueillir à bord.</p>
       <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-    </div>` : passenger.typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+    </div>` : typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
       <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
         les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong>
