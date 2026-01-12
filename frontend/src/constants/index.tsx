@@ -27,6 +27,7 @@ export const NavbarLinks = (lang: string) => [
   {
     title: "Helico",
     icon: HelicopterIcon,
+    
     links: [
       { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
@@ -34,15 +35,18 @@ export const NavbarLinks = (lang: string) => [
     ],
   },
 
-  {
-    title: "Shared Charter",
-    icon: '',
-    links: [
-      { label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter` },
-      { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter` },
-    //   { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
-    ],
-  },
+ {
+  title: "Charter",
+  icons: [Plane, HelicopterIcon],
+  links: [
+    {label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter`,},
+    {label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter`,},
+  ],
+}
+
+
+
+
 //   {
 //     title: "Users",
 //     icon: Users,

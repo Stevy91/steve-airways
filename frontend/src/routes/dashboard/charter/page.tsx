@@ -27,6 +27,7 @@ interface Flight {
     arrival_time: string;
     departure_time: string;
     typecharter: string;
+    charter: string;
 }
 
 type Location = {
@@ -370,6 +371,7 @@ const handleSearch = async () => {
         setEditingFlight(flight);
         setSelectedDeparture(departureId);
         setSelectedDestination(destinationId);
+        setSelectedCharter(flight.typecharter);
         setShowModal(true);
     };
 
@@ -521,7 +523,7 @@ const handleSearch = async () => {
             )}
 
             <div className="mb-4 flex items-center justify-between">
-                <h1 className="text-2xl font-bold">All Flight Helico</h1>
+                <h1 className="text-2xl font-bold">All Flight Charter</h1>
 
                 {/* Bouton Add new flight seulement pour les admins */}
                 {isAdmin && (
@@ -838,7 +840,8 @@ const handleSearch = async () => {
                                                     <select
                                                         value={selectedCharter}
                                                         name= "typecharter"
-                                                        defaultValue={editingFlight?.typecharter}
+                                                        
+                                                        
                                                         onChange={(e) => setSelectedCharter(e.target.value)}
                                                         className="w-full bg-transparent outline-none disabled:text-gray-400"
                                                         required

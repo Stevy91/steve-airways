@@ -92,7 +92,16 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                     )}
                                 >
                                     <span className="text flex items-center gap-2">
-                                        {navbarLink.icon && <navbarLink.icon size={18} />}
+                                        {navbarLink.icons ? (
+                                        <div className="flex items-center gap-1">
+                                            {navbarLink.icons.map((Icon, index) => (
+                                            <Icon key={index} size={16} />
+                                            ))}
+                                        </div>
+                                        ) : (
+                                        navbarLink.icon && <navbarLink.icon size={18} />
+                                        )}
+
                                         {!collapsed && navbarLink.title}
                                     </span>
                                     {!collapsed && (openGroup === navbarLink.title ? <ChevronDown size={18} /> : <ChevronRight size={18} />)}
@@ -137,7 +146,16 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                         )}
                                     >
                                         <span className="text flex items-center gap-2">
-                                            {navbarLink.icon && <navbarLink.icon size={18} />}
+                                            {navbarLink.icons ? (
+                                                <div className="flex items-center gap-1">
+                                                    {navbarLink.icons.map((Icon, index) => (
+                                                    <Icon key={index} size={16} />
+                                                    ))}
+                                                </div>
+                                                ) : (
+                                                navbarLink.icon && <navbarLink.icon size={18} />
+                                                )}
+
                                             {!collapsed && navbarLink.title}
                                         </span>
                                         {!collapsed && (openGroup === navbarLink.title ? <ChevronDown size={18} /> : <ChevronRight size={18} />)}
@@ -195,7 +213,16 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                     )}
                                 >
                                     <span className="text flex items-center gap-2">
-                                        {navbarLink.icon && <navbarLink.icon size={18} />}
+                                        {navbarLink.icons ? (
+                                            <div className="flex items-center gap-1">
+                                                {navbarLink.icons.map((Icon, index) => (
+                                                <Icon key={index} size={16} />
+                                                ))}
+                                            </div>
+                                            ) : (
+                                            navbarLink.icon && <navbarLink.icon size={18} />
+                                            )}
+
                                         {!collapsed && navbarLink.title}
                                     </span>
                                     {!collapsed && (openGroup === navbarLink.title ? <ChevronDown size={18} /> : <ChevronRight size={18} />)}
