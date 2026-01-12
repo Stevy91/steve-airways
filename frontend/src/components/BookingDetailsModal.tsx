@@ -52,6 +52,9 @@ export type BookingDetails = {
     currency: string;
     id?: string;
     typeVol?: string;
+    typecharter?: string;
+    flightId?: number;
+    returnFlightId?: number;
     typeV?: string;
     created_by_name?: string;
     created_by_email?: string;
@@ -338,6 +341,7 @@ const handleSaveChanges = async () => {
                 bookingReference: booking.reference,
                 currency: booking.currency,
                 typeVol: booking.typeVol,
+                typecharter: booking.typecharter,
                 payment_method: booking.payment_method,
                 flightId: flightIdToUpdate, // Envoyer le nouvel ID de vol si changement
                 returnFlightId: returnFlightIdToUpdate // Envoyer le nouvel ID de vol retour si changement

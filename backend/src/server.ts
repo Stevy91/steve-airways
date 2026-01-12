@@ -3358,8 +3358,24 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           </div>
         </div>
         <!-- End E-Ticket Section -->
-
-        ${booking.type_vol === "plane" ? `
+        ${booking.typecharter ? booking.typecharter === "plane" ? `
+        <div style="padding: 8px; font-size: 0.9em; color: #555">
+          <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+          <p><strong>Baggage Limitation:</strong> The maximum allowance for passenger baggage is 30 lb. <strong>Luggage dimensions 65*40*25</strong></p>
+          <p><strong>Remarks:</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+          <p><strong>Remarks 2:</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged.</p>
+          <p>We look forward to welcoming you on board.</p>
+          <p>Sincerely,<br />The Trogon Airways Team</p>
+        </div>`  :  `
+        <div style="padding: 20px; font-size: 0.9em; color: #555;">
+          <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+          <p><strong>Baggage Limitation:</strong> The maximum allowance for passenger baggage is 20 lb. <strong>Luggage dimensions 35*55*25, Carry on, soft skin</strong></p>
+          <p><strong>Remarks:</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+          <p><strong>Remarks 2:</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged.</p>
+          <p>We look forward to welcoming you on board.</p>
+          <p>Sincerely,<br>The Trogon Airways Team</p>
+        </div>` :
+        booking.type_vol === "plane" ? `
         <div style="padding: 8px; font-size: 0.9em; color: #555">
           <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
           <p><strong>Baggage Limitation:</strong> The maximum allowance for passenger baggage is 30 lb. <strong>Luggage dimensions 65*40*25</strong></p>
@@ -3520,11 +3536,27 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           </div>
         </div>
         <!-- Fin Section E-Ticket -->
-
-        ${booking.type_vol === "plane" ? `
+         ${booking.typecharter ? booking.typecharter === "plane" ? `
         <div style="padding: 20px; font-size: 0.9em; color: #555;">
           <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
+          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
+          <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+          <p>Nous nous réjouissons de vous accueillir à bord.</p>
+          <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+        </div>`  :  `
+        <div style="padding: 20px; font-size: 0.9em; color: #555;">
+          <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+          <p><strong>Baggage Limitation:</strong> The maximum allowance for passenger baggage is 20 lb. <strong>Luggage dimensions 35*55*25, Carry on, soft skin</strong></p>
+          <p><strong>Remarks:</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+          <p><strong>Remarks 2:</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged.</p>
+          <p>We look forward to welcoming you on board.</p>
+          <p>Sincerely,<br>The Trogon Airways Team</p>
+        </div>` :
+        booking.type_vol === "plane" ? `
+        <div style="padding: 20px; font-size: 0.9em; color: #555;">
+          <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
+          <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong></p>
           <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
           <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
@@ -3538,6 +3570,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
           <p>Cordialement,<br>L'équipe de Trogon Airways</p>
         </div>`}
+
       </div>
     </body>
     </html>
@@ -3927,6 +3960,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     paymentStatus,
     bookingReference,
     typeVol,
+    typecharter,
     payment_method,
     currency,
     flightId,
@@ -3955,6 +3989,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           contact_email,
           contact_phone,
           type_vol,
+          typecharter,
           payment_method,
           departure_date,
           return_date
@@ -4331,9 +4366,9 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
           `INSERT INTO passengers (
             booking_id, first_name, middle_name, last_name,
             date_of_birth, gender, title, address, type,
-            type_vol, type_v, country, nationality,
+            type_vol, typecharter, type_v, country, nationality,
             phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             booking.id,
             passenger.firstName || passenger.name || '',
@@ -4344,7 +4379,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             passenger.title || "Mr",
             passenger.address || null,
             passenger.type || "adult",
-            passenger.typeVol || "plane",
+            passenger.typeVol || "",
+            typecharter || "",
             passenger.typeVolV || "onway",
             passenger.country || null,
             passenger.nationality || null,
@@ -4557,9 +4593,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
               payment_method === "transfert" ? "Deposit" : "Contract"}
           </p>
 
-          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typeVol === "helicopter"
-            ? "Helicopter" : "Air Plane"
-          }</p>
+          <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typecharter ? typecharter === "helicopter" ? "Charter Helicopter" : "Charter Plane" : typeVol === "helicopter" ? "Helicopter" : "Plane"}</p>
+          
           ${flightChanged ?
             `<p style="margin: 10px 0 0; color: #ff9900; font-size: 1em;">
             <strong>⚠️ Important: Your flight details have been updated</strong>
@@ -4668,8 +4703,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         </div>
       </div>
       <!-- End E-Ticket Section -->
-
-      ${passenger.typeVol === "plane" ? `
+      ${typecharter ? typecharter === "plane" ? `
       <div style="padding: 8px; font-size: 0.9em; color: #555">
         <p>
           <strong>Important:</strong> Please arrive at the airport at least 1 hour
@@ -4695,8 +4729,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         </p>
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br />The Trogon Airways Team</p>
-      </div>` :
-            `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+      </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
         <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All
           passengers must present a valid ID at check-in.</p>
         <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb. <strong>Luggage dimensions 35*55*25, Carry on, soft skin</strong></p>
@@ -4710,7 +4743,48 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>
-      `}
+      ` : passenger.typeVol === "plane" ? `
+      <div style="padding: 8px; font-size: 0.9em; color: #555">
+        <p>
+          <strong>Important:</strong> Please arrive at the airport at least 1 hour
+          before your departure time. All passengers must present a valid ID at
+          check-in.
+        </p>
+        <p>
+          <strong>Baggage Limitation: **</strong> The maximum allowance for
+          passenger baggage is 30 lb. <strong>Luggage dimensions 65*40*25</strong>
+        </p>
+        <p>
+          <strong>Remarks: **</strong> The company declines all responsibility for
+          flight delays, cancellations, or changes resulting from circumstances
+          beyond its control, such as, technical problems, strikes, or any other
+          problems. The customer is responsible for their own personal arrangements
+          (airport arrival time, travel formalities, etc.). No refund or
+          compensation can be claimed in the event of a missed flight
+          for these reasons.
+        </p>
+        <p>
+          <strong>Remarks 2: **</strong> Any cancellation on the day of or the day
+          before your trip will result in a 50% cancellation fee being charged..
+        </p>
+        <p>We look forward to welcoming you on board.</p>
+        <p>Sincerely,<br />The Trogon Airways Team</p>
+      </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All
+          passengers must present a valid ID at check-in.</p>
+        <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb. <strong>Luggage dimensions 35*55*25, Carry on, soft skin</strong></p>
+        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or
+          changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other
+          problems. The customer is responsible for their own personal arrangements (airport arrival time, travel
+          formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.
+        </p>
+        <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50%
+          cancellation fee being charged..</p>
+        <p>We look forward to welcoming you on board.</p>
+        <p>Sincerely,<br>The Trogon Airways Team</p>
+      </div>
+      `}</p>
+
     </div>
 
   </body>
@@ -4834,8 +4908,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
               payment_method === "transfert" ? "Deposit" : "Contrat"}
         </p>
 
-        <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${typeVol === "helicopter"
-            ? "Hélicoptère" : "Avion"}</p>
+      
+            <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${typecharter ? typecharter === "helicopter" ? "Charter Hélicoptère" : "Charter Avion" : typeVol === "helicopter" ? "Hélicoptère" : "Avion"}</p>
 
         ${flightChanged ?
             `<p style="margin: 10px 0 0; color: #ff9900; font-size: 1em;">
