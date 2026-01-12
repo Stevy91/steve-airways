@@ -2558,7 +2558,7 @@ app.post("/api/create-ticket10", authMiddleware, async (req: any, res: Response)
           booking_id, first_name, middle_name, last_name, date_of_birth, idClient, idTypeClient, gender, title, address, type,
           type_vol, typecharter, type_v, country, nationality,
           phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookingResult.insertId,
           passenger.firstName,
