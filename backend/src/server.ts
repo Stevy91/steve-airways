@@ -5966,9 +5966,9 @@ LEFT JOIN passengers p
     LIMIT 1
   )
            
-            WHERE b.type_vol = ?
+            WHERE b.typecharter IN ('helicopter', 'plane')
             ORDER BY b.created_at DESC`,
-      ["helicopter"]
+    
     );
 
     const bookings: Booking[] = bookingRows.map((row) => ({
