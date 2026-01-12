@@ -260,7 +260,7 @@ const ViewBookingCharter = () => {
                                     <tr key={booking.id} className="table-row">
                                         <td className="table-cell text-center">{booking.booking_reference}</td>
                                         <td className="table-cell text-center">{booking.payment_intent_id}</td>
-                                        <td className="table-cell text-center">{booking.type_vol}</td>
+                                        <td className="table-cell text-center">{booking.typecharter}</td>
 
                                         <td className="table-cell text-center">
                                             <span

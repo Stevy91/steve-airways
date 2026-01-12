@@ -3238,7 +3238,9 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
               <strong>Payment Method:</strong>
               ${booking.payment_method === "cash" ? "Cash" : booking.payment_method === "card" ? "Credit/Debit Card" : booking.payment_method === "cheque" ? "Bank Check" : booking.payment_method === "virement" ? "Bank transfer" : booking.payment_method === "transfert" ? "Deposit" : "Contract"}
             </p>
-            <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"}</p>
+            <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${booking.typecharter ? booking.typecharter === "helicopter" ? "Charter Helicopter" : "Charter Plane" : booking.type_vol === "helicopter" ? "Helicopter" : "Air Plane"}
+</p>
+            
           </div>
 
           <div style="background: rgba(0, 28, 150, 0.3); border: 1px solid #eee; padding: 8px; border-radius: 8px;">
@@ -3400,7 +3402,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
               <strong>Mode de paiement:</strong>
               ${booking.payment_method === "cash" ? "Espèces" : booking.payment_method === "card" ? "Carte bancaire" : booking.payment_method === "cheque" ? "Chèque bancaire" : booking.payment_method === "virement" ? "Virement bancaire" : booking.payment_method === "transfert" ? "Dépôt" : "Contrat"}
             </p>
-            <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.type_vol === "helicopter" ? "Hélicoptère" : "Avion"}</p>
+            <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${booking.typecharter ? booking.typecharter === "helicopter" ? "Charter hélicoptère" : "Charter avion" : booking.type_vol === "helicopter" ? "Hélicoptère" : "Avion"}</p>
+            
           </div>
 
           <div style="background: rgba(0, 28, 150, 0.3); border: 1px solid #eee; padding: 8px; border-radius: 8px;">
@@ -3557,6 +3560,8 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la génération du billet" });
   }
 });
+
+
 
 
 app.post("/api/addflighttable", async (req: Request, res: Response) => {
