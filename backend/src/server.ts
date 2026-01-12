@@ -8813,6 +8813,7 @@ app.get("/api/booking-plane-pop/:id", async (req: Request, res: Response) => {
       passenger_count: booking.passenger_count,
       contact_email: booking.contact_email,
       type_vol: booking.type_vol,
+      typecharter: booking.typecharter,
       type_v: booking.type_v,
       adminNotes: booking.adminNotes,
       created_by_name: booking.created_by_name,  // AJOUT DU CHAMP

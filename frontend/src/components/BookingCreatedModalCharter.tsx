@@ -76,6 +76,7 @@ type BookingData = {
     };
     tabType?: string;
     totalPrice: number;
+    typecharter?: string;
 };
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
@@ -183,7 +184,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           ${paymentMethod === "cash" ? "Cash" : paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "cheque" ? "Bank Check" : paymentMethod === "virement" ? "Bank transfer" : paymentMethod === "transfert" ? "Deposit" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Flight Type:</strong> ${
-              bookingData.tabType === "helicopter" ? "Charter helicopter" : "Charter plane"
+              bookingData.typecharter === "helicopter" ? "Charter helicopter" : "Charter plane"
           }</p>
         </div>
 
@@ -326,7 +327,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
           ${paymentMethod === "cash" ? "Espèces" : paymentMethod === "card" ? "Carte bancaire" : paymentMethod === "cheque" ? "chèque bancaire" : paymentMethod === "virement" ? "Virement bancaire" : paymentMethod === "transfert" ? "Dépôt" : "Contrat"}
           </p>
           <p style="margin: 0; color: #1A237E; font-size: 0.9em;"><strong>Type de vol:</strong> ${
-              bookingData.tabType === "helicopter" ? "Charter hélicoptère" : "Charter avion"
+              bookingData.typecharter === "helicopter" ? "Charter hélicoptère" : "Charter avion"
           }</p>
         </div>
 
@@ -1050,6 +1051,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         passengersData: { adults: passengers },
                         totalPrice: data.totalPrice || totalPrice,
                         tabType: flight.type || "plane",
+                        typecharter: flight.typecharter,
                         status: data.status || "pending",
                         currency: formData.devisePayment,
                     };
