@@ -4,9 +4,10 @@ import { useAuth } from "../../../hooks/useAuth";
 import toast from "react-hot-toast";
 import { format, toZonedTime } from "date-fns-tz";
 import { parse, parseISO } from "date-fns";
-import BookingCreatedModalHelico from "../../../components/BookingCreatedModdalHelico";
+
 import { AnimatePresence, motion } from "framer-motion";
 import Passenger from "../../passenger/page";
+import BookingCreatedModalCharter from "../../../components/BookingCreatedModalCharter";
 
 interface Flight {
     id: number;
@@ -735,7 +736,7 @@ const handleSearch = async () => {
                 </div>
             </div>
 
-            <BookingCreatedModalHelico
+            <BookingCreatedModalCharter
                 open={open}
                 onClose={() => setOpen(false)}
                 flight={selectedFlight!}
