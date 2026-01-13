@@ -295,15 +295,25 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         </div>
       </div>
       <!-- End E-Ticket Section -->
-
-      <div style="padding: 20px; font-size: 0.9em; color: #555;">
+      ${
+              bookingData.typecharter === "helicopter" ?`<div style="padding: 20px; font-size: 0.9em; color: #555;">
         <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
         <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb. <strong>Luggage dimensions 35*55*25, Carry on, soft skin</strong></p>
         <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
         <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged.</p>
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br>The Trogon Airways Team</p>
-      </div>
+      </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important:</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
+       <p><strong>Baggage Limitation: **</strong> The maximum allowance for passenger baggage is 30 lb. <strong>Luggage dimensions 65*40*25</strong></p>
+        <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
+        <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged..</p>
+        <p>We look forward to welcoming you on board.</p>
+        <p>Sincerely,<br>The Trogon Airways Team</p>
+      </div>`
+          }
+
+      
     </div>
     <br><br><br>
 
@@ -444,7 +454,8 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
       </div>
       <!-- End E-Ticket Section -->
 
-      <div style="padding: 20px; font-size: 0.9em; color: #555;">
+       ${
+              bookingData.typecharter === "helicopter" ?`<div style="padding: 20px; font-size: 0.9em; color: #555;">
         <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
         <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong></p> 
          <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol
@@ -455,7 +466,19 @@ pour ces raisons.</p>
         <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
         <p>Nous nous réjouissons de vous accueillir à bord.</p>
         <p>Cordialement,<br>L'équipe de Trogon Airways</p>
-      </div>
+      </div>` : ` <div style="padding: 20px; font-size: 0.9em; color: #555;">
+        <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+        <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
+        <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité.
+Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
+</p>
+        <p><strong>Remarques 2:</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+        <p>Nous nous réjouissons de vous accueillir à bord.</p>
+        <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      </div>`
+          }
+
+      
     </div>
   `;
 };

@@ -134,7 +134,7 @@ const ViewBookingCharter = () => {
 
     return (
         <div className="flex flex-col gap-y-4">
-            <h1 className="title">View Booking Helico</h1>
+            <h1 className="title">View bookings all types of charters</h1>
             {/* Filtres */}
 
             

@@ -253,7 +253,7 @@ const handleSearch = async () => {
     try {
         setLoading(true);
         
-        const url = new URL("https://steve-airways.onrender.com/api/flight-helico-search");
+        const url = new URL("https://steve-airways.onrender.com/api/flight-charter-search");
         if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
         if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
         if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
@@ -274,7 +274,7 @@ const handleSearch = async () => {
      // API EXPORT EXCEL
     const downloadExcel = () => {
         let url =
-            "https://steve-airways.onrender.com/api/flight-helico-export?" +
+            "https://steve-airways.onrender.com/api/flight-charter-export?" +
             `flightNumb=${flightNumb}&tailNumber=${tailNumber}&dateDeparture=${dateDeparture}`;
 
         window.open(url, "_blank");
