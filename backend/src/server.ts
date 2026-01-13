@@ -6578,7 +6578,7 @@ ORDER BY f.departure_time
       <html lang="fr">
       <head>
         <meta charset="UTF-8" />
-        <title>Manifeste Hélicoptère</title>
+        <title>Manifeste Charter</title>
         <style>
           @page {
             size: A4;
@@ -6736,7 +6736,7 @@ ORDER BY f.departure_time
       : 'all';
     
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=manifeste-helico-${fileNameDate}.pdf`);
+    res.setHeader("Content-Disposition", `attachment; filename=manifeste-charter-${fileNameDate}.pdf`);
     res.send(pdfBuffer);
 
   } catch (error) {
