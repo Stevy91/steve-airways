@@ -7884,7 +7884,7 @@ app.get("/api/booking-charter-export", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, transactionType, currency, status, name } = req.query;
 
-    let conditions = " WHERE b.type_vol IN ('helicopter', 'plane') ";
+    let conditions = " WHERE b.typecharter IN ('helicopter', 'plane') ";
     const params: any[] = [];
 
     // Filtre dates
