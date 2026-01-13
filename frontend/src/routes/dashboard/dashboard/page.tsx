@@ -493,6 +493,7 @@ const DashboardPage = () => {
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
+                                    
                                     outerRadius={80}
                                     label={(entry) => `${entry.name}: ${entry.value}`}
                                 >

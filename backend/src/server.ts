@@ -97,6 +97,7 @@ export interface Booking {
   passenger_count: number;
   contact_email: string;
   type_vol: "plane" | "helicopter";
+  typecharter: "plane" | "helicopter";
   type_v: "onway" | "roundtrip";
   created_by_name?: string;  // NOUVEAU CHAMP
   created_by_email?: string; // NOUVEAU CHAMP
@@ -3049,6 +3050,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
         passenger_count, 
         contact_email,
         type_vol,
+        typecharter,
         type_v
       FROM bookings
       ${dateWhereClause}
@@ -3066,6 +3068,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
       passenger_count: row.passenger_count,
       contact_email: row.contact_email,
       type_vol: row.type_vol,
+      typecharter: row.typecharter,
       type_v: row.type_v,
     }));
 
@@ -3118,7 +3121,7 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
 
     // 5. Statistiques par type de vol
     const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
-      const type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+      const type = booking.typecharter ? "Charter" : booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
       acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {});
