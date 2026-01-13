@@ -3120,16 +3120,33 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     }));
 
     // 5. Statistiques par type de vol
+    // const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
+    //   const type = booking.typecharter ? "Charter" : booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+    //   acc[type] = (acc[type] || 0) + 1;
+    //   return acc;
+    // }, {});
+
     const flightTypeCounts = bookings.reduce((acc: Record<string, number>, booking) => {
-      const type = booking.typecharter ? "Charter" : booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
+    let type: string;
+
+        if (booking.typecharter) {
+          type = booking.typecharter === "helicopter" ? "Charter Hélicoptère" : "Charter Avion";
+        } else {
+          type = booking.type_vol === "plane" ? "Avion" : "Hélicoptère";
+        }
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+ 
 
     const bookingsByFlightType = Object.entries(flightTypeCounts).map(([name, value]) => ({
       name,
       value,
     }));
+
+
 
     // 6. Revenu par mois (USD et HTG séparés)
     const monthlyRevenue = bookings.reduce((acc: Record<string, { usd: number, htg: number }>, booking) => {
