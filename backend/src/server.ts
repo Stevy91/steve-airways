@@ -974,24 +974,41 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
 import cron from 'node-cron';
 
 // Ajoutez cette fonction pour nettoyer les réservations expirées
+
 async function cleanupExpiredBookings() {
   const connection = await pool.getConnection();
+  
   try {
     await connection.beginTransaction();
     
-    // Trouver toutes les réservations "pending" créées il y a plus de 2 heures
+    console.log('Starting cleanup of expired paylater bookings...');
+    
+    // 1. Trouver TOUTES les réservations paylater expirées
     const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT b.id, b.flight_id, b.return_flight_id, b.passenger_count 
+      `SELECT 
+        b.id, 
+        b.flight_id, 
+        b.return_flight_id, 
+        b.passenger_count,
+        b.booking_reference
        FROM bookings b
        LEFT JOIN payments p ON b.id = p.booking_id
-       WHERE b.status = 'pending' AND b.payment_method = 'paylater'
+       WHERE 
+         b.status = 'pending'
+         AND b.payment_method = 'paylater'  -- CRITÈRE IMPORTANT
          AND p.payment_status = 'pending'
          AND p.payment_method = 'paylater'
-         AND b.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)`
+         AND b.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)
+       FOR UPDATE`
     );
 
+    console.log(`Found ${expiredBookings.length} expired paylater bookings`);
+
+    // 2. Pour chaque réservation expirée
     for (const booking of expiredBookings) {
-      // Libérer les sièges
+      console.log(`Processing expired booking: ${booking.booking_reference} (ID: ${booking.id})`);
+      
+      // Libérer les sièges des vols
       const flightIds = [];
       if (booking.flight_id) flightIds.push(booking.flight_id);
       if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
@@ -1001,51 +1018,67 @@ async function cleanupExpiredBookings() {
           "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
           [booking.passenger_count, flightId]
         );
+        console.log(`Released ${booking.passenger_count} seats for flight ${flightId}`);
       }
 
-      // Marquer la réservation comme expirée
+      // Mettre à jour le statut de la réservation
       await connection.execute(
         "UPDATE bookings SET status = 'expired', updated_at = NOW() WHERE id = ?",
         [booking.id]
       );
 
+      // Mettre à jour le statut du paiement
       await connection.execute(
         "UPDATE payments SET payment_status = 'expired', updated_at = NOW() WHERE booking_id = ?",
         [booking.id]
       );
 
-      // Ajouter une notification d'expiration
+      // Ajouter une notification
       await connection.execute(
         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
          VALUES (?, ?, ?, ?, ?)`,
         [
           "expiration",
-          `Booking #${booking.id} has expired due to non-payment`,
+          `Reservation ${booking.booking_reference} expired due to non-payment (paylater)`,
           booking.id,
           false,
           new Date()
         ]
       );
 
-      // Émettre une notification en temps réel
-      io.emit("booking-expired", {
-        bookingId: booking.id,
-        message: `Booking #${booking.id} has expired`
-      });
+      console.log(`Marked booking ${booking.id} as expired`);
     }
 
     await connection.commit();
     
     if (expiredBookings.length > 0) {
-      console.log(`Cleaned up ${expiredBookings.length} expired bookings`);
+      // Émettre une notification globale
+      io.emit("paylater-bookings-expired", {
+        count: expiredBookings.length,
+        message: `${expiredBookings.length} paylater bookings have been expired`
+      });
+      
+      console.log(`Successfully cleaned up ${expiredBookings.length} expired paylater bookings`);
+    } else {
+      console.log('No expired paylater bookings found');
     }
+
   } catch (error) {
     await connection.rollback();
-    console.error("Error cleaning up expired bookings:", error);
+    console.error('Error cleaning up expired paylater bookings:', error);
+    
+    // Émettre une erreur
+    io.emit("cleanup-error", {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
   } finally {
     connection.release();
   }
 }
+
+
+
 
 // Planifier le nettoyage toutes les 5 minutes
 cron.schedule('*/5 * * * *', cleanupExpiredBookings);
