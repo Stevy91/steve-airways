@@ -756,19 +756,323 @@ app.post("/api/confirm-booking", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
+// app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
 
+//   const connection = await pool.getConnection();
+
+//   try {
+//     await connection.beginTransaction();
+
+//     const { paymentMethod, paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+//     const typeVol = passengers[0]?.typeVol || "plane";
+//     const typeVolV = passengers[0]?.typeVolV || "onway";
+//     const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
+//     if (paymentMethod !== "paylater") {
+//       requiredFields.push("paymentIntentId");
+//     }
+
+//     for (const field of requiredFields) {
+//       if (!req.body[field]) {
+//         throw new Error(`Missing required field: ${field}`);
+//       }
+//     }
+
+//     // 3. Validation des passagers
+//     if (!Array.isArray(passengers) || passengers.length === 0) {
+//       throw new Error("Invalid passenger list");
+//     }
+
+//     passengers.forEach((passenger, index) => {
+//       if (!passenger.firstName || !passenger.lastName) {
+//         throw new Error(`Passager ${index + 1}: Full name required`);
+//       }
+//       if (!passenger.type) {
+//         throw new Error(`Passager ${index + 1}: Type manquant (Adult/Child/Infant)`);
+//       }
+//     });
+
+//     // 4. Vérification des vols
+
+
+//     const flightIds = returnFlightId ? [flightId, returnFlightId] : [flightId];
+//     const [flights] = await connection.query<mysql.RowDataPacket[]>("SELECT id, seats_available FROM flights WHERE id IN (?) FOR UPDATE", [
+//       flightIds,
+//     ]);
+
+
+//     if (flights.length !== flightIds.length) {
+//       throw new Error("One or more flights missing");
+//     }
+
+//     for (const flight of flights) {
+//       if (flight.seats_available < passengers.length) {
+//         throw new Error(`Not enough seats available for the flight ${flight.id}`);
+//       }
+//     }
+
+
+//     if (flights.length !== flightIds.length) {
+//       throw new Error("One or more flights missing");
+//     }
+
+//     // 5. Création de la réservation
+//     const now = new Date();
+//     const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+//     const [bookingResult] = await connection.query<mysql.OkPacket>(
+//       `INSERT INTO bookings (
+//                 flight_id, payment_intent_id,
+//                 total_price, currency, contact_email, contact_phone,
+//                 status, type_vol, type_v, guest_user, guest_email,
+//                 created_at, updated_at, departure_date,
+//                 return_date, passenger_count, booking_reference, return_flight_id, payment_method
+//             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//       [
+//         flightId,
+//         paymentIntentId,
+//         totalPrice,
+//         "usd",
+//         contactInfo.email,
+//         contactInfo.phone,
+//         "pending",
+//         typeVol,
+//         typeVolV,
+//         1,
+//         contactInfo.email,
+//         now,
+//         now,
+//         departureDate || null,
+//         returnDate || null,
+//         passengers.length,
+//         bookingReference,
+//         returnFlightId || null,
+//         paymentMethod,
+//       ],
+//     );
+
+//     await connection.query<mysql.OkPacket>(
+//       `INSERT INTO payments (
+//           booking_id, amount, currency,
+//           payment_method, payment_status, transaction_reference, created_at
+//       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+//       [
+//         bookingResult.insertId,
+//         totalPrice,
+//         "usd",
+//         paymentMethod,
+//         "pending",
+//         paymentIntentId || "paylater",
+//         now 
+//       ],
+//     );
+
+//     // 6. Insertion des passagers avec gestion d'erreur
+//     for (const passenger of passengers) {
+//       console.log("Inserting passenger:", {
+//         firstName: passenger.firstName,
+//         lastName: passenger.lastName,
+//         type: passenger.type,
+//         // Ajoutez d'autres champs pertinents
+//       });
+//       try {
+//         await connection.query(
+//           `INSERT INTO passengers (
+//                         booking_id, first_name, middle_name, last_name,
+//                         date_of_birth, gender, title, address, type,
+//                         type_vol, type_v, country, nationality,
+//                         phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+//                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//           [
+//             bookingResult.insertId,
+//             passenger.firstName,
+//             passenger.middleName || null,
+//             passenger.lastName,
+//             passenger.dateOfBirth || null,
+//             passenger.gender || "other",
+//             passenger.title || "Mr",
+//             passenger.address || null,
+//             passenger.type,
+//             passenger.typeVol || "plane",
+//             passenger.typeVolV || "onway",
+//             getCountryName(passenger.country) || passenger.country,
+//             passenger.nationality || null,
+//             passenger.phone || contactInfo.phone,
+//             passenger.email || contactInfo.email,
+//             passenger.nom_urgence || null,
+//             passenger.email_urgence || null,
+//             passenger.tel_urgence || null,
+//             now,
+//             now,
+//           ],
+//         );
+//       } catch (passengerError) {
+//         console.error("Erreur insertion passager:", passengerError);
+//         throw new Error(`Failed temporary creation: ${passenger.firstName} ${passenger.lastName}`);
+//       }
+//     }
+
+//     // 5. Mise à jour des sièges pour tous les vols concernés
+//     for (const flight of flights) {
+//       await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
+//     }
+//     await connection.query(
+//       `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//         VALUES (?, ?, ?, ?, ?)`,
+//       [
+//         "booking",
+//         ` ${bookingReference} avec ${passengers.length} passager(s).`,
+//         bookingResult.insertId,
+//         false,
+//         now,
+//       ]
+//     );
+//     // Envoyer la notif au front
+//     io.emit("new-notification", {
+//       message: `${bookingReference} avec ${passengers.length} passager(s).`,
+//       bookingId: bookingResult.insertId,
+//       createdAt: now,
+//     });
+
+//     await connection.commit();
+
+//     res.json({
+//       success: true,
+//       bookingId: bookingResult.insertId,
+//       bookingReference,
+//       passengerCount: passengers.length,
+//     });
+//   } catch (error: unknown) {
+//     try {
+//       await connection.rollback();
+//     } catch (rollbackError) {
+//       console.error("Échec rollback:", rollbackError);
+//     }
+
+//     const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+//     console.error("Erreur réservation:", {
+//       message: errorMessage,
+//       stack: error instanceof Error ? error.stack : undefined,
+//       body: req.body,
+//     });
+
+//     res.status(500).json({
+//       error: "Reservation failed",
+//       details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+//       reference: Date.now().toString(36),
+//     });
+//   } finally {
+//     try {
+//       connection.release();
+//     } catch (releaseError) {
+//       console.error("Échec libération connexion:", releaseError);
+//     }
+//   }
+// });
+
+
+
+import cron from 'node-cron';
+
+// Ajoutez cette fonction pour nettoyer les réservations expirées
+async function cleanupExpiredBookings() {
   const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    
+    // Trouver toutes les réservations "pending" créées il y a plus de 2 heures
+    const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
+      `SELECT b.id, b.flight_id, b.return_flight_id, b.passenger_count 
+       FROM bookings b
+       LEFT JOIN payments p ON b.id = p.booking_id
+       WHERE b.status = 'pending' AND b.payment_method = 'paylater'
+         AND p.payment_status = 'pending'
+         AND p.payment_method = 'paylater'
+         AND b.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)`
+    );
 
+    for (const booking of expiredBookings) {
+      // Libérer les sièges
+      const flightIds = [];
+      if (booking.flight_id) flightIds.push(booking.flight_id);
+      if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
+      
+      for (const flightId of flightIds) {
+        await connection.execute(
+          "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
+          [booking.passenger_count, flightId]
+        );
+      }
+
+      // Marquer la réservation comme expirée
+      await connection.execute(
+        "UPDATE bookings SET status = 'expired', updated_at = NOW() WHERE id = ?",
+        [booking.id]
+      );
+
+      await connection.execute(
+        "UPDATE payments SET payment_status = 'expired', updated_at = NOW() WHERE booking_id = ?",
+        [booking.id]
+      );
+
+      // Ajouter une notification d'expiration
+      await connection.execute(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          "expiration",
+          `Booking #${booking.id} has expired due to non-payment`,
+          booking.id,
+          false,
+          new Date()
+        ]
+      );
+
+      // Émettre une notification en temps réel
+      io.emit("booking-expired", {
+        bookingId: booking.id,
+        message: `Booking #${booking.id} has expired`
+      });
+    }
+
+    await connection.commit();
+    
+    if (expiredBookings.length > 0) {
+      console.log(`Cleaned up ${expiredBookings.length} expired bookings`);
+    }
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error cleaning up expired bookings:", error);
+  } finally {
+    connection.release();
+  }
+}
+
+// Planifier le nettoyage toutes les 5 minutes
+cron.schedule('*/5 * * * *', cleanupExpiredBookings);
+
+// Modifiez votre route pour inclure l'expiration automatique
+app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+  
   try {
     await connection.beginTransaction();
 
-
-
-    const { paymentMethod, paymentIntentId, passengers, contactInfo, flightId, totalPrice, returnFlightId, departureDate, returnDate } = req.body;
+    const { 
+      paymentMethod, 
+      paymentIntentId, 
+      passengers, 
+      contactInfo, 
+      flightId, 
+      totalPrice, 
+      returnFlightId, 
+      departureDate, 
+      returnDate 
+    } = req.body;
+    
     const typeVol = passengers[0]?.typeVol || "plane";
     const typeVolV = passengers[0]?.typeVolV || "onway";
-    const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
+    
+        const requiredFields = ["passengers", "contactInfo", "flightId", "totalPrice"];
     if (paymentMethod !== "paylater") {
       requiredFields.push("paymentIntentId");
     }
@@ -817,25 +1121,27 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
       throw new Error("One or more flights missing");
     }
 
-    // 5. Création de la réservation
+    // Créer la réservation avec une date d'expiration
     const now = new Date();
     const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
-
+    
     const [bookingResult] = await connection.query<mysql.OkPacket>(
       `INSERT INTO bookings (
-                flight_id, payment_intent_id,
-                total_price, contact_email, contact_phone,
-                status, type_vol, type_v, guest_user, guest_email,
-                created_at, updated_at, departure_date,
-                return_date, passenger_count, booking_reference, return_flight_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        flight_id, payment_intent_id,
+        total_price, currency, contact_email, contact_phone,
+        status, type_vol, type_v, guest_user, guest_email,
+        created_at, updated_at, departure_date,
+        return_date, passenger_count, booking_reference, 
+        return_flight_id, payment_method, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         flightId,
-        paymentIntentId,
+        paymentIntentId || `paylater-${Date.now()}`,
         totalPrice,
+        "usd",
         contactInfo.email,
         contactInfo.phone,
-        "pending",
+        "pending", // Status initial
         typeVol,
         typeVolV,
         1,
@@ -847,9 +1153,31 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
         passengers.length,
         bookingReference,
         returnFlightId || null,
-      ],
+        "paylater",
+        // Date d'expiration: maintenant + 2 heures
+        new Date(now.getTime() + 2 * 60 * 60 * 1000)
+      ]
     );
 
+    // Créer le paiement avec status "pending"
+    await connection.query<mysql.OkPacket>(
+      `INSERT INTO payments (
+        booking_id, amount, currency,
+        payment_method, payment_status, transaction_reference, 
+        created_at, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bookingResult.insertId,
+        totalPrice,
+        "usd",
+        "paylater",
+        "pending", // Status du paiement
+        `paylater-${bookingResult.insertId}-${Date.now()}`,
+        now,
+        // Date d'expiration: maintenant + 2 heures
+        new Date(now.getTime() + 2 * 60 * 60 * 1000)
+      ]
+    );
     // 6. Insertion des passagers avec gestion d'erreur
     for (const passenger of passengers) {
       console.log("Inserting passenger:", {
@@ -899,22 +1227,27 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     for (const flight of flights) {
       await connection.execute("UPDATE flights SET seats_available = seats_available - ? WHERE id = ?", [passengers.length, flight.id]);
     }
+
+    // Ajouter une notification avec le temps d'expiration
     await connection.query(
       `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-        VALUES (?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?)`,
       [
-        "booking",
-        ` ${bookingReference} avec ${passengers.length} passager(s).`,
+        "booking_pending",
+        `Reservation ${bookingReference} created. You have 2 hours to complete payment.`,
         bookingResult.insertId,
         false,
         now,
       ]
     );
-    // Envoyer la notif au front
+
+    // Envoyer la notification au front avec le temps d'expiration
     io.emit("new-notification", {
-      message: `${bookingReference} avec ${passengers.length} passager(s).`,
+      message: `${bookingReference} created with ${passengers.length} passenger(s). Payment due in 2 hours.`,
       bookingId: bookingResult.insertId,
       createdAt: now,
+      expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+      type: "pending_payment"
     });
 
     await connection.commit();
@@ -924,35 +1257,35 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
       bookingId: bookingResult.insertId,
       bookingReference,
       passengerCount: passengers.length,
+      expiresAt: new Date(now.getTime() + 2 * 60 * 60 * 1000), // Retourner la date d'expiration
+      message: "Reservation created. You have 2 hours to complete payment."
     });
+
   } catch (error: unknown) {
     try {
       await connection.rollback();
     } catch (rollbackError) {
-      console.error("Échec rollback:", rollbackError);
+      console.error("Rollback failed:", rollbackError);
     }
 
-    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-    console.error("Erreur réservation:", {
-      message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-      body: req.body,
-    });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Booking error:", errorMessage);
 
     res.status(500).json({
       error: "Reservation failed",
       details: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
-      reference: Date.now().toString(36),
     });
   } finally {
-    try {
-      connection.release();
-    } catch (releaseError) {
-      console.error("Échec libération connexion:", releaseError);
-    }
+    connection.release();
   }
 });
-// POST /api/verify-flight
+
+
+
+
+
+
+
 app.post("/api/verify-flight", async (req: Request, res: Response) => {
   const connection = await pool.getConnection();
   try {
