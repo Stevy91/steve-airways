@@ -1281,7 +1281,43 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
 });
 
 
+app.get("/api/booking-status/:bookingId", async (req: Request, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+    
+    const [booking] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT 
+        b.*, 
+        p.payment_status,
+        TIMESTAMPDIFF(MINUTE, NOW(), b.expires_at) as minutes_remaining,
+        b.expires_at > NOW() as is_active
+       FROM bookings b
+       LEFT JOIN payments p ON b.id = p.booking_id
+       WHERE b.id = ?`,
+      [bookingId]
+    );
 
+    if (booking.length === 0) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const bookingData = booking[0];
+    
+    res.json({
+      bookingId: bookingData.id,
+      status: bookingData.status,
+      paymentStatus: bookingData.payment_status,
+      minutesRemaining: bookingData.minutes_remaining,
+      isActive: bookingData.is_active,
+      expiresAt: bookingData.expires_at,
+      bookingReference: bookingData.booking_reference
+    });
+
+  } catch (error) {
+    console.error("Error checking booking status:", error);
+    res.status(500).json({ error: "Failed to check booking status" });
+  }
+});
 
 
 
