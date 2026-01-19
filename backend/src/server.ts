@@ -1013,13 +1013,13 @@ FOR UPDATE;
 
       // Mettre à jour le statut de la réservation
       await connection.execute(
-        "UPDATE bookings SET status = 'expired', updated_at = NOW() WHERE id = ?",
+        "UPDATE bookings SET status = 'expired', updated_at = UTC_TIMESTAMP() WHERE id = ?",
         [booking.id]
       );
 
       // Mettre à jour le statut du paiement
       await connection.execute(
-        `UPDATE payments SET payment_status = 'expired', updated_at = NOW() WHERE booking_id = ?
+        `UPDATE payments SET payment_status = 'expired', updated_at = UTC_TIMESTAMP() WHERE booking_id = ?
           AND payment_method = 'paylater'
           AND payment_status = 'pending'`,
         [booking.id]
@@ -1151,59 +1151,64 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     const now = new Date();
     const bookingReference = `BOOK-${Math.floor(100000 + Math.random() * 900000)}`;
     
+   
+
     const [bookingResult] = await connection.query<mysql.OkPacket>(
-      `INSERT INTO bookings (
-        flight_id, payment_intent_id,
-        total_price, currency, contact_email, contact_phone,
-        status, type_vol, type_v, guest_user, guest_email,
-        created_at, updated_at, departure_date,
-        return_date, passenger_count, booking_reference, 
-        return_flight_id, payment_method, expires_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        flightId,
-        paymentIntentId || `paylater-${Date.now()}`,
-        totalPrice,
-        "usd",
-        contactInfo.email,
-        contactInfo.phone,
-        "pending", // Status initial
-        typeVol,
-        typeVolV,
-        1,
-        contactInfo.email,
-        now,
-        now,
-        departureDate || null,
-        returnDate || null,
-        passengers.length,
-        bookingReference,
-        returnFlightId || null,
-        "paylater",
-        // Date d'expiration: maintenant + 2 heures
-        new Date(now.getTime() + 2 * 60 * 60 * 1000)
-      ]
-    );
+  `INSERT INTO bookings (
+    flight_id, payment_intent_id,
+    total_price, currency, contact_email, contact_phone,
+    status, type_vol, type_v, guest_user, guest_email,
+    created_at, updated_at, departure_date,
+    return_date, passenger_count, booking_reference, 
+    return_flight_id, payment_method, expires_at
+  ) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+    UTC_TIMESTAMP(), UTC_TIMESTAMP(), ?, ?, ?, ?, ?, ?, 
+    DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 HOUR)
+  )`,
+  [
+    flightId,
+    paymentIntentId || `paylater-${Date.now()}`,
+    totalPrice,
+    "usd",
+    contactInfo.email,
+    contactInfo.phone,
+    "pending",
+    typeVol,
+    typeVolV,
+    1,
+    contactInfo.email,
+    departureDate || null,
+    returnDate || null,
+    passengers.length,
+    bookingReference,
+    returnFlightId || null,
+    "paylater",
+  ]
+);
+
 
     // Créer le paiement avec status "pending"
-    await connection.query<mysql.OkPacket>(
-      `INSERT INTO payments (
-        booking_id, amount, currency,
-        payment_method, payment_status, transaction_reference, 
-        created_at, expires_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        bookingResult.insertId,
-        totalPrice,
-        "usd",
-        "paylater",
-        "pending", // Status du paiement
-        `paylater-${bookingResult.insertId}-${Date.now()}`,
-        now,
-        // Date d'expiration: maintenant + 2 heures
-        new Date(now.getTime() + 2 * 60 * 60 * 1000)
-      ]
-    );
+   await connection.query(
+  `INSERT INTO payments (
+    booking_id, amount, currency,
+    payment_method, payment_status, transaction_reference,
+    created_at, expires_at
+  ) VALUES (
+    ?, ?, ?, ?, ?, ?,
+    UTC_TIMESTAMP(),
+    DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 HOUR)
+  )`,
+  [
+    bookingResult.insertId,
+    totalPrice,
+    "usd",
+    "paylater",
+    "pending",
+    `paylater-${bookingResult.insertId}-${Date.now()}`
+  ]
+);
+
     // 6. Insertion des passagers avec gestion d'erreur
     for (const passenger of passengers) {
       console.log("Inserting passenger:", {
