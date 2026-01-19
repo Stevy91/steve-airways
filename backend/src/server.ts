@@ -985,17 +985,13 @@ async function cleanupExpiredBookings() {
     
     // 1. Trouver TOUTES les réservations paylater expirées
     const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT 
-        id, 
-        flight_id, 
-        return_flight_id, 
-        passenger_count,
-        booking_reference
-      FROM bookings
-      WHERE status = 'pending'
-        AND payment_method = 'paylater'
-        AND expires_at <= NOW()
-      FOR UPDATE;
+      `SELECT id, flight_id, return_flight_id, passenger_count, booking_reference
+FROM bookings
+WHERE status = 'pending'
+  AND payment_method = 'paylater'
+  AND expires_at <= UTC_TIMESTAMP()
+FOR UPDATE;
+
       `
     );
 
