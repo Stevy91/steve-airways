@@ -300,7 +300,7 @@ const ViewBookingHelico = () => {
                                             </span>
                                         </td>
 
-                                        <td className="table-cell text-center">{booking.payment_method === "card" ? "Card" : booking.payment_method === "cash" ? "Cash" : booking.payment_method === "cheque" ? "Check" : booking.payment_method === "virement" ? "Bank Transfer" : booking.payment_method === "transfert" ? "Deposit" : "Contrat"}</td>
+                                        <td className="table-cell text-center">{booking.payment_method === "card" ? "Card" : booking.payment_method === "cash" ? "Cash" : booking.payment_method === "cheque" ? "Check" : booking.payment_method === "virement" ? "Bank Transfer" : booking.payment_method === "transfert" ? "Deposit" : booking.payment_method === "paylater" ? "Pay Later" : "Contrat"}</td>
                                         <td className="table-cell text-center">{booking.created_by_name || "Client Online"}</td>
 
                                         <td className="table-cell text-center">

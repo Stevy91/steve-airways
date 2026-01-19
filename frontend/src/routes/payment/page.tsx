@@ -658,128 +658,289 @@ const PayPalPayment = ({ totalPrice, onSuccess }: { totalPrice: number; onSucces
     );
 };
 
+
+
+
+
 const PayLaterPayment = ({
-    paymentData,
-    onSuccess,
+  paymentData,
+  onSuccess,
 }: {
-    paymentData: PaymentData;
-    onSuccess: (data: { bookingId: number; reference: string }) => void;
+  paymentData: PaymentData;
+  onSuccess: (data: { bookingId: number; reference: string }) => void;
 }) => {
-    const [processing, setProcessing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const { t, i18n } = useTranslation();
+    const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [bookingId, setBookingId] = useState<number | null>(null);
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
-    const verifyFlightAvailability = async () => {
-        const response = await fetch("https://steve-airways.onrender.com/api/verify-flight", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                flightId: paymentData.outbound.flightId,
-                returnFlightId: paymentData.return?.flightId,
-                passengerCount:
-                    (paymentData.passengersData.adults.length || 0) +
-                    (paymentData.passengersData.children.length || 0) +
-                    (paymentData.passengersData.infants.length || 0),
-            }),
-        });
 
-        const data = await response.json();
+  // Timer pour afficher le compte à rebours
+  useEffect(() => {
+    if (!bookingId || timeLeft === null) return;
 
-        if (!response.ok) {
-            // Ici on lance l'erreur avec le message exact du serveur
-            throw new Error(data.error || "Vol non disponible");
+    if (timeLeft <= 0) {
+      setError("Reservation time has expired. Please start over.");
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev !== null ? prev - 1 : null));
+    }, 60000); // Mettre à jour toutes les minutes
+
+    return () => clearInterval(timer);
+  }, [bookingId, timeLeft]);
+
+  // Fonction pour formater le temps
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const handlePayLater = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const transformedPassengers = transformPassengers(
+        paymentData.passengersData, 
+        paymentData.outbound.type, 
+        paymentData.outbound.typev
+      );
+      
+      if (!transformedPassengers?.length) throw new Error("Invalid passenger data");
+
+      const bookingRequest = {
+        paymentMethod: "paylater",
+        passengers: transformedPassengers,
+        contactInfo: {
+          email: paymentData.passengersData.adults[0].email,
+          phone: paymentData.passengersData.adults[0].phone,
+        },
+        flightId: paymentData.outbound.flightId,
+        returnFlightId: paymentData.return?.flightId,
+        totalPrice: paymentData.totalPrice,
+        departureDate: paymentData.outbound.date,
+        returnDate: paymentData.return?.date,
+      };
+
+      const response = await fetch("https://steve-airways.onrender.com/api/confirm-booking-paylater", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookingRequest),
+      });
+
+      if (!response.ok) throw new Error("Reservation failed");
+
+      const responseData = await response.json();
+      
+      // Stocker l'ID de réservation et le temps restant
+      setBookingId(responseData.bookingId);
+      setTimeLeft(120); // 2 heures = 120 minutes
+      
+      // Afficher le message de succès avec le timer
+      onSuccess({
+        bookingId: responseData.bookingId,
+        reference: responseData.bookingReference,
+      });
+
+      // Rediriger vers une page de confirmation avec timer
+      navigate(`/${currentLang}/booking-pending/${responseData.bookingId}`, {
+        state: {
+          bookingReference: responseData.bookingReference,
+          expiresAt: responseData.expiresAt,
+          totalPrice: paymentData.totalPrice
         }
+      });
 
-        return data;
-    };
-    // Efface automatiquement après 5s
-    useEffect(() => {
-        if (error) {
-            const timer = setTimeout(() => {
-                setError(null);
-            }, 5000); // ⏱️ 5 secondes
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Reservation failed. Please try again or contact support.");
+      }
+    } finally {
+      setProcessing(false);
+    }
+  };
 
-            return () => clearTimeout(timer);
-        }
-    }, [error]);
-
-    const handlePayLater = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setProcessing(true);
-        setError(null);
-
-        let bookingRequest;
-
-        try {
-            await verifyFlightAvailability();
-            const transformedPassengers = transformPassengers(paymentData.passengersData, paymentData.outbound.type, paymentData.outbound.typev);
-            if (!transformedPassengers?.length) throw new Error("Données passagers invalides");
-
-            bookingRequest = {
-                paymentIntentId: 0, // pas de paiement immédiat
-                paymentMethod: "paylater",
-                passengers: transformedPassengers,
-                contactInfo: {
-                    email: paymentData.passengersData.adults[0].email,
-                    phone: paymentData.passengersData.adults[0].phone,
-                },
-                flightId: paymentData.outbound.flightId,
-                returnFlightId: paymentData.return?.flightId,
-                totalPrice: paymentData.totalPrice,
-                departureDate: paymentData.outbound.date,
-                returnDate: paymentData.return?.date,
-            };
-
-            const response = await fetch("https://steve-airways.onrender.com/api/confirm-booking-paylater", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(bookingRequest),
-            });
-
-            if (!response.ok) throw new Error("Échec de la réservation steve");
-
-            const responseData = await response.json();
-
-            onSuccess({
-                bookingId: responseData.bookingId,
-                reference: responseData.bookingReference,
-            });
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                // Si l'erreur vient de fetch et contient un message du serveur
-                if (err.message === "Failed to fetch") {
-                    setError("Impossible de contacter le serveur. Réessayez plus tard.");
-                } else {
-                    setError(err.message); // Affiche exactement le message renvoyé par le serveur
-                }
-            } else {
-                setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
-            }
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    return (
-        <div>
-            {error && (
-                <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm font-medium text-red-800 shadow-md">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <span>{error}</span>
-                </div>
-            )}
-            <button
-                onClick={handlePayLater}
-                disabled={processing}
-                className={`w-full rounded-md px-4 py-3 font-medium ${processing ? "bg-gray-400" : "bg-yellow-500 hover:bg-yellow-600"} text-white transition-colors`}
-            >
-                {processing ? t("Processing...") : `${t("Reserve and Pay Later")} (${paymentData.totalPrice.toFixed(2)}$)`}
-            </button>
+  return (
+    <div>
+      {bookingId && timeLeft !== null && timeLeft > 0 && (
+        <div className="mb-4 rounded-lg bg-yellow-50 p-4 border border-yellow-200">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-yellow-800">
+              Time remaining to complete payment: <span className="font-bold">{formatTime(timeLeft)}</span>
+            </p>
+          </div>
+          <p className="text-xs text-yellow-600 mt-1">
+            Your seats are reserved for {formatTime(timeLeft)}. After this time, the reservation will be automatically cancelled.
+          </p>
         </div>
-    );
+      )}
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      <button
+        onClick={handlePayLater}
+        disabled={processing}
+        className={`w-full rounded-md px-4 py-3 font-medium ${
+          processing ? "bg-gray-400" : "bg-yellow-500 hover:bg-yellow-600"
+        } text-white transition-colors`}
+      >
+        {processing ? t("Processing...") : `${t("Reserve and Pay Later")} (${paymentData.totalPrice.toFixed(2)}$)`}
+      </button>
+
+      <p className="mt-2 text-xs text-gray-500 text-center">
+        You will have 2 hours to complete the payment. After this time, your reservation will be automatically cancelled.
+      </p>
+    </div>
+  );
 };
 
+
+// const PayLaterPayment = ({
+//     paymentData,
+//     onSuccess,
+// }: {
+//     paymentData: PaymentData;
+//     onSuccess: (data: { bookingId: number; reference: string }) => void;
+// }) => {
+//     const [processing, setProcessing] = useState(false);
+//     const [error, setError] = useState<string | null>(null);
+//     const { t, i18n } = useTranslation();
+
+//     const verifyFlightAvailability = async () => {
+//         const response = await fetch("https://steve-airways.onrender.com/api/verify-flight", {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({
+//                 flightId: paymentData.outbound.flightId,
+//                 returnFlightId: paymentData.return?.flightId,
+//                 passengerCount:
+//                     (paymentData.passengersData.adults.length || 0) +
+//                     (paymentData.passengersData.children.length || 0) +
+//                     (paymentData.passengersData.infants.length || 0),
+//             }),
+//         });
+
+//         const data = await response.json();
+
+//         if (!response.ok) {
+//             // Ici on lance l'erreur avec le message exact du serveur
+//             throw new Error(data.error || "Vol non disponible");
+//         }
+
+//         return data;
+//     };
+
+//     // Efface automatiquement après 5s
+//     useEffect(() => {
+//         if (error) {
+//             const timer = setTimeout(() => {
+//                 setError(null);
+//             }, 5000); // ⏱️ 5 secondes
+
+//             return () => clearTimeout(timer);
+//         }
+//     }, [error]);
+
+//     const handlePayLater = async (event: React.FormEvent) => {
+//         event.preventDefault();
+//         setProcessing(true);
+//         setError(null);
+
+//         let bookingRequest;
+
+//         try {
+//             await verifyFlightAvailability();
+//             const transformedPassengers = transformPassengers(paymentData.passengersData, paymentData.outbound.type, paymentData.outbound.typev);
+//             if (!transformedPassengers?.length) throw new Error("Données passagers invalides");
+
+//             bookingRequest = {
+//                 paymentIntentId: 0, // pas de paiement immédiat
+//                 paymentMethod: "paylater",
+//                 passengers: transformedPassengers,
+//                 contactInfo: {
+//                     email: paymentData.passengersData.adults[0].email,
+//                     phone: paymentData.passengersData.adults[0].phone,
+//                 },
+//                 flightId: paymentData.outbound.flightId,
+//                 returnFlightId: paymentData.return?.flightId,
+//                 totalPrice: paymentData.totalPrice,
+//                 departureDate: paymentData.outbound.date,
+//                 returnDate: paymentData.return?.date,
+//             };
+
+//             const response = await fetch("https://steve-airways.onrender.com/api/confirm-booking-paylater", {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify(bookingRequest),
+//             });
+
+//             if (!response.ok) throw new Error("Échec de la réservation steve");
+
+//             const responseData = await response.json();
+
+//             onSuccess({
+//                 bookingId: responseData.bookingId,
+//                 reference: responseData.bookingReference,
+//             });
+//         } catch (err: unknown) {
+//             if (err instanceof Error) {
+//                 // Si l'erreur vient de fetch et contient un message du serveur
+//                 if (err.message === "Failed to fetch") {
+//                     setError("Impossible de contacter le serveur. Réessayez plus tard.");
+//                 } else {
+//                     setError(err.message); // Affiche exactement le message renvoyé par le serveur
+//                 }
+//             } else {
+//                 setError("Échec de la réservation. Veuillez réessayer ou contacter le support.");
+//             }
+//         } finally {
+//             setProcessing(false);
+//         }
+//     };
+
+//     return (
+//         <div>
+//             {error && (
+//                 <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-sm font-medium text-red-800 shadow-md">
+//                     <AlertCircle className="h-5 w-5 text-red-600" />
+//                     <span>{error}</span>
+//                 </div>
+//             )}
+//             <button
+//                 onClick={handlePayLater}
+//                 disabled={processing}
+//                 className={`w-full rounded-md px-4 py-3 font-medium ${processing ? "bg-gray-400" : "bg-yellow-500 hover:bg-yellow-600"} text-white transition-colors`}
+//             >
+//                 {processing ? t("Processing...") : `${t("Reserve and Pay Later")} (${paymentData.totalPrice.toFixed(2)}$)`}
+//             </button>
+//         </div>
+//     );
+// };
+
 // Page de paiement principale
+
+
+
+
+
+
 export default function Pay() {
     const { lang } = useParams<{ lang: string }>();
     const currentLang = lang || "en"; // <-- ici on définit currentLang
@@ -819,6 +980,12 @@ export default function Pay() {
             });
         }, 3000);
     };
+        const handlePaymentLater = async (successData: { bookingId: number; reference: string }) => {
+        setPaymentSuccess(true);
+
+     
+    };
+
 
     if (loading) {
         return (
@@ -953,7 +1120,7 @@ export default function Pay() {
                                         </div>
                                     </label> */}
 
-                                            {/* <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
+                                            <label className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-4 hover:border-blue-900">
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
@@ -964,7 +1131,7 @@ export default function Pay() {
                                                 <div className="ml-3 flex items-center">
                                                     <h1>{t("Pay Later")}</h1>
                                                 </div>
-                                            </label> */}
+                                            </label>
                                         </div>
 
                                         {error && (
@@ -1023,7 +1190,7 @@ export default function Pay() {
                                         ) : (
                                             <PayLaterPayment
                                                 paymentData={paymentData}
-                                                onSuccess={handlePaymentSuccess}
+                                                onSuccess={handlePaymentLater}
                                             />
                                         )}
                                     </div>

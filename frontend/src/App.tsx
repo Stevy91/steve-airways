@@ -28,6 +28,8 @@ import PermissionsPage from "./routes/dashboard/permission/page";
 import Register from "./routes/dashboard/register/page";
 import ViewBookingCharter from "./routes/dashboard/viewbookingcharter/page";
 import FlightTableCharter from "./routes/dashboard/charter/page";
+import BookingPending from "./routes/confirmationpending/page";
+import BookingExpired from "./routes/confirmationexpired/page";
 
 
 // export default function App() {
@@ -176,6 +178,14 @@ const router = createBrowserRouter([
             {
                 path: ":lang/confirmation",
                 element: <ConfirmationPage />,
+            },
+             {
+                path: ":lang/booking-pending/:bookingId",
+                element: <BookingPending />,
+            },
+            {
+                path: ":lang/booking-expired",
+                element: <BookingExpired />,
             },
         ],
     },

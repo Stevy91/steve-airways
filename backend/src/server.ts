@@ -981,7 +981,7 @@ async function cleanupExpiredBookings() {
   try {
     await connection.beginTransaction();
     
-    console.log('Starting cleanup of expired paylater bookings...');
+
     
     // 1. Trouver TOUTES les réservations paylater expirées
     const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
@@ -995,18 +995,18 @@ async function cleanupExpiredBookings() {
        LEFT JOIN payments p ON b.id = p.booking_id
        WHERE 
          b.status = 'pending'
-         AND b.payment_method = 'paylater'  -- CRITÈRE IMPORTANT
+         AND b.payment_method = 'paylater' 
          AND p.payment_status = 'pending'
          AND p.payment_method = 'paylater'
-         AND b.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)
+         AND b.created_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE)
        FOR UPDATE`
     );
 
-    console.log(`Found ${expiredBookings.length} expired paylater bookings`);
+ 
 
     // 2. Pour chaque réservation expirée
     for (const booking of expiredBookings) {
-      console.log(`Processing expired booking: ${booking.booking_reference} (ID: ${booking.id})`);
+   
       
       // Libérer les sièges des vols
       const flightIds = [];
@@ -1046,7 +1046,7 @@ async function cleanupExpiredBookings() {
         ]
       );
 
-      console.log(`Marked booking ${booking.id} as expired`);
+  
     }
 
     await connection.commit();
