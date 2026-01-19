@@ -996,8 +996,6 @@ async function cleanupExpiredBookings() {
        WHERE 
          b.status = 'pending'
          AND b.payment_method = 'paylater' 
-         AND p.payment_status = 'pending'
-         AND p.payment_method = 'paylater'
          AND b.created_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE)
        FOR UPDATE`
     );
