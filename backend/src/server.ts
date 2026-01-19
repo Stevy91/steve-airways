@@ -1189,6 +1189,8 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
 
 
 
+
+
     // Créer le paiement avec status "pending"
 await connection.query(
   `INSERT INTO payments (
