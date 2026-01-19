@@ -47,6 +47,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: process.env.STRIPE_API_VERSION as any,
 });
 
+// const pool = mysql.createPool({
+//   host: 'srv1387.hstgr.io',
+//   user: 'u566035799_trogonAirWays',
+//   password: '2024Mapbon@',
+//   database: 'u566035799_trogon',
+//   port: 3306,
+//   waitForConnections: true,
+//   connectionLimit: 10,
+//   queueLimit: 0,
+//   timezone: 'Z', // 🔹 Utiliser UTC
+//   dateStrings: true,
+//   charset: 'utf8mb4',
+// });
+
 const pool = mysql.createPool({
   host: 'srv1387.hstgr.io',
   user: 'u566035799_trogonAirWays',
@@ -56,12 +70,15 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: 'Z', // 🔹 Utiliser UTC
+  timezone: '+00:00', // Forcer UTC explicitement
   dateStrings: true,
   charset: 'utf8mb4',
 });
 
-
+// Ajouter un événement pour configurer la timezone à chaque connexion
+pool.on('connection', function(connection) {
+  connection.query('SET time_zone = "+00:00"');
+});
 
 
 // Interface pour typage des locations
