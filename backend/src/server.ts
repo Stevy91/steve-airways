@@ -999,11 +999,8 @@ async function cleanupExpiredBookings() {
       `
     );
 
- 
-
     // 2. Pour chaque réservation expirée
     for (const booking of expiredBookings) {
-   
       
       // Libérer les sièges des vols
       const flightIds = [];
