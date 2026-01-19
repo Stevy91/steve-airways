@@ -985,18 +985,25 @@ async function cleanupExpiredBookings() {
     
     // 1. Trouver TOUTES les réservations paylater expirées
     const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT id, flight_id, return_flight_id, passenger_count, booking_reference
-FROM bookings
-WHERE status = 'pending'
-  AND payment_method = 'paylater'
-  AND expires_at <= UTC_TIMESTAMP()
-FOR UPDATE;
-
+      `SELECT 
+        id, 
+        flight_id, 
+        return_flight_id, 
+        passenger_count,
+        booking_reference
+      FROM bookings
+      WHERE status = 'pending'
+        AND payment_method = 'paylater'
+        AND expires_at <= NOW()
+      FOR UPDATE;
       `
     );
 
+ 
+
     // 2. Pour chaque réservation expirée
     for (const booking of expiredBookings) {
+   
       
       // Libérer les sièges des vols
       const flightIds = [];
@@ -1013,13 +1020,13 @@ FOR UPDATE;
 
       // Mettre à jour le statut de la réservation
       await connection.execute(
-        "UPDATE bookings SET status = 'expired', updated_at = UTC_TIMESTAMP() WHERE id = ?",
+        "UPDATE bookings SET status = 'expired', updated_at = NOW() WHERE id = ?",
         [booking.id]
       );
 
       // Mettre à jour le statut du paiement
       await connection.execute(
-        `UPDATE payments SET payment_status = 'expired', updated_at = UTC_TIMESTAMP() WHERE booking_id = ?
+        `UPDATE payments SET payment_status = 'expired', updated_at = NOW() WHERE booking_id = ?
           AND payment_method = 'paylater'
           AND payment_status = 'pending'`,
         [booking.id]
@@ -1073,8 +1080,8 @@ FOR UPDATE;
 
 
 // Planifier le nettoyage toutes les 5 minutes
-cron.schedule('* * * * *', cleanupExpiredBookings)
-// cron.schedule('*/5 * * * *', cleanupExpiredBookings);
+
+cron.schedule('*/5 * * * *', cleanupExpiredBookings);
 
 // Modifiez votre route pour inclure l'expiration automatique
 app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
