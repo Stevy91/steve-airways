@@ -1153,7 +1153,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     
    
 
-    const [bookingResult] = await connection.query<mysql.OkPacket>(
+ const [bookingResult] = await connection.query<mysql.OkPacket>(
   `INSERT INTO bookings (
     flight_id, payment_intent_id,
     total_price, currency, contact_email, contact_phone,
@@ -1173,7 +1173,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     "usd",
     contactInfo.email,
     contactInfo.phone,
-    "pending",
+    "pending", // status
     typeVol,
     typeVolV,
     1,
@@ -1183,21 +1183,20 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     passengers.length,
     bookingReference,
     returnFlightId || null,
-    "paylater",
+    "paylater"
   ]
 );
 
 
+
     // Créer le paiement avec status "pending"
-   await connection.query(
+await connection.query(
   `INSERT INTO payments (
     booking_id, amount, currency,
     payment_method, payment_status, transaction_reference,
     created_at, expires_at
   ) VALUES (
-    ?, ?, ?, ?, ?, ?,
-    UTC_TIMESTAMP(),
-    DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 HOUR)
+    ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 HOUR)
   )`,
   [
     bookingResult.insertId,
@@ -1208,6 +1207,7 @@ app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) =>
     `paylater-${bookingResult.insertId}-${Date.now()}`
   ]
 );
+
 
     // 6. Insertion des passagers avec gestion d'erreur
     for (const passenger of passengers) {
