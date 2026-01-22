@@ -2723,7 +2723,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
       message: "userId ou permissions manquants",
     });
   }
-  
+
 
   try {
     // Vérification du format
@@ -2750,7 +2750,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     res.status(500).json({
       success: false,
       message: "Erreur serveur",
-      error: error.message
+      error: (error as Error).message  // ✅ assertion de type
     });
   }
 });
