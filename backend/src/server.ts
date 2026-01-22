@@ -2709,10 +2709,6 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
   }
 });
 
-
-
-
-// SERVER (Node.js/Express)
 app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response) => {
   console.log("=== API PERMISSIONS ===");
   console.log("Body reçu:", JSON.stringify(req.body, null, 2));
