@@ -1,4 +1,5 @@
 // hooks/useAuth.ts
+import { P } from "framer-motion/dist/types.d-Cjd591yU";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -72,5 +73,15 @@ export const useAuth = () => {
         loading,
         isAdmin: user?.role === "admin",
         isOperateur: user?.role === "operateur",
+        listeFlightsPlane: user?.role === "listeFlightsPlanee",
+        listeBookingsPlane: user?.role === "listeBookingsPlane",
+        listeFlightsHelico: user?.role === "listeFlightsHelico",
+        listeBookingsHelico: user?.role === "listeBookingsHelico",
+        listeUsers: user?.role === "listeUsers",
+        addFlights: user?.role === "addFlights",
+        editFlights: user?.role === "editFlights",
+        listePassagers: user?.role === "listePassagers",
+        editBookings: user?.role === "editBookings",
+        imprimerTicket: user?.role === "imprimeTicket"
     };
 };

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Eye } from "lucide-react";
-import UsersDetailsModal, { UsersDetails } from "../../../components/UsersDetailsModal";
+
 import { useTheme } from "../../../contexts/theme-context";
 import { useAuth } from "../../../hooks/useAuth";
+import { useParams } from "react-router-dom";
 
 // Types
 type Users = {
@@ -16,6 +17,8 @@ type Users = {
 const Users = () => {
     const { theme } = useTheme();
     const { isAdmin, isOperateur } = useAuth();
+        const { lang } = useParams<{ lang: string }>();
+    const currentLang = lang || "en"; // <-- ici on définit currentLang
 
     const [stats, setStats] = useState<Users[]>([]);
 
@@ -115,7 +118,7 @@ const Users = () => {
                                             className="table-row"
                                         >
                                          
-                                            <td className="table-cell text-center">Access</td>
+                                            <td className="table-cell text-center"><a href={`/${currentLang}/dashboard/permissions/${user.id}`}>Access</a></td>
                                             <td className="table-cell text-center">{user.name}</td>
                                             <td className="table-cell text-center">{user.email}</td>
                                             <td className="table-cell text-center">{user.phone}</td>

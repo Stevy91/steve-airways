@@ -42,19 +42,19 @@ export const NavbarLinks = (lang: string) => [
     {label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter`,},
     {label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter`,},
   ],
-}
+},
 
 
 
 
-//   {
-//     title: "Users",
-//     icon: Users,
-//     links: [
-//       { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
-//       { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
-//     ],
-//   },
+  {
+    title: "Users",
+    icon: Users,
+    links: [
+      { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
+      { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+    ],
+  },
 //   {
 //     title: "Settings",
 //     icon: Settings,

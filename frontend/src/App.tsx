@@ -207,7 +207,7 @@ const router = createBrowserRouter([
             { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
             { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
             { path: "user", element: <Users /> },
-            { path: "permissions", element: <PermissionsPage /> },
+            { path: "permissions/:userId", element: <PermissionsPage /> },
             { path: "roleUser", element: <h1 className="title">Role</h1> },
             { path: "settings", element: <h1 className="title">Settings</h1> },
         ],

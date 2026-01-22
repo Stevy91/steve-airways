@@ -2708,6 +2708,30 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 });
 
 
+app.put("/roles/permissions", authMiddleware,  async (req: any, res: Response) => {
+    try {
+      const { userId, permissions } = req.body;
+
+      if (!userId || !permissions) {
+        return res.status(400).json({ message: "Données manquantes" });
+      }
+
+      await pool.execute(
+        "UPDATE users SET role = ? WHERE id = ?",
+        [JSON.stringify(permissions), userId]
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  }
+);
+
+
+
+
 app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
   const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, role, created_at FROM users WHERE id = ?", [req.user.id]);
   res.json(rows[0]);
