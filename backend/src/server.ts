@@ -2723,6 +2723,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
       message: "userId ou permissions manquants",
     });
   }
+  
 
   try {
     // Vérification du format
