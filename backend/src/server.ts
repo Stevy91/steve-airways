@@ -2710,6 +2710,7 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 
 app.put("/roles/permissions", authMiddleware,  async (req: any, res: Response) => {
     try {
+      console.log("BODY REÇU :", req.body);
       const { userId, permissions } = req.body;
 
       if (!userId || !permissions) {

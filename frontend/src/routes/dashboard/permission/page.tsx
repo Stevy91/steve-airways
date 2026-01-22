@@ -107,7 +107,7 @@ export default function PermissionsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: 1, // À remplacer par l'ID réel de l'utilisateur
+          userId: '3', // À remplacer par l'ID réel de l'utilisateur
           permissions,
         }),
       });

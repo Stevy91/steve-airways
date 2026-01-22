@@ -73,7 +73,7 @@ export const useAuth = () => {
         loading,
         isAdmin: user?.role === "admin",
         isOperateur: user?.role === "operateur",
-        listeFlightsPlane: user?.role === "listeFlightsPlanee",
+        listeFlightsPlane: user?.role === "listeFlightsPlane",
         listeBookingsPlane: user?.role === "listeBookingsPlane",
         listeFlightsHelico: user?.role === "listeFlightsHelico",
         listeBookingsHelico: user?.role === "listeBookingsHelico",
