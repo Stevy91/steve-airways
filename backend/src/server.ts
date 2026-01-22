@@ -2710,27 +2710,29 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 });
 
 
-app.put("/roles/permissions", authMiddleware,  async (req: any, res: Response) => {
-    try {
-      console.log("BODY REÇU :", req.body);
-      const { userId, permissions } = req.body;
 
-      if (!userId || !permissions) {
-        return res.status(400).json({ message: "Données manquantes" });
-      }
 
-      await pool.execute(
-        "UPDATE users SET role = ? WHERE id = ?",
-        [JSON.stringify(permissions), userId]
-      );
+app.put("/api/roles/permissions", authMiddleware, async (req: any, res) => {
+  console.log("HEADERS :", req.headers);
+  console.log("BODY REÇU :", req.body);
 
-      res.json({ success: true });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Erreur serveur" });
-    }
+  const { userId, permissions } = req.body;
+
+  if (!userId || !permissions) {
+    return res.status(400).json({
+      message: "userId ou permissions manquants",
+      body: req.body,
+    });
   }
-);
+
+  await pool.execute(
+    "UPDATE users SET role = ? WHERE id = ?",
+    [JSON.stringify(permissions), userId]
+  );
+
+  res.json({ success: true });
+});
+
 
 
 
