@@ -2742,6 +2742,8 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
         permissionsArray.push(key);
       }
     });
+
+    
     
     const permissionsString = permissionsArray.join(', ');
     console.log("Permissions à enregistrer (CSV) :", permissionsString);
