@@ -2712,6 +2712,7 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 
 
 
+// SERVER (Node.js/Express)
 app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response) => {
   console.log("BODY REÇU :", req.body);
 
@@ -2723,14 +2724,35 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     });
   }
 
-  await pool.execute(
-    "UPDATE users SET permissions = ? WHERE id = ?",
-    [JSON.stringify(permissions), userId]
-  );
+  try {
+    // Vérification du format
+    if (typeof permissions !== 'object') {
+      return res.status(400).json({
+        message: "Permissions doit être un objet",
+      });
+    }
 
-  res.json({ success: true });
+    console.log("Permissions à enregistrer :", permissions);
+    console.log("Permissions stringifié :", JSON.stringify(permissions));
+
+    await pool.execute(
+      "UPDATE users SET permissions = ? WHERE id = ?",
+      [JSON.stringify(permissions), userId]
+    );
+
+    res.json({ 
+      success: true,
+      message: "Permissions mises à jour avec succès" 
+    });
+  } catch (error) {
+    console.error("Erreur SQL :", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur",
+      error: error.message
+    });
+  }
 });
-
 
 
 
