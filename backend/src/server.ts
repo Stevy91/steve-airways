@@ -2735,11 +2735,14 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
 
     console.log("Permissions à enregistrer :", permissions);
     console.log("Permissions stringifié :", JSON.stringify(permissions));
+    
 
     await pool.execute(
       "UPDATE users SET permissions = ? WHERE id = ?",
       [JSON.stringify(permissions), userId]
     );
+
+
 
     res.json({ 
       success: true,
