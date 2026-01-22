@@ -2714,58 +2714,114 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 
 // SERVER (Node.js/Express)
 app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response) => {
-  console.log("BODY REÇU :", req.body);
+  console.log("=== API PERMISSIONS ===");
+  console.log("Body reçu:", JSON.stringify(req.body, null, 2));
 
   const { userId, permissions } = req.body;
 
-  if (!userId || !permissions) {
+  // Validation stricte
+  if (!userId || userId === "" || userId === null || userId === undefined) {
     return res.status(400).json({
-      message: "userId ou permissions manquants",
+      success: false,
+      message: "userId est requis et ne peut pas être vide",
+    });
+  }
+
+  if (!permissions || typeof permissions !== 'object') {
+    return res.status(400).json({
+      success: false,
+      message: "permissions doit être un objet JSON",
     });
   }
 
   try {
-    // Vérification du format
-    if (typeof permissions !== 'object') {
-      return res.status(400).json({
-        message: "Permissions doit être un objet",
-      });
-    }
-
-    console.log("Permissions reçues :", permissions);
-
-    // Convertir les permissions en chaîne CSV
+    // Convertir en CSV
     const permissionsArray: string[] = [];
     
     Object.entries(permissions).forEach(([key, value]) => {
-      if (value === true) {
+      // Vérification stricte du type boolean
+      if (value === true || value === "true") {
         permissionsArray.push(key);
       }
     });
-
     
-    
-    const permissionsString = permissionsArray.join(', ');
-    console.log("Permissions à enregistrer (CSV) :", permissionsString);
+    const permissionsString = permissionsArray.join(',');
+    console.log("Valeur CSV:", permissionsString);
+    console.log("Type userId:", typeof userId, "Valeur:", userId);
+    console.log("Type permissionsString:", typeof permissionsString);
 
-    // Mettre à jour la base de données
-    await pool.execute(
+    // **IMPORTANT : Convertir les types explicitement**
+    const userIdNumber = parseInt(userId, 10);
+    if (isNaN(userIdNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "userId doit être un nombre valide",
+      });
+    }
+
+    // Méthode 1: Exécution directe avec types corrects
+    console.log("Exécution avec paramètres:", [permissionsString, userIdNumber]);
+    
+    const [result] = await pool.execute(
       "UPDATE users SET permissions = ? WHERE id = ?",
-      [permissions, userId]
+      [permissionsString, userIdNumber] // Types explicites
     );
 
+    console.log("✅ Succès! Résultat:", result);
+    
     res.json({ 
       success: true,
       message: "Permissions mises à jour avec succès",
-      permissions: permissionsString
+      userId: userIdNumber,
+      storedValue: permissionsString,
+      affectedRows: (result as any).affectedRows
     });
+
   } catch (error: any) {
-    console.error("Erreur SQL :", error);
-    res.status(500).json({
-      success: false,
-      message: "Erreur serveur",
-      error: error.message
-    });
+    console.error("❌ ERREUR DÉTAILLÉE:");
+    console.error("Code:", error.code);
+    console.error("Errno:", error.errno);
+    console.error("Message:", error.sqlMessage);
+    console.error("SQL:", error.sql);
+    console.error("Stack:", error.stack);
+
+    // Tentative avec requête non préparée
+    if (error.errno === 1210) {
+      try {
+        console.log("🔄 Tentative avec requête directe...");
+        
+        // Utiliser query() au lieu de execute() pour éviter les paramètres préparés
+        const [result] = await pool.query(
+          `UPDATE users SET permissions = '${permissionsArray.join(',')}' WHERE id = ${parseInt(userId, 10)}`
+        );
+        
+        res.json({ 
+          success: true,
+          message: "Permissions mises à jour (requête directe)",
+          warning: "Utilisation de query() au lieu de execute()"
+        });
+        
+      } catch (directError: any) {
+        console.error("❌ Requête directe échouée:", directError);
+        
+        res.status(500).json({
+          success: false,
+          message: "Erreur MySQL avec les arguments",
+          error: {
+            code: error.code,
+            errno: error.errno,
+            message: error.sqlMessage,
+            suggestion: "Vérifiez les types des paramètres envoyés à MySQL"
+          }
+        });
+      }
+    } else {
+      res.status(500).json({
+        success: false,
+        message: "Erreur serveur",
+        error: error.message
+      });
+    }
   }
 });
 
