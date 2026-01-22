@@ -102,7 +102,7 @@ export default function PermissionsPage() {
       const permissions = buildPermissionsPayload();
 
       const res = await fetch("https://steve-airways.onrender.com/api/roles/permissions", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
