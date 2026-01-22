@@ -974,110 +974,110 @@ import cron from 'node-cron';
 
 // Ajoutez cette fonction pour nettoyer les réservations expirées
 
-async function cleanupExpiredBookings() {
-  const connection = await pool.getConnection();
+// async function cleanupExpiredBookings() {
+//   const connection = await pool.getConnection();
   
-  try {
-    await connection.beginTransaction();
+//   try {
+//     await connection.beginTransaction();
     
 
     
-    // 1. Trouver TOUTES les réservations paylater expirées
-    const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
-      `SELECT id, flight_id, return_flight_id, passenger_count, booking_reference
-FROM bookings
-WHERE status = 'pending'
-  AND payment_method = 'paylater'
-  AND expires_at <= UTC_TIMESTAMP()
-FOR UPDATE;
+//     // 1. Trouver TOUTES les réservations paylater expirées
+//     const [expiredBookings] = await connection.query<mysql.RowDataPacket[]>(
+//       `SELECT id, flight_id, return_flight_id, passenger_count, booking_reference
+// FROM bookings
+// WHERE status = 'pending'
+//   AND payment_method = 'paylater'
+//   AND expires_at <= UTC_TIMESTAMP()
+// FOR UPDATE;
 
-      `
-    );
+//       `
+//     );
 
  
 
-    // 2. Pour chaque réservation expirée
-    for (const booking of expiredBookings) {
+//     // 2. Pour chaque réservation expirée
+//     for (const booking of expiredBookings) {
    
       
-      // Libérer les sièges des vols
-      const flightIds = [];
-      if (booking.flight_id) flightIds.push(booking.flight_id);
-      if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
+//       // Libérer les sièges des vols
+//       const flightIds = [];
+//       if (booking.flight_id) flightIds.push(booking.flight_id);
+//       if (booking.return_flight_id) flightIds.push(booking.return_flight_id);
       
-      for (const flightId of flightIds) {
-        await connection.execute(
-          "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
-          [booking.passenger_count, flightId]
-        );
-        console.log(`Released ${booking.passenger_count} seats for flight ${flightId}`);
-      }
+//       for (const flightId of flightIds) {
+//         await connection.execute(
+//           "UPDATE flights SET seats_available = seats_available + ? WHERE id = ?",
+//           [booking.passenger_count, flightId]
+//         );
+//         console.log(`Released ${booking.passenger_count} seats for flight ${flightId}`);
+//       }
 
-      // Mettre à jour le statut de la réservation
-      await connection.execute(
-        "UPDATE bookings SET status = 'expired', updated_at = NOW() WHERE id = ?",
-        [booking.id]
-      );
+//       // Mettre à jour le statut de la réservation
+//       await connection.execute(
+//         "UPDATE bookings SET status = 'expired', updated_at = NOW() WHERE id = ?",
+//         [booking.id]
+//       );
 
-      // Mettre à jour le statut du paiement
-      await connection.execute(
-        `UPDATE payments SET payment_status = 'expired', updated_at = NOW() WHERE booking_id = ?
-          AND payment_method = 'paylater'
-          AND payment_status = 'pending'`,
-        [booking.id]
-      );
+//       // Mettre à jour le statut du paiement
+//       await connection.execute(
+//         `UPDATE payments SET payment_status = 'expired', updated_at = NOW() WHERE booking_id = ?
+//           AND payment_method = 'paylater'
+//           AND payment_status = 'pending'`,
+//         [booking.id]
+//       );
 
-      // Ajouter une notification
-      await connection.execute(
-        `INSERT INTO notifications (type, message, booking_id, seen, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          "expiration",
-          `Reservation ${booking.booking_reference} expired due to non-payment (paylater)`,
-          booking.id,
-          false,
-          new Date()
-        ]
-      );
+//       // Ajouter une notification
+//       await connection.execute(
+//         `INSERT INTO notifications (type, message, booking_id, seen, created_at)
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           "expiration",
+//           `Reservation ${booking.booking_reference} expired due to non-payment (paylater)`,
+//           booking.id,
+//           false,
+//           new Date()
+//         ]
+//       );
 
   
-    }
+//     }
 
-    await connection.commit();
+//     await connection.commit();
     
-    if (expiredBookings.length > 0) {
-      // Émettre une notification globale
-      io.emit("paylater-bookings-expired", {
-        count: expiredBookings.length,
-        message: `${expiredBookings.length} paylater bookings have been expired`
-      });
+//     if (expiredBookings.length > 0) {
+//       // Émettre une notification globale
+//       io.emit("paylater-bookings-expired", {
+//         count: expiredBookings.length,
+//         message: `${expiredBookings.length} paylater bookings have been expired`
+//       });
       
-      console.log(`Successfully cleaned up ${expiredBookings.length} expired paylater bookings`);
-    } else {
-      console.log('No expired paylater bookings found');
-    }
+//       console.log(`Successfully cleaned up ${expiredBookings.length} expired paylater bookings`);
+//     } else {
+//       console.log('No expired paylater bookings found');
+//     }
 
-  } catch (error) {
-    await connection.rollback();
-    console.error('Error cleaning up expired paylater bookings:', error);
+//   } catch (error) {
+//     await connection.rollback();
+//     console.error('Error cleaning up expired paylater bookings:', error);
     
-    // Émettre une erreur
-    io.emit("cleanup-error", {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+//     // Émettre une erreur
+//     io.emit("cleanup-error", {
+//       error: error instanceof Error ? error.message : 'Unknown error'
+//     });
     
-  } finally {
-    connection.release();
-  }
-}
+//   } finally {
+//     connection.release();
+//   }
+// }
 
 
 
 
-// Planifier le nettoyage toutes les 5 minutes
+// // Planifier le nettoyage toutes les 5 minutes
 
-cron.schedule('* * * * *', cleanupExpiredBookings);
-// cron.schedule('*/5 * * * *', cleanupExpiredBookings);
+// cron.schedule('* * * * *', cleanupExpiredBookings);
+// // cron.schedule('*/5 * * * *', cleanupExpiredBookings);
 
 // Modifiez votre route pour inclure l'expiration automatique
 app.post("/api/confirm-booking-paylater", async (req: Request, res: Response) => {
