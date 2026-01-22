@@ -2710,8 +2710,7 @@ app.delete("/api/users/:id", authMiddleware, async (req: any, res: Response) => 
 });
 
 app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response) => {
-  console.log("=== API PERMISSIONS ===");
-  console.log("Body reçu:", JSON.stringify(req.body, null, 2));
+
 
   const { userId, permissions } = req.body;
 
@@ -2742,9 +2741,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     });
     
     const permissionsString = permissionsArray.join(',');
-    console.log("Valeur CSV:", permissionsString);
-    console.log("Type userId:", typeof userId, "Valeur:", userId);
-    console.log("Type permissionsString:", typeof permissionsString);
+  
 
     // **IMPORTANT : Convertir les types explicitement**
     const userIdNumber = parseInt(userId.toString(), 10);
@@ -2763,7 +2760,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
       [permissionsString, userIdNumber] // Types explicites
     );
 
-    console.log("✅ Succès! Résultat:", result);
+ 
     
     res.json({ 
       success: true,
@@ -2774,17 +2771,12 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     });
 
   } catch (error: any) {
-    console.error("❌ ERREUR DÉTAILLÉE:");
-    console.error("Code:", error.code);
-    console.error("Errno:", error.errno);
-    console.error("Message:", error.sqlMessage);
-    console.error("SQL:", error.sql);
-    console.error("Stack:", error.stack);
+  
 
     // Tentative avec requête non préparée
     if (error.errno === 1210) {
       try {
-        console.log("🔄 Tentative avec requête directe...");
+       
         
         // Recréer permissionsArray pour l'erreur handler
         const errorPermissionsArray: string[] = [];
@@ -2806,7 +2798,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
         });
         
       } catch (directError: any) {
-        console.error("❌ Requête directe échouée:", directError);
+
         
         res.status(500).json({
           success: false,
