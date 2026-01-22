@@ -73,15 +73,15 @@ export const useAuth = () => {
         loading,
         isAdmin: user?.role === "admin",
         isOperateur: user?.role === "operateur",
-        listeFlightsPlane: user?.role === "listeFlightsPlane",
-        listeBookingsPlane: user?.role === "listeBookingsPlane",
-        listeFlightsHelico: user?.role === "listeFlightsHelico",
-        listeBookingsHelico: user?.role === "listeBookingsHelico",
-        listeUsers: user?.role === "listeUsers",
-        addFlights: user?.role === "addFlights",
-        editFlights: user?.role === "editFlights",
-        listePassagers: user?.role === "listePassagers",
-        editBookings: user?.role === "editBookings",
-        imprimerTicket: user?.role === "imprimeTicket"
+        listeFlightsPlane: user?.permissions === "listeFlightsPlane",
+        listeBookingsPlane: user?.permissions === "listeBookingsPlane",
+        listeFlightsHelico: user?.permissions === "listeFlightsHelico",
+        listeBookingsHelico: user?.permissions === "listeBookingsHelico",
+        listeUsers: user?.permissions === "listeUsers",
+        addFlights: user?.permissions === "addFlights",
+        editFlights: user?.permissions === "editFlights",
+        listePassagers: user?.permissions === "listePassagers",
+        editBookings: user?.permissions === "editBookings",
+        imprimerTicket: user?.permissions === "imprimeTicket"
     };
 };

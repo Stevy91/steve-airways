@@ -2384,7 +2384,7 @@ function authMiddleware(req: any, res: Response, next: any) {
 async function adminOnly(req: any, res: Response, next: any) {
   const userId = req.user.id;
   try {
-    const [rows] = await pool.query<User[]>("SELECT role FROM users WHERE id = ?", [userId]);
+    const [rows] = await pool.query<User[]>("SELECT role, permissions FROM users WHERE id = ?", [userId]);
     if (rows.length === 0) return res.status(404).json({ error: "Utilisateur introuvable" });
     if (rows[0].role !== "admin") return res.status(403).json({ error: "Accès refusé" });
     next();
@@ -2859,7 +2859,7 @@ app.get("/api/users/:id/permissions", authMiddleware, async (req: Request, res: 
 
 
 app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
-  const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, role, created_at FROM users WHERE id = ?", [req.user.id]);
+  const [rows] = await pool.query<User[]>("SELECT id, name, email, phone, role, permissions, created_at FROM users WHERE id = ?", [req.user.id]);
   res.json(rows[0]);
 });
 
