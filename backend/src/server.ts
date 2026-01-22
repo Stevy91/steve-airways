@@ -2749,7 +2749,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     // Mettre à jour la base de données
     await pool.execute(
       "UPDATE users SET permissions = ? WHERE id = ?",
-      [permissionsString, userId]
+      [permissions, userId]
     );
 
     res.json({ 
