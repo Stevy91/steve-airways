@@ -2747,7 +2747,7 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     console.log("Type permissionsString:", typeof permissionsString);
 
     // **IMPORTANT : Convertir les types explicitement**
-    const userIdNumber = parseInt(userId, 10);
+    const userIdNumber = parseInt(userId.toString(), 10);
     if (isNaN(userIdNumber)) {
       return res.status(400).json({
         success: false,
@@ -2786,9 +2786,17 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
       try {
         console.log("🔄 Tentative avec requête directe...");
         
+        // Recréer permissionsArray pour l'erreur handler
+        const errorPermissionsArray: string[] = [];
+        Object.entries(req.body.permissions || {}).forEach(([key, value]: [string, any]) => {
+          if (value === true || value === "true") {
+            errorPermissionsArray.push(key);
+          }
+        });
+        
         // Utiliser query() au lieu de execute() pour éviter les paramètres préparés
         const [result] = await pool.query(
-          `UPDATE users SET permissions = '${permissionsArray.join(',')}' WHERE id = ${parseInt(userId, 10)}`
+          `UPDATE users SET permissions = '${errorPermissionsArray.join(',')}' WHERE id = ${parseInt(req.body.userId?.toString() || "0", 10)}`
         );
         
         res.json({ 
