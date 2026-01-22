@@ -2724,7 +2724,6 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
     });
   }
 
-
   try {
     // Vérification du format
     if (typeof permissions !== 'object') {
@@ -2733,33 +2732,76 @@ app.put("/api/roles/permissions", authMiddleware, async (req: any, res: Response
       });
     }
 
-    console.log("Permissions à enregistrer :", permissions);
-    console.log("Permissions stringifié :", JSON.stringify(permissions));
-    
+    console.log("Permissions reçues :", permissions);
 
+    // Convertir les permissions en chaîne CSV
+    const permissionsArray: string[] = [];
+    
+    Object.entries(permissions).forEach(([key, value]) => {
+      if (value === true) {
+        permissionsArray.push(key);
+      }
+    });
+    
+    const permissionsString = permissionsArray.join(', ');
+    console.log("Permissions à enregistrer (CSV) :", permissionsString);
+
+    // Mettre à jour la base de données
     await pool.execute(
       "UPDATE users SET permissions = ? WHERE id = ?",
-      [JSON.stringify(permissions), userId]
+      [permissionsString, userId]
     );
-
-
 
     res.json({ 
       success: true,
-      message: "Permissions mises à jour avec succès" 
+      message: "Permissions mises à jour avec succès",
+      permissions: permissionsString
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur SQL :", error);
     res.status(500).json({
       success: false,
       message: "Erreur serveur",
-      error: (error as Error).message  // ✅ assertion de type
+      error: error.message
     });
   }
 });
 
 
+app.get("/api/users/:id/permissions", authMiddleware, async (req: Request, res: Response) => {
+  const userId = req.params.id;
 
+  try {
+    const [rows] = await pool.execute(
+      "SELECT id, email, permissions FROM users WHERE id = ?",
+      [userId]
+    );
+
+    const user = (rows as any[])[0];
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Utilisateur non trouvé"
+      });
+    }
+
+    res.json({
+      success: true,
+      permissions: user.permissions,
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    });
+  } catch (error: any) {
+    console.error("Erreur chargement permissions :", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur"
+    });
+  }
+});
 
 
 app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
