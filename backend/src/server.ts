@@ -2875,6 +2875,9 @@ app.post("/api/logout", authMiddleware, (req: any, res: Response) => {
 });
 
 
+
+
+
 //--------------------------fin user----------------------------
 
 app.get("/api/locationstables", async (req: Request, res: Response) => {
