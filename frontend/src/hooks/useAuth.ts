@@ -1,5 +1,4 @@
 // hooks/useAuth.ts
-import { P } from "framer-motion/dist/types.d-Cjd591yU";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -12,7 +11,18 @@ export const useAuth = () => {
 
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [permissions, setPermissions] = useState<string[]>([]);
     const logoutTimer = useRef<NodeJS.Timeout | null>(null);
+
+    // Fonction pour parser les permissions
+    const parsePermissions = (permissionsString: string): string[] => {
+        if (!permissionsString) return [];
+        // Séparer par virgule, trimmer chaque permission et filtrer les vides
+        return permissionsString
+            .split(',')
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
+    };
 
     // 🔐 Logout function
     const logout = () => {
@@ -44,7 +54,14 @@ export const useAuth = () => {
 
         if (userData) {
             try {
-                setUser(JSON.parse(userData));
+                const parsedUser = JSON.parse(userData);
+                setUser(parsedUser);
+                
+                // Parser les permissions
+                if (parsedUser.permissions) {
+                    const parsedPerms = parsePermissions(parsedUser.permissions);
+                    setPermissions(parsedPerms);
+                }
             } catch {
                 logout();
                 return;
@@ -68,21 +85,37 @@ export const useAuth = () => {
         };
     }, [navigate, currentLang]);
 
+    // Fonction utilitaire pour vérifier une permission
+    const hasPermission = (permission: string): boolean => {
+        if (user?.role === "admin") return true; // Les admins ont toutes les permissions
+        return permissions.includes(permission);
+    };
+
     return {
         user,
         loading,
         isAdmin: user?.role === "admin",
         isOperateur: user?.role === "operateur",
-        listeFlightsPlane: user?.permissions === "listeFlightsPlane",
-        listeBookingsPlane: user?.permissions === "listeBookingsPlane",
-        listeFlightsHelico: user?.permissions === "listeFlightsHelico",
-        listeBookingsHelico: user?.permissions === "listeBookingsHelico",
-        listeUsers: user?.permissions === "listeUsers",
-        addFlights: user?.permissions === "addFlights",
-        editFlights: user?.permissions === "editFlights",
-        listePassagers: user?.permissions === "listePassagers",
-        editBookings: user?.permissions === "editBookings",
-        imprimerTicket: user?.permissions === "imprimeTicket",
-        createdTicket: user?.permissions === "createdTicket"
+        permissions, // Tableau de permissions
+        hasPermission, // Fonction pour vérifier une permission
+        
+        // Compatibilité avec le code existant (optionnel)
+        listeFlightsPlane: hasPermission("listeFlightsPlane"),
+        // listeBookingsPlane: hasPermission("listeBookingsPlane"),
+        listeFlightsHelico: hasPermission("listeFlightsHelico"),
+        // listeBookingsHelico: hasPermission("listeBookingsHelico"),
+        listeUsers: hasPermission("listeUsers"),
+        charter: hasPermission("charter"),
+        addFlights: hasPermission("addFlights"),
+        deleteFlights: hasPermission("deleteFlights"),
+        manifestPdf: hasPermission("manifestPdf"),
+        editFlights: hasPermission("editFlights"),
+        listePassagers: hasPermission("listePassagers"),
+        editBookings: hasPermission("editBookings"),
+        imprimerTicket: hasPermission("imprimerTicket"),
+        createdTicket: hasPermission("createdTicket"),
+        dashboard: hasPermission("dashboard"),
+        rapport: hasPermission("rapport"),
+        cancelledTicket: hasPermission("cancelledTicket")
     };
 };

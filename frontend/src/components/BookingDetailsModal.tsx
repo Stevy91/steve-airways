@@ -85,7 +85,20 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
     const [isEditing, setIsEditing] = useState(false);
     const [editedBooking, setEditedBooking] = useState<BookingDetails | null>(null);
     const [saving, setSaving] = useState(false);
-    const { isAdmin, isOperateur } = useAuth();
+  
+
+        const { 
+    user, 
+    loading: authLoading, 
+    isAdmin, 
+    hasPermission, 
+    permissions 
+} = useAuth();
+
+// Vérifier plusieurs permissions
+const cancelledTicket = isAdmin || hasPermission("cancelledTicket");
+const imprimerTicket = isAdmin || hasPermission("imprimerTicket");
+const editBookings = isAdmin || hasPermission("editBookings");
 
     const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -505,20 +518,22 @@ const birth = (dateString: string, formatString: string) => {
                                         Booking Details: <span className="text-blue-900">{booking.reference}</span>
                                     </h2>
                                     <div className="flex items-center gap-2">
+                                        {imprimerTicket && (
+
                                         <button
-                                        className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-900"
+                                        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-2 text-white hover:from-amber-600 hover:to-amber-500 hover:text-black "
                                             onClick={() => generateTicketPDF()}
                                             >
                                             Download the ticket
                                         </button>
 
-                                       
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                         {(isAdmin || isOperateur) && (
+                                         {editBookings && (
                                                <button
                                             onClick={handleEditToggle}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-white hover:bg-blue-900"
+                                            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600  px-3 py-2 text-white hover:from-amber-600 hover:to-amber-500 hover:text-black "
                                         >
                                             {isEditing ? <X size={16} /> : <Edit size={16} />}
                                             {isEditing ? "Cancel" : "Edit"}
@@ -943,17 +958,17 @@ const birth = (dateString: string, formatString: string) => {
                                             type="button"
                                             onClick={handleSaveChanges}
                                             disabled={saving}
-                                            className="flex items-center gap-2 rounded-md bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-gray-400"
+                                            className="flex items-center gap-2 rounded-md bg-gradient-to-r hover:from-green-600 hover:to-green-500 from-green-500 to-green-600 px-4 py-2 text-white  disabled:bg-gray-400"
                                         >
                                             <Save size={16} />
                                             {saving ? "Saving..." : "Save"}
                                         </button>
                                     ) : (
-                                        (isAdmin || isOperateur) && (
+                                        cancelledTicket && (
                                         <button
                                             type="button"
                                             onClick={() => handleSavePaymentStatus(paymentStatus as "pending" | "confirmed" | "cancelled")}
-                                            className="rounded-md bg-amber-500 px-4 py-2 text-white hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                            className="rounded-md bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 hover:text-black px-4 py-2 text-white  focus:outline-none focus:ring-2 focus:ring-amber-500"
                                         >
                                             Update Status
                                         </button>)

@@ -1,6 +1,7 @@
 import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List, Helicopter } from "lucide-react";
 import { HelicopterIcon } from "../components/icons/HelicopterIcon";
 import { useParams } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function useLang() {
   const { lang } = useParams();
@@ -8,61 +9,133 @@ function useLang() {
 }
 
 
-export const NavbarLinks = (lang: string) => [
-  {
-    title: "Dashboard",
-    links: [
-      { label: "Dashboard", icon: LayoutDashboard, path: `/${lang}/dashboard` },
-    ],
-  },
-  {
-    title: "Air plane",
-    icon: Plane,
-    links: [
-      { label: "All flights", icon: List, path: `/${lang}/dashboard/flights` },
-      { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-plane` },
-    //   { label: "Airport", icon: TowerControl, path: `/${lang}/dashboard/airport` },
-    ],
-  },
-  {
-    title: "Helico",
-    icon: HelicopterIcon,
+// export const NavbarLinks = (lang: string) => [
+
     
-    links: [
-      { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
-      { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
-    //   { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
-    ],
-  },
-
- {
-  title: "Charter",
-  icons: [Plane, HelicopterIcon],
-  links: [
-    {label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter`,},
-    {label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter`,},
-  ],
-},
-
-
-
-
-  {
-    title: "Users",
-    icon: Users,
-    links: [
-      { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
-      { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
-    ],
-  },
 //   {
-//     title: "Settings",
-//     icon: Settings,
+//     title: "Dashboard",
 //     links: [
-//       { label: "Settings", icon: Settings, path: `/${lang}/dashboard/settings` },
+//       { label: "Dashboard", icon: LayoutDashboard, path: `/${lang}/dashboard` },
 //     ],
 //   },
-];
+//   {
+//     title: "Air plane",
+//     icon: Plane,
+//     links: [
+//       { label: "All flights", icon: List, path: `/${lang}/dashboard/flights` },
+//       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-plane` },
+//     //   { label: "Airport", icon: TowerControl, path: `/${lang}/dashboard/airport` },
+//     ],
+//   },
+//   {
+//     title: "Helico",
+//     icon: HelicopterIcon,
+    
+//     links: [
+//       { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
+//       { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
+//     //   { label: "Airport Helico", icon: TowerControl, path: `/${lang}/dashboard/airport-helico` },
+//     ],
+//   },
+
+//  {
+//   title: "Charter",
+//   icons: [Plane, HelicopterIcon],
+//   links: [
+//     {label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter`,},
+//     {label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter`,},
+//   ],
+// },
+
+
+
+
+//   {
+//     title: "Users",
+//     icon: Users,
+//     links: [
+//       { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
+//       { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+//     ],
+//   },
+// //   {
+// //     title: "Settings",
+// //     icon: Settings,
+// //     links: [
+// //       { label: "Settings", icon: Settings, path: `/${lang}/dashboard/settings` },
+// //     ],
+// //   },
+// ];
+
+export const NavbarLinks = (
+  lang: string,
+  auth: {
+    isAdmin: boolean;
+    hasPermission: (perm: string) => boolean;
+  }
+) => {
+
+  
+const { 
+    user, 
+    loading: authLoading, 
+    isAdmin, 
+    hasPermission, 
+    permissions 
+} = useAuth();
+
+  const canSeeUsers = isAdmin || hasPermission("listeUsers");
+  const dashboard = isAdmin || hasPermission("dashboard");
+  const listeFlightsPlane = isAdmin || hasPermission("listeFlightsPlane");
+  const listeFlightsHelico = isAdmin || hasPermission("listeFlightsHelico");
+  const charter = isAdmin || hasPermission("charter");
+
+  return [
+    dashboard && {
+      title: "Dashboard",
+      links: [
+        { label: "Dashboard", icon: LayoutDashboard, path: `/${lang}/dashboard` },
+      ],
+    },
+
+   
+    listeFlightsPlane && {
+      title: "Air plane",
+      icon: Plane,
+      links: [
+        { label: "All flights", icon: List, path: `/${lang}/dashboard/flights` },
+        { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-plane` },
+      ],
+    },
+    listeFlightsHelico && {
+      title: "Helico",
+      icon: HelicopterIcon,
+      links: [
+        { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
+        { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
+      ],
+    },
+    charter && {
+      title: "Charter",
+      icons: [Plane, HelicopterIcon],
+      links: [
+        { label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter` },
+        { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter` },
+      ],
+    },
+
+    // 👇 USERS — CONDITIONNEL
+    canSeeUsers && {
+      title: "Users",
+      icon: Users,
+      links: [
+        { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
+        // { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+      ],
+    },
+  ].filter(Boolean);
+};
+
 
 
 export const headerHomeLinks = [

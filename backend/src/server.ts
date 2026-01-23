@@ -2829,7 +2829,7 @@ app.get("/api/users/:id/permissions", authMiddleware, async (req: Request, res: 
 
   try {
     const [rows] = await pool.execute(
-      "SELECT id, email, permissions FROM users WHERE id = ?",
+      "SELECT id, email, name, permissions FROM users WHERE id = ?",
       [userId]
     );
 
@@ -2845,9 +2845,12 @@ app.get("/api/users/:id/permissions", authMiddleware, async (req: Request, res: 
     res.json({
       success: true,
       permissions: user.permissions,
+      name: user.name,
+     
       user: {
         id: user.id,
-        email: user.email
+        email: user.email,
+        name: user.name
       }
     });
   } catch (error: any) {

@@ -1941,7 +1941,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                     <button
                                         onClick={handleSubmit}
                                         disabled={createTicket}
-                                        className="w-full rounded-md bg-amber-500 py-3 font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
+                                        className="w-full rounded-md hover:text-black  bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 py-3 font-semibold text-white transition-colors disabled:bg-gray-400"
                                     >
                                         {createTicket ? "Saving..." : "Confirm and Create the Ticket"}
                                     </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Eye } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, Eye } from "lucide-react";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
 import { useTheme } from "../../../contexts/theme-context";
 import { useAuth } from "../../../hooks/useAuth";
@@ -26,7 +26,19 @@ type Booking = {
 
 const ViewBookingPlane = () => {
     const { theme } = useTheme();
-    const { isAdmin, isOperateur } = useAuth();
+   
+
+    const { 
+    user, 
+    loading: authLoading, 
+    isAdmin, 
+    hasPermission, 
+    permissions 
+} = useAuth();
+
+// Vérifier plusieurs permissions
+const rapport = isAdmin || hasPermission("rapport");
+
 
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -219,13 +231,13 @@ const ViewBookingPlane = () => {
                                 <button
                                     type="button"
                                     onClick={handleSearch}
-                                    className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                                    className="rounded-md bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 px-4 pb-1 pt-2 text-white hover:text-black "
                                 >
                                     Search
                                 </button>
                             </div>
 
-                            {(isAdmin || isOperateur) && (
+                            {rapport && (
                                 <button
                                     type="button"
                                     onClick={downloadExcel}
@@ -320,7 +332,7 @@ const ViewBookingPlane = () => {
                                                 </button>
                                             )} */}
                                             <button
-                                                    className="flex w-full gap-2 rounded-lg p-2 hover:bg-amber-500"
+                                                    className="flex w-full gap-2 rounded-lg p-2 bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 hover:text-black"
                                                     onClick={() => handleViewDetails(booking.id)}
                                                 >
                                                     <Eye className="h-6 w-4" /> View Details
@@ -331,28 +343,65 @@ const ViewBookingPlane = () => {
                             </tbody>
                         </table>
 
-                        {/* PAGINATION */}
-                        <div className="mt-4 flex justify-center gap-2">
-                            <span>
-                                Page {currentPage} / {totalPages}
-                            </span>
-
-                            <button
-                                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                                className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                            >
-                                Previous
-                            </button>
-
-                            <button
-                                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                                disabled={currentPage === totalPages}
-                                className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                            >
-                                Next
-                            </button>
+                           {/* PAGINATION */}
+                {currentBookings.length > 0 && (
+                    <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                                Page <span className="font-semibold">{currentPage}</span> of{" "}
+                                <span className="font-semibold">{totalPages}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeftIcon className="w-4 h-4" />
+                                    Previous
+                                </button>
+                                
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+                                        
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                                                    currentPage === pageNum
+                                                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'
+                                                        : 'text-gray-600 hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                
+                                <button
+                                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next
+                                    <ChevronRightIcon className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
+                    </div>
+                )}
                     </div>
                 </div>
 

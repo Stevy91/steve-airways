@@ -1,4 +1,4 @@
-import { ChevronDown, MapPinIcon, MoreVertical, Pencil, PersonStanding, Ticket, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronLeftIcon, ChevronRightIcon, MapPinIcon, MoreVertical, Pencil, PersonStanding, Ticket, Trash2, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 import { useAuth } from "../../../hooks/useAuth";
@@ -196,7 +196,45 @@ const FlightTable = () => {
         };
     }, [openDropdown]);
 
-    const { user, loading: authLoading, isAdmin, addFlights } = useAuth();
+// const { 
+//     user, 
+//     loading: authLoading, 
+//     isAdmin, 
+//     manifestPdf,
+//     addFlights,
+//     deleteFlights, 
+//     listeFlightsPlane, 
+//     listeBookingsPlane, 
+//     listeFlightsHelico, 
+//     listeBookingsHelico, 
+//     listeUsers, 
+//     editFlights, 
+//     listePassagers, 
+//     editBookings, 
+//     imprimerTicket, 
+//     createdTicket 
+// } = useAuth();
+
+
+const { 
+    user, 
+    loading: authLoading, 
+    isAdmin, 
+    hasPermission, 
+    permissions 
+} = useAuth();
+
+// Vérifier plusieurs permissions
+const canAddNewFlight = isAdmin || hasPermission("addFlights");
+const canEditFlight = isAdmin || hasPermission("editFlights");
+const manifestPdf = isAdmin || hasPermission("manifestPdf");
+const deleteFlights = isAdmin || hasPermission("deleteFlights");
+
+const listePassagers = isAdmin || hasPermission("listePassagers");
+const imprimerTicket = isAdmin || hasPermission("imprimerTicket");
+const createdTicket = isAdmin || hasPermission("createdTicket");
+
+
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -496,7 +534,7 @@ const FlightTable = () => {
                 <h1 className="text-2xl font-bold">All Flight Airplane</h1>
 
                 {/* Bouton Add new flight seulement pour les admins */}
-                {isAdmin && (
+                {canAddNewFlight && (
                     <button
                         onClick={() => {
                             setEditingFlight(null);
@@ -505,7 +543,7 @@ const FlightTable = () => {
                             setShowModal(true);
                             handleGenerate();
                         }}
-                        className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
+                        className="rounded bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 hover:from-amber-600 hover:to-amber-500 hover:text-black "
                     >
                         Add new flight
                     </button>
@@ -547,11 +585,13 @@ const FlightTable = () => {
                     <button
                         type="button"
                         onClick={handleSearch}
-                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                        className="rounded-md hover:text-black px-4 pb-1 pt-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white  hover:from-amber-600 hover:to-amber-500"
                     >
                         Search Flights
                     </button>
                 </div>
+                {manifestPdf && (
+               
                 <button
                     type="button"
                     onClick={downloadExcel}
@@ -559,6 +599,7 @@ const FlightTable = () => {
                 >
                     PDF
                 </button>
+                )}
             </div>
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
@@ -623,7 +664,7 @@ const FlightTable = () => {
                                                         }}
                                                     >
                                                         <div className="py-1">
-                                                            {isAdmin && (
+                                                            {canEditFlight && (
                                                                 <>
                                                                     <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
@@ -634,6 +675,10 @@ const FlightTable = () => {
                                                                     >
                                                                         <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                                     </button>
+                                                                    </>
+                                                            )}
+                                                            {deleteFlights && (       
+                                                                <>
                                                                     <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                                         onClick={() => {
@@ -645,7 +690,8 @@ const FlightTable = () => {
                                                                     </button>
                                                                 </>
                                                             )}
-
+                                                        {createdTicket && ( 
+                                                            <>
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
                                                                 onClick={() => {
@@ -657,6 +703,10 @@ const FlightTable = () => {
                                                                 <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
                                                             </button>
 
+                                                               </>
+                                                            )}
+                                                         {listePassagers && ( 
+                                                            <>
                                                             <button
                                                                 className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
                                                                 onClick={() => {
@@ -668,6 +718,9 @@ const FlightTable = () => {
                                                             >
                                                                 <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
                                                             </button>
+
+                                                               </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -678,27 +731,65 @@ const FlightTable = () => {
                             </tbody>
                         </table>
                     </div>
-                    {/* 🔹 Pagination */}
-                    <div className="mt-4 flex justify-center gap-2">
-                        <span>
-                            Page {currentPage} / {totalPages}
-                        </span>
-                        <button
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                        >
-                            Previous
-                        </button>
-
-                        <button
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                        >
-                            Next
-                        </button>
+                    {/* PAGINATION */}
+                {currentBookings.length > 0 && (
+                    <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                                Page <span className="font-semibold">{currentPage}</span> of{" "}
+                                <span className="font-semibold">{totalPages}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeftIcon className="w-4 h-4" />
+                                    Previous
+                                </button>
+                                
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+                                        
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                                                    currentPage === pageNum
+                                                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'
+                                                        : 'text-gray-600 hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                
+                                <button
+                                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next
+                                    <ChevronRightIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                )}
                 </div>
             </div>
 
@@ -1010,11 +1101,11 @@ const FlightTable = () => {
                                         <div className="md:col-span-2">
                                             <button
                                                 type="submit"
-                                                className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
+                                                className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 py-3 align-middle font-semibold text-white transition-colors  disabled:bg-gray-400 hover:text-black "
                                                 disabled={submitting}
                                             >
                                                 {submitting && (
-                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 hover:text-black border-t-white"></div>
                                                 )}
 
                                                 {editingFlight ? (submitting ? "Updating..." : "Update") : submitting ? "Saving..." : "Save"}
@@ -1128,7 +1219,7 @@ const FlightTable = () => {
                                                             toast.error("Aucun vol sélectionné");
                                                         }
                                                     }}
-                                                    className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
+                                                    className="w-60 rounded-md hover:text-black bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 py-3 font-semibold text-white "
                                                     disabled={!selectedFlightId}
                                                 >
                                                     {loadingPassengers ? "Chargement..." : "Download the passenger list"}

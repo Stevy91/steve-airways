@@ -30,7 +30,7 @@
     .sidebar-item-dashboard {
        @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-white transition-colors hover:bg-blue-50 dark:text-slate-50 dark:hover:bg-blue-950;
         &.active {
-            @apply bg-amber-500 text-slate-50 dark:bg-red-600;
+            @apply bg-gradient-to-r  from-amber-500 to-amber-600 text-slate-50 dark:bg-red-600;
         }
     }
 

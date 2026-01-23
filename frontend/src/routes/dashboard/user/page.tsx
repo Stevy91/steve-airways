@@ -194,7 +194,7 @@ const Users = () => {
                                                     ? 'bg-amber-100 text-amber-800'
                                                     : 'bg-emerald-100 text-emerald-800' 
                                             }`}>
-                                                {user.role ?? 'user'}
+                                                {user.role === 'user' ? 'Agent ' : 'Admin'}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6">

@@ -56,7 +56,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                     if (!user) return null;
 
                     // 🔹 CAS 1: SI L'UTILISATEUR EST ADMIN
-                    if (user.role === "admin") {
+             
                         // Dashboard spécial pour les admins (lien direct)
                         if (isDashboardGroup && navbarLink.links.length === 1) {
                             const firstLink = navbarLink.links[0];
@@ -127,10 +127,10 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                 </div>
                             </nav>
                         );
-                    }
+                   
 
                     // 🔹 CAS 2: SI L'UTILISATEUR N'EST PAS ADMIN (user role)
-                    else {
+                    
                         // Pour le groupe Dashboard, filtrer le lien principal
                         if (isDashboardGroup) {
                             return (
@@ -254,7 +254,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
                                 </div>
                             </nav>
                         );
-                    }
+                  
                 })}
             </div>
         </aside>
