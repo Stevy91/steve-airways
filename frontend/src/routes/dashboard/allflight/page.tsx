@@ -196,7 +196,7 @@ const FlightTable = () => {
         };
     }, [openDropdown]);
 
-    const { user, loading: authLoading, isAdmin } = useAuth();
+    const { user, loading: authLoading, isAdmin, addFlights } = useAuth();
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);

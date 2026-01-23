@@ -82,6 +82,7 @@ export const useAuth = () => {
         editFlights: user?.permissions === "editFlights",
         listePassagers: user?.permissions === "listePassagers",
         editBookings: user?.permissions === "editBookings",
-        imprimerTicket: user?.permissions === "imprimeTicket"
+        imprimerTicket: user?.permissions === "imprimeTicket",
+        createdTicket: user?.permissions === "createdTicket"
     };
 };

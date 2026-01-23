@@ -2546,6 +2546,7 @@ app.post("/api/login", async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        permissions: user.permissions,
       },
       process.env.JWT_SECRET || "secretKey",
       { expiresIn: "1d" }
@@ -2561,6 +2562,7 @@ app.post("/api/login", async (req: Request, res: Response) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        permissions: user.permissions,
       },
     });
   } catch (err) {

@@ -24,6 +24,7 @@ const permissionsData = [
       { id: "listePassagers", label: "1.8 - Listes Passagers" },
       { id: "editBookings", label: "1.9 - Edit Bookings" },
       { id: "imprimerTicket", label: "2.0 - Imprimer Ticket" },
+      { id: "createdTicket", label: "2.1 - Created Ticket" },
     ],
   },
 ];
@@ -106,7 +107,8 @@ export default function PermissionsPage() {
       "editFlights",
       "listePassagers",
       "editBookings",
-      "imprimerTicket"
+      "imprimerTicket",
+      "createdTicket"
     ];
 
     // S'assurer que toutes les permissions sont présentes
@@ -247,10 +249,14 @@ export default function PermissionsPage() {
   ======================= */
   return (
     <div style={{ padding: 20, maxWidth: 800 }}>
-      <h2>Gestion des permissions</h2>
+      <h2 style={{
+            marginBottom: 40,
+            fontSize: 30,
+            fontWeight: "bold"
+          }}>Gestion des permissions</h2>
 
       {/* Champ utilisateur */}
-      <div style={{ marginBottom: 20 }}>
+      {/* <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <label style={{ minWidth: 100 }}>
             ID Utilisateur:
@@ -293,7 +299,7 @@ export default function PermissionsPage() {
             ⚠️ {error}
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Liste des permissions */}
       {permissionsData.map((group: PermissionGroup) => (
@@ -355,18 +361,16 @@ export default function PermissionsPage() {
       {/* Bouton d'enregistrement */}
       <div style={{ marginTop: 30 }}>
         <button 
+        className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold py-3 px-6 rounded-lg hover:from-amber-600 hover:to-amber-700 transition-colors duration-300"
           onClick={savePermissions} 
           disabled={loading || !userId}
           style={{
             padding: "12px 24px",
             backgroundColor: !userId ? "#ccc" : "#f59e0b",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
+
             cursor: loading || !userId ? "not-allowed" : "pointer",
             opacity: loading ? 0.7 : 1,
-            fontSize: 16,
-            fontWeight: "bold"
+          
           }}
         >
           {loading ? "⏳ Enregistrement..." : "💾 Enregistrer permissions"}
@@ -407,7 +411,7 @@ export default function PermissionsPage() {
       </div>
 
       {/* Prévisualisation */}
-      <div style={{ 
+      {/* <div style={{ 
         marginTop: 30, 
         padding: 20, 
         backgroundColor: "#f8f9fa", 
@@ -445,10 +449,10 @@ export default function PermissionsPage() {
         <div style={{ marginTop: 15, fontSize: 12, color: "#6c757d" }}>
           <strong>Note :</strong> Seules les permissions cochées seront enregistrées sous forme de texte (ex: "listeFlightsPlane, editBookings")
         </div>
-      </div>
+      </div> */}
 
       {/* Debug - Optionnel */}
-      <details style={{ marginTop: 30 }}>
+      {/* <details style={{ marginTop: 30 }}>
         <summary style={{ 
           cursor: "pointer", 
           padding: "10px", 
@@ -477,7 +481,7 @@ export default function PermissionsPage() {
             }, null, 2)}
           </pre>
         </div>
-      </details>
+      </details> */}
     </div>
   );
 }
