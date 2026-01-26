@@ -125,7 +125,7 @@ const Users = () => {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
+                 
                 },
                 body: JSON.stringify(userdData),
             });
@@ -559,7 +559,7 @@ const Users = () => {
                                                     type="password"
                                                     name="password_hash"
                                                     placeholder="password"
-                                                    value={editingFlight?.password_hash || password_hash}
+                                                    value={password_hash}
                                                     onChange={(e) => setPassword_hash(e.target.value)}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required

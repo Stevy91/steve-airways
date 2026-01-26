@@ -1451,7 +1451,32 @@ interface User extends mysql.RowDataPacket {
 
 
 //-------------------------user------------------------------------------------------
+function authMiddleware(req: any, res: Response, next: any) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
+  if (!token) return res.status(401).json({ error: "Token manquant" });
+
+  jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
+    if (err) return res.status(403).json({ error: "Vous n'êtes pas connecté. Vous devez vous connecter pour continuer." });
+    req.user = user;
+    next();
+  });
+}
+
+// Middleware adminOnly pour protéger certaines routes
+async function adminOnly(req: any, res: Response, next: any) {
+  const userId = req.user.id;
+  try {
+    const [rows] = await pool.query<User[]>("SELECT role, permissions FROM users WHERE id = ?", [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: "Utilisateur introuvable" });
+    if (rows[0].role !== "admin") return res.status(403).json({ error: "Accès refusé" });
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+}
 
 app.post("/api/create-ticketdernier", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
@@ -2367,32 +2392,7 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
   }
 });
 
-function authMiddleware(req: any, res: Response, next: any) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.status(401).json({ error: "Token manquant" });
-
-  jwt.verify(token, process.env.JWT_SECRET || "secretKey", (err: any, user: any) => {
-    if (err) return res.status(403).json({ error: "Vous n'êtes pas connecté. Vous devez vous connecter pour continuer." });
-    req.user = user;
-    next();
-  });
-}
-
-// Middleware adminOnly pour protéger certaines routes
-async function adminOnly(req: any, res: Response, next: any) {
-  const userId = req.user.id;
-  try {
-    const [rows] = await pool.query<User[]>("SELECT role, permissions FROM users WHERE id = ?", [userId]);
-    if (rows.length === 0) return res.status(404).json({ error: "Utilisateur introuvable" });
-    if (rows[0].role !== "admin") return res.status(403).json({ error: "Accès refusé" });
-    next();
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-}
 
 // Register (protégé)
 // app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: Response) => {
@@ -2668,11 +2668,11 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-
+  
 
 
 //  Modifier un utilisateur (protégé)
-app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
+app.put("/api/users/:id", async (req: any, res: Response) => {
   const { name, username, email, password_hash, phone, role } = req.body;
   const userId = parseInt(req.params.id, 10);
 
