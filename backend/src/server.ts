@@ -2446,7 +2446,7 @@ app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: R
     );
 
     if (usernameExists.length > 0) {
-      return res.status(400).json({ error: "Nom d'utilisateur déjà utilisé" });
+      return res.status(400).json({ error: "Username already taken" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

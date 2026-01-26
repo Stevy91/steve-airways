@@ -52,7 +52,12 @@ const Users = () => {
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentUsers = stats.slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(stats.length / rowsPerPage);
-
+    const [userName, setUserName] = useState("");
+    const [name, setName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [email, setEmail] = useState("");
+    const [role, setRole] = useState("");
+    const [password_hash, setPassword_hash] = useState("");
 
     const [success, setSuccess] = useState("");
 
@@ -96,6 +101,7 @@ const Users = () => {
 
         setEditingFlight(user);
         setShowModal(true);
+        setSuccess(""); // Réinitialise le succès
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,14 +115,13 @@ const Users = () => {
         setError("");
         setSuccess("");
 
-         const dataToSend = {
+        const dataToSend = {
             username: userData.username,
             name: userData.name,
             phone: userData.phone,
             role: userData.role,
             password: userData.password_hash, // <-- Changez ici
         };
-
 
         try {
             const res = await fetch("https://steve-airways.onrender.com/api/register", {
@@ -132,11 +137,32 @@ const Users = () => {
 
             if (!res.ok) {
                 console.error("Erreur API Register:", data);
-                throw new Error(data.error || "Erreur lors de l'inscription");
+
+                toast.error(data.error || "Erreur lors de l'inscription", {
+                    style: {
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #f87171",
+                    },
+                    iconTheme: { primary: "#fff", secondary: "#dc2626" },
+                });
             }
 
             setSuccess("Account created successfully!");
             fetchDashboardData();
+            // Réinitialisez le formulaire
+            setFormData({
+                id: "",
+                username: "",
+                name: "",
+                phone: "",
+                email: "",
+                role: "",
+                password_hash: "",
+            });
+            setSuccess(""); // Réinitialise le succès
+            setRole("");
+            setPassword_hash("");
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -147,7 +173,6 @@ const Users = () => {
     const handleUpdateUser = async (userId: number, userData: any) => {
         setError("");
         setSuccess("");
-        setLoading(true);
 
         try {
             // Renommez password_hash en password pour correspondre à l'API
@@ -178,7 +203,7 @@ const Users = () => {
 
                 // Ajoutez des messages d'erreur plus spécifiques
                 if (res.status === 403) {
-                    throw new Error("Vous n'avez pas les permissions nécessaires");
+                    throw new Error("You do not have the necessary permissions");
                 } else if (res.status === 400) {
                     throw new Error(data.error || "Données invalides");
                 } else {
@@ -186,9 +211,9 @@ const Users = () => {
                 }
             }
 
-            setSuccess("Compte mis à jour avec succès!");
+            setSuccess("Account successfully updated!");
             fetchDashboardData();
-            setShowModal(false);
+
             setEditingFlight(null);
         } catch (err: any) {
             setError(err.message);
@@ -258,6 +283,16 @@ const Users = () => {
                 <button
                     onClick={() => {
                         setShowModal(true);
+                        setFormData({
+                            id: "",
+                            username: "",
+                            name: "",
+                            phone: "",
+                            email: "",
+                            role: "",
+                            password_hash: "",
+                        });
+                        setSuccess(""); // Réinitialise le succès
                     }}
                     className="rounded bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-white hover:from-amber-600 hover:to-amber-500 hover:text-black"
                 >
@@ -582,7 +617,6 @@ const Users = () => {
                                                     <option value="">Select a role</option>
                                                     <option value="admin">Admin</option>
                                                     <option value="user">Agent</option>
-                                                   
                                                 </select>
                                             </div>
 
