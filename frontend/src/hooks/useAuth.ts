@@ -1,8 +1,8 @@
 // hooks/useAuth.ts
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const INACTIVITY_TIME = 58 * 60 * 1000; // 15 minutes
+const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes (corrigé 58*60*1000 = 58 minutes)
 
 export const useAuth = () => {
     const navigate = useNavigate();
@@ -15,24 +15,35 @@ export const useAuth = () => {
     const logoutTimer = useRef<NodeJS.Timeout | null>(null);
 
     // Fonction pour parser les permissions
-    const parsePermissions = (permissionsString: string): string[] => {
+    const parsePermissions = useCallback((permissionsString: string | string[]): string[] => {
         if (!permissionsString) return [];
-        // Séparer par virgule, trimmer chaque permission et filtrer les vides
-        return permissionsString
-            .split(',')
-            .map(p => p.trim())
-            .filter(p => p.length > 0);
-    };
+        
+        if (Array.isArray(permissionsString)) {
+            return permissionsString.filter(p => p && p.trim().length > 0);
+        }
+        
+        if (typeof permissionsString === 'string') {
+            return permissionsString
+                .split(',')
+                .map(p => p.trim())
+                .filter(p => p.length > 0);
+        }
+        
+        return [];
+    }, []);
 
     // 🔐 Logout function
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem("token");
+        localStorage.removeItem("authToken");
         localStorage.removeItem("user");
+        setUser(null);
+        setPermissions([]);
         navigate(`/${currentLang}/login`);
-    };
+    }, [navigate, currentLang]);
 
     // 🔄 Reset inactivity timer
-    const resetTimer = () => {
+    const resetTimer = useCallback(() => {
         if (logoutTimer.current) {
             clearTimeout(logoutTimer.current);
         }
@@ -41,35 +52,46 @@ export const useAuth = () => {
             console.log("⏰ Session expirée (inactivité)");
             logout();
         }, INACTIVITY_TIME);
-    };
+    }, [logout]);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token") || localStorage.getItem("authToken");
         const userData = localStorage.getItem("user");
 
+        // Si pas de token, rediriger vers login
         if (!token) {
             navigate(`/${currentLang}/login`);
+            setLoading(false);
             return;
         }
 
-        if (userData) {
-            try {
-                const parsedUser = JSON.parse(userData);
-                setUser(parsedUser);
-                
-                // Parser les permissions
-                if (parsedUser.permissions) {
-                    const parsedPerms = parsePermissions(parsedUser.permissions);
-                    setPermissions(parsedPerms);
-                }
-            } catch {
-                logout();
-                return;
-            }
+        // Si pas de données utilisateur, déconnecter
+        if (!userData) {
+            logout();
+            setLoading(false);
+            return;
         }
 
-        setLoading(false);
-        resetTimer();
+        try {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+            
+            // Parser les permissions
+            if (parsedUser.permissions) {
+                const parsedPerms = parsePermissions(parsedUser.permissions);
+                setPermissions(parsedPerms);
+            }
+            
+            // NE PAS faire de redirection automatique ici
+            // La redirection sera gérée par les routes protégées
+            
+        } catch (error) {
+            console.error("Erreur de parsing utilisateur:", error);
+            logout();
+        } finally {
+            setLoading(false);
+            resetTimer();
+        }
 
         // 👂 Écoute activité utilisateur
         const events = ["click", "mousemove", "keydown", "scroll"];
@@ -83,27 +105,33 @@ export const useAuth = () => {
                 window.removeEventListener(event, resetTimer)
             );
         };
-    }, [navigate, currentLang]);
+    }, [navigate, currentLang, logout, resetTimer, parsePermissions]);
 
     // Fonction utilitaire pour vérifier une permission
-    const hasPermission = (permission: string): boolean => {
+    const hasPermission = useCallback((permission: string): boolean => {
         if (user?.role === "admin") return true; // Les admins ont toutes les permissions
         return permissions.includes(permission);
-    };
+    }, [user, permissions]);
+
+    // Vérifier si l'utilisateur a au moins une permission
+    const hasAnyPermission = useCallback((requiredPermissions: string[]): boolean => {
+        if (user?.role === "admin") return true;
+        return requiredPermissions.some(permission => permissions.includes(permission));
+    }, [user, permissions]);
 
     return {
         user,
         loading,
         isAdmin: user?.role === "admin",
         isOperateur: user?.role === "operateur",
-        permissions, // Tableau de permissions
-        hasPermission, // Fonction pour vérifier une permission
+        permissions,
+        hasPermission,
+        hasAnyPermission,
+        logout,
         
-        // Compatibilité avec le code existant (optionnel)
+        // Permissions individuelles pour compatibilité
         listeFlightsPlane: hasPermission("listeFlightsPlane"),
-        // listeBookingsPlane: hasPermission("listeBookingsPlane"),
         listeFlightsHelico: hasPermission("listeFlightsHelico"),
-        // listeBookingsHelico: hasPermission("listeBookingsHelico"),
         listeUsers: hasPermission("listeUsers"),
         charter: hasPermission("charter"),
         addFlights: hasPermission("addFlights"),

@@ -30,6 +30,8 @@ import ViewBookingCharter from "./routes/dashboard/viewbookingcharter/page";
 import FlightTableCharter from "./routes/dashboard/charter/page";
 import BookingPending from "./routes/confirmationpending/page";
 import BookingExpired from "./routes/confirmationexpired/page";
+import Unauthorized from "./components/Unauthorized";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 // export default function App() {
@@ -189,29 +191,149 @@ const router = createBrowserRouter([
             },
         ],
     },
-    {
-        path: ":lang/dashboard",
-        element: <Layout />,
-        children: [
-            { index: true, element: <DashboardPage /> },
-            { path: "analytics", element: <h1 className="title">Analytics</h1> },
-            { path: "reports", element: <h1 className="title">Reports</h1> },
-            { path: "flights", element: <FlightTable /> },
-            { path: "flights-helico", element: <FlightTableHelico /> },
-            { path: "bookings-plane", element: <ViewBookingPlane /> },
-            { path: "bookings-helico", element: <ViewBookingHelico /> },
-            { path: "flights-charter", element: <FlightTableCharter /> },
-            { path: "bookings-charter", element: <ViewBookingCharter /> },
-            { path: "register", element: <Register /> },
-
-            { path: "airport", element: <h1 className="title">Airport Airplane</h1> },
-            { path: "airport-helico", element: <h1 className="title">Airport Helico</h1> },
-            { path: "user", element: <Users /> },
-            { path: "permissions/:userId", element: <PermissionsPage /> },
-            { path: "roleUser", element: <h1 className="title">Role</h1> },
-            { path: "settings", element: <h1 className="title">Settings</h1> },
-        ],
-    },
+  {
+    path: ":lang/dashboard",
+    element: (
+        <ProtectedRoute>
+            <Layout />
+        </ProtectedRoute>
+    ),
+    children: [
+        { 
+            index: true, 
+            element: (
+                <ProtectedRoute requiredAnyPermission={["dashboard", "listeFlightsPlane", "listeFlightsHelico", "charter"]}>
+                    <DashboardPage />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "analytics", 
+            element: (
+                <ProtectedRoute adminOnly>
+                    <h1 className="title">Analytics</h1>
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "reports", 
+            element: (
+                <ProtectedRoute requiredPermission="rapport">
+                    <h1 className="title">Reports</h1>
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "flights", 
+            element: (
+                <ProtectedRoute requiredPermission="listeFlightsPlane">
+                    <FlightTable />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "flights-helico", 
+            element: (
+                <ProtectedRoute requiredPermission="listeFlightsHelico">
+                    <FlightTableHelico />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "bookings-plane", 
+            element: (
+                <ProtectedRoute requiredPermission="listeBookingsPlane">
+                    <ViewBookingPlane />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "bookings-helico", 
+            element: (
+                <ProtectedRoute requiredPermission="listeBookingsHelico">
+                    <ViewBookingHelico />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "flights-charter", 
+            element: (
+                <ProtectedRoute requiredPermission="charter">
+                    <FlightTableCharter />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "bookings-charter", 
+            element: (
+                <ProtectedRoute requiredPermission="charter">
+                    <ViewBookingCharter />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "register", 
+            element: (
+                <ProtectedRoute adminOnly>
+                    <Register />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "airport", 
+            element: (
+                <ProtectedRoute requiredPermission="listeAirportsPlane">
+                    <h1 className="title">Airport Airplane</h1>
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "airport-helico", 
+            element: (
+                <ProtectedRoute requiredPermission="listeAirportsHelico">
+                    <h1 className="title">Airport Helico</h1>
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "user", 
+            element: (
+                <ProtectedRoute adminOnly>
+                    <Users />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "permissions/:userId", 
+            element: (
+                <ProtectedRoute adminOnly>
+                    <PermissionsPage />
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "roleUser", 
+            element: (
+                <ProtectedRoute adminOnly>
+                    <h1 className="title">Role</h1>
+                </ProtectedRoute>
+            ) 
+        },
+        { 
+            path: "settings", 
+            element: (
+                <ProtectedRoute adminOnly>
+                    <h1 className="title">Settings</h1>
+                </ProtectedRoute>
+            ) 
+        },
+    ],
+},
+// Ajoutez la route unauthorized
+{
+    path: ":lang/unauthorized",
+    element: <Unauthorized />
+}
 ]);
 
 export default function App() {

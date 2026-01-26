@@ -39,11 +39,36 @@ export default function Login() {
             localStorage.setItem("token", data.token); // Garder les deux pour compatibilité
             localStorage.setItem("user", JSON.stringify(data.user));
 
-            // ✅ Redirection conditionnelle selon le rôle
+            // ✅ Redirection conditionnelle selon le rôle et les permissions
             if (data.user.role === "admin") {
                 navigate(`/${currentLang}/dashboard`);
             } else {
-                navigate(`/${currentLang}/dashboard/flights`);
+                const permissions = data.user.permissions;
+
+                // Fonction pour parser les permissions
+                const parsePermissions = (permissions: string | string[]): string[] => {
+                    if (Array.isArray(permissions)) {
+                        return permissions;
+                    }
+                    if (typeof permissions === "string") {
+                        return permissions.split(",").map((p: string) => p.trim());
+                    }
+                    return [];
+                };
+
+                const permissionArray = parsePermissions(permissions);
+
+                // Redirection selon les permissions
+                if (permissionArray.includes("listeFlightsPlane")) {
+                    navigate(`/${currentLang}/dashboard/flights`);
+                } else if (permissionArray.includes("listeFlightsHelico")) {
+                    navigate(`/${currentLang}/dashboard/flights-helico`);
+                } else if (permissionArray.includes("charter")) {
+                    navigate(`/${currentLang}/dashboard/flights-charter`);
+                } else {
+                    // Redirection par défaut si aucune permission ne correspond
+                    navigate(`/${currentLang}/dashboard`);
+                }
             }
         } catch (err) {
             console.error(err);

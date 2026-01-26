@@ -1,4 +1,4 @@
-import { ChevronDown, MapPinIcon, MoreVertical, Pencil, PersonStanding, Ticket, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronLeftIcon, ChevronRightIcon, MapPinIcon, MoreVertical, Pencil, PersonStanding, Ticket, Trash2, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../hooks/useAuth";
 import toast from "react-hot-toast";
@@ -70,7 +70,7 @@ const FlightTableCharter = () => {
     const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
     const [stats, setStats] = useState<any>(null);
 
-       // Champs filtres
+    // Champs filtres
     const [flightNumb, setFlightNumb] = useState("");
     const [tailNumber, setTailNumber] = useState("");
     const [dateDeparture, setDateDeparture] = useState("");
@@ -100,7 +100,7 @@ const FlightTableCharter = () => {
         setFlightNumber(generateFlightNumber());
     };
 
-      const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
     const handleDropdownClick = (flightId: number, event: React.MouseEvent) => {
         event.stopPropagation(); // Empêche la propagation du clic
@@ -134,8 +134,18 @@ const FlightTableCharter = () => {
         setOpenDropdown(openDropdown === flightId ? null : flightId);
     };
 
-    const { user, loading: authLoading, isAdmin, isOperateur } = useAuth();
-  // 🔹 Pagination
+    const { user, loading: authLoading, isAdmin, hasPermission, permissions } = useAuth();
+
+    // Vérifier plusieurs permissions
+    const canAddNewFlight = isAdmin || hasPermission("addFlights");
+    const canEditFlight = isAdmin || hasPermission("editFlights");
+    const manifestPdf = isAdmin || hasPermission("manifestPdf");
+    const deleteFlights = isAdmin || hasPermission("deleteFlights");
+
+    const listePassagers = isAdmin || hasPermission("listePassagers");
+    const createdTicket = isAdmin || hasPermission("createdTicket");
+
+    // 🔹 Pagination
     // const [currentPage, setCurrentPage] = useState(1);
     // const itemsPerPage = 10;
     // const indexOfLastItem = currentPage * itemsPerPage;
@@ -143,24 +153,17 @@ const FlightTableCharter = () => {
     // const currentFlights = flights.slice(indexOfFirstItem, indexOfLastItem);
     // const totalPages = Math.ceil(flights.length / itemsPerPage);
 
-
-        // Pagination
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-   // Remplacer la ligne 69 (ou autour) où vous utilisez slice()
-const currentBookings = stats && stats.recentBookings 
-    ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) 
-    : [];
+    // Remplacer la ligne 69 (ou autour) où vous utilisez slice()
+    const currentBookings = stats && stats.recentBookings ? stats.recentBookings.slice(indexOfFirstRow, indexOfLastRow) : [];
 
-// Et pour totalPages
-const totalPages = stats && stats.recentBookings 
-    ? Math.ceil(stats.recentBookings.length / rowsPerPage) 
-    : 1;
-
-
+    // Et pour totalPages
+    const totalPages = stats && stats.recentBookings ? Math.ceil(stats.recentBookings.length / rowsPerPage) : 1;
 
     const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
     const [open, setOpen] = useState(false);
@@ -234,44 +237,41 @@ const totalPages = stats && stats.recentBookings
     }, [openDropdown]);
 
     // Fetch flights
-const fetchFlights = async () => {
-    try {
-        setLoading(true);
-        const res = await fetch("https://steve-airways.onrender.com/api/flighttablecharter");
-        const data = await res.json();
+    const fetchFlights = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch("https://steve-airways.onrender.com/api/flighttablecharter");
+            const data = await res.json();
             setStats(data);
-        
-    } catch {
-        setError("Erreur lors du chargement des vols");
-    } finally {
-        setLoading(false);
-    }
-};
+        } catch {
+            setError("Erreur lors du chargement des vols");
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    const handleSearch = async () => {
+        try {
+            setLoading(true);
 
-const handleSearch = async () => {
-    try {
-        setLoading(true);
-        
-        const url = new URL("https://steve-airways.onrender.com/api/flight-charter-search");
-        if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
-        if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
-        if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
-        
-        const res = await fetch(url.toString());
-        const data = await res.json();
+            const url = new URL("https://steve-airways.onrender.com/api/flight-charter-search");
+            if (flightNumb) url.searchParams.append("flightNumb", flightNumb);
+            if (tailNumber) url.searchParams.append("tailNumber", tailNumber);
+            if (dateDeparture) url.searchParams.append("dateDeparture", dateDeparture);
 
-        setStats({ recentBookings: data.bookings });
-        setCurrentPage(1);
-    } catch (err) {
-        alert("Erreur lors de la recherche");
-    } finally {
-        setLoading(false);
-    }
-};
+            const res = await fetch(url.toString());
+            const data = await res.json();
 
+            setStats({ recentBookings: data.bookings });
+            setCurrentPage(1);
+        } catch (err) {
+            alert("Erreur lors de la recherche");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-     // API EXPORT EXCEL
+    // API EXPORT EXCEL
     const downloadExcel = () => {
         let url =
             "https://steve-airways.onrender.com/api/flight-charter-export?" +
@@ -279,9 +279,6 @@ const handleSearch = async () => {
 
         window.open(url, "_blank");
     };
-
-
-
 
     const refreshFlights = () => {
         fetchFlights();
@@ -459,15 +456,14 @@ const handleSearch = async () => {
         if (!isAdmin) {
             toast.error("❌ Accès refusé - Admin uniquement");
             return;
-       }
+        }
 
         try {
             const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, { method: "DELETE" });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Erreur suppression");
             setFlights((prev) => prev.filter((f) => f.id !== flightId));
-               await fetchFlights();
-           
+            await fetchFlights();
 
             toast.success(`Vol supprimé`, {
                 style: {
@@ -527,7 +523,7 @@ const handleSearch = async () => {
                 <h1 className="text-2xl font-bold">All Flight Charter</h1>
 
                 {/* Bouton Add new flight seulement pour les admins */}
-                {isAdmin && (
+                {canAddNewFlight && (
                     <button
                         onClick={() => {
                             setEditingFlight(null);
@@ -537,7 +533,7 @@ const handleSearch = async () => {
                             setShowModal(true);
                             handleGenerate();
                         }}
-                        className="rounded bg-amber-500 px-4 py-2 text-white hover:bg-amber-600"
+                        className="rounded bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-white hover:from-amber-600 hover:to-amber-500 hover:text-black"
                     >
                         Add new flight
                     </button>
@@ -580,18 +576,20 @@ const handleSearch = async () => {
                     <button
                         type="button"
                         onClick={handleSearch}
-                        className="rounded-md bg-amber-500 px-4 pb-1 pt-2 text-white hover:bg-amber-600"
+                        className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 pb-1 pt-2 text-white hover:from-amber-600 hover:to-amber-500 hover:text-black"
                     >
                         Search Flights
                     </button>
                 </div>
-                <button
-                                type="button"
-                                onClick={downloadExcel}
-                                className="rounded-md w-24 bg-slate-200 border-2 border-slate-50 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
-                            >
-                                PDF
-                            </button>
+                {manifestPdf && (
+                    <button
+                        type="button"
+                        onClick={downloadExcel}
+                        className="w-24 rounded-md border-2 border-slate-50 bg-slate-200 px-4 py-2 text-slate-700 hover:bg-amber-600 hover:text-slate-50"
+                    >
+                        PDF
+                    </button>
+                )}
             </div>
 
             {loading && (
@@ -600,22 +598,198 @@ const handleSearch = async () => {
                 </div>
             )}
 
-            <div className="card relative col-span-1 overflow-visible md:col-span-2 lg:col-span-4">
+            <div className="card overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
                 <div className="card-body p-0">
                     <div className="w-full overflow-x-auto">
                         <table className="table min-w-full">
                             <thead className="table-header">
                                 <tr className="table-row">
-                                    <th className="table-head text-center">Flight number</th>
-                                    <th className="table-head text-center">Flight type</th>
-                                    <th className="table-head text-center">Tail Number</th>
-                                    <th className="table-head text-center">Departure</th>
-                                    <th className="table-head text-center">Destination</th>
-                                    <th className="table-head text-center">Departure time</th>
-                                    <th className="table-head text-center">Arrival time</th>
-                                    <th className="table-head text-center">Price</th>
-                                    <th className="table-head text-center">Seats</th>
-                                    <th className="table-head text-center">Action</th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            <span>Flight number</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                />
+                                            </svg>
+                                            <span>Flight type</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                            <span>Tail Number</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                                />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                            </svg>
+                                            <span>Departure</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                            <span>Destination</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                            <span>Departure time</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                            <span>Arrival time</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            </svg>
+                                            <span>Price</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                />
+                                            </svg>
+                                            <span>Seats</span>
+                                        </div>
+                                    </th>
+                                    <th className="table-head text-center text-blue-600">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                                                />
+                                            </svg>
+                                            <span>Action</span>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="table-body">
@@ -641,10 +815,10 @@ const handleSearch = async () => {
                                                 }}
                                             >
                                                 <button
-                                                    className="inline-flex w-full justify-center gap-2 rounded-lg p-2 px-4 py-2 text-center text-amber-500 hover:bg-amber-500"
+                                                    className="inline-flex w-full justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 p-2 px-4 py-2 hover:from-amber-600 hover:to-amber-500"
                                                     onClick={(e) => handleDropdownClick(flight.id, e)}
                                                 >
-                                                    <MoreVertical className="h-5 w-5 text-gray-700" />
+                                                    <MoreVertical className="h-5 w-5 text-white hover:text-black" />
                                                 </button>
 
                                                 {openDropdown === flight.id && (
@@ -657,7 +831,7 @@ const handleSearch = async () => {
                                                         }}
                                                     >
                                                         <div className="py-1">
-                                                            {isAdmin && (
+                                                            {canEditFlight && (
                                                                 <>
                                                                     <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-amber-500 hover:bg-gray-100"
@@ -668,6 +842,10 @@ const handleSearch = async () => {
                                                                     >
                                                                         <Pencil className="h-4 w-4 text-amber-500" /> Edit
                                                                     </button>
+                                                                </>
+                                                            )}
+                                                            {deleteFlights && (
+                                                                <>
                                                                     <button
                                                                         className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
                                                                         onClick={() => {
@@ -680,28 +858,36 @@ const handleSearch = async () => {
                                                                 </>
                                                             )}
 
-                                                            <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    setSelectedFlight(flight);
-                                                                    setOpen(true);
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
-                                                            </button>
+                                                            {createdTicket && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-green-500 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            setSelectedFlight(flight);
+                                                                            setOpen(true);
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
+                                                                    </button>
+                                                                </>
+                                                            )}
 
-                                                            <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    fetchPassengers(flight.id);
-                                                                    setSelectedFlightId(flight.id);
-                                                                    setShowModalPassager(true);
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
-                                                            </button>
+                                                            {listePassagers && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            fetchPassengers(flight.id);
+                                                                            setSelectedFlightId(flight.id);
+                                                                            setShowModalPassager(true);
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -712,27 +898,64 @@ const handleSearch = async () => {
                             </tbody>
                         </table>
                     </div>
-                    {/* 🔹 Pagination */}
-                    <div className="mt-4 flex justify-center gap-2">
-                        <span>
-                            Page {currentPage} / {totalPages}
-                        </span>
-                        <button
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                        >
-                            Previous
-                        </button>
+                    {/* PAGINATION */}
+                    {currentBookings.length > 0 && (
+                        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="text-sm text-gray-600">
+                                    Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <ChevronLeftIcon className="h-4 w-4" />
+                                        Previous
+                                    </button>
 
-                        <button
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                            className="rounded bg-amber-500 px-3 py-1 text-sm text-gray-50 hover:bg-amber-600 disabled:bg-gray-200"
-                        >
-                            Next
-                        </button>
-                    </div>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            let pageNum;
+                                            if (totalPages <= 5) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage <= 3) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage >= totalPages - 2) {
+                                                pageNum = totalPages - 4 + i;
+                                            } else {
+                                                pageNum = currentPage - 2 + i;
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    onClick={() => setCurrentPage(pageNum)}
+                                                    className={`h-10 w-10 rounded-lg text-sm font-medium transition-colors ${
+                                                        currentPage === pageNum
+                                                            ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+                                                            : "text-gray-600 hover:bg-gray-100"
+                                                    }`}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                        <ChevronRightIcon className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -827,9 +1050,8 @@ const handleSearch = async () => {
                                         }}
                                         className="space-y-4"
                                     >
-                                        
                                         <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-2">
-                                             <div className="flex flex-col">
+                                            <div className="flex flex-col">
                                                 <label
                                                     htmlFor="firstName"
                                                     className="mb-1 font-medium text-gray-700"
@@ -837,33 +1059,26 @@ const handleSearch = async () => {
                                                     Charter type
                                                 </label>
                                                 <div className="relative flex w-full items-center rounded-md border border-gray-300 p-2 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
-                                                    
                                                     <select
                                                         value={selectedCharter}
-                                                        name= "typecharter"
-                                                        
-                                                        
+                                                        name="typecharter"
                                                         onChange={(e) => setSelectedCharter(e.target.value)}
                                                         className="w-full bg-transparent outline-none disabled:text-gray-400"
                                                         required
-                                                        
                                                     >
                                                         <option value="plane">Plane</option>
                                                         <option value="helicopter">Helico</option>
-                                                        
                                                     </select>
 
                                                     <input
-                                                    type="text"
-                                                    name="charter"
-                                                    placeholder="Numéro de vol"
-                                                    className="w-full rounded-full border px-3 py-2"
-                                                    value="charter"
-                                                    required
-                                                    hidden
-                                                />
-
-                                                   
+                                                        type="text"
+                                                        name="charter"
+                                                        placeholder="Numéro de vol"
+                                                        className="w-full rounded-full border px-3 py-2"
+                                                        value="charter"
+                                                        required
+                                                        hidden
+                                                    />
                                                 </div>
                                             </div>
                                             <div className="flex flex-col">
@@ -873,7 +1088,7 @@ const handleSearch = async () => {
                                                 >
                                                     Flight number
                                                 </label>
-                                                
+
                                                 <input
                                                     type="text"
                                                     name="flight_number"
@@ -1089,11 +1304,11 @@ const handleSearch = async () => {
                                             <div className="md:col-span-2">
                                                 <button
                                                     type="submit"
-                                                    className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-3 align-middle font-semibold text-white transition-colors hover:bg-amber-600 disabled:bg-gray-400"
+                                                    className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 py-3 align-middle font-semibold text-white transition-colors hover:from-amber-600 hover:to-amber-500 hover:text-black disabled:bg-gray-400"
                                                     disabled={submitting}
                                                 >
                                                     {submitting && (
-                                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-white"></div>
+                                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-500 hover:text-black"></div>
                                                     )}
 
                                                     {editingFlight ? (submitting ? "Updating..." : "Update") : submitting ? "Saving..." : "Save"}
@@ -1207,7 +1422,7 @@ const handleSearch = async () => {
                                                             toast.error("Aucun vol sélectionné");
                                                         }
                                                     }}
-                                                    className="w-60 rounded-md bg-amber-500 py-3 font-semibold text-white hover:bg-amber-600"
+                                                    className="w-60 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 py-3 font-semibold text-white hover:from-amber-600 hover:to-amber-500 hover:text-black"
                                                     disabled={!selectedFlightId}
                                                 >
                                                     {loadingPassengers ? "Chargement..." : "Download the passenger list"}
