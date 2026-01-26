@@ -2668,65 +2668,12 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
-  const flightId = req.params.id;
 
-  const allowedFields = [
-    "flight_number",
-    "type",
-    "typecharter",
-    "charter",
-    "airline",
-    "departure_location_id",
-    "arrival_location_id",
-    "departure_time",
-    "arrival_time",
-    "price",
-    "seats_available",
-  ];
-
-  const setFields: string[] = [];
-  const values: any[] = [];
-
-  for (const field of allowedFields) {
-    if (req.body[field] !== undefined) {
-      setFields.push(`${field} = ?`);
-      values.push(req.body[field]);
-    }
-  }
-
-  if (setFields.length === 0) {
-    return res.status(400).json({ error: "Aucun champ à mettre à jour" });
-  }
-
-  try {
-    const [result] = await pool.execute<ResultSetHeader>(
-      `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
-      [...values, flightId]
-    );
-
-    // Récupérer le vol mis à jour
-    const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [flightId]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Vol non trouvé" });
-    }
-
-    res.status(200).json(rows[0]);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(error);
-      res.status(500).json({ error: "Erreur MySQL", details: error.message });
-    } else {
-      res.status(500).json({ error: "Erreur inconnue" });
-    }
-  }
-});
 
 
 //  Modifier un utilisateur (protégé)
 app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
-  const { name, username, email, password, phone, role, permissions } = req.body;
+  const { name, username, email, password_hash, phone, role } = req.body;
   const userId = parseInt(req.params.id, 10);
 
   // Vérifier que l’utilisateur connecté modifie son propre compte
@@ -2736,13 +2683,13 @@ app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
 
   try {
     let hashedPassword;
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
+    if (password_hash) {
+      hashedPassword = await bcrypt.hash(password_hash, 10);
     }
 
     await pool.execute(
-      "UPDATE users SET name = COALESCE(?, name), username = COALESCE(?, username), email = COALESCE(?, email), password_hash = COALESCE(?, password_hash), phone = COALESCE(?, phone), role = COALESCE(?, role), permissions = COALESCE(?, permissions) WHERE id = ?",
-      [name, username, email, hashedPassword, phone, role, permissions, userId]
+      "UPDATE users SET name = COALESCE(?, name), username = COALESCE(?, username), email = COALESCE(?, email), password_hash = COALESCE(?, password_hash), phone = COALESCE(?, phone), role = COALESCE(?, role) WHERE id = ?",
+      [name, username, email, hashedPassword, phone, role, userId]
     );
 
     res.json({ success: true, message: "Utilisateur mis à jour" });
