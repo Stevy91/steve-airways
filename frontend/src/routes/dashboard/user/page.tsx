@@ -18,6 +18,7 @@ import { useTheme } from "../../../contexts/theme-context";
 import { useAuth } from "../../../hooks/useAuth";
 import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import toast from "react-hot-toast";
 
 // Types
 type Users = {
@@ -26,6 +27,8 @@ type Users = {
     name?: string;
     role?: string;
     phone?: string;
+    username?: string;
+    password?: string;
 };
 
 const Users = () => {
@@ -39,6 +42,7 @@ const Users = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
+     const [editingFlight, setEditingFlight] = useState<Users | null>(null);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -49,6 +53,7 @@ const Users = () => {
     const currentUsers = stats.slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(stats.length / rowsPerPage);
 
+       const [id, setID] = useState("");
        const [username, setUserName] = useState("");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
@@ -60,12 +65,24 @@ const Users = () => {
  
     const [success, setSuccess] = useState("");
 
-   
+      const handleEditClick = (user: Users) => {
+        if (!isAdmin) {
+            toast.error("❌ Accès refusé - Admin uniquement");
+            return;
+        }
+
+        console.log("User à éditer:", user);
+
+
+        setEditingFlight(user);
+
+        setShowModal(true);
+    };
 
 
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (userData: any) => {
+      
         setError("");
         setSuccess("");
       
@@ -77,7 +94,7 @@ const Users = () => {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
                 },
-                body: JSON.stringify({username, name, phone, password, role}),
+                body: JSON.stringify(userData),
             });
 
             const data = await res.json();
@@ -88,6 +105,39 @@ const Users = () => {
             }
 
             setSuccess("Account created successfully!");
+            fetchDashboardData();
+           
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateUser = async (userId: number, userdData: any) => {
+   
+        setError("");
+        setSuccess("");
+      
+
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/users/${userId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
+                },
+                body: JSON.stringify(userdData),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                console.error("Erreur API Register:", data);
+                throw new Error(data.error || "Erreur lors de l'inscription");
+            }
+
+            setSuccess("Account update successfully!");
             fetchDashboardData();
            
         } catch (err: any) {
@@ -124,6 +174,8 @@ const Users = () => {
             setLoading(false);
         }
     };
+
+
 
     useEffect(() => {
         fetchDashboardData();
@@ -274,7 +326,10 @@ const Users = () => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        <button className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-amber-600 hover:to-amber-700 hover:shadow">
+                                                        <button 
+                                                            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-amber-600 hover:to-amber-700 hover:shadow"
+                                                            onClick={() => handleEditClick(user)}
+                                                        >
                                                             <EditIcon className="h-4 w-4" />
                                                             Edit
                                                         </button>
@@ -376,38 +431,84 @@ const Users = () => {
                                     aria-label="Close"
                                     onClick={() => {
                                         setShowModal(false);
+                                        setEditingFlight(null);
                                     }}
                                 >
                                     <X className="h-5 w-5" />
                                 </button>
                                 <div className="flex items-center justify-center bg-white">
                                     <div className="w-full   p-8 ">
-                                        <h2 className="mb-2 text-center text-2xl font-bold text-blue-900">Add Account</h2>
+                                        <h2 className="mb-2 text-center text-2xl font-bold text-blue-900">{editingFlight ? "Edit Account" : "Add Account"}</h2>
                                         
                                         {error && <div className="mb-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-600">{error}</div>}
                                         {success && <div className="mb-4 rounded-lg bg-green-100 px-3 py-2 text-sm text-green-600">{success}</div>}
 
                                         <form
-                                            onSubmit={handleSubmit}
+                                         
+
+                                            onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        setLoading(true);
+                                        const formData = new FormData(e.currentTarget);
+
+                                        const userData = {
+                                           
+                                            id: formData.get("id") as string,
+                                            username: formData.get("username") as string,
+                                            name: formData.get("name") as string,
+                                            phone: formData.get("phone") as string,
+                                            password: formData.get("password") as string,
+                                            role: formData.get("role") as string
+                                        };
+                                      
+
+                                        console.log("Données à envoyer:", userData);
+
+                                        try {
+                                            if (editingFlight) {
+                                                await handleUpdateUser(editingFlight.id, userData);
+                                            } else {
+                                                await handleSubmit(userData);
+                                            }
+                                        } catch (err) {
+                                            console.error("Erreur dans le formulaire:", err);
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
                                             className="space-y-4"
                                         >
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">Username</label>
                                                 <input
                                                     type="text"
+                                                    name="username"
                                                     placeholder="Dupont"
-                                                    value={username}
+                                                    value={editingFlight?.username || username}
+                                                   
                                                     onChange={(e) => setUserName(e.target.value)}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
+                                                />
+
+                                                 <input
+                                                    type="text"
+                                                    name="id"
+                                                    placeholder="Dupont"
+                                                    value={editingFlight?.id || id}
+                                                   
+                                                    onChange={(e) => setID(e.target.value)}
+                                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                                                  hidden
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">Name</label>
                                                 <input
                                                     type="text"
+                                                    name="name"
                                                     placeholder="Jean Dupont"
-                                                    value={name}
+                                                    value={editingFlight?.name || name}
                                                     onChange={(e) => setName(e.target.value)}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
@@ -418,31 +519,33 @@ const Users = () => {
                                                 <label className="block text-sm font-medium text-gray-700">Phone</label>
                                                 <input
                                                     type="tel"
+                                                    name="phone"
                                                     placeholder="+50912345678"
-                                                    value={phone}
+                                                    value={editingFlight?.phone || phone}
                                                     onChange={(e) => setPhone(e.target.value)}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                 />
                                             </div>
 
                                             {/* <div>
-                        <label className="block text-sm font-medium text-gray-700">E-mail</label>
-                        <input
-                            type="email"
-                            placeholder="admin@trogonairways.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                          
-                        />
-                    </div> */}
+                                                <label className="block text-sm font-medium text-gray-700">E-mail</label>
+                                                <input
+                                                    type="email"
+                                                    placeholder="admin@trogonairways.com"
+                                                    value={editingFlight?.email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                                                
+                                                />
+                                            </div> */}
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">Role</label>
                                                 <input
                                                     type="text"
+                                                    name="role"
                                                     placeholder="admin, user"
-                                                    value={role}
+                                                    value={editingFlight?.role || role}
                                                     onChange={(e) => setRole(e.target.value)}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
@@ -453,8 +556,9 @@ const Users = () => {
                                                 <label className="block text-sm font-medium text-gray-700">Password</label>
                                                 <input
                                                     type="password"
+                                                    name="password"
                                                     placeholder="password"
-                                                    value={password}
+                                                    value={editingFlight?.password || password}
                                                     onChange={(e) => setPassword(e.target.value)}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
@@ -466,7 +570,7 @@ const Users = () => {
                                                 disabled={loading}
                                                 className="flex w-full items-center justify-center rounded-lg bg-orange-500 px-4 py-2 text-white transition hover:bg-orange-600 disabled:opacity-50"
                                             >
-                                                <UserPlus className="mr-2 h-4 w-4" /> {loading ? "In progress..." : "Create an account"}
+                                                <UserPlus className="mr-2 h-4 w-4" /> {loading ? "In progress..." : editingFlight ? "Update Account" : "Create Account"}
                                             </button>
                                         </form>
 

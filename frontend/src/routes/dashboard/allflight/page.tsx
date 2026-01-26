@@ -196,24 +196,6 @@ const FlightTable = () => {
         };
     }, [openDropdown]);
 
-    // const {
-    //     user,
-    //     loading: authLoading,
-    //     isAdmin,
-    //     manifestPdf,
-    //     addFlights,
-    //     deleteFlights,
-    //     listeFlightsPlane,
-    //     listeBookingsPlane,
-    //     listeFlightsHelico,
-    //     listeBookingsHelico,
-    //     listeUsers,
-    //     editFlights,
-    //     listePassagers,
-    //     editBookings,
-    //     imprimerTicket,
-    //     createdTicket
-    // } = useAuth();
 
     const { user, loading: authLoading, isAdmin, hasPermission, permissions } = useAuth();
 
