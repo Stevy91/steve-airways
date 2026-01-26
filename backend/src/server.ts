@@ -2576,7 +2576,7 @@ app.post("/api/login", async (req: Request, res: Response) => {
 app.get("/api/users", authMiddleware, async (req: Request, res: Response) => {
   try {
     const [rows] = await pool.query<User[]>(
-      "SELECT id, name, email, phone, role, permissions, created_at FROM users ORDER BY id DESC"
+      "SELECT * FROM users ORDER BY id DESC"
     );
     res.json(rows);
   } catch (err) {
