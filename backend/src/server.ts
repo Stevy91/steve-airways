@@ -2432,11 +2432,11 @@ app.post("/api/register", authMiddleware, adminOnly, async (req: Request, res: R
   const { username, name, password, phone, role } = req.body;
   
 
-  // if (!username || !name || !password || !role) {
-  //   return res.status(400).json({
-  //     error: "Username, nom, rôle et mot de passe requis",
-  //   });
-  // }
+  if (!username || !name || !password || !role) {
+    return res.status(400).json({
+      error: "Username, nom, rôle et mot de passe requis",
+    });
+  }
 
   try {
    

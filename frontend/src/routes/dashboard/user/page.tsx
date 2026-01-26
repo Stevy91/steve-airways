@@ -109,6 +109,15 @@ const Users = () => {
         setError("");
         setSuccess("");
 
+         const dataToSend = {
+            username: userData.username,
+            name: userData.name,
+            phone: userData.phone,
+            role: userData.role,
+            password: userData.password_hash, // <-- Changez ici
+        };
+
+
         try {
             const res = await fetch("https://steve-airways.onrender.com/api/register", {
                 method: "POST",
@@ -116,7 +125,7 @@ const Users = () => {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
                 },
-                body: JSON.stringify(userData),
+                body: JSON.stringify(dataToSend),
             });
 
             const data = await res.json();
