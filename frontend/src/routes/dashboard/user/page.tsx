@@ -114,38 +114,60 @@ const Users = () => {
         }
     };
 
-    const handleUpdateUser = async (userId: number, userdData: any) => {
-   
-        setError("");
-        setSuccess("");
-      
+const handleUpdateUser = async (userId: number, userData: any) => {
+  setError("");
+  setSuccess("");
+  setLoading(true);
 
-        try {
-            const res = await fetch(`https://steve-airways.onrender.com/api/users/${userId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
-                },
-                body: JSON.stringify(userdData),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                console.error("Erreur API Register:", data);
-                throw new Error(data.error || "Erreur lors de l'inscription");
-            }
-
-            setSuccess("Account update successfully!");
-            fetchDashboardData();
-           
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+  try {
+    // Renommez password_hash en password pour correspondre à l'API
+    const dataToSend = {
+      ...userData,
+      password: userData.password_hash || undefined // Renommez le champ
     };
+    
+    // Supprimez le champ password_hash si vide
+    if (!userData.password_hash) {
+      delete dataToSend.password;
+    }
+    delete dataToSend.password_hash;
+
+    const res = await fetch(`https://steve-airways.onrender.com/api/users/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(dataToSend),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Erreur API:", data);
+      
+      // Ajoutez des messages d'erreur plus spécifiques
+      if (res.status === 403) {
+        throw new Error("Vous n'avez pas les permissions nécessaires");
+      } else if (res.status === 400) {
+        throw new Error(data.error || "Données invalides");
+      } else {
+        throw new Error(data.error || `Erreur serveur (${res.status})`);
+      }
+    }
+
+    setSuccess("Compte mis à jour avec succès!");
+    fetchDashboardData();
+    setShowModal(false);
+    setEditingFlight(null);
+    
+  } catch (err: any) {
+    setError(err.message);
+    console.error("Erreur détaillée:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
     // Charger liste par défaut = date du jour
     const fetchDashboardData = async () => {
@@ -447,36 +469,29 @@ const Users = () => {
                                          
 
                                             onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        setLoading(true);
-                                        const formData = new FormData(e.currentTarget);
+                                                e.preventDefault();
+                                                setLoading(true);
 
-                                        const userData = {
-                                           
-                                            id: formData.get("id") as string,
-                                            username: formData.get("username") as string,
-                                            name: formData.get("name") as string,
-                                            // email: formData.get("email") as string,
-                                            phone: formData.get("phone") as string,                                           
-                                            role: formData.get("role") as string,
-                                            password_hash: formData.get("password_hash") as string,
-                                        };
-                                      
+                                                const userData = {
+                                                    username,
+                                                    name,
+                                                    phone,
+                                                    role,
+                                                    password_hash: password_hash || null,
+                                                };
 
-                                        console.log("Données à envoyer:", userData);
-
-                                        try {
-                                            if (editingFlight) {
-                                                await handleUpdateUser(editingFlight.id, userData);
-                                            } else {
-                                                await handleSubmit(userData);
-                                            }
-                                        } catch (err) {
-                                            console.error("Erreur dans le formulaire:", err);
-                                        } finally {
-                                            setLoading(false);
-                                        }
-                                    }}
+                                                try {
+                                                    if (editingFlight) {
+                                                    await handleUpdateUser(editingFlight.id, userData);
+                                                    } else {
+                                                    await handleSubmit(userData);
+                                                    }
+                                                } catch (err) {
+                                                    console.error(err);
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                                }}
                                             className="space-y-4"
                                         >
                                             <div>
@@ -556,14 +571,14 @@ const Users = () => {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">Password</label>
                                                 <input
-                                                    type="password"
-                                                    name="password_hash"
-                                                    placeholder="password"
-                                                    value={password_hash}
-                                                    onChange={(e) => setPassword_hash(e.target.value)}
-                                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                                                    required
-                                                />
+  type="password"
+  name="password" // Changez de password_hash à password
+  placeholder="Laissez vide pour ne pas changer"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+  // Retirez required pour permettre de ne pas changer le mot de passe
+/>
                                             </div>
 
                                             <button

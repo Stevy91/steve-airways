@@ -2705,26 +2705,49 @@ if (req.user.id !== userId) {
 
 
 //  Modifier un utilisateur (protégé)
+// Modifier un utilisateur (protégé)
 app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
-  const { name, username, email, password_hash, phone, role } = req.body;
+  const { name, username, email, password, phone, role } = req.body; // Changez password_hash à password
   const userId = parseInt(req.params.id, 10);
 
-  // Vérifier que l’utilisateur connecté modifie son propre compte
+  // Vérifier les permissions
+  // Admin peut modifier n'importe quel utilisateur
+  // Utilisateur peut modifier seulement son propre compte
+  if (req.user.role !== "admin" && req.user.id !== userId) {
+    return res.status(403).json({ error: "Non autorisé" });
+  }
 
+  // Si l'utilisateur n'est pas admin, il ne peut pas changer son rôle
+  if (req.user.role !== "admin" && role && role !== req.user.role) {
+    return res.status(403).json({ error: "Vous ne pouvez pas modifier votre rôle" });
+  }
 
-if (req.user.role !== "admin") {
-  return res.status(403).json({ error: "Non autorisé" });
-}
   try {
-    let hashedPassword;
-    if (password_hash) {
-      hashedPassword = await bcrypt.hash(password_hash, 10);
+    let hashedPassword = undefined;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    await pool.execute(
-      "UPDATE users SET name = COALESCE(?, name), username = COALESCE(?, username), email = COALESCE(?, email), password_hash = COALESCE(?, password_hash), phone = COALESCE(?, phone), role = COALESCE(?, role) WHERE id = ?",
-      [name, username, email, hashedPassword, phone, role, userId]
-    );
+    // Construire dynamiquement la requête
+    const updateFields = [];
+    const updateValues = [];
+    
+    if (name) { updateFields.push("name = ?"); updateValues.push(name); }
+    if (username) { updateFields.push("username = ?"); updateValues.push(username); }
+    if (email) { updateFields.push("email = ?"); updateValues.push(email); }
+    if (hashedPassword) { updateFields.push("password_hash = ?"); updateValues.push(hashedPassword); }
+    if (phone) { updateFields.push("phone = ?"); updateValues.push(phone); }
+    if (role && req.user.role === "admin") { updateFields.push("role = ?"); updateValues.push(role); }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: "Aucune donnée à mettre à jour" });
+    }
+
+    updateValues.push(userId);
+    
+    const query = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
+    
+    await pool.execute(query, updateValues);
 
     res.json({ success: true, message: "Utilisateur mis à jour" });
   } catch (err) {
