@@ -2669,10 +2669,7 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 
-
-
-//  Modifier un utilisateur (protégé)
-app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
+app.put("/api/usersbon/:id", authMiddleware, async (req: any, res: Response) => {
   const { name, username, email, password_hash, phone, role } = req.body;
   const userId = parseInt(req.params.id, 10);
 
@@ -2683,6 +2680,39 @@ app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
 }
 
 if (req.user.id !== userId) {
+  return res.status(403).json({ error: "Non autorisé" });
+}
+
+
+  try {
+    let hashedPassword;
+    if (password_hash) {
+      hashedPassword = await bcrypt.hash(password_hash, 10);
+    }
+
+    await pool.execute(
+      "UPDATE users SET name = COALESCE(?, name), username = COALESCE(?, username), email = COALESCE(?, email), password_hash = COALESCE(?, password_hash), phone = COALESCE(?, phone), role = COALESCE(?, role) WHERE id = ?",
+      [name, username, email, hashedPassword, phone, role, userId]
+    );
+
+    res.json({ success: true, message: "Utilisateur mis à jour" });
+  } catch (err) {
+    console.error("Error updating user:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+
+
+//  Modifier un utilisateur (protégé)
+app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
+  const { name, username, email, password_hash, phone, role } = req.body;
+  const userId = parseInt(req.params.id, 10);
+
+  // Vérifier que l’utilisateur connecté modifie son propre compte
+
+
+if (req.user.role !== "admin") {
   return res.status(403).json({ error: "Non autorisé" });
 }
   try {
