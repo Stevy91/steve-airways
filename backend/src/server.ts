@@ -2668,19 +2668,23 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-  
+
 
 
 //  Modifier un utilisateur (protégé)
-app.put("/api/users/:id", async (req: any, res: Response) => {
+app.put("/api/users/:id", authMiddleware, async (req: any, res: Response) => {
   const { name, username, email, password_hash, phone, role } = req.body;
   const userId = parseInt(req.params.id, 10);
 
   // Vérifier que l’utilisateur connecté modifie son propre compte
-  if (req.user.id !== userId) {
-    return res.status(403).json({ error: "Non autorisé" });
-  }
 
+  if (!req.user || !req.user.id) {
+  return res.status(401).json({ error: "Utilisateur non authentifié" });
+}
+
+if (req.user.id !== userId) {
+  return res.status(403).json({ error: "Non autorisé" });
+}
   try {
     let hashedPassword;
     if (password_hash) {

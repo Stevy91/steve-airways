@@ -125,7 +125,7 @@ const Users = () => {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                 
+                    Authorization: `Bearer ${localStorage.getItem("token")}`, // <-- token admin
                 },
                 body: JSON.stringify(userdData),
             });
