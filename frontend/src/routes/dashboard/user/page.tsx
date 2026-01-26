@@ -42,7 +42,7 @@ const Users = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
-     const [editingFlight, setEditingFlight] = useState<Users | null>(null);
+    const [editingFlight, setEditingFlight] = useState<Users | null>(null);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -53,39 +53,61 @@ const Users = () => {
     const currentUsers = stats.slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(stats.length / rowsPerPage);
 
-       const [id, setID] = useState("");
-       const [username, setUserName] = useState("");
-    const [name, setName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [email, setEmail] = useState("");
-    const [role, setRole] = useState("");
-    const [password_hash, setPassword_hash] = useState("");
 
- 
- 
     const [success, setSuccess] = useState("");
 
-      const handleEditClick = (user: Users) => {
+    // Remplacez les états individuels par un seul état de formulaire
+    interface UserFormData {
+        id: string;
+        username: string;
+        name: string;
+        phone: string;
+        email: string;
+        role: string;
+        password_hash: string;
+    }
+
+    const [formData, setFormData] = useState<UserFormData>({
+        id: "",
+        username: "",
+        name: "",
+        phone: "",
+        email: "",
+        role: "",
+        password_hash: "",
+    });
+
+    const handleEditClick = (user: Users) => {
         if (!isAdmin) {
             toast.error("❌ Accès refusé - Admin uniquement");
             return;
         }
 
-        console.log("User à éditer:", user);
-
+        // Initialisez le formulaire avec les données de l'utilisateur
+        setFormData({
+            id: user.id?.toString() || "",
+            username: user.username || "",
+            name: user.name || "",
+            phone: user.phone || "",
+            email: user.email || "",
+            role: user.role || "",
+            password_hash: "", // Toujours vide pour l'édition
+        });
 
         setEditingFlight(user);
-
         setShowModal(true);
     };
 
-
-
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
     const handleSubmit = async (userData: any) => {
-      
         setError("");
         setSuccess("");
-      
 
         try {
             const res = await fetch("https://steve-airways.onrender.com/api/register", {
@@ -106,7 +128,6 @@ const Users = () => {
 
             setSuccess("Account created successfully!");
             fetchDashboardData();
-           
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -114,60 +135,59 @@ const Users = () => {
         }
     };
 
-const handleUpdateUser = async (userId: number, userData: any) => {
-  setError("");
-  setSuccess("");
-  setLoading(true);
+    const handleUpdateUser = async (userId: number, userData: any) => {
+        setError("");
+        setSuccess("");
+        setLoading(true);
 
-  try {
-    // Renommez password_hash en password pour correspondre à l'API
-    const dataToSend = {
-      ...userData,
-      password: userData.password_hash || undefined // Renommez le champ
+        try {
+            // Renommez password_hash en password pour correspondre à l'API
+            const dataToSend = {
+                ...userData,
+                password: userData.password_hash || undefined, // Renommez le champ
+            };
+
+            // Supprimez le champ password_hash si vide
+            if (!userData.password_hash) {
+                delete dataToSend.password;
+            }
+            delete dataToSend.password_hash;
+
+            const res = await fetch(`https://steve-airways.onrender.com/api/users/${userId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(dataToSend),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                console.error("Erreur API:", data);
+
+                // Ajoutez des messages d'erreur plus spécifiques
+                if (res.status === 403) {
+                    throw new Error("Vous n'avez pas les permissions nécessaires");
+                } else if (res.status === 400) {
+                    throw new Error(data.error || "Données invalides");
+                } else {
+                    throw new Error(data.error || `Erreur serveur (${res.status})`);
+                }
+            }
+
+            setSuccess("Compte mis à jour avec succès!");
+            fetchDashboardData();
+            setShowModal(false);
+            setEditingFlight(null);
+        } catch (err: any) {
+            setError(err.message);
+            console.error("Erreur détaillée:", err);
+        } finally {
+            setLoading(false);
+        }
     };
-    
-    // Supprimez le champ password_hash si vide
-    if (!userData.password_hash) {
-      delete dataToSend.password;
-    }
-    delete dataToSend.password_hash;
-
-    const res = await fetch(`https://steve-airways.onrender.com/api/users/${userId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify(dataToSend),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Erreur API:", data);
-      
-      // Ajoutez des messages d'erreur plus spécifiques
-      if (res.status === 403) {
-        throw new Error("Vous n'avez pas les permissions nécessaires");
-      } else if (res.status === 400) {
-        throw new Error(data.error || "Données invalides");
-      } else {
-        throw new Error(data.error || `Erreur serveur (${res.status})`);
-      }
-    }
-
-    setSuccess("Compte mis à jour avec succès!");
-    fetchDashboardData();
-    setShowModal(false);
-    setEditingFlight(null);
-    
-  } catch (err: any) {
-    setError(err.message);
-    console.error("Erreur détaillée:", err);
-  } finally {
-    setLoading(false);
-  }
-};
 
     // Charger liste par défaut = date du jour
     const fetchDashboardData = async () => {
@@ -196,8 +216,6 @@ const handleUpdateUser = async (userId: number, userData: any) => {
             setLoading(false);
         }
     };
-
-
 
     useEffect(() => {
         fetchDashboardData();
@@ -348,7 +366,7 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        <button 
+                                                        <button
                                                             className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:from-amber-600 hover:to-amber-700 hover:shadow"
                                                             onClick={() => handleEditClick(user)}
                                                         >
@@ -442,12 +460,12 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                         <motion.div
                             role="dialog"
                             aria-modal="true"
-                            className="absolute inset-0 mx-auto flex max-w-md items-start justify-center p-4 sm:my-12 "
+                            className="absolute inset-0 mx-auto flex max-w-md items-start justify-center p-4 sm:my-12"
                             initial={{ opacity: 0, y: 20, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         >
-                            <div className="relative max-w-md w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                            <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                                 <button
                                     className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                                     aria-label="Close"
@@ -459,39 +477,39 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                                     <X className="h-5 w-5" />
                                 </button>
                                 <div className="flex items-center justify-center bg-white">
-                                    <div className="w-full   p-8 ">
-                                        <h2 className="mb-2 text-center text-2xl font-bold text-blue-900">{editingFlight ? "Edit Account" : "Add Account"}</h2>
-                                        
+                                    <div className="w-full p-8">
+                                        <h2 className="mb-2 text-center text-2xl font-bold text-blue-900">
+                                            {editingFlight ? "Edit Account" : "Add Account"}
+                                        </h2>
+
                                         {error && <div className="mb-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-600">{error}</div>}
                                         {success && <div className="mb-4 rounded-lg bg-green-100 px-3 py-2 text-sm text-green-600">{success}</div>}
 
                                         <form
-                                         
-
                                             onSubmit={async (e) => {
                                                 e.preventDefault();
                                                 setLoading(true);
 
                                                 const userData = {
-                                                    username,
-                                                    name,
-                                                    phone,
-                                                    role,
-                                                    password_hash: password_hash || null,
+                                                    username: formData.username,
+                                                    name: formData.name,
+                                                    phone: formData.phone,
+                                                    role: formData.role,
+                                                    password_hash: formData.password_hash || null,
                                                 };
 
                                                 try {
                                                     if (editingFlight) {
-                                                    await handleUpdateUser(editingFlight.id, userData);
+                                                        await handleUpdateUser(editingFlight.id, userData);
                                                     } else {
-                                                    await handleSubmit(userData);
+                                                        await handleSubmit(userData);
                                                     }
                                                 } catch (err) {
                                                     console.error(err);
                                                 } finally {
                                                     setLoading(false);
                                                 }
-                                                }}
+                                            }}
                                             className="space-y-4"
                                         >
                                             <div>
@@ -500,22 +518,10 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                                                     type="text"
                                                     name="username"
                                                     placeholder="Dupont"
-                                                    value={editingFlight?.username || username}
-                                                   
-                                                    onChange={(e) => setUserName(e.target.value)}
+                                                    value={formData.username}
+                                                    onChange={handleInputChange}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
-                                                />
-
-                                                 <input
-                                                    type="text"
-                                                    name="id"
-                                                    placeholder="Dupont"
-                                                    value={editingFlight?.id || id}
-                                                   
-                                                    onChange={(e) => setID(e.target.value)}
-                                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                                                  hidden
                                                 />
                                             </div>
                                             <div>
@@ -524,8 +530,8 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                                                     type="text"
                                                     name="name"
                                                     placeholder="Jean Dupont"
-                                                    value={editingFlight?.name || name}
-                                                    onChange={(e) => setName(e.target.value)}
+                                                    value={formData.name}
+                                                    onChange={handleInputChange}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
                                                 />
@@ -537,8 +543,8 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                                                     type="tel"
                                                     name="phone"
                                                     placeholder="+50912345678"
-                                                    value={editingFlight?.phone || phone}
-                                                    onChange={(e) => setPhone(e.target.value)}
+                                                    value={formData.phone}
+                                                    onChange={handleInputChange}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                 />
                                             </div>
@@ -547,46 +553,51 @@ const handleUpdateUser = async (userId: number, userData: any) => {
                                                 <label className="block text-sm font-medium text-gray-700">E-mail</label>
                                                 <input
                                                     type="email"
+                                                    name="email"
                                                     placeholder="admin@trogonairways.com"
-                                                    value={editingFlight?.email}
-                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    value={formData.email}
+                                                    onChange={handleInputChange}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                                                
                                                 />
                                             </div> */}
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">Role</label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     name="role"
-                                                    placeholder="admin, user"
-                                                    value={editingFlight?.role || role}
-                                                    onChange={(e) => setRole(e.target.value)}
+                                                    value={formData.role}
+                                                    onChange={handleInputChange}
                                                     className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                                                     required
-                                                />
+                                                >
+                                                    <option value="">Select a role</option>
+                                                    <option value="admin">Admin</option>
+                                                    <option value="user">Agent</option>
+                                                   
+                                                </select>
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700">Password</label>
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Password{" "}
+                                                    {editingFlight && <span className="text-xs text-gray-500">(leave blank to keep current)</span>}
+                                                </label>
                                                 <input
-  type="password"
-  name="password" // Changez de password_hash à password
-  placeholder="Laissez vide pour ne pas changer"
-  value={password}
-  onChange={(e) => setPassword(e.target.value)}
-  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-  // Retirez required pour permettre de ne pas changer le mot de passe
-/>
+                                                    type="password"
+                                                    name="password_hash"
+                                                    placeholder="New password"
+                                                    value={formData.password_hash}
+                                                    onChange={handleInputChange}
+                                                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                                                />
                                             </div>
-
                                             <button
                                                 type="submit"
                                                 disabled={loading}
                                                 className="flex w-full items-center justify-center rounded-lg bg-orange-500 px-4 py-2 text-white transition hover:bg-orange-600 disabled:opacity-50"
                                             >
-                                                <UserPlus className="mr-2 h-4 w-4" /> {loading ? "In progress..." : editingFlight ? "Update Account" : "Create Account"}
+                                                <UserPlus className="mr-2 h-4 w-4" />{" "}
+                                                {loading ? "In progress..." : editingFlight ? "Update Account" : "Create Account"}
                                             </button>
                                         </form>
 
