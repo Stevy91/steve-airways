@@ -2585,6 +2585,8 @@ app.get("/api/users", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+
+
 //  Récupérer un utilisateur par ID (protégé)
 app.get("/api/users/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
