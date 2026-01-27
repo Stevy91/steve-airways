@@ -8780,6 +8780,7 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
     "arrival_time",
     "price",
     "seats_available",
+    "total_seat",
   ];
 
   const setFields: string[] = [];

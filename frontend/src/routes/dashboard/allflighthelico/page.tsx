@@ -1021,6 +1021,7 @@ const FlightTableHelico = () => {
                                                 arrival_time: formData.get("arrival_time") as string,
                                                 price: Number(formData.get("price")),
                                                 seats_available: Number(formData.get("seats_available")),
+                                                total_seat: Number(formData.get("seats_available")), // Convertir en number
                                             };
 
                                             console.log("Données à envoyer:", flightData);

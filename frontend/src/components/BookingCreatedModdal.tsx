@@ -1391,7 +1391,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                             {/* En-tête */}
                             <div className="px-6 pt-6">
-                                <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.total_seat}</h2>
+                                <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.flight_number}</h2>
 
                                 <p className="text-sm text-slate-500">
                                     {flight.from} → {flight.to} | Departure: {flight.departure}
@@ -1979,8 +1979,8 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                 {/* Section Sélection de Siège (droite) */}
                                 <div className="w-96 border-l border-gray-200 bg-gray-50 p-4">
                                     <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-gray-800">Sélection du Siège</h3>
-                                        <p className="text-xs text-gray-600">Boeing 737-800</p>
+                                        <h3 className="text-lg font-semibold text-gray-800">Seat Selection</h3>
+                                        <p className="text-xs text-gray-600">Type plane {flight.airline}</p>
                                     </div>
 
                                     {/* Visualisation de la cabine */}
@@ -1992,7 +1992,8 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                                         {/* Rangées de sièges */}
                                         <div className="max-h-96 space-y-1 overflow-y-auto pr-2">
-                                            {Array.from({ length: 30 }).map((_, rowIndex) => (
+                                            
+                                            {Array.from({ length: flight.total_seat/6 }).map((_, rowIndex) => (
                                                 <div
                                                     key={rowIndex}
                                                     className="flex items-center"

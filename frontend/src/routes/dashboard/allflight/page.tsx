@@ -779,7 +779,7 @@ const FlightTable = () => {
                                         key={flight.id}
                                         className="border-b hover:bg-gray-50"
                                     >
-                                        <td className="table-cell text-center">{flight.total_seat}</td>
+                                        <td className="table-cell text-center">{flight.flight_number}</td>
                                         <td className="table-cell text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
                                         <td className="table-cell text-center">{flight.airline}</td>
                                         <td className="table-cell text-center">{flight.from}</td>
@@ -1005,6 +1005,7 @@ const FlightTable = () => {
                                             arrival_time: formData.get("arrival_time") as string,
                                             price: Number(formData.get("price")), // Convertir en number
                                             seats_available: Number(formData.get("seats_available")), // Convertir en number
+                                            total_seat: Number(formData.get("seats_available")), // Convertir en number
                                         };
 
                                         console.log("Données à envoyer:", flightData);
