@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 interface Flight {
     id: number;
     flight_number?: string;
-    flightNumber?: string;
+    total_seat?: string;
     type: string;
 
     airline: string;
@@ -779,7 +779,7 @@ const FlightTable = () => {
                                         key={flight.id}
                                         className="border-b hover:bg-gray-50"
                                     >
-                                        <td className="table-cell text-center">{flight.flight_number}</td>
+                                        <td className="table-cell text-center">{flight.total_seat}</td>
                                         <td className="table-cell text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>
                                         <td className="table-cell text-center">{flight.airline}</td>
                                         <td className="table-cell text-center">{flight.from}</td>

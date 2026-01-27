@@ -23,6 +23,7 @@ type Flight = {
     toCity: string;
     status: string;
    selectedSeat: string;
+   total_seat: number;
 };
 
 type BookingCreatedModalProps = {
@@ -76,6 +77,7 @@ type BookingData = {
     };
     tabType?: string;
     totalPrice: number;
+    total_seat?: number;
     selectedSeat?: string;
 };
 
@@ -1389,7 +1391,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                             {/* En-tête */}
                             <div className="px-6 pt-6">
-                                <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.selectedSeat}</h2>
+                                <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.total_seat}</h2>
 
                                 <p className="text-sm text-slate-500">
                                     {flight.from} → {flight.to} | Departure: {flight.departure}
