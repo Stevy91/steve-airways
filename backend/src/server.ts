@@ -5646,7 +5646,6 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
                 f.departure_time,
                 f.arrival_time,
                 f.price,
-                f.total_seat,
                 f.seats_available,
                 dep.name AS departure_airport_name,
                 dep.city AS departure_city,
