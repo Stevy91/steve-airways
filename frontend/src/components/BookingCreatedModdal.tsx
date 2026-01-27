@@ -1060,6 +1060,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                         return: returnFlight,
                         passengersData: { adults: passengers },
                         totalPrice: data.totalPrice || totalPrice,
+                        selectedSeat: data.selectedSeat || formData.selectedSeat || "",
                         tabType: flight.type || "plane",
                         status: data.status || "pending",
                         currency: formData.devisePayment,
