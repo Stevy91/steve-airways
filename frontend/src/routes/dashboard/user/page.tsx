@@ -393,7 +393,7 @@ const Users = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="text-gray-600">{user.phone ?? "N/A"}</span>
+                                                    <span className="text-gray-600">{user.phone ?? "No phone"}</span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span

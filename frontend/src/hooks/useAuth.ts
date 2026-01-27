@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes (corrigé 58*60*1000 = 58 minutes)
+const INACTIVITY_TIME = 60 * 60 * 1000; // 60 minutes (corrigé 58*60*1000 = 58 minutes)
 
 export const useAuth = () => {
     const navigate = useNavigate();

@@ -273,10 +273,14 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                         <span className="pt-2 font-bold">{user ? user.name : "..."}</span>
                         <button
                             onClick={toggleProfile}
-                            className="size-10 overflow-hidden rounded-full border bg-slate-500 pl-2 text-center ring-2 ring-transparent transition focus:outline-none focus:ring-blue-500"
+                            className="size-10 overflow-hidden rounded-full  text-center ring-2 ring-transparent transition focus:outline-none focus:ring-blue-400"
                             aria-label="Toggle profile menu"
                         >
-                            <User className="h-5 w-5 text-blue-500" />
+                           <img
+                            src="/user.png"
+                            alt="Logo"
+                            className="w-full h-full object-cover"
+                        />
                         </button>
                     </div>
 
@@ -284,28 +288,18 @@ export const Header: React.FC<HeaderProps> = ({ collapsed, setCollapsed }) => {
                         <div className="animate-in fade-in zoom-in-95 absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 duration-200 dark:bg-slate-800">
                             <div className="py-2">
                                 {/* Afficher Register seulement si user est admin */}
-                                {user.role === "admin" && (
+                                {/* {user.role === "admin" && (
                                     <>
-                                        <a
-                                            href="#profile"
-                                            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                                        >
-                                            Edit your profile
-                                        </a>
+                                    
                                         <a
                                             href="#password"
                                             className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                                         >
                                             Change your password
                                         </a>
-                                        <button
-                                            onClick={() => navigate(`/${currentLang}/dashboard/register`)}
-                                            className="block w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-blue-400"
-                                        >
-                                            Register new user
-                                        </button>
+                                     
                                     </>
-                                )}
+                                )} */}
 
                                 <button
                                     onClick={handleLogout}

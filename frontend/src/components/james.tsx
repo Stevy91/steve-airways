@@ -22,7 +22,6 @@ type Flight = {
     fromCity: string;
     toCity: string;
     status: string;
-   selectedSeat?: string;
 };
 
 type BookingCreatedModalProps = {
@@ -58,7 +57,6 @@ type Passenger = {
     devisePayment?: string;
     taux_jour?: string;
     price?: string;
-    selectedSeat?: string;
 };
 
 type BookingData = {
@@ -76,7 +74,6 @@ type BookingData = {
     };
     tabType?: string;
     totalPrice: number;
-    selectedSeat?: string;
 };
 
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
@@ -527,19 +524,17 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         price: "",
         devisePayment: "usd",
         taux_jour: "",
-        selectedSeat: "",
+        selectedSeat: '',
     };
 
     const [formData, setFormData] = useState(initialFormData);
 
     const handleSeatSelect = (seatId) => {
-        setFormData((prev) => ({
-            ...prev,
-            selectedSeat: seatId,
-        }));
-    };
-
-    console.log("✅ siege selected", formData.selectedSeat);
+    setFormData(prev => ({
+        ...prev,
+        selectedSeat: seatId
+    }));
+};
 
     useEffect(() => {
         if (!open) {
@@ -875,7 +870,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
                 devisePayment: formData.devisePayment || "",
                 price: totalPrice.toString(),
                 taux_jour: formData.taux_jour || "",
-                selectedSeat: formData.selectedSeat || "",
             });
         }
 
@@ -900,7 +894,6 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             idTypeClient: formData.idTypeClient || "passport",
             returnFlightNumber: formData.flightNumberReturn || null,
             isRoundTrip: isRoundTrip,
-            selectedSeat: formData.selectedSeat || "",
         };
 
         try {
@@ -1372,7 +1365,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        className="relative mx-auto my-8 w-full max-w-7xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+                        className="relative mx-auto my-8 w-full max-w-6xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
                         initial={{ opacity: 0, y: 20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -1380,13 +1373,12 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                         <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
                             <button
                                 onClick={handleClose}
-                                className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                                 aria-label="Close"
                             >
                                 <X className="h-5 w-5" />
                             </button>
 
-                            {/* En-tête */}
                             <div className="px-6 pt-6">
                                 <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.flight_number}</h2>
 
@@ -1476,6 +1468,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="font-medium text-green-800">Vol aller ✓</p>
+                                                
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm text-green-700">
@@ -1492,632 +1485,473 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                 <div className="my-4 h-px w-full bg-slate-100" />
                             </div>
 
-                            {/* Contenu principal avec formulaire et sélection de siège */}
-                            <div className="flex">
-                                {/* Formulaire (gauche) */}
-                                <div className="flex-1 px-6 pb-6">
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                        {/* Prénom */}
-                                        <div className="relative flex flex-col">
-                                            <label className="mb-1 text-sm font-medium text-gray-700">First Name</label>
+                            <div className="grid grid-cols-1 gap-4 px-6 pb-6 md:grid-cols-3">
+                                {/* Prénom */}
+                                <div className="relative flex flex-col">
+                                    <label className="mb-1 font-medium text-gray-700">First Name</label>
 
-                                            <input
-                                                type="text"
-                                                ref={setInputRef}
-                                                id="firstName"
-                                                name="firstName"
-                                                value={formData.firstName}
-                                                onChange={handleFirstNameChange}
-                                                onBlur={handleFirstNameBlur}
-                                                autoComplete="off"
-                                                placeholder="First Name"
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
+                                    <input
+                                        type="text"
+                                        ref={setInputRef}
+                                        id="firstName"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleFirstNameChange}
+                                        onBlur={handleFirstNameBlur}
+                                        autoComplete="off"
+                                        placeholder="First Name"
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
 
-                                            {showDropdown && suggestions.length > 0 && (
+                                    {showDropdown && suggestions.length > 0 && (
+                                        <div
+                                            ref={setDropdownRef}
+                                            className="absolute top-full z-50 w-full rounded-md border bg-white shadow-md"
+                                        >
+                                            {suggestions.map((p) => (
                                                 <div
-                                                    ref={setDropdownRef}
-                                                    className="absolute top-full z-50 w-full rounded-md border bg-white shadow-md"
+                                                    key={p.id}
+                                                    onClick={() => selectPassenger(p)}
+                                                    className="cursor-pointer px-4 py-2 hover:bg-gray-100"
                                                 >
-                                                    {suggestions.map((p) => (
-                                                        <div
-                                                            key={p.id}
-                                                            onClick={() => selectPassenger(p)}
-                                                            className="cursor-pointer px-3 py-2 hover:bg-gray-100"
-                                                        >
-                                                            <p className="text-sm font-medium">
-                                                                {p.first_name} {p.last_name}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500">{p.email || p.phone}</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Deuxième prénom */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="middleName"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Middle Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="middleName"
-                                                name="middleName"
-                                                placeholder="Middle Name"
-                                                value={formData.middleName}
-                                                autoComplete="off"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Nom */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="lastName"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Last Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="lastName"
-                                                name="lastName"
-                                                placeholder="Last Name"
-                                                value={formData.lastName}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Date de naissance */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="dateOfBirth"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Date of birth
-                                            </label>
-                                            <input
-                                                type="date"
-                                                id="dateOfBirth"
-                                                name="dateOfBirth"
-                                                value={formData.dateOfBirth}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Adresse */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="address"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Adress
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="address"
-                                                name="address"
-                                                placeholder="Adress"
-                                                value={formData.address}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* ID Type */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="idTypeClient"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                ID Type
-                                            </label>
-                                            <select
-                                                id="idTypeClient"
-                                                name="idTypeClient"
-                                                value={formData.idTypeClient}
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            >
-                                                <option value="passport">Passport</option>
-                                                <option value="nimu">NINU</option>
-                                                <option value="licens">License</option>
-                                            </select>
-                                        </div>
-
-                                        {/* ID Number */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="idClient"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                {formData.idTypeClient === "nimu"
-                                                    ? "ID NINU"
-                                                    : formData.idTypeClient === "licens"
-                                                      ? "ID LICENSE"
-                                                      : "ID PASSPORT"}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="idClient"
-                                                name="idClient"
-                                                placeholder={
-                                                    formData.idTypeClient === "nimu"
-                                                        ? "000-000-000-0"
-                                                        : formData.idTypeClient === "licens"
-                                                          ? "ID LICENSE"
-                                                          : "ID PASSPORT"
-                                                }
-                                                value={formData.idClient}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Pays */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="country"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Country
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="country"
-                                                name="country"
-                                                placeholder="Country"
-                                                required
-                                                value={formData.country}
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Nationalité */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="nationality"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Nationality
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="nationality"
-                                                name="nationality"
-                                                placeholder="Nationality"
-                                                value={formData.nationality}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Email */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="email"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                E-mail
-                                            </label>
-                                            <input
-                                                type="email"
-                                                id="email"
-                                                name="email"
-                                                placeholder="E-mail"
-                                                value={formData.email}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Téléphone */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="phone"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Phone
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="phone"
-                                                name="phone"
-                                                placeholder="Phone"
-                                                value={formData.phone}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Méthode de paiement */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="paymentMethod"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Payment Method
-                                            </label>
-                                            <select
-                                                id="paymentMethod"
-                                                name="paymentMethod"
-                                                value={formData.paymentMethod}
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            >
-                                                <option value="cash">Cash</option>
-                                                <option value="card">Card</option>
-                                                <option value="cheque">Check</option>
-                                                <option value="virement">Bank Transfer</option>
-                                                <option value="transfert">Deposit</option>
-                                                <option value="contrat">Contrat</option>
-                                            </select>
-                                        </div>
-
-                                        {/* UnPaid */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="unpaid"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                UnPaid
-                                            </label>
-                                            <div className="pt-1">
-                                                <label className="relative inline-flex cursor-pointer items-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="unpaid"
-                                                        name="unpaid"
-                                                        value="pending"
-                                                        required
-                                                        onChange={handleChange}
-                                                        className="peer sr-only"
-                                                    />
-                                                    <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
-                                                    <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        {/* Prix du vol */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="price"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Flight Price
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="price"
-                                                name="price"
-                                                value={`${totalPrice.toFixed(2)} ${priceCurrency}`}
-                                                readOnly
-                                                className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none"
-                                            />
-                                            {isRoundTrip && price2 > 0 && (
-                                                <p className="mt-1 text-xs text-gray-500">
-                                                    Aller: {price1.toFixed(2)} {priceCurrency} + Retour: {price2.toFixed(2)} {priceCurrency}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {formData.paymentMethod === "cash" && (
-                                            <>
-                                                <div className="flex flex-col">
-                                                    <label className="mb-1 text-sm font-medium text-gray-700">Payment currency</label>
-                                                    <select
-                                                        name="devisePayment"
-                                                        value={formData.devisePayment}
-                                                        onChange={handleChange}
-                                                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                                    >
-                                                        <option value="usd">USD</option>
-                                                        <option value="htg">GOURDE</option>
-                                                    </select>
-                                                </div>
-
-                                                {/* Taux du jour */}
-                                                <div className="flex flex-col">
-                                                    <label className="mb-1 text-sm font-medium text-gray-700">Taux du jour</label>
-                                                    <input
-                                                        type="number"
-                                                        name="taux_jour"
-                                                        value={formData.taux_jour}
-                                                        onChange={handleChange}
-                                                        disabled={formData.devisePayment !== "htg"}
-                                                        placeholder="Ex: 135"
-                                                        className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none ${
-                                                            formData.devisePayment !== "htg" ? "cursor-not-allowed bg-gray-100" : ""
-                                                        }`}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {/* Company Name */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="companyName"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Company Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="companyName"
-                                                name="companyName"
-                                                placeholder="Company Name"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Reference Number */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="reference"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Reference Number
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="reference"
-                                                name="reference"
-                                                placeholder="Reference Number"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Emergency contact person name */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="nom_urgence"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Emergency contact person name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="nom_urgence"
-                                                name="nom_urgence"
-                                                value={formData.nom_urgence}
-                                                placeholder="Emergency contact person name"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Emergency contact email */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="email_urgence"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Emergency contact email
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="email_urgence"
-                                                name="email_urgence"
-                                                value={formData.email_urgence}
-                                                placeholder="Emergency contact email"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Emergency contact number */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="tel_urgence"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Emergency contact number
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="tel_urgence"
-                                                name="tel_urgence"
-                                                value={formData.tel_urgence}
-                                                placeholder="Emergency contact number"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Nombre de passagers (hidden) */}
-                                        <input
-                                            type="hidden"
-                                            id="passengerCount"
-                                            name="passengerCount"
-                                            min="1"
-                                            defaultValue={1}
-                                            required
-                                            onChange={handleChange}
-                                        />
-
-                                        {/* Bouton */}
-                                        <div className="md:col-span-3">
-                                            <button
-                                                onClick={handleSubmit}
-                                                disabled={createTicket}
-                                                className="mt-2 w-full rounded-md bg-gradient-to-r from-amber-500 to-amber-600 py-2.5 text-sm font-semibold text-white transition-colors hover:from-amber-600 hover:to-amber-500 hover:text-black disabled:bg-gray-400"
-                                            >
-                                                {createTicket ? "Saving..." : "Confirm and Create the Ticket"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Section Sélection de Siège (droite) */}
-                                <div className="w-96 border-l border-gray-200 bg-gray-50 p-4">
-                                    <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-gray-800">Sélection du Siège</h3>
-                                        <p className="text-xs text-gray-600">Boeing 737-800</p>
-                                    </div>
-
-                                    {/* Visualisation de la cabine */}
-                                    <div className="mb-4">
-                                        <div className="mb-2 flex justify-between">
-                                            <div className="text-xs font-medium text-gray-700">Gauche</div>
-                                            <div className="text-xs font-medium text-gray-700">Droite</div>
-                                        </div>
-
-                                        {/* Rangées de sièges */}
-                                        <div className="max-h-96 space-y-1 overflow-y-auto pr-2">
-                                            {Array.from({ length: 30 }).map((_, rowIndex) => (
-                                                <div
-                                                    key={rowIndex}
-                                                    className="flex items-center"
-                                                >
-                                                    <div className="w-6 text-center text-xs font-medium text-gray-600">{rowIndex + 1}</div>
-                                                    <div className="ml-1 flex flex-1 justify-between">
-                                                        {/* Sièges gauche (A, B, C) */}
-                                                        <div className="flex space-x-0.5">
-                                                            {["A", "B", "C"].map((seat) => {
-                                                                const seatId = `${rowIndex + 1}${seat}`;
-                                                                const isOccupied = false; // À remplacer par vos données réelles
-                                                                const isSelected = formData.selectedSeat === seatId;
-                                                                return (
-                                                                    <button
-                                                                        key={seat}
-                                                                        type="button"
-                                                                        onClick={() => handleSeatSelect(seatId)}
-                                                                        disabled={isOccupied}
-                                                                        className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
-                                                                            isSelected
-                                                                                ? "bg-amber-500 text-white"
-                                                                                : isOccupied
-                                                                                  ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                                                                                  : "bg-white text-gray-700 hover:bg-gray-100"
-                                                                        } border ${
-                                                                            isSelected
-                                                                                ? "border-amber-500"
-                                                                                : isOccupied
-                                                                                  ? "border-gray-300"
-                                                                                  : "border-gray-300"
-                                                                        }`}
-                                                                    >
-                                                                        {seat}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-
-                                                        {/* Allée */}
-                                                        <div className="w-8"></div>
-
-                                                        {/* Sièges droite (D, E, F) */}
-                                                        <div className="flex space-x-0.5">
-                                                            {["D", "E", "F"].map((seat) => {
-                                                                const seatId = `${rowIndex + 1}${seat}`;
-                                                                const isOccupied = false; // À remplacer par vos données réelles
-                                                                const isSelected = formData.selectedSeat === seatId;
-                                                                return (
-                                                                    <button
-                                                                        key={seat}
-                                                                        type="button"
-                                                                        onClick={() => handleSeatSelect(seatId)}
-                                                                        disabled={isOccupied}
-                                                                        className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
-                                                                            isSelected
-                                                                                ? "bg-amber-500 text-white"
-                                                                                : isOccupied
-                                                                                  ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                                                                                  : "bg-white text-gray-700 hover:bg-gray-100"
-                                                                        } border ${
-                                                                            isSelected
-                                                                                ? "border-amber-500"
-                                                                                : isOccupied
-                                                                                  ? "border-gray-300"
-                                                                                  : "border-gray-300"
-                                                                        }`}
-                                                                    >
-                                                                        {seat}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
+                                                    <p className="font-medium">
+                                                        {p.first_name} {p.last_name}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">{p.email || p.phone}</p>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
+                                    )}
+                                </div>
 
-                                    {/* Légende */}
-                                    <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3">
-                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Légende</h4>
-                                        <div className="grid grid-cols-2 gap-1 text-[10px]">
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-gray-300 bg-white"></div>
-                                                <span className="text-gray-600">Disponible</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-amber-500 bg-amber-500"></div>
-                                                <span className="text-gray-600">Sélectionné</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-gray-300 bg-gray-300"></div>
-                                                <span className="text-gray-600">Occupé</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-blue-300 bg-blue-100"></div>
-                                                <span className="text-gray-600">Fenêtre</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {/* Deuxième prénom */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="middleName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Middle Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="middleName"
+                                        name="middleName"
+                                        placeholder="Middle Name"
+                                        value={formData.middleName}
+                                        autoComplete="off"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
 
-                                    {/* Siège sélectionné */}
-                                    <div className="rounded-lg border border-gray-200 bg-white p-3">
-                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Siège choisi</h4>
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                {formData.selectedSeat ? (
-                                                    <>
-                                                        <div className="text-sm font-bold text-amber-600">{formData.selectedSeat}</div>
-                                                        <div className="text-xs text-gray-600">
-                                                            Rangée {formData.selectedSeat.slice(0, -1)}, Siège {formData.selectedSeat.slice(-1)}
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="text-xs text-gray-500">Aucun siège sélectionné</div>
-                                                )}
-                                            </div>
-                                            {formData.selectedSeat && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSeatSelect("")}
-                                                    className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 hover:bg-gray-200"
-                                                >
-                                                    Changer
-                                                </button>
-                                            )}
+                                {/* Nom */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="lastName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Last Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="lastName"
+                                        name="lastName"
+                                        placeholder="Last Name"
+                                        value={formData.lastName}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Date de naissance */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="dateOfBirth"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Date of birth
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="dateOfBirth"
+                                        name="dateOfBirth"
+                                        value={formData.dateOfBirth}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Adresse */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="address"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Adress
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="address"
+                                        name="address"
+                                        placeholder="Adress"
+                                        value={formData.address}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                {/* ID Type */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="idTypeClient"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        ID Type
+                                    </label>
+                                    <select
+                                        id="idTypeClient"
+                                        name="idTypeClient"
+                                        value={formData.idTypeClient}
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    >
+                                        <option value="passport">Passport</option>
+                                        <option value="nimu">NINU</option>
+                                        <option value="licens">License</option>
+                                    </select>
+                                </div>
+
+                                {/* ID Number */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="idClient"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        {formData.idTypeClient === "nimu"
+                                            ? "ID NINU"
+                                            : formData.idTypeClient === "licens"
+                                              ? "ID LICENSE"
+                                              : "ID PASSPORT"}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="idClient"
+                                        name="idClient"
+                                        placeholder={
+                                            formData.idTypeClient === "nimu"
+                                                ? "000-000-000-0"
+                                                : formData.idTypeClient === "licens"
+                                                  ? "ID LICENSE"
+                                                  : "ID PASSPORT"
+                                        }
+                                        value={formData.idClient}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Pays */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="country"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Country
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="country"
+                                        name="country"
+                                        placeholder="Country"
+                                        required
+                                        value={formData.country}
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Nationalité */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="nationality"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Nationality
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="nationality"
+                                        name="nationality"
+                                        placeholder="Nationality"
+                                        value={formData.nationality}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Email */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="email"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        E-mail
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        placeholder="E-mail"
+                                        value={formData.email}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="phone"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Phone
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="phone"
+                                        name="phone"
+                                        placeholder="Phone"
+                                        value={formData.phone}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Méthode de paiement */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="paymentMethod"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Payment Method
+                                    </label>
+                                    <select
+                                        id="paymentMethod"
+                                        name="paymentMethod"
+                                        value={formData.paymentMethod}
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    >
+                                        <option value="cash">Cash</option>
+                                        <option value="card">Card</option>
+                                        <option value="cheque">Check</option>
+                                        <option value="virement">Bank Transfer</option>
+                                        <option value="transfert">Deposit</option>
+                                        <option value="contrat">Contrat</option>
+                                    </select>
+                                    {/* Nombre de passagers */}
+                                    <input
+                                        type="hidden"
+                                        id="passengerCount"
+                                        name="passengerCount"
+                                        min="1"
+                                        defaultValue={1}
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="flex w-28 flex-col">
+                                    <label
+                                        htmlFor="unpaid"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        UnPaid
+                                    </label>
+
+                                    <label className="relative inline-flex cursor-pointer items-center">
+                                        <input
+                                            type="checkbox"
+                                            id="unpaid"
+                                            name="unpaid"
+                                            value="pending"
+                                            required
+                                            onChange={handleChange}
+                                            className="peer sr-only"
+                                        />
+
+                                        <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
+
+                                        <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
+                                    </label>
+                                </div>
+
+                                {/* Prix du vol */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="price"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Flight Price
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="price"
+                                        name="price"
+                                        value={`${totalPrice.toFixed(2)} ${priceCurrency}`}
+                                        readOnly
+                                        className="w-full rounded-md border border-gray-300 bg-gray-100 px-4 py-2 outline-none"
+                                    />
+                                    {isRoundTrip && price2 > 0 && (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Aller: {price1.toFixed(2)} {priceCurrency} + Retour: {price2.toFixed(2)} {priceCurrency}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {formData.paymentMethod === "cash" && (
+                                    <>
+                                        <div className="flex flex-col">
+                                            <label className="mb-1 font-medium text-gray-700">Payment currency</label>
+
+                                            <select
+                                                name="devisePayment"
+                                                value={formData.devisePayment}
+                                                onChange={handleChange}
+                                                className="w-full rounded-md border px-4 py-2"
+                                            >
+                                                <option value="usd">USD</option>
+                                                <option value="htg">GOURDE</option>
+                                            </select>
                                         </div>
-                                    </div>
+
+                                        {/* Taux du jour */}
+                                        <div className="flex flex-col">
+                                            <label className="mb-1 font-medium text-gray-700">Taux du jour</label>
+
+                                            <input
+                                                type="number"
+                                                name="taux_jour"
+                                                value={formData.taux_jour}
+                                                onChange={handleChange}
+                                                disabled={formData.devisePayment !== "htg"}
+                                                placeholder="Ex: 135"
+                                                className={`w-full rounded-md border px-4 py-2 outline-none ${
+                                                    formData.devisePayment !== "htg" ? "cursor-not-allowed bg-gray-100" : ""
+                                                }`}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="companyName"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Company Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="companyName"
+                                        name="companyName"
+                                        placeholder="Company Name"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Téléphone */}
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="reference"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Reference Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="reference"
+                                        name="reference"
+                                        placeholder="Reference Number"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="nom_urgence"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Emergency contact person name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="nom_urgence"
+                                        name="nom_urgence"
+                                        value={formData.nom_urgence}
+                                        placeholder="Emergency contact person name"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="email_urgence"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Emergency contact email
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="email_urgence"
+                                        name="email_urgence"
+                                        value={formData.email_urgence}
+                                        placeholder="Emergency contact email"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label
+                                        htmlFor="tel_urgence"
+                                        className="mb-1 font-medium text-gray-700"
+                                    >
+                                        Emergency contact number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="tel_urgence"
+                                        name="tel_urgence"
+                                        value={formData.tel_urgence}
+                                        placeholder="Emergency contact number"
+                                        required
+                                        onChange={handleChange}
+                                        className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                    />
+                                </div>
+
+                                {/* Bouton */}
+                                <div className="md:col-span-3">
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={createTicket}
+                                        className="w-full rounded-md hover:text-black  bg-gradient-to-r hover:from-amber-600 hover:to-amber-500 from-amber-500 to-amber-600 py-3 font-semibold text-white transition-colors disabled:bg-gray-400"
+                                    >
+                                        {createTicket ? "Saving..." : "Confirm and Create the Ticket"}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -2125,6 +1959,10 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                 </div>
             )}
         </AnimatePresence>
+
+
+
+
     );
 };
 
