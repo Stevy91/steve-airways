@@ -5682,7 +5682,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
       arrival: flight.arrival_time,
       price: flight.price,
       seats_available: flight.seats_available.toString(),
-      total_seat: flight.total_seat.toString(),
+      total_seat: flight.total_seat.toString() || '',
       departure_city: flight.departure_city,
       arrival_city: flight.arrival_city,
     }));
@@ -5826,7 +5826,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
       departure: flight.departure_time,
       arrival: flight.arrival_time,
       price: flight.price,
-       total_seat: flight.total_seat.toString(),
+       total_seat: flight.total_seat.toString() || '',
       seats_available: flight.seats_available.toString(),
       departure_city: flight.departure_city,
       arrival_city: flight.arrival_city,
