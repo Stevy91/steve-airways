@@ -647,6 +647,7 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
             nom_urgence: p.nom_urgence,
             email_urgence: p.email_urgence,
             tel_urgence: p.tel_urgence,
+            selectedSeat: p.selectedSeat,
             country: p.country,
             address: p.address,
             dateOfBirth: p.dateOfBirth,

@@ -79,7 +79,8 @@ interface Flight extends mysql.RowDataPacket {
   to: string;
   departure: string;
   arrival: string;
-
+  affectedRows: string;
+flightInfo: string;
   seats_available: string;
 }
 
@@ -2328,6 +2329,468 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     connection.release();
   }
 });
+
+
+
+/**
+ * API pour vérifier si un siège est déjà sélectionné
+ * Méthode: POST
+ * Route: /api/check-seat-availability
+ */
+app.post('/check-seat-availability', authMiddleware, async (req: Request, res: Response) => {
+    const connection = await pool.getConnection();
+    
+    try {
+        const { flightId, seatNumber, flightNumber } = req.body;
+
+        // Validation des données d'entrée
+        if (!flightId && !flightNumber) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Missing required fields",
+                message: "Veuillez fournir soit flightId, soit flightNumber"
+            });
+        }
+
+        if (!seatNumber) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Missing required field",
+                message: "Le numéro de siège est requis"
+            });
+        }
+
+        // Valider le format du siège (ex: 12A, 24F)
+        const seatRegex = /^(\d+)([A-F])$/i;
+        if (!seatRegex.test(seatNumber)) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Invalid seat format",
+                message: "Format de siège invalide. Utilisez le format: numéro + lettre (ex: 12A, 24F)"
+            });
+        }
+
+        let flightInfo: mysql.RowDataPacket | null = null;
+
+        // Récupérer les informations du vol
+        if (flightId) {
+            const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+                'SELECT id, flight_number, seats_available, total_seats FROM flights WHERE id = ?',
+                [flightId]
+            );
+            
+            if (flightRows.length === 0) {
+                await connection.release();
+                return res.status(404).json({
+                    success: false,
+                    error: "Flight not found",
+                    message: "Vol non trouvé avec cet ID"
+                });
+            }
+            
+            flightInfo = flightRows[0];
+        } else if (flightNumber) {
+            const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+                'SELECT id, flight_number, seats_available, total_seats FROM flights WHERE flight_number = ?',
+                [flightNumber.toUpperCase()]
+            );
+            
+            if (flightRows.length === 0) {
+                await connection.release();
+                return res.status(404).json({
+                    success: false,
+                    error: "Flight not found",
+                    message: `Vol ${flightNumber} non trouvé`
+                });
+            }
+            
+            flightInfo = flightRows[0];
+        }
+
+        // Vérifier que flightInfo est bien défini (TypeScript safety)
+        if (!flightInfo) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Flight information not found",
+                message: "Impossible de récupérer les informations du vol"
+            });
+        }
+
+        // Vérifier la capacité du siège
+        const seatMatch = seatNumber.match(seatRegex);
+        if (!seatMatch) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Invalid seat format",
+                message: "Format de siège invalide"
+            });
+        }
+
+        const seatRow = parseInt(seatMatch[1]);
+        const seatLetter = seatMatch[2].toUpperCase();
+        
+        // Vérifier si la rangée existe (basée sur le nombre total de sièges)
+        const totalRows = Math.ceil(flightInfo.total_seats / 6); // 6 sièges par rangée pour Boeing 737-800
+        if (seatRow > totalRows || seatRow < 1) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Invalid seat row",
+                message: `La rangée ${seatRow} n'existe pas. Les rangées disponibles sont de 1 à ${totalRows}`
+            });
+        }
+
+        // Vérifier si la lettre du siège est valide (A-F)
+        if (!['A', 'B', 'C', 'D', 'E', 'F'].includes(seatLetter)) {
+            await connection.release();
+            return res.status(400).json({
+                success: false,
+                error: "Invalid seat letter",
+                message: "La lettre du siège doit être entre A et F"
+            });
+        }
+
+        // Vérifier si le siège est déjà réservé
+        const [occupiedSeats] = await connection.query<mysql.RowDataPacket[]>(`
+            SELECT 
+                p.selectedSeat,
+                p.first_name,
+                p.last_name,
+                b.booking_reference,
+                b.status,
+                b.departure_date
+            FROM passengers p
+            JOIN bookings b ON p.booking_id = b.id
+            WHERE b.flight_id = ?
+                AND p.selectedSeat = ?
+                AND b.status NOT IN ('cancelled', 'refunded')
+        `, [flightInfo.id, seatNumber]);
+
+        // Vérifier aussi pour les vols retour si applicable
+        const [occupiedSeatsReturn] = await connection.query<mysql.RowDataPacket[]>(`
+            SELECT 
+                p.selectedSeat,
+                p.first_name,
+                p.last_name,
+                b.booking_reference,
+                b.status,
+                b.return_date
+            FROM passengers p
+            JOIN bookings b ON p.booking_id = b.id
+            WHERE b.return_flight_id = ?
+                AND p.selectedSeat = ?
+                AND b.status NOT IN ('cancelled', 'refunded')
+        `, [flightInfo.id, seatNumber]);
+
+        const allOccupiedSeats = [...occupiedSeats, ...occupiedSeatsReturn];
+
+        if (allOccupiedSeats.length > 0) {
+            const passengerInfo = allOccupiedSeats[0];
+            
+            await connection.release();
+            return res.status(409).json({
+                success: false,
+                available: false,
+                seatNumber: seatNumber,
+                occupiedBy: `${passengerInfo.first_name} ${passengerInfo.last_name}`,
+                bookingReference: passengerInfo.booking_reference,
+                flightNumber: flightInfo.flight_number,
+                message: `Le siège ${seatNumber} est déjà réservé sur le vol ${flightInfo.flight_number}`
+            });
+        }
+
+        // Si le siège est libre, récupérer tous les sièges occupés pour affichage dans l'interface
+        const [allOccupiedSeatsForFlight] = await connection.query<mysql.RowDataPacket[]>(`
+            SELECT DISTINCT p.selectedSeat
+            FROM passengers p
+            JOIN bookings b ON p.booking_id = b.id
+            WHERE (b.flight_id = ? OR b.return_flight_id = ?)
+                AND p.selectedSeat IS NOT NULL
+                AND p.selectedSeat != ''
+                AND b.status NOT IN ('cancelled', 'refunded')
+        `, [flightInfo.id, flightInfo.id]);
+
+        const occupiedSeatsList = allOccupiedSeatsForFlight.map(item => item.selectedSeat);
+
+        // Récupérer les informations du vol pour la réponse
+        const [flightDetails] = await connection.query<mysql.RowDataPacket[]>(`
+            SELECT 
+                f.id,
+                f.flight_number,
+                f.from,
+                f.to,
+                f.fromCity,
+                f.toCity,
+                f.departure_time,
+                f.arrival_time,
+                f.seats_available,
+                f.total_seats,
+                f.airline,
+                f.type,
+                f.price,
+                f.currency
+            FROM flights f
+            WHERE f.id = ?
+        `, [flightInfo.id]);
+
+        await connection.release();
+        
+        res.status(200).json({
+            success: true,
+            available: true,
+            seatNumber: seatNumber,
+            flight: flightDetails[0] || flightInfo,
+            occupiedSeats: occupiedSeatsList,
+            seatsAvailable: flightInfo.seats_available,
+            message: `Le siège ${seatNumber} est disponible sur le vol ${flightInfo.flight_number}`
+        });
+
+    } catch (error: any) {
+        console.error('❌ ERREUR vérification siège:', error);
+        
+        if (connection) {
+            await connection.release();
+        }
+        
+        res.status(500).json({
+            success: false,
+            error: "Server error",
+            message: "Une erreur est survenue lors de la vérification du siège",
+            details: process.env.NODE_ENV !== 'production' ? error.message : undefined
+        });
+    }
+});
+
+/**
+ * API pour récupérer tous les sièges occupés d'un vol
+ * Méthode: GET
+ * Route: /api/occupied-seats/:flightId
+ */
+app.get('/occupied-seats/:flightId', authMiddleware, async (req, res) => {
+    const connection = await pool.getConnection();
+    
+    try {
+        const flightId = req.params.flightId;
+
+        const [seats] = await connection.query<mysql.RowDataPacket[]>(`
+            SELECT DISTINCT 
+                p.selectedSeat,
+                p.first_name,
+                p.last_name,
+                b.booking_reference,
+                b.status,
+                b.departure_date,
+                b.return_date,
+                f1.flight_number AS outbound_flight,
+                f2.flight_number AS return_flight
+            FROM passengers p
+            JOIN bookings b ON p.booking_id = b.id
+            LEFT JOIN flights f1 ON b.flight_id = f1.id
+            LEFT JOIN flights f2 ON b.return_flight_id = f2.id
+            WHERE (b.flight_id = ? OR b.return_flight_id = ?)
+                AND p.selectedSeat IS NOT NULL
+                AND p.selectedSeat != ''
+                AND b.status NOT IN ('cancelled', 'refunded')
+            ORDER BY 
+                CAST(SUBSTRING(p.selectedSeat, 1, LENGTH(p.selectedSeat)-1) AS UNSIGNED),
+                SUBSTRING(p.selectedSeat, -1)
+        `, [flightId, flightId]);
+
+        // Récupérer les informations du vol
+        const [flightInfo] = await connection.query<mysql.RowDataPacket[]>(`
+            SELECT 
+                id,
+                flight_number,
+                seats_available,
+                total_seats
+            FROM flights 
+            WHERE id = ?
+        `, [flightId]);
+
+        if (flightInfo.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: "Flight not found",
+                message: "Vol non trouvé"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            flightId: flightId,
+            flightNumber: flightInfo[0].flight_number,
+            totalSeats: flightInfo[0].total_seats,
+            seatsAvailable: flightInfo[0].seats_available,
+            occupiedSeats: seats,
+            count: seats.length
+        });
+
+    } catch (error) {
+        console.error('❌ ERREUR récupération sièges occupés:', error);
+        
+        res.status(500).json({
+            success: false,
+            error: "Server error",
+            message: "Une erreur est survenue lors de la récupération des sièges occupés"
+        });
+    } finally {
+        connection.release();
+    }
+});
+
+/**
+ * API pour mettre à jour la sélection de siège après création du ticket
+ * Méthode: POST
+ * Route: /api/update-seat-selection
+ * 
+ * 
+ 
+ */
+
+app.post('/update-seat-selection', authMiddleware, async (req: Request, res: Response) => {
+    const connection = await pool.getConnection();
+    
+    try {
+        await connection.beginTransaction();
+
+       const { bookingId, passengerIds, seatNumbers } = req.body;
+        
+        // Utiliser l'assertion de type pour req.user
+        const reqWithUser = req as any;
+        const userId = reqWithUser.user?.id;
+        
+        if (!userId) {
+            await connection.rollback();
+            connection.release();
+            return res.status(401).json({
+                success: false,
+                error: "Unauthorized",
+                message: "Utilisateur non authentifié"
+            });
+        }
+
+        if (!bookingId || !passengerIds || !seatNumbers) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                error: "Missing required fields",
+                message: "bookingId, passengerIds et seatNumbers sont requis"
+            });
+        }
+
+        if (passengerIds.length !== seatNumbers.length) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                error: "Mismatched arrays",
+                message: "Le nombre de passagers et de sièges doit correspondre"
+            });
+        }
+
+        // Vérifier que la réservation existe et appartient à l'utilisateur
+        const [bookingRows] = await connection.query<mysql.RowDataPacket[]>(
+            'SELECT id, flight_id, user_created_booking FROM bookings WHERE id = ?',
+            [bookingId]
+        );
+
+        if (bookingRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                error: "Booking not found",
+                message: "Réservation non trouvée"
+            });
+        }
+
+        const booking = bookingRows[0];
+
+        // Mettre à jour chaque passager avec son siège
+        const updates = [];
+        for (let i = 0; i < passengerIds.length; i++) {
+            const passengerId = passengerIds[i];
+            const seatNumber = seatNumbers[i];
+
+            // Valider le format du siège
+            const seatRegex = /^(\d+)([A-F])$/i;
+            if (!seatRegex.test(seatNumber)) {
+                await connection.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid seat format",
+                    message: `Format de siège invalide: ${seatNumber}. Utilisez le format: numéro + lettre (ex: 12A)`
+                });
+            }
+
+            // Vérifier si le siège est déjà pris pour ce vol
+            const [existingSeat] = await connection.query<mysql.RowDataPacket[]>(`
+                SELECT p.id, p.first_name, p.last_name 
+                FROM passengers p
+                JOIN bookings b ON p.booking_id = b.id
+                WHERE (b.flight_id = ? OR b.return_flight_id = ?)
+                    AND p.selectedSeat = ?
+                    AND p.id != ?
+                    AND b.status NOT IN ('cancelled', 'refunded')
+            `, [booking.flight_id, booking.flight_id, seatNumber, passengerId]);
+
+            if (existingSeat.length > 0) {
+                await connection.rollback();
+                return res.status(409).json({
+                    success: false,
+                    error: "Seat already taken",
+                    seatNumber: seatNumber,
+                    occupiedBy: `${existingSeat[0].first_name} ${existingSeat[0].last_name}`,
+                    message: `Le siège ${seatNumber} est déjà occupé`
+                });
+            }
+
+            // Mettre à jour le siège du passager
+            const [updateResult] = await pool.execute<mysql.OkPacket>(
+                'UPDATE passengers SET selectedSeat = ?, updated_at = NOW() WHERE id = ? AND booking_id = ?',
+                [seatNumber, passengerId, bookingId]
+            );
+
+            updates.push({
+                passengerId: passengerId,
+                seatNumber: seatNumber,
+                updated: updateResult.affectedRows > 0
+            });
+        }
+
+        // Log de l'action
+        await connection.query(
+            'INSERT INTO seat_selection_logs (booking_id, user_id, action, details, created_at) VALUES (?, ?, ?, ?, NOW())',
+            [bookingId, userId, 'UPDATE_SEATS', JSON.stringify({ updates, seatNumbers })]
+        );
+
+        await connection.commit();
+
+        res.status(200).json({
+            success: true,
+            bookingId: bookingId,
+            updates: updates,
+            message: "Sélection de sièges mise à jour avec succès"
+        });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('❌ ERREUR mise à jour siège:', error);
+        
+        res.status(500).json({
+            success: false,
+            error: "Server error",
+            message: "Une erreur est survenue lors de la mise à jour des sièges"
+        });
+    } finally {
+        connection.release();
+    }
+});
+
+
 
 
 // Route pour récupérer uniquement le prix d'un vol
