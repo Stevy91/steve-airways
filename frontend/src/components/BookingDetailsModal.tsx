@@ -37,6 +37,7 @@ export type Passenger = {
     address?: string;
     dateOfBirth?: string;
     adminNotes?: string;
+    selectedSeat?: string
 };
 
 export type BookingDetails = {
@@ -862,6 +863,12 @@ const birth = (dateString: string, formatString: string) => {
                                                                 <div>
                                                                     <span className="font-semibold text-slate-700">Nationality: </span>{" "}
                                                                     {passenger.nationality}
+                                                                </div>
+                                                            )}
+                                                            {passenger.selectedSeat && (
+                                                                <div>
+                                                                    <span className="font-semibold text-slate-700">Seat: </span>{" "}
+                                                                    {passenger.selectedSeat}
                                                                 </div>
                                                             )}
                                                             {passenger.nom_urgence && (
