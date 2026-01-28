@@ -2343,6 +2343,8 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
     try {
         const { flightId, seatNumber, flightNumber } = req.body;
 
+        console.log('🔍 Vérification siège - Données reçues:', { flightId, seatNumber, flightNumber });
+
         // Validation des données d'entrée
         if (!flightId && !flightNumber) {
             await connection.release();
@@ -2362,14 +2364,18 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             });
         }
 
-        // Valider le format du siège (ex: 12A, 24F)
+        // Nettoyer et normaliser le numéro de siège
+        const cleanSeatNumber = seatNumber.trim().toUpperCase();
+        console.log('🔍 Siège normalisé:', cleanSeatNumber);
+
+        // Valider le format du siège (ex: 12A, 24F, 1A)
         const seatRegex = /^(\d+)([A-F])$/i;
-        if (!seatRegex.test(seatNumber)) {
+        if (!seatRegex.test(cleanSeatNumber)) {
             await connection.release();
             return res.status(400).json({
                 success: false,
                 error: "Invalid seat format",
-                message: "Format de siège invalide. Utilisez le format: numéro + lettre (ex: 12A, 24F)"
+                message: "Format de siège invalide. Utilisez le format: numéro + lettre (ex: 12A, 24F, 1A)"
             });
         }
 
@@ -2420,8 +2426,15 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             });
         }
 
+        console.log('🔍 Informations vol trouvées:', {
+            flightId: flightInfo.id,
+            flightNumber: flightInfo.flight_number,
+            seatsAvailable: flightInfo.seats_available,
+            totalSeats: flightInfo.total_seats
+        });
+
         // Vérifier la capacité du siège
-        const seatMatch = seatNumber.match(seatRegex);
+        const seatMatch = cleanSeatNumber.match(seatRegex);
         if (!seatMatch) {
             await connection.release();
             return res.status(400).json({
@@ -2455,7 +2468,12 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             });
         }
 
-        // Vérifier si le siège est déjà réservé
+        console.log('🔍 Recherche sièges occupés pour:', {
+            flightId: flightInfo.id,
+            seatNumber: cleanSeatNumber
+        });
+
+        // 1. Vérifier les sièges occupés (version améliorée)
         const [occupiedSeats] = await connection.query<mysql.RowDataPacket[]>(`
             SELECT 
                 p.selectedSeat,
@@ -2467,11 +2485,13 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             FROM passengers p
             JOIN bookings b ON p.booking_id = b.id
             WHERE b.flight_id = ?
-                AND p.selectedSeat = ?
+                AND TRIM(UPPER(p.selectedSeat)) = ?
                 AND b.status NOT IN ('cancelled', 'refunded')
-        `, [flightInfo.id, seatNumber]);
+        `, [flightInfo.id, cleanSeatNumber]);
 
-        // Vérifier aussi pour les vols retour si applicable
+        console.log('🔍 Sièges occupés (vol aller) trouvés:', occupiedSeats.length);
+
+        // 2. Vérifier aussi pour les vols retour
         const [occupiedSeatsReturn] = await connection.query<mysql.RowDataPacket[]>(`
             SELECT 
                 p.selectedSeat,
@@ -2483,39 +2503,82 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             FROM passengers p
             JOIN bookings b ON p.booking_id = b.id
             WHERE b.return_flight_id = ?
-                AND p.selectedSeat = ?
+                AND TRIM(UPPER(p.selectedSeat)) = ?
                 AND b.status NOT IN ('cancelled', 'refunded')
-        `, [flightInfo.id, seatNumber]);
+        `, [flightInfo.id, cleanSeatNumber]);
+
+        console.log('🔍 Sièges occupés (vol retour) trouvés:', occupiedSeatsReturn.length);
 
         const allOccupiedSeats = [...occupiedSeats, ...occupiedSeatsReturn];
 
         if (allOccupiedSeats.length > 0) {
             const passengerInfo = allOccupiedSeats[0];
+            console.log('❌ Siège occupé par:', passengerInfo);
             
             await connection.release();
             return res.status(409).json({
                 success: false,
                 available: false,
-                seatNumber: seatNumber,
+                seatNumber: cleanSeatNumber,
                 occupiedBy: `${passengerInfo.first_name} ${passengerInfo.last_name}`,
                 bookingReference: passengerInfo.booking_reference,
                 flightNumber: flightInfo.flight_number,
-                message: `Le siège ${seatNumber} est déjà réservé sur le vol ${flightInfo.flight_number}`
+                message: `Le siège ${cleanSeatNumber} est déjà réservé sur le vol ${flightInfo.flight_number}`
             });
         }
 
-        // Si le siège est libre, récupérer tous les sièges occupés pour affichage dans l'interface
+        // 3. Si le siège est libre, récupérer tous les sièges occupés pour affichage dans l'interface
         const [allOccupiedSeatsForFlight] = await connection.query<mysql.RowDataPacket[]>(`
-            SELECT DISTINCT p.selectedSeat
+            SELECT DISTINCT TRIM(UPPER(p.selectedSeat)) as selectedSeat
             FROM passengers p
             JOIN bookings b ON p.booking_id = b.id
             WHERE (b.flight_id = ? OR b.return_flight_id = ?)
                 AND p.selectedSeat IS NOT NULL
                 AND p.selectedSeat != ''
+                AND TRIM(p.selectedSeat) != ''
                 AND b.status NOT IN ('cancelled', 'refunded')
+            ORDER BY selectedSeat
         `, [flightInfo.id, flightInfo.id]);
 
-        const occupiedSeatsList = allOccupiedSeatsForFlight.map(item => item.selectedSeat);
+        const occupiedSeatsList = allOccupiedSeatsForFlight
+            .map(item => item.selectedSeat)
+            .filter(seat => seat && seat.trim() !== '');
+
+        console.log('🔍 Tous les sièges occupés pour ce vol:', occupiedSeatsList);
+
+        // 4. Vérifier aussi dans la table des sièges réservés si elle existe
+        let reservedSeats: string[] = [];
+        try {
+            // Vérifier si la table 'reserved_seats' existe
+            const [tableCheck] = await connection.query<mysql.RowDataPacket[]>(`
+                SELECT TABLE_NAME 
+                FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'reserved_seats'
+            `);
+
+            if (tableCheck.length > 0) {
+                const [reservedRows] = await connection.query<mysql.RowDataPacket[]>(`
+                    SELECT seat_number 
+                    FROM reserved_seats 
+                    WHERE flight_id = ? 
+                    AND TRIM(UPPER(seat_number)) = ?
+                `, [flightInfo.id, cleanSeatNumber]);
+
+                if (reservedRows.length > 0) {
+                    console.log('❌ Siège réservé dans table reserved_seats');
+                    await connection.release();
+                    return res.status(409).json({
+                        success: false,
+                        available: false,
+                        seatNumber: cleanSeatNumber,
+                        message: `Le siège ${cleanSeatNumber} est réservé sur le vol ${flightInfo.flight_number}`
+                    });
+                }
+            }
+        } catch (tableError) {
+            console.log('ℹ️ Table reserved_seats non trouvée, continuation normale');
+        }
 
         // Récupérer les informations du vol pour la réponse
         const [flightDetails] = await connection.query<mysql.RowDataPacket[]>(`
@@ -2540,14 +2603,16 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
 
         await connection.release();
         
+        console.log('✅ Siège disponible:', cleanSeatNumber);
+        
         res.status(200).json({
             success: true,
             available: true,
-            seatNumber: seatNumber,
+            seatNumber: cleanSeatNumber,
             flight: flightDetails[0] || flightInfo,
             occupiedSeats: occupiedSeatsList,
             seatsAvailable: flightInfo.seats_available,
-            message: `Le siège ${seatNumber} est disponible sur le vol ${flightInfo.flight_number}`
+            message: `Le siège ${cleanSeatNumber} est disponible sur le vol ${flightInfo.flight_number}`
         });
 
     } catch (error: any) {

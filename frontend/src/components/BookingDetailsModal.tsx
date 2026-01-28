@@ -165,9 +165,6 @@ const editBookings = isAdmin || hasPermission("editBookings");
 
 
 
-
-
-
     const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
         if (!editedBooking) return;
 

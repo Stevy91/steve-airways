@@ -81,45 +81,6 @@ type BookingData = {
     selectedSeat?: string;
 };
 
-// Ajoutez ces types pour les données API
-type SeatAvailabilityResponse = {
-    success: boolean;
-    available: boolean;
-    seatNumber: string;
-    flight: Flight;
-    occupiedSeats: string[];
-    seatsAvailable: number;
-    message: string;
-};
-
-type OccupiedSeatsResponse = {
-    success: boolean;
-    flightId: string;
-    flightNumber: string;
-    totalSeats: number;
-    seatsAvailable: number;
-    occupiedSeats: Array<{ selectedSeat: string }>;
-    count: number;
-};
-
-type ApiPassenger = {
-    id: number;
-    first_name: string;
-    last_name: string;
-    middle_name?: string;
-    date_of_birth?: string;
-    idClient?: string;
-    idTypeClient?: string;
-    address?: string;
-    country?: string;
-    nationality?: string;
-    phone?: string;
-    email?: string;
-    nom_urgence?: string;
-    email_urgence?: string;
-    tel_urgence?: string;
-};
-
 const generateEmailContent = (bookingData: BookingData, bookingReference: string, paymentMethod: string): string => {
     const outboundFlight = bookingData.outbound;
     const returnFlight = bookingData.return;
@@ -535,168 +496,136 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const [calculatedPrice2, setCalculatedPrice2] = useState<number>(0);
     const [priceCurrency2, setPriceCurrency2] = useState<string>("USD");
 
-    const [suggestions, setSuggestions] = useState<ApiPassenger[]>([]);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const user = useProfile();
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-const initialFormData = {
-    firstName: "",
-    flightNumberReturn: "",
-    middleName: "",
-    lastName: "",
-    idClient: "",
-    idTypeClient: "",
-    unpaid: "",
-    reference: "",
-    companyName: "",
-    nom_urgence: "",
-    email_urgence: "",
-    tel_urgence: "",
-    dateOfBirth: "",
-    gender: "other" as const,
-    title: "Mr" as const,
-    address: "",
-    country: "",
-    nationality: "",
-    email: "",
-    phone: "",
-    passengerCount: 1,
-    paymentMethod: "card" as "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat",
-    price: "",
-    devisePayment: "usd" as "usd" | "htg",
-    taux_jour: "",
-    selectedSeat: "",
-};
+    const initialFormData = {
+        firstName: "",
+        flightNumberReturn: "",
+        middleName: "",
+        lastName: "",
+        idClient: "",
+        idTypeClient: "",
+        unpaid: "",
+        reference: "",
+        companyName: "",
+        nom_urgence: "",
+        email_urgence: "",
+        tel_urgence: "",
+        dateOfBirth: "",
+        gender: "other",
+        title: "Mr",
+        address: "",
+        country: "",
+        nationality: "",
+        email: "",
+        phone: "",
+        passengerCount: 1,
+        paymentMethod: "card",
+        price: "",
+        devisePayment: "usd",
+        taux_jour: "",
+        selectedSeat: "",
+    };
 
-type FormDataType = {
-    firstName: string;
-    flightNumberReturn: string;
-    middleName: string;
-    lastName: string;
-    idClient: string;
-    idTypeClient: string;
-    unpaid: string;
-    reference: string;
-    companyName: string;
-    nom_urgence: string;
-    email_urgence: string;
-    tel_urgence: string;
-    dateOfBirth: string;
-    gender: "other";
-    title: "Mr";
-    address: string;
-    country: string;
-    nationality: string;
-    email: string;
-    phone: string;
-    passengerCount: number;
-    paymentMethod: "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat";
-    price: string;
-    devisePayment: "usd" | "htg";
-    taux_jour: string;
-    selectedSeat: string;
-};
-
-
-
-
-
-    const [formData, setFormData] = useState<FormDataType>(initialFormData);
-
-    // Ajoutez cet état pour stocker les sièges occupés avec type explicite
-    const [occupiedSeats, setOccupiedSeats] = useState<string[]>([]);
+    const [formData, setFormData] = useState(initialFormData);
 
     // Ajoutez cette fonction pour vérifier la disponibilité du siège
-    const checkSeatAvailability = async (seatId: string): Promise<boolean> => {
-        if (!seatId || !flight) return false;
+const checkSeatAvailability = async (seatId) => {
+    if (!seatId || !flight) return false;
+    
+    try {
+        const token = localStorage.getItem("authToken");
+        const response = await fetch("https://steve-airways.onrender.com/api/check-seat-availability", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                flightId: flight.id,
+                seatNumber: seatId,
+            }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            return data.available;
+        } else {
+            console.warn("Siège non disponible:", data.message);
+            return false;
+        }
+    } catch (error) {
+        console.error("Erreur vérification siège:", error);
+        return false;
+    }
+};
+
+// Modifiez la fonction handleSeatSelect
+const handleSeatSelect = async (seatId) => {
+    // Si on clique sur un siège déjà sélectionné, on le désélectionne
+    if (formData.selectedSeat === seatId) {
+        setFormData(prev => ({
+            ...prev,
+            selectedSeat: '',
+        }));
+        return;
+    }
+
+    // Vérifier la disponibilité du siège
+    const isAvailable = await checkSeatAvailability(seatId);
+    
+    if (!isAvailable) {
+        toast.error(`Le siège ${seatId} est déjà occupé. Veuillez choisir un autre siège.`, {
+            duration: 3000,
+        });
+        return;
+    }
+
+    // Si le siège est disponible, le sélectionner
+    setFormData(prev => ({
+        ...prev,
+        selectedSeat: seatId,
+    }));
+};
+
+// Ajoutez cette fonction pour charger les sièges occupés au démarrage
+useEffect(() => {
+    const loadOccupiedSeats = async () => {
+        if (!open || !flight) return;
         
         try {
             const token = localStorage.getItem("authToken");
-            const response = await fetch("https://steve-airways.onrender.com/api/check-seat-availability", {
-                method: "POST",
+            const response = await fetch(`https://steve-airways.onrender.com/api/occupied-seats/${flight.id}`, {
                 headers: {
-                    "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    flightId: flight.id,
-                    seatNumber: seatId,
-                }),
             });
-
-            const data: SeatAvailabilityResponse = await response.json();
             
-            if (response.ok && data.success) {
-                return data.available;
-            } else {
-                console.warn("Siège non disponible:", data.message);
-                return false;
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Stocker les sièges occupés dans un état
+                    setOccupiedSeats(data.occupiedSeats.map(seat => seat.selectedSeat));
+                }
             }
         } catch (error) {
-            console.error("Erreur vérification siège:", error);
-            return false;
+            console.error("Erreur chargement sièges occupés:", error);
         }
     };
 
-    // Modifiez la fonction handleSeatSelect avec types
-    const handleSeatSelect = async (seatId: string): Promise<void> => {
-        // Si on clique sur un siège déjà sélectionné, on le désélectionne
-        if (formData.selectedSeat === seatId) {
-            setFormData(prev => ({
-                ...prev,
-                selectedSeat: '',
-            }));
-            return;
-        }
+    loadOccupiedSeats();
+}, [open, flight]);
 
-        // Vérifier la disponibilité du siège
-        const isAvailable = await checkSeatAvailability(seatId);
-        
-        if (!isAvailable) {
-            toast.error(`Le siège ${seatId} est déjà occupé. Veuillez choisir un autre siège.`, {
-                duration: 3000,
-            });
-            return;
-        }
+// Ajoutez cet état pour stocker les sièges occupés
+const [occupiedSeats, setOccupiedSeats] = useState([]);
 
-        // Si le siège est disponible, le sélectionner
-        setFormData(prev => ({
-            ...prev,
-            selectedSeat: seatId,
-        }));
-    };
 
-    // Ajoutez cette fonction pour charger les sièges occupés au démarrage
-    useEffect(() => {
-        const loadOccupiedSeats = async () => {
-            if (!open || !flight) return;
-            
-            try {
-                const token = localStorage.getItem("authToken");
-                const response = await fetch(`https://steve-airways.onrender.com/api/occupied-seats/${flight.id}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                
-                if (response.ok) {
-                    const data: OccupiedSeatsResponse = await response.json();
-                    if (data.success) {
-                        // Stocker les sièges occupés dans un état
-                        const occupiedSeatsList = data.occupiedSeats.map(seat => seat.selectedSeat);
-                        setOccupiedSeats(occupiedSeatsList);
-                    }
-                }
-            } catch (error) {
-                console.error("Erreur chargement sièges occupés:", error);
-            }
-        };
-
-        loadOccupiedSeats();
-    }, [open, flight]);
 
     console.log("✅ siege selected", formData.selectedSeat);
 
@@ -706,7 +635,6 @@ type FormDataType = {
             setShowDropdown(false);
             setCalculatedPrice2(0);
             setPriceCurrency2("USD");
-            setOccupiedSeats([]); // Réinitialiser aussi les sièges occupés
         }
     }, [open]);
 
@@ -738,7 +666,7 @@ type FormDataType = {
 
     if (!open || !flight) return null;
 
-    const formatNimuLicens = (value: string): string => {
+    const formatNimuLicens = (value: string) => {
         const numbers = value.replace(/\D/g, "");
         const trimmed = numbers.slice(0, 10);
         const parts = [];
@@ -750,7 +678,6 @@ type FormDataType = {
     };
 
     // Fonction pour rechercher le prix du vol retour
- 
     const fetchReturnFlightPrice = async (flightNumber: string): Promise<{ price: number; currency: string } | null> => {
         if (!flightNumber || flightNumber.trim().length < 2) {
             return null;
@@ -789,7 +716,7 @@ type FormDataType = {
         }
     };
 
-       // Gestion du changement du numéro de vol retour
+    // Gestion du changement du numéro de vol retour
     const handleFlightNumberReturnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const flightNumber = e.target.value;
 
@@ -855,66 +782,48 @@ type FormDataType = {
         }
     };
 
-     
-    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
 
-   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-
-    if (name === "flightNumberReturn") {
-        handleFlightNumberReturnChange(e as React.ChangeEvent<HTMLInputElement>);
-        return;
-    }
-
-    if (name === "idClient" && formData.idTypeClient === "nimu") {
-        setFormData((prev) => ({
-            ...prev,
-            idClient: formatNimuLicens(value),
-        }));
-        return;
-    }
-
-    if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
-        setFormData({
-            ...formData,
-            [name]: e.target.checked ? value : "",
-        });
-        return;
-    }
-
-    setFormData((prev) => {
-        // Créez un objet temporaire avec des types plus larges
-        const updatedData: any = {
-            ...prev,
-            [name]: value,
-        };
-
-        // Gestion conditionnelle pour devisePayment
-        if (name === "devisePayment") {
-            if (value !== "htg") {
-                updatedData.taux_jour = "";
-            }
-            // TypeScript sait maintenant que value peut être "usd" ou "htg"
-            updatedData.devisePayment = value as "usd" | "htg";
+        if (name === "flightNumberReturn") {
+            handleFlightNumberReturnChange(e as React.ChangeEvent<HTMLInputElement>);
+            return;
         }
 
-        // Gestion conditionnelle pour paymentMethod
-        if (name === "paymentMethod") {
-            if (value !== "cash") {
+        if (name === "idClient" && formData.idTypeClient === "nimu") {
+            setFormData((prev) => ({
+                ...prev,
+                idClient: formatNimuLicens(value),
+            }));
+            return;
+        }
+
+        if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+            setFormData({
+                ...formData,
+                [name]: e.target.checked ? value : "",
+            });
+            return;
+        }
+
+        setFormData((prev) => {
+            const updatedData = {
+                ...prev,
+                [name]: value,
+                ...(name === "devisePayment" && value !== "htg" ? { taux_jour: "" } : {}),
+            };
+
+            if (name === "paymentMethod" && value !== "cash") {
                 updatedData.devisePayment = "";
                 updatedData.taux_jour = "";
             }
-            // TypeScript sait maintenant que value peut être l'une des méthodes de paiement
-            updatedData.paymentMethod = value as "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat";
-        }
 
-        return updatedData;
-    });
-};
-
+            return updatedData;
+        });
+    };
 
     // Fonction pour gérer le changement du prénom
-    const handleFirstNameChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFirstNameChange = async (e: any) => {
         const value = e.target.value;
 
         setFormData((prev) => ({
@@ -930,7 +839,7 @@ type FormDataType = {
 
         try {
             const res = await fetch(`https://steve-airways.onrender.com/api/passengers/search?q=${value}`);
-            const data: ApiPassenger[] = await res.json();
+            const data = await res.json();
             setSuggestions(data);
             setShowDropdown(data.length > 0);
         } catch (error) {
@@ -948,7 +857,7 @@ type FormDataType = {
         }, 200);
     };
 
-    const selectPassenger = (p: ApiPassenger) => {
+    const selectPassenger = (p: any) => {
         setFormData((prev) => ({
             ...prev,
             firstName: p.first_name || "",
@@ -986,7 +895,7 @@ type FormDataType = {
     const price1 = Number(calculatedPrice) || 0;
     const totalPrice = isRoundTrip ? price1 + price2 : price1;
 
-   const handleSubmit = async () => {
+    const handleSubmit = async () => {
         setCreateTicket(true);
 
         // Validation des champs obligatoires
@@ -1534,7 +1443,6 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
         setPriceCurrency2("USD");
         setSuggestions([]);
         setShowDropdown(false);
-        setOccupiedSeats([]); // Réinitialiser les sièges occupés
         onClose();
     };
 
@@ -1716,7 +1624,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                             )}
                                         </div>
 
-                                                                                {/* Deuxième prénom */}
+                                        {/* Deuxième prénom */}
                                         <div className="flex flex-col">
                                             <label
                                                 htmlFor="middleName"
@@ -2170,7 +2078,8 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                                         {/* Rangées de sièges */}
                                         <div className="max-h-96 space-y-1 overflow-y-auto pr-2">
-                                            {Array.from({ length: Math.floor(flight.total_seat/6) }).map((_, rowIndex) => (
+                                            
+                                            {Array.from({ length: flight.total_seat/6 }).map((_, rowIndex) => (
                                                 <div
                                                     key={rowIndex}
                                                     className="flex items-center"
@@ -2179,35 +2088,35 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                     <div className="ml-1 flex flex-1 justify-between">
                                                         {/* Sièges gauche (A, B, C) */}
                                                         <div className="flex space-x-0.5">
-                                                            {["A", "B", "C"].map((seat: string) => {
-                                                                const seatId = `${rowIndex + 1}${seat}`;
-                                                                const isOccupied = occupiedSeats.includes(seatId);
-                                                                const isSelected = formData.selectedSeat === seatId;
-                                                                return (
-                                                                    <button
-                                                                        key={seat}
-                                                                        type="button"
-                                                                        onClick={() => handleSeatSelect(seatId)}
-                                                                        disabled={isOccupied}
-                                                                        className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
-                                                                            isSelected
-                                                                                ? "bg-amber-500 text-white"
-                                                                                : isOccupied
-                                                                                ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                                                                                : "bg-white text-gray-700 hover:bg-gray-100"
-                                                                        } border ${
-                                                                            isSelected
-                                                                                ? "border-amber-500"
-                                                                                : isOccupied
-                                                                                ? "border-gray-300"
-                                                                                : "border-gray-300"
-                                                                        }`}
-                                                                        title={isOccupied ? `Siège ${seatId} occupé` : `Siège ${seatId} disponible`}
-                                                                    >
-                                                                        {seat}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                            {["A", "B", "C"].map((seat) => {
+    const seatId = `${rowIndex + 1}${seat}`;
+    const isOccupied = occupiedSeats.includes(seatId); // Utilisez les données réelles
+    const isSelected = formData.selectedSeat === seatId;
+    return (
+        <button
+            key={seat}
+            type="button"
+            onClick={() => handleSeatSelect(seatId)}
+            disabled={isOccupied}
+            className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
+                isSelected
+                    ? "bg-amber-500 text-white"
+                    : isOccupied
+                      ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+            } border ${
+                isSelected
+                    ? "border-amber-500"
+                    : isOccupied
+                      ? "border-gray-300"
+                      : "border-gray-300"
+            }`}
+            title={isOccupied ? `Siège ${seatId} occupé` : `Siège ${seatId} disponible`}
+        >
+            {seat}
+        </button>
+    );
+})}
                                                         </div>
 
                                                         {/* Allée */}
@@ -2215,35 +2124,35 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                                                         {/* Sièges droite (D, E, F) */}
                                                         <div className="flex space-x-0.5">
-                                                            {["D", "E", "F"].map((seat: string) => {
-                                                                const seatId = `${rowIndex + 1}${seat}`;
-                                                                const isOccupied = occupiedSeats.includes(seatId);
-                                                                const isSelected = formData.selectedSeat === seatId;
-                                                                return (
-                                                                    <button
-                                                                        key={seat}
-                                                                        type="button"
-                                                                        onClick={() => handleSeatSelect(seatId)}
-                                                                        disabled={isOccupied}
-                                                                        className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
-                                                                            isSelected
-                                                                                ? "bg-amber-500 text-white"
-                                                                                : isOccupied
-                                                                                ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                                                                                : "bg-white text-gray-700 hover:bg-gray-100"
-                                                                        } border ${
-                                                                            isSelected
-                                                                                ? "border-amber-500"
-                                                                                : isOccupied
-                                                                                ? "border-gray-300"
-                                                                                : "border-gray-300"
-                                                                        }`}
-                                                                        title={isOccupied ? `Siège ${seatId} occupé` : `Siège ${seatId} disponible`}
-                                                                    >
-                                                                        {seat}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                            {["D", "E", "F"].map((seat) => {
+    const seatId = `${rowIndex + 1}${seat}`;
+    const isOccupied = occupiedSeats.includes(seatId); // Utilisez les données réelles
+    const isSelected = formData.selectedSeat === seatId;
+    return (
+        <button
+            key={seat}
+            type="button"
+            onClick={() => handleSeatSelect(seatId)}
+            disabled={isOccupied}
+            className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
+                isSelected
+                    ? "bg-amber-500 text-white"
+                    : isOccupied
+                      ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
+            } border ${
+                isSelected
+                    ? "border-amber-500"
+                    : isOccupied
+                      ? "border-gray-300"
+                      : "border-gray-300"
+            }`}
+            title={isOccupied ? `Siège ${seatId} occupé` : `Siège ${seatId} disponible`}
+        >
+            {seat}
+        </button>
+    );
+})}
                                                         </div>
                                                     </div>
                                                 </div>
