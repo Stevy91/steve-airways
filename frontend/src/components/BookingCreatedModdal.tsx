@@ -1986,8 +1986,8 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                     {/* Visualisation de la cabine */}
                                     <div className="mb-4">
                                         <div className="mb-2 flex justify-between">
-                                            <div className="text-xs font-medium text-gray-700">Gauche</div>
-                                            <div className="text-xs font-medium text-gray-700">Droite</div>
+                                            <div className="text-xs font-medium text-gray-700">Left</div>
+                                            <div className="text-xs font-medium text-gray-700">Right</div>
                                         </div>
 
                                         {/* Rangées de sièges */}
@@ -2074,30 +2074,30 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                                     {/* Légende */}
                                     <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3">
-                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Légende</h4>
+                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Legend</h4>
                                         <div className="grid grid-cols-2 gap-1 text-[10px]">
                                             <div className="flex items-center">
                                                 <div className="mr-1 h-3 w-3 rounded border border-gray-300 bg-white"></div>
-                                                <span className="text-gray-600">Disponible</span>
+                                                <span className="text-gray-600">Available</span>
                                             </div>
                                             <div className="flex items-center">
                                                 <div className="mr-1 h-3 w-3 rounded border border-amber-500 bg-amber-500"></div>
-                                                <span className="text-gray-600">Sélectionné</span>
+                                                <span className="text-gray-600">Selected</span>
                                             </div>
                                             <div className="flex items-center">
                                                 <div className="mr-1 h-3 w-3 rounded border border-gray-300 bg-gray-300"></div>
-                                                <span className="text-gray-600">Occupé</span>
+                                                <span className="text-gray-600">Unavailable</span>
                                             </div>
                                             <div className="flex items-center">
                                                 <div className="mr-1 h-3 w-3 rounded border border-blue-300 bg-blue-100"></div>
-                                                <span className="text-gray-600">Fenêtre</span>
+                                                <span className="text-gray-600">Window</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Siège sélectionné */}
                                     <div className="rounded-lg border border-gray-200 bg-white p-3">
-                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Siège choisi</h4>
+                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Selected seat</h4>
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 {formData.selectedSeat ? (
@@ -2108,7 +2108,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                         </div>
                                                     </>
                                                 ) : (
-                                                    <div className="text-xs text-gray-500">Aucun siège sélectionné</div>
+                                                    <div className="text-xs text-gray-500">No seat selected</div>
                                                 )}
                                             </div>
                                             {formData.selectedSeat && (

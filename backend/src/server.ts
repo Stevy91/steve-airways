@@ -2223,7 +2223,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
         `INSERT INTO passengers (
           booking_id, first_name, middle_name, last_name, date_of_birth, idClient, idTypeClient, gender, title, address, type,
           type_vol, typecharter, type_v, country, nationality,
-          phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
+          phone, email, nom_urgence, email_urgence, tel_urgence, selectedSeat, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookingResult.insertId,
@@ -2246,6 +2246,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
           passenger.email || contactInfo.email,
           passenger.nom_urgence || null,
           passenger.email_urgence || null,
+          passenger.selectedSeat || null,
           passenger.tel_urgence || null,
           now,
           now,
