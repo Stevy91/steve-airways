@@ -2355,6 +2355,8 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             });
         }
 
+        
+
         if (!seatNumber) {
             await connection.release();
             return res.status(400).json({
