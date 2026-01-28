@@ -2386,7 +2386,7 @@ app.post('/api/check-seat-availability', authMiddleware, async (req: Request, re
         // Récupérer les informations du vol
         if (flightId) {
             const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
-                'SELECT id, flight_number, seats_available, total_seats FROM flights WHERE id = ?',
+                'SELECT id, flight_number, seats_available, total_seat FROM flights WHERE id = ?',
                 [flightId]
             );
             
@@ -2402,7 +2402,7 @@ app.post('/api/check-seat-availability', authMiddleware, async (req: Request, re
             flightInfo = flightRows[0];
         } else if (flightNumber) {
             const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
-                'SELECT id, flight_number, seats_available, total_seats FROM flights WHERE flight_number = ?',
+                'SELECT id, flight_number, seats_available, total_seat FROM flights WHERE flight_number = ?',
                 [flightNumber.toUpperCase()]
             );
             
@@ -2432,7 +2432,7 @@ app.post('/api/check-seat-availability', authMiddleware, async (req: Request, re
             flightId: flightInfo.id,
             flightNumber: flightInfo.flight_number,
             seatsAvailable: flightInfo.seats_available,
-            totalSeats: flightInfo.total_seats
+            totalSeats: flightInfo.total_seat
         });
 
         // Vérifier la capacité du siège
@@ -2450,7 +2450,7 @@ app.post('/api/check-seat-availability', authMiddleware, async (req: Request, re
         const seatLetter = seatMatch[2].toUpperCase();
         
         // Vérifier si la rangée existe (basée sur le nombre total de sièges)
-        const totalRows = Math.ceil(flightInfo.total_seats / 6); // 6 sièges par rangée pour Boeing 737-800
+        const totalRows = Math.ceil(flightInfo.total_seat / 6); // 6 sièges par rangée pour Boeing 737-800
         if (seatRow > totalRows || seatRow < 1) {
             await connection.release();
             return res.status(400).json({
@@ -2594,7 +2594,7 @@ app.post('/api/check-seat-availability', authMiddleware, async (req: Request, re
                 f.departure_time,
                 f.arrival_time,
                 f.seats_available,
-                f.total_seats,
+                f.total_seat,
                 f.airline,
                 f.type,
                 f.price,
@@ -2674,7 +2674,7 @@ app.get('/api/occupied-seats/:flightId', authMiddleware, async (req, res) => {
                 id,
                 flight_number,
                 seats_available,
-                total_seats
+                total_seat
             FROM flights 
             WHERE id = ?
         `, [flightId]);
@@ -2691,7 +2691,7 @@ app.get('/api/occupied-seats/:flightId', authMiddleware, async (req, res) => {
             success: true,
             flightId: flightId,
             flightNumber: flightInfo[0].flight_number,
-            totalSeats: flightInfo[0].total_seats,
+            totalSeats: flightInfo[0].total_seat,
             seatsAvailable: flightInfo[0].seats_available,
             occupiedSeats: seats,
             count: seats.length
