@@ -2337,7 +2337,7 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
  * Méthode: POST
  * Route: /api/check-seat-availability
  */
-app.post('/check-seat-availability', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/check-seat-availability', authMiddleware, async (req: Request, res: Response) => {
     const connection = await pool.getConnection();
     
     try {
@@ -2355,7 +2355,7 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
             });
         }
 
-        
+
 
         if (!seatNumber) {
             await connection.release();
@@ -2638,7 +2638,7 @@ app.post('/check-seat-availability', authMiddleware, async (req: Request, res: R
  * Méthode: GET
  * Route: /api/occupied-seats/:flightId
  */
-app.get('/occupied-seats/:flightId', authMiddleware, async (req, res) => {
+app.get('/api/occupied-seats/:flightId', authMiddleware, async (req, res) => {
     const connection = await pool.getConnection();
     
     try {
@@ -2719,7 +2719,7 @@ app.get('/occupied-seats/:flightId', authMiddleware, async (req, res) => {
  
  */
 
-app.post('/update-seat-selection', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/update-seat-selection', authMiddleware, async (req: Request, res: Response) => {
     const connection = await pool.getConnection();
     
     try {
