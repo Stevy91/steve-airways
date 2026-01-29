@@ -132,6 +132,8 @@ export const useAuth = () => {
         // Permissions individuelles pour compatibilité
         listeFlightsPlane: hasPermission("listeFlightsPlane"),
         listeFlightsHelico: hasPermission("listeFlightsHelico"),
+        listeBookingsHelico: hasPermission("listeBookingsHelico"),
+        listeBookingsPlane: hasPermission("listeBookingsPlane"),
         listeUsers: hasPermission("listeUsers"),
         charter: hasPermission("charter"),
         addFlights: hasPermission("addFlights"),

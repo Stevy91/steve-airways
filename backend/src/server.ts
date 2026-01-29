@@ -5580,6 +5580,48 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 });
 
 
+app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
+  const flightId = req.params.id;
+  const {
+
+    cancelNotes,
+    flightNumber,
+   
+  } = req.body;
+
+
+  let connection: mysql.PoolConnection | undefined;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    
+
+     if (cancelNotes) {
+          await connection!.execute(
+            "UPDATE flights SET activeflight = ? WHERE id = ?",
+            ['desactive', flightId]
+          );
+
+        }
+
+
+  } catch (error: any) {
+    console.error("❌ Erreur modification réservation:", error);
+    if (connection) {
+      await connection.rollback();
+    }
+    res.status(500).json({
+      success: false,
+      error: "Échec de la modification de la réservation",
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
 app.get("/api/flights/:flightNumber", async (req: Request, res: Response) => {
   try {
     const { flightNumber } = req.params;

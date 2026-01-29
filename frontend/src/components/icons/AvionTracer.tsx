@@ -11,12 +11,12 @@ export function NoFlightIcon({ size = 24, color = "currentColor" }) {
         style={{ position: "absolute", top: 0, left: 0 }}
         fill="none"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
         {/* Ligne de haut-droite à bas-gauche */}
-        <line x1="12" y1="0" x2="12" y2="24" stroke="#fca5a5" strokeWidth="3" />
+        <line x1="12" y1="0" x2="12" y2="24" stroke="#0041b9" strokeWidth="2" />
       </svg>
     </div>
   );

@@ -15,10 +15,10 @@ const permissionsData = [
         label: "1 - UTILISATEUR",
         children: [
             { id: "listeFlightsPlane", label: "1.1 - Listes Flights Plane" },
-            // { id: "listeBookingsPlane", label: "1.2 - Listes Bookings Plane" },
+            { id: "listeBookingsPlane", label: "1.2 - Listes Bookings Plane" },
             { id: "listeFlightsHelico", label: "1.2 - Listes Flights Helico" },
             { id: "charter", label: "1.3 - Listes Charter" },
-            // { id: "listeBookingsHelico", label: "1.4 - Listes Bookings Helico" },
+            { id: "listeBookingsHelico", label: "1.4 - Listes Bookings Helico" },
             { id: "listeUsers", label: "1.4 - Users" },
             { id: "addFlights", label: "1.5 - Add Flights" },
             { id: "deleteFlights", label: "1.6 - Delete Flights" },
@@ -105,9 +105,9 @@ export default function PermissionsPage() {
         // Liste complète des permissions attendues par le backend
         const allPermissions = [
             "listeFlightsPlane",
-            // "listeBookingsPlane",
+            "listeBookingsPlane",
             "listeFlightsHelico",
-            // "listeBookingsHelico",
+            "listeBookingsHelico",
             "listeUsers",
             "charter",
             "addFlights",
