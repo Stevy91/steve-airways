@@ -5833,6 +5833,9 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
 });
 
 
+
+
+
 app.get("/api/flights/:flightNumber", async (req: Request, res: Response) => {
   try {
     const { flightNumber } = req.params;
