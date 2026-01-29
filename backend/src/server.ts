@@ -6241,6 +6241,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
                 f.price,
                 f.total_seat,
                 f.seats_available,
+                f.activeflight,
                 dep.name AS departure_airport_name,
                 dep.city AS departure_city,
                 dep.code AS departure_code,
@@ -6276,6 +6277,7 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
       price: flight.price,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
+      activeflight: flight.activeflight,
       departure_city: flight.departure_city,
       arrival_city: flight.arrival_city,
     }));
@@ -6386,6 +6388,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
                 f.price,
                 f.total_seat,
                 f.seats_available,
+                f.activeflight,
                 dep.name AS departure_airport_name,
                 dep.city AS departure_city,
                 dep.code AS departure_code,
@@ -6421,6 +6424,7 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
       price: flight.price,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
+      activeflight: flight.activeflight,
       departure_city: flight.departure_city,
       arrival_city: flight.arrival_city,
     }));
@@ -6698,6 +6702,7 @@ app.get("/api/flighttablecharter", async (req: Request, res: Response) => {
                 f.price,
                 f.total_seat,
                 f.seats_available,
+                f.activeflight,
                 dep.name AS departure_airport_name,
                 dep.city AS departure_city,
                 dep.code AS departure_code,
@@ -6735,6 +6740,7 @@ app.get("/api/flighttablecharter", async (req: Request, res: Response) => {
       price: flight.price,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
+      activeflight: flight.activeflight,
       departure_city: flight.departure_city,
       arrival_city: flight.arrival_city,
     }));

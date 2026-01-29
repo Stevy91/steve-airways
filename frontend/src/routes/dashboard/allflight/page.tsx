@@ -384,36 +384,46 @@ const FlightTable = () => {
                 [field]: value,
             });
     };
-    const handleCancelFlight = async () => {
+const handleCancelFlight = async () => {
     if (!cancelFlight) return;
     setLoadingPassengers(true);
-     console.log("steve",  cancelFlight.id);
-
+    
     try {
-       
-      
         const res = await fetch(`https://steve-airways.onrender.com/api/cancelFlight/${cancelFlight.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-               
                 cancelNotes: cancelFlight.cancelNotes,
                 flightNumber: cancelFlight.flight_number,
-               
             }),
         });
 
+        const responseData = await res.json();
+        
         if (!res.ok) {
-           
+            throw new Error(responseData.error || `HTTP error! status: ${res.status}`);
         }
 
-        const updatedData = await res.json();
-
+        console.log("✅ Flight cancelled successfully:", responseData);
         
+        // Update your local state to reflect the cancellation
+        // Example:
+        // setFlights(prevFlights => 
+        //   prevFlights.map(flight => 
+        //     flight.id === cancelFlight.id 
+        //       ? { ...flight, activeflight: 'desactive' } 
+        //       : flight
+        //   )
+        // );
+        
+        alert("Vol annulé avec succès!");
+        
+        // Close modal or redirect if needed
+        setCancelFlight(null);
 
-    } catch (err) {
-        console.error("❌ Failed to update booking", err);
-        alert("Ce vol n'existe pas Impossible de mettre à jour la réservation.");
+    } catch (err: any) {
+        console.error("❌ Failed to cancel flight", err);
+        alert(err.message || "Impossible d'annuler le vol. Veuillez réessayer.");
     } finally {
         setLoadingPassengers(false);
     }
