@@ -5660,12 +5660,12 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     
-    // First, check if the flight exists and get flight details
+   
+
+
+     // First, check if the flight exists
     const [existingFlights] = await connection.execute(
-      `SELECT f.id, f.flight_number, f.departure_airport, f.arrival_airport, 
-              f.departure_time, f.arrival_time, f.activeflight 
-       FROM flights f 
-       WHERE f.id = ?`,
+      "SELECT id, activeflight FROM flights WHERE id = ?",
       [flightId]
     );
     
@@ -5679,6 +5679,9 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
 
     const flight = existingFlights[0] as any;
 
+
+    
+
     // Update the flight status
     await connection.execute(
       "UPDATE flights SET activeflight = ? WHERE id = ?",
@@ -5688,13 +5691,12 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
     // Récupérer tous les passagers du vol via les bookings
     const [passengersData] = await connection.execute(
       `SELECT p.email, p.first_name, p.last_name, 
-              b.booking_reference, b.booking_date,
-              f.flight_number, f.departure_airport, f.arrival_airport,
-              f.departure_time, f.arrival_time
+              b.booking_reference,
+              f.flight_number
        FROM flights f
        JOIN bookings b ON f.id = b.flight_id
        JOIN passengers p ON b.id = p.booking_id
-       WHERE f.id = ? AND b.status = 'confirmed'`,
+       WHERE f.id = ?`,
       [flightId]
     );
 
@@ -5716,9 +5718,7 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
                 <h3 style="margin-top: 0;">Détails du vol annulé :</h3>
                 <p><strong>Référence de réservation :</strong> ${passenger.booking_reference}</p>
                 <p><strong>Numéro de vol :</strong> ${passenger.flight_number}</p>
-                <p><strong>Trajet :</strong> ${passenger.departure_airport} → ${passenger.arrival_airport}</p>
-                <p><strong>Date de départ prévue :</strong> ${new Date(passenger.departure_time).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Heure de départ :</strong> ${new Date(passenger.departure_time).toLocaleTimeString('fr-FR')}</p>
+              
               </div>
               
               ${cancelNotes ? `
