@@ -387,10 +387,11 @@ const FlightTable = () => {
     const handleCancelFlight = async () => {
     if (!cancelFlight) return;
     setLoadingPassengers(true);
+     console.log("steve",  cancelFlight.id);
 
     try {
        
-        // Sauvegarder les modifications via API
+      
         const res = await fetch(`https://steve-airways.onrender.com/api/cancelFlight/${cancelFlight.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },

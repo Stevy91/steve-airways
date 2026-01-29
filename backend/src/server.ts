@@ -5582,28 +5582,48 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
 app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
   const flightId = req.params.id;
-  const {
+  const { cancelNotes, flightNumber } = req.body;
 
-    cancelNotes,
-    flightNumber,
-   
-  } = req.body;
-
+  // Validate input
+  if (!flightId || isNaN(Number(flightId))) {
+    return res.status(400).json({
+      success: false,
+      error: "ID de vol invalide"
+    });
+  }
 
   let connection: mysql.PoolConnection | undefined;
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     
+    // First, check if the flight exists
+    const [existingFlights] = await connection.execute(
+      "SELECT id, activeflight FROM flights WHERE id = ?",
+      [flightId]
+    );
+    
+    if (!Array.isArray(existingFlights) || existingFlights.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        error: "Vol non trouvé"
+      });
+    }
 
-     if (cancelNotes) {
-          await connection!.execute(
-            "UPDATE flights SET activeflight = ? WHERE id = ?",
-            ['desactive', flightId]
-          );
+    // Update the flight
+    await connection.execute(
+      "UPDATE flights SET activeflight = ? WHERE id = ?",
+      ['desactive', flightId]
+    );
 
-        }
-
+    await connection.commit();
+    
+    res.json({
+      success: true,
+      message: "Vol désactivé avec succès",
+      flightId: flightId
+    });
 
   } catch (error: any) {
     console.error("❌ Erreur modification réservation:", error);
