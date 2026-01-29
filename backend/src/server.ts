@@ -5707,50 +5707,78 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
       const emailPromises = passengers.map(async (passenger) => {
         try {
           // Générer le contenu HTML de l'email
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #dc2626;">Annulation de votre vol</h2>
-              <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
+
+                  const emailHtml = `
+                  
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f0f7ff; padding: 20px; text-align: center; border-radius: 5px; }
+                .flight-card { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+                .flight-header { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+                .flight-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .passenger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                .passenger-table th, .passenger-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .passenger-table th { background-color: #f2f2f2; }
+                .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; }
+            </style>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <div style="background-color: #1A237E; color: white; padding: 20px; text-align: center;">
+                <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle;">
               
-              <p>Nous regrettons de vous informer que votre vol a été annulé.</p>
+                <p style="margin: 5px 0 0; font-size: 1.2em;">Cancellation of your flight</p>
+              </div>
+
+              <div style="padding: 20px;">
+                <p></p>Dear, ${passenger.first_name} ${passenger.last_name},</p>
               
+              <p>We are sorry to inform you that your reservation has been <b>cancelled</b>.</p>
+
               <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Détails du vol annulé :</h3>
-                <p><strong>Référence de réservation :</strong> ${passenger.booking_reference}</p>
-                <p><strong>Numéro de vol :</strong> ${passenger.flight_number}</p>
+                <h3 style="margin-top: 0;">Details of the canceled flight :</h3>
+                <p><strong>Booking reference :</strong> ${passenger.booking_reference}</p>
+                <p><strong>Flight number :</strong> ${passenger.flight_number}</p>
               
               </div>
-              
+
               ${cancelNotes ? `
               <div style="background-color: #fee2e2; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h4 style="color: #991b1b;">Raison de l'annulation :</h4>
+                <h4 style="color: #991b1b;">Reason for cancellation :</h4>
                 <p>${cancelNotes}</p>
               </div>
               ` : ''}
-              
+
               <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h4>Options disponibles :</h4>
+                <h4>Available options:</h4>
                 <ul>
-                  <li>Vous serez remboursé intégralement dans les 7 à 10 jours ouvrables</li>
-                  <li>Vous pouvez contacter notre service client pour réserver un autre vol</li>
-                  <li>Consultez notre politique d'annulation pour plus de détails</li>
+                  <li>You will be fully refunded within 7 to 10 business days</li>
+                  <li>You can contact our customer service to book another flight.</li>
+                  <li>See our cancellation policy for more details.</li>
                 </ul>
               </div>
+
+              <p>For any questions, please contact our customer service. :</p>
+              <p>📞 +509 334104004</p>
+              <p>✉️ info@trogonairways.com.com</p>
               
-              <p>Pour toute question, contactez notre service client :</p>
-              <p>📞 +33 1 23 45 67 89</p>
-              <p>✉️ contact@steveairways.com</p>
+             
+              </div>
+
+
+              <div style="padding: 20px; font-size: 0.9em; color: #555;">
+              <p>Thank you for choosing Trogon Airways.</p>
               
-              <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">
-                Ceci est un message automatique, merci de ne pas y répondre.
-              </p>
+            
+                <p>Sincerely,<br>The Trogon Airways Team</p>
+              </div>
             </div>
-          `;
+
+        `;
 
           // Utiliser votre fonction sendEmail existante
           const emailResult = await sendEmail(
             passenger.email,
-            `Steve Airways - Annulation du vol ${passenger.flight_number}`,
+            `Trogn Airways - Annulation du vol ${passenger.flight_number}`,
             emailHtml
           );
 
