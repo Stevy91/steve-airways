@@ -43,6 +43,7 @@ interface Flight {
     arrival_time: string;
     departure_time: string;
     cancelNotes?: string;
+    activeflight: string;
 }
 
 type Location = {
@@ -872,7 +873,7 @@ const handleCancelFlight = async () => {
                                 {currentBookings.map((flight) => (
                                     <tr
                                         key={flight.id}
-                                        className="border-b hover:bg-gray-50"
+                                        className={`border-b hover:bg-gray-50 ${flight.activeflight === 'desactive' ? 'text-red-500' : ''}`}
                                     >
                                         <td className="table-cell text-center">{flight.flight_number}</td>
                                         <td className="table-cell text-center">{flight.type === "plane" ? "Avion" : "Hélicoptère"}</td>

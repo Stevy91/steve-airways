@@ -5580,6 +5580,69 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 });
 
 
+// app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
+//   const flightId = req.params.id;
+//   const { cancelNotes, flightNumber } = req.body;
+
+//   // Validate input
+//   if (!flightId || isNaN(Number(flightId))) {
+//     return res.status(400).json({
+//       success: false,
+//       error: "ID de vol invalide"
+//     });
+//   }
+
+//   let connection: mysql.PoolConnection | undefined;
+//   try {
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+    
+//     // First, check if the flight exists
+//     const [existingFlights] = await connection.execute(
+//       "SELECT id, activeflight FROM flights WHERE id = ?",
+//       [flightId]
+//     );
+    
+//     if (!Array.isArray(existingFlights) || existingFlights.length === 0) {
+//       await connection.rollback();
+//       return res.status(404).json({
+//         success: false,
+//         error: "Vol non trouvé"
+//       });
+//     }
+
+//     // Update the flight
+//     await connection.execute(
+//       "UPDATE flights SET activeflight = ? WHERE id = ?",
+//       ['desactive', flightId]
+//     );
+
+//     await connection.commit();
+    
+//     res.json({
+//       success: true,
+//       message: "Vol désactivé avec succès",
+//       flightId: flightId
+//     });
+
+//   } catch (error: any) {
+//     console.error("❌ Erreur modification réservation:", error);
+//     if (connection) {
+//       await connection.rollback();
+//     }
+//     res.status(500).json({
+//       success: false,
+//       error: "Échec de la modification de la réservation",
+//       details: process.env.NODE_ENV !== "production" ? error.message : undefined
+//     });
+//   } finally {
+//     if (connection) {
+//       connection.release();
+//     }
+//   }
+// });
+
+
 app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
   const flightId = req.params.id;
   const { cancelNotes, flightNumber } = req.body;
@@ -5597,9 +5660,12 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     
-    // First, check if the flight exists
+    // First, check if the flight exists and get flight details
     const [existingFlights] = await connection.execute(
-      "SELECT id, activeflight FROM flights WHERE id = ?",
+      `SELECT f.id, f.flight_number, f.departure_airport, f.arrival_airport, 
+              f.departure_time, f.arrival_time, f.activeflight 
+       FROM flights f 
+       WHERE f.id = ?`,
       [flightId]
     );
     
@@ -5611,18 +5677,114 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
       });
     }
 
-    // Update the flight
+    const flight = existingFlights[0] as any;
+
+    // Update the flight status
     await connection.execute(
       "UPDATE flights SET activeflight = ? WHERE id = ?",
       ['desactive', flightId]
     );
+
+    // Récupérer tous les passagers du vol via les bookings
+    const [passengersData] = await connection.execute(
+      `SELECT p.email, p.first_name, p.last_name, 
+              b.booking_reference, b.booking_date,
+              f.flight_number, f.departure_airport, f.arrival_airport,
+              f.departure_time, f.arrival_time
+       FROM flights f
+       JOIN bookings b ON f.id = b.flight_id
+       JOIN passengers p ON b.id = p.booking_id
+       WHERE f.id = ? AND b.status = 'confirmed'`,
+      [flightId]
+    );
+
+    const passengers = passengersData as any[];
+
+    // Envoyer les emails aux passagers
+    if (passengers.length > 0) {
+      const emailPromises = passengers.map(async (passenger) => {
+        try {
+          // Générer le contenu HTML de l'email
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #dc2626;">Annulation de votre vol</h2>
+              <p>Bonjour ${passenger.first_name} ${passenger.last_name},</p>
+              
+              <p>Nous regrettons de vous informer que votre vol a été annulé.</p>
+              
+              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Détails du vol annulé :</h3>
+                <p><strong>Référence de réservation :</strong> ${passenger.booking_reference}</p>
+                <p><strong>Numéro de vol :</strong> ${passenger.flight_number}</p>
+                <p><strong>Trajet :</strong> ${passenger.departure_airport} → ${passenger.arrival_airport}</p>
+                <p><strong>Date de départ prévue :</strong> ${new Date(passenger.departure_time).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Heure de départ :</strong> ${new Date(passenger.departure_time).toLocaleTimeString('fr-FR')}</p>
+              </div>
+              
+              ${cancelNotes ? `
+              <div style="background-color: #fee2e2; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4 style="color: #991b1b;">Raison de l'annulation :</h4>
+                <p>${cancelNotes}</p>
+              </div>
+              ` : ''}
+              
+              <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4>Options disponibles :</h4>
+                <ul>
+                  <li>Vous serez remboursé intégralement dans les 7 à 10 jours ouvrables</li>
+                  <li>Vous pouvez contacter notre service client pour réserver un autre vol</li>
+                  <li>Consultez notre politique d'annulation pour plus de détails</li>
+                </ul>
+              </div>
+              
+              <p>Pour toute question, contactez notre service client :</p>
+              <p>📞 +33 1 23 45 67 89</p>
+              <p>✉️ contact@steveairways.com</p>
+              
+              <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">
+                Ceci est un message automatique, merci de ne pas y répondre.
+              </p>
+            </div>
+          `;
+
+          // Utiliser votre fonction sendEmail existante
+          const emailResult = await sendEmail(
+            passenger.email,
+            `Steve Airways - Annulation du vol ${passenger.flight_number}`,
+            emailHtml
+          );
+
+          console.log(`✅ Email envoyé à ${passenger.email}`, emailResult);
+          return { email: passenger.email, success: true, result: emailResult };
+        } catch (emailError) {
+          console.error(`❌ Erreur envoi email à ${passenger.email}:`, emailError);
+          return { email: passenger.email, success: false, error: emailError };
+        }
+      });
+
+      // Attendre l'envoi de tous les emails (mais ne pas bloquer la transaction)
+      const emailResults = await Promise.allSettled(emailPromises);
+      
+      // Log des résultats
+      const successfulEmails = emailResults.filter(r => 
+        r.status === 'fulfilled' && r.value.success
+      ).length;
+      
+      const failedEmails = emailResults.filter(r => 
+        r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
+      ).length;
+      
+      console.log(`📧 Emails envoyés : ${successfulEmails} réussis, ${failedEmails} échecs`);
+    }
 
     await connection.commit();
     
     res.json({
       success: true,
       message: "Vol désactivé avec succès",
-      flightId: flightId
+      flightId: flightId,
+      emailsSent: passengers.length,
+      passengerCount: passengers.length
     });
 
   } catch (error: any) {
@@ -5641,6 +5803,7 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
     }
   }
 });
+
 
 app.get("/api/flights/:flightNumber", async (req: Request, res: Response) => {
   try {
