@@ -8,12 +8,15 @@ import { parse, parseISO } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import Passenger from "../../passenger/page";
 import BookingCreatedModalCharter from "../../../components/BookingCreatedModalCharter";
+import { NoFlightIcon } from "../../../components/icons/AvionTracer";
 
 interface Flight {
     id: number;
-    flight_number: string;
-    flightNumber?: string;
+    flightId: number;
+    flight_number?: string;
+    total_seat?: string;
     type: string;
+
     airline: string;
     from?: string;
     to?: string;
@@ -27,8 +30,8 @@ interface Flight {
     arrival_location_id?: string;
     arrival_time: string;
     departure_time: string;
-    typecharter: string;
-    charter: string;
+    cancelNotes?: string;
+    activeflight: string;
 }
 
 type Location = {
@@ -69,6 +72,9 @@ const FlightTableCharter = () => {
     const [liste, setListe] = useState<undefined>();
     const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
     const [stats, setStats] = useState<any>(null);
+    const [showModalCancel, setShowModalCancel] = useState(false);
+
+    const [cancelFlight, setCancelFlight] = useState<Flight | null>(null);
 
     // Champs filtres
     const [flightNumb, setFlightNumb] = useState("");
@@ -371,6 +377,83 @@ const FlightTableCharter = () => {
         setSelectedDestination(destinationId);
         setSelectedCharter(flight.typecharter);
         setShowModal(true);
+    };
+
+    const handleCancelClick = (flight: Flight) => {
+        if (!isAdmin) {
+            toast.error("❌ Accès refusé - Admin uniquement");
+            return;
+        }
+
+        console.log("Flight à éditer:", flight);
+
+        // Extraire les codes d'aéroport depuis les champs from/to
+        const departureCode = extractAirportCode(flight.from || "");
+        const destinationCode = extractAirportCode(flight.to || "");
+
+        // Convertir les codes en IDs
+        const departureId = findLocationIdByCode(departureCode);
+        const destinationId = findLocationIdByCode(destinationCode);
+
+        console.log("Départ code:", departureCode, "ID:", departureId);
+        console.log("Destination code:", destinationCode, "ID:", destinationId);
+
+        setCancelFlight(flight);
+        setSelectedDeparture(departureId);
+        setSelectedDestination(destinationId);
+        setShowModalCancel(true);
+    };
+
+    const handleInfoCancel = (field: keyof Flight, value: string) => {
+        if (!cancelFlight) return;
+        setCancelFlight({
+            ...cancelFlight,
+            [field]: value,
+        });
+    };
+    const handleCancelFlight = async () => {
+        if (!cancelFlight) return;
+        setLoadingPassengers(true);
+
+        try {
+            const res = await fetch(`https://steve-airways.onrender.com/api/cancelFlight/${cancelFlight.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    cancelNotes: cancelFlight.cancelNotes,
+                    flightNumber: cancelFlight.flight_number,
+                }),
+            });
+
+            const responseData = await res.json();
+
+            if (!res.ok) {
+                throw new Error(responseData.error || `HTTP error! status: ${res.status}`);
+            }
+
+            console.log("✅ Flight cancelled successfully:", responseData);
+
+            // Update your local state to reflect the cancellation
+            // Example:
+            // setFlights(prevFlights =>
+            //   prevFlights.map(flight =>
+            //     flight.id === cancelFlight.id
+            //       ? { ...flight, activeflight: 'desactive' }
+            //       : flight
+            //   )
+            // );
+
+            alert("Flight successfully cancelled!");
+
+            // Close modal or redirect if needed
+            setCancelFlight(null);
+            setShowModalCancel(false);
+        } catch (err: any) {
+            console.error("❌ Failed to cancel flight", err);
+            alert(err.message || "Impossible d'annuler le vol. Veuillez réessayer.");
+        } finally {
+            setLoadingPassengers(false);
+        }
     };
 
     const handleAddFlight = async (flightData: any) => {
@@ -796,7 +879,7 @@ const FlightTableCharter = () => {
                                 {currentBookings.map((flight) => (
                                     <tr
                                         key={flight.id}
-                                        className="border-b hover:bg-gray-50"
+                                        className={`border-b hover:bg-gray-50 ${flight.activeflight === "desactive" ? "text-red-500" : ""}`}
                                     >
                                         <td className="table-cell text-center">{flight.flight_number}</td>
                                         <td className="table-cell text-center">{flight.typecharter === "plane" ? "Avion" : "Hélicoptère"}</td>
@@ -840,23 +923,48 @@ const FlightTableCharter = () => {
                                                                             setOpenDropdown(null);
                                                                         }}
                                                                     >
-                                                                        <Pencil className="h-4 w-4 text-amber-500" /> Edit
+                                                                        <Pencil className="h-5 w-5 text-amber-500" /> Edit
                                                                     </button>
                                                                 </>
                                                             )}
-                                                            {deleteFlights && (
-                                                                <>
-                                                                    <button
-                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
-                                                                        onClick={() => {
-                                                                            deleteFlight(flight.id);
-                                                                            setOpenDropdown(null);
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4 text-red-500" /> Delete
-                                                                    </button>
-                                                                </>
-                                                            )}
+
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-sky-700 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    handleEditClick(flight);
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="20"
+                                                                    height="20"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    stroke-width="2"
+                                                                    stroke-linecap="round"
+                                                                    stroke-linejoin="round"
+                                                                    class="lucide lucide-clipboard-clock-icon lucide-clipboard-clock"
+                                                                >
+                                                                    <path d="M16 14v2.2l1.6 1" />
+                                                                    <path d="M16 4h2a2 2 0 0 1 2 2v.832" />
+                                                                    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2" />
+                                                                    <circle
+                                                                        cx="16"
+                                                                        cy="16"
+                                                                        r="6"
+                                                                    />
+                                                                    <rect
+                                                                        x="8"
+                                                                        y="2"
+                                                                        width="8"
+                                                                        height="4"
+                                                                        rx="1"
+                                                                    />
+                                                                </svg>
+                                                                Reschedule
+                                                            </button>
 
                                                             {createdTicket && (
                                                                 <>
@@ -868,15 +976,14 @@ const FlightTableCharter = () => {
                                                                             setOpenDropdown(null);
                                                                         }}
                                                                     >
-                                                                        <Ticket className="h-4 w-4 text-green-500" /> Create Ticket
+                                                                        <Ticket className="h-5 w-5 text-green-500" /> Create Ticket
                                                                     </button>
                                                                 </>
                                                             )}
-
                                                             {listePassagers && (
                                                                 <>
                                                                     <button
-                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-yellow-500 hover:bg-gray-100"
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-lime-600 hover:bg-gray-100"
                                                                         onClick={() => {
                                                                             fetchPassengers(flight.id);
                                                                             setSelectedFlightId(flight.id);
@@ -884,7 +991,32 @@ const FlightTableCharter = () => {
                                                                             setOpenDropdown(null);
                                                                         }}
                                                                     >
-                                                                        <PersonStanding className="h-6 w-6 text-yellow-500" /> Passengers
+                                                                        <PersonStanding className="h-7 w-7 text-lime-600" /> Passengers
+                                                                    </button>
+                                                                </>
+                                                            )}
+
+                                                            <button
+                                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-900 hover:bg-gray-100"
+                                                                onClick={() => {
+                                                                    handleCancelClick(flight);
+
+                                                                    setOpenDropdown(null);
+                                                                }}
+                                                            >
+                                                                <NoFlightIcon /> Cancel the Flight
+                                                            </button>
+
+                                                            {deleteFlights && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-red-500 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            deleteFlight(flight.id);
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="h-5 w-5 text-red-500" /> Delete
                                                                     </button>
                                                                 </>
                                                             )}
@@ -1431,6 +1563,75 @@ const FlightTableCharter = () => {
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showModalCancel && (
+                    <div className="fixed inset-0 z-50">
+                        <motion.div
+                            className="absolute inset-0 bg-black/50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                setShowModalCancel(false);
+                            }}
+                        />
+                        <motion.div
+                            role="dialog"
+                            aria-modal="true"
+                            className="absolute inset-0 mx-auto my-6 flex max-w-4xl items-start justify-center p-4 sm:my-12"
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        >
+                            <div className="relative max-h-[90vh] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                                <button
+                                    className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Close"
+                                    onClick={() => {
+                                        setShowModalCancel(false);
+                                    }}
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+
+                                <div className="px-6 pt-6">
+                                    <h2 className="text-xl font-semibold text-slate-800"> Flight cancellation ({cancelFlight?.flight_number})</h2>
+                                </div>
+
+                                <div className="my-4 h-px w-full bg-slate-100" />
+
+                                <div className="max-h-[60vh] overflow-auto">
+                                    {" "}
+                                    {/* Ajout d'un conteneur scrollable */}
+                                    <div className="m-10 grid gap-3">
+                                        <label className="text-lg font-bold text-amber-500">Reason for the flight cancellation</label>
+
+                                        <textarea
+                                            value={cancelFlight?.cancelNotes || ""}
+                                            onChange={(e) => handleInfoCancel("cancelNotes", e.target.value)}
+                                            placeholder="Reason ..."
+                                            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                            rows={6}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-3">
+                                        <div className="flex items-center justify-center py-6">
+                                            <button
+                                                onClick={handleCancelFlight}
+                                                disabled={loadingPassengers}
+                                                className="w-60 rounded-md bg-gradient-to-r from-red-500 to-red-600 py-3 font-semibold text-white hover:from-red-600 hover:to-red-500 hover:text-black"
+                                            >
+                                                {loadingPassengers ? "Chargement..." : "Cancelled the flight"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>

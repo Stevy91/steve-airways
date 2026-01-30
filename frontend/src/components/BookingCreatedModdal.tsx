@@ -22,8 +22,9 @@ type Flight = {
     fromCity: string;
     toCity: string;
     status: string;
-   selectedSeat: string;
-   total_seat: number;
+    selectedSeat: string;
+    total_seat: number;
+    seats_available:number
 };
 
 type BookingCreatedModalProps = {
@@ -542,67 +543,63 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const user = useProfile();
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-const initialFormData = {
-    firstName: "",
-    flightNumberReturn: "",
-    middleName: "",
-    lastName: "",
-    idClient: "",
-    idTypeClient: "",
-    unpaid: "",
-    reference: "",
-    companyName: "",
-    nom_urgence: "",
-    email_urgence: "",
-    tel_urgence: "",
-    dateOfBirth: "",
-    gender: "other" as const,
-    title: "Mr" as const,
-    address: "",
-    country: "",
-    nationality: "",
-    email: "",
-    phone: "",
-    passengerCount: 1,
-    paymentMethod: "card" as "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat",
-    price: "",
-    devisePayment: "usd" as "usd" | "htg",
-    taux_jour: "",
-    selectedSeat: "",
-};
+    const initialFormData = {
+        firstName: "",
+        flightNumberReturn: "",
+        middleName: "",
+        lastName: "",
+        idClient: "",
+        idTypeClient: "",
+        unpaid: "",
+        reference: "",
+        companyName: "",
+        nom_urgence: "",
+        email_urgence: "",
+        tel_urgence: "",
+        dateOfBirth: "",
+        gender: "other" as const,
+        title: "Mr" as const,
+        address: "",
+        country: "",
+        nationality: "",
+        email: "",
+        phone: "",
+        passengerCount: 1,
+        paymentMethod: "card" as "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat",
+        price: "",
+        devisePayment: "usd" as "usd" | "htg",
+        taux_jour: "",
+        selectedSeat: "",
+    };
 
-type FormDataType = {
-    firstName: string;
-    flightNumberReturn: string;
-    middleName: string;
-    lastName: string;
-    idClient: string;
-    idTypeClient: string;
-    unpaid: string;
-    reference: string;
-    companyName: string;
-    nom_urgence: string;
-    email_urgence: string;
-    tel_urgence: string;
-    dateOfBirth: string;
-    gender: "other";
-    title: "Mr";
-    address: string;
-    country: string;
-    nationality: string;
-    email: string;
-    phone: string;
-    passengerCount: number;
-    paymentMethod: "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat";
-    price: string;
-    devisePayment: "usd" | "htg";
-    taux_jour: string;
-    selectedSeat: string;
-};
-
-
-
-
+    type FormDataType = {
+        firstName: string;
+        flightNumberReturn: string;
+        middleName: string;
+        lastName: string;
+        idClient: string;
+        idTypeClient: string;
+        unpaid: string;
+        reference: string;
+        companyName: string;
+        nom_urgence: string;
+        email_urgence: string;
+        tel_urgence: string;
+        dateOfBirth: string;
+        gender: "other";
+        title: "Mr";
+        address: string;
+        country: string;
+        nationality: string;
+        email: string;
+        phone: string;
+        passengerCount: number;
+        paymentMethod: "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat";
+        price: string;
+        devisePayment: "usd" | "htg";
+        taux_jour: string;
+        selectedSeat: string;
+    };
 
     const [formData, setFormData] = useState<FormDataType>(initialFormData);
 
@@ -610,100 +607,99 @@ type FormDataType = {
     const [occupiedSeats, setOccupiedSeats] = useState<string[]>([]);
 
     // Ajoutez cette fonction pour vérifier la disponibilité du siège
- const checkSeatAvailability = async (seatId: string): Promise<boolean> => {
-    if (!seatId || !flight) return true; // Pour le moment, retournez true pour continuer
-    
-    try {
-        const token = localStorage.getItem("authToken");
-        
-        console.log('🔍 Vérification siège - Token présent:', !!token);
-        console.log('🔍 Détails:', { flightId: flight?.id, seatId, token: token?.substring(0, 20) + '...' });
+    const checkSeatAvailability = async (seatId: string): Promise<boolean> => {
+        if (!seatId || !flight) return true; // Pour le moment, retournez true pour continuer
 
-        if (!token) {
-            console.warn('⚠️ Aucun token d\'authentification trouvé');
-            // Pour le développement, retournez true
-            return true;
-        }
+        try {
+            const token = localStorage.getItem("authToken");
 
-        const response = await fetch("https://steve-airways.onrender.com/api/check-seat-availability", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                flightId: flight.id,
-                seatNumber: seatId,
-            }),
-        });
+            console.log("🔍 Vérification siège - Token présent:", !!token);
+            console.log("🔍 Détails:", { flightId: flight?.id, seatId, token: token?.substring(0, 20) + "..." });
 
-        console.log('🔍 Réponse API - Status:', response.status, response.statusText);
-        
-        if (response.status === 403) {
-            console.error('❌ Accès interdit (403). Token probablement invalide ou expiré.');
-            
-            // Essayez de rafraîchir le token
-            try {
-                const refreshResponse = await fetch("https://steve-airways.onrender.com/api/auth/refresh", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                
-                if (refreshResponse.ok) {
-                    const refreshData = await refreshResponse.json();
-                    localStorage.setItem("authToken", refreshData.token);
-                    console.log('✅ Token rafraîchi');
-                    // Réessayez avec le nouveau token
-                    return checkSeatAvailability(seatId);
-                }
-            } catch (refreshError) {
-                console.error('❌ Impossible de rafraîchir le token:', refreshError);
+            if (!token) {
+                console.warn("⚠️ Aucun token d'authentification trouvé");
+                // Pour le développement, retournez true
+                return true;
             }
-            
-            // Pour le développement, retournez true
-            return true;
-        }
-        
-        if (!response.ok) {
-            console.warn('⚠️ Réponse non-OK:', response.status);
-            const errorText = await response.text();
-            console.warn('⚠️ Contenu erreur:', errorText.substring(0, 200));
-            
-            // Pour le développement, retournez true
-            return true;
-        }
 
-        const data = await response.json();
-        console.log('✅ Données reçues:', data);
-        
-        return data.success ? data.available : false;
-        
-    } catch (error) {
-        console.error("❌ Erreur vérification siège:", error);
-        
-        // Pour le développement, retournez true pour permettre la sélection
-        // En production, vous voudrez retourner false
-        return process.env.NODE_ENV === 'development' ? true : false;
-    }
-};
+            const response = await fetch("https://steve-airways.onrender.com/api/check-seat-availability", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    flightId: flight.id,
+                    seatNumber: seatId,
+                }),
+            });
+
+            console.log("🔍 Réponse API - Status:", response.status, response.statusText);
+
+            if (response.status === 403) {
+                console.error("❌ Accès interdit (403). Token probablement invalide ou expiré.");
+
+                // Essayez de rafraîchir le token
+                try {
+                    const refreshResponse = await fetch("https://steve-airways.onrender.com/api/auth/refresh", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+
+                    if (refreshResponse.ok) {
+                        const refreshData = await refreshResponse.json();
+                        localStorage.setItem("authToken", refreshData.token);
+                        console.log("✅ Token rafraîchi");
+                        // Réessayez avec le nouveau token
+                        return checkSeatAvailability(seatId);
+                    }
+                } catch (refreshError) {
+                    console.error("❌ Impossible de rafraîchir le token:", refreshError);
+                }
+
+                // Pour le développement, retournez true
+                return true;
+            }
+
+            if (!response.ok) {
+                console.warn("⚠️ Réponse non-OK:", response.status);
+                const errorText = await response.text();
+                console.warn("⚠️ Contenu erreur:", errorText.substring(0, 200));
+
+                // Pour le développement, retournez true
+                return true;
+            }
+
+            const data = await response.json();
+            console.log("✅ Données reçues:", data);
+
+            return data.success ? data.available : false;
+        } catch (error) {
+            console.error("❌ Erreur vérification siège:", error);
+
+            // Pour le développement, retournez true pour permettre la sélection
+            // En production, vous voudrez retourner false
+            return process.env.NODE_ENV === "development" ? true : false;
+        }
+    };
 
     // Modifiez la fonction handleSeatSelect avec types
     const handleSeatSelect = async (seatId: string): Promise<void> => {
         // Si on clique sur un siège déjà sélectionné, on le désélectionne
         if (formData.selectedSeat === seatId) {
-            setFormData(prev => ({
+            setFormData((prev) => ({
                 ...prev,
-                selectedSeat: '',
+                selectedSeat: "",
             }));
             return;
         }
 
         // Vérifier la disponibilité du siège
         const isAvailable = await checkSeatAvailability(seatId);
-        
+
         if (!isAvailable) {
             toast.error(`Le siège ${seatId} est déjà occupé. Veuillez choisir un autre siège.`, {
                 duration: 3000,
@@ -712,7 +708,7 @@ type FormDataType = {
         }
 
         // Si le siège est disponible, le sélectionner
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             selectedSeat: seatId,
         }));
@@ -722,7 +718,7 @@ type FormDataType = {
     useEffect(() => {
         const loadOccupiedSeats = async () => {
             if (!open || !flight) return;
-            
+
             try {
                 const token = localStorage.getItem("authToken");
                 const response = await fetch(`https://steve-airways.onrender.com/api/occupied-seats/${flight.id}`, {
@@ -730,12 +726,12 @@ type FormDataType = {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                
+
                 if (response.ok) {
                     const data: OccupiedSeatsResponse = await response.json();
                     if (data.success) {
                         // Stocker les sièges occupés dans un état
-                        const occupiedSeatsList = data.occupiedSeats.map(seat => seat.selectedSeat);
+                        const occupiedSeatsList = data.occupiedSeats.map((seat) => seat.selectedSeat);
                         setOccupiedSeats(occupiedSeatsList);
                     }
                 }
@@ -799,7 +795,7 @@ type FormDataType = {
     };
 
     // Fonction pour rechercher le prix du vol retour
- 
+
     const fetchReturnFlightPrice = async (flightNumber: string): Promise<{ price: number; currency: string } | null> => {
         if (!flightNumber || flightNumber.trim().length < 2) {
             return null;
@@ -838,7 +834,7 @@ type FormDataType = {
         }
     };
 
-       // Gestion du changement du numéro de vol retour
+    // Gestion du changement du numéro de vol retour
     const handleFlightNumberReturnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const flightNumber = e.target.value;
 
@@ -904,63 +900,59 @@ type FormDataType = {
         }
     };
 
-     
-    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
 
-   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+        if (name === "flightNumberReturn") {
+            handleFlightNumberReturnChange(e as React.ChangeEvent<HTMLInputElement>);
+            return;
+        }
 
-    if (name === "flightNumberReturn") {
-        handleFlightNumberReturnChange(e as React.ChangeEvent<HTMLInputElement>);
-        return;
-    }
+        if (name === "idClient" && formData.idTypeClient === "nimu") {
+            setFormData((prev) => ({
+                ...prev,
+                idClient: formatNimuLicens(value),
+            }));
+            return;
+        }
 
-    if (name === "idClient" && formData.idTypeClient === "nimu") {
-        setFormData((prev) => ({
-            ...prev,
-            idClient: formatNimuLicens(value),
-        }));
-        return;
-    }
+        if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
+            setFormData({
+                ...formData,
+                [name]: e.target.checked ? value : "",
+            });
+            return;
+        }
 
-    if (e.target instanceof HTMLInputElement && e.target.type === "checkbox") {
-        setFormData({
-            ...formData,
-            [name]: e.target.checked ? value : "",
+        setFormData((prev) => {
+            // Créez un objet temporaire avec des types plus larges
+            const updatedData: any = {
+                ...prev,
+                [name]: value,
+            };
+
+            // Gestion conditionnelle pour devisePayment
+            if (name === "devisePayment") {
+                if (value !== "htg") {
+                    updatedData.taux_jour = "";
+                }
+                // TypeScript sait maintenant que value peut être "usd" ou "htg"
+                updatedData.devisePayment = value as "usd" | "htg";
+            }
+
+            // Gestion conditionnelle pour paymentMethod
+            if (name === "paymentMethod") {
+                if (value !== "cash") {
+                    updatedData.devisePayment = "";
+                    updatedData.taux_jour = "";
+                }
+                // TypeScript sait maintenant que value peut être l'une des méthodes de paiement
+                updatedData.paymentMethod = value as "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat";
+            }
+
+            return updatedData;
         });
-        return;
-    }
-
-    setFormData((prev) => {
-        // Créez un objet temporaire avec des types plus larges
-        const updatedData: any = {
-            ...prev,
-            [name]: value,
-        };
-
-        // Gestion conditionnelle pour devisePayment
-        if (name === "devisePayment") {
-            if (value !== "htg") {
-                updatedData.taux_jour = "";
-            }
-            // TypeScript sait maintenant que value peut être "usd" ou "htg"
-            updatedData.devisePayment = value as "usd" | "htg";
-        }
-
-        // Gestion conditionnelle pour paymentMethod
-        if (name === "paymentMethod") {
-            if (value !== "cash") {
-                updatedData.devisePayment = "";
-                updatedData.taux_jour = "";
-            }
-            // TypeScript sait maintenant que value peut être l'une des méthodes de paiement
-            updatedData.paymentMethod = value as "card" | "cash" | "cheque" | "virement" | "transfert" | "contrat";
-        }
-
-        return updatedData;
-    });
-};
-
+    };
 
     // Fonction pour gérer le changement du prénom
     const handleFirstNameChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1035,7 +1027,7 @@ type FormDataType = {
     const price1 = Number(calculatedPrice) || 0;
     const totalPrice = isRoundTrip ? price1 + price2 : price1;
 
-   const handleSubmit = async () => {
+    const handleSubmit = async () => {
         setCreateTicket(true);
 
         // Validation des champs obligatoires
@@ -1591,266 +1583,437 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
         <AnimatePresence>
             {open && (
                 <div className="fixed inset-0 z-50 overflow-y-auto">
+                    {/* Backdrop avec flou - identique aux autres popups */}
                     <motion.div
-                        className="fixed inset-0 bg-black/70"
+                        className="fixed inset-0 bg-gradient-to-br from-slate-900/70 via-slate-800/60 to-black/70 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={handleClose}
                     />
 
+                    {/* Contenu du modal - plus large */}
                     <motion.div
                         role="dialog"
                         aria-modal="true"
-                        className="relative mx-auto my-8 w-full max-w-7xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+                        className="relative mx-auto my-8 flex w-full max-w-7xl items-center justify-center p-4"
                         initial={{ opacity: 0, y: 20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
                     >
-                        <div className="relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+                        <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-white via-white to-slate-50 shadow-2xl shadow-slate-900/30 ring-1 ring-white/50">
+                            {/* Bouton fermer identique */}
                             <button
                                 onClick={handleClose}
-                                className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                                className="group absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/30 active:scale-95"
                                 aria-label="Close"
                             >
-                                <X className="h-5 w-5" />
+                                <X className="h-5 w-5 text-slate-700 transition-transform group-hover:rotate-90" />
+                                <span className="absolute -inset-1 rounded-full bg-slate-100/50 transition-all group-hover:bg-slate-200/50" />
                             </button>
 
-                            {/* En-tête */}
-                            <div className="px-6 pt-6">
-                                <h2 className="text-xl font-semibold text-slate-800">Create a ticket for the flight {flight.flight_number}</h2>
+                            
+                            <div className="relative bg-gradient-to-r  from-amber-500 via-orange-500 to-red-500 px-8 pb-6 pt-8">
+                                <div className="absolute -bottom-1 left-0 right-0 h-4 bg-gradient-to-t from-white/20 to-transparent" />
 
-                                <p className="text-sm text-slate-500">
-                                    {flight.from} → {flight.to} | Departure: {flight.departure}
-                                </p>
-                                <div className="my-4 h-px w-full bg-slate-100" />
-                                <div className="mt-1 flex items-center gap-4">
-                                    <span className="text-xl font-semibold text-amber-500">Round-Trip</span>
-
-                                    <label className="relative inline-flex cursor-pointer items-center">
-                                        <input
-                                            type="checkbox"
-                                            className="peer sr-only"
-                                            checked={isRoundTrip}
-                                            onChange={(e) => handleRoundTripToggle(e.target.checked)}
-                                        />
-
-                                        <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
-                                        <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
-                                    </label>
-
-                                    <div className="relative flex-1">
-                                        <input
-                                            type="text"
-                                            id="flightNumberReturn"
-                                            name="flightNumberReturn"
-                                            placeholder="Return flight number"
-                                            disabled={!isRoundTrip}
-                                            required={isRoundTrip}
-                                            value={formData.flightNumberReturn}
-                                            onChange={handleChange}
-                                            className={`w-full rounded-md border px-4 py-2 outline-none transition ${
-                                                isRoundTrip
-                                                    ? "border-gray-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                                    : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                                            }`}
-                                        />
-
-                                        {loadingReturnFlight && (
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500"></div>
-                                            </div>
-                                        )}
-
-                                        {!loadingReturnFlight && price2 > 0 && (
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                                <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                                    {price2} {priceCurrency}
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                                            <svg
+                                                className="h-7 w-7 text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-white">Create Ticket for Flight {flight.flight_number}</h2>
+                                            <div className="mt-2 flex items-center gap-3">
+                                                <div className="rounded-full bg-white/20 px-4 py-1.5">
+                                                    <span className="text-sm font-semibold text-white">
+                                                        {flight.from} → {flight.to}
+                                                    </span>
+                                                </div>
+                                                <span className="text-sm text-white/90">
+                                                    • Departure: {new Date(flight.departure).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Affichage des infos du vol retour trouvé */}
-                                {price2 > 0 ? (
-                                    <div className="mt-2 rounded-lg bg-green-50 p-3">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="font-medium text-green-800">Vol retour trouvé ✓</p>
-                                                <div className="flex flex-wrap gap-6">
-                                                    <div className="text-green-800">
-                                                        Return flight number: <span className="font-bold">{formData.flightNumberReturn}</span>
+                                {/* Section vol retour */}
+                                <div className="mt-6 rounded-2xl bg-white/20 p-4 backdrop-blur-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-lg font-semibold text-white">Round-Trip</span>
+
+                                            <label className="relative inline-flex cursor-pointer items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="peer sr-only"
+                                                    checked={isRoundTrip}
+                                                    onChange={(e) => handleRoundTripToggle(e.target.checked)}
+                                                />
+                                                <div className="peer h-7 w-14 rounded-full bg-white/30 transition-all peer-checked:bg-amber-400 peer-focus:ring-2 peer-focus:ring-amber-400/50"></div>
+                                                <div className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-all peer-checked:translate-x-7"></div>
+                                            </label>
+
+                                            <div className="relative flex-1">
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        id="flightNumberReturn"
+                                                        name="flightNumberReturn"
+                                                        placeholder="Return flight number"
+                                                        disabled={!isRoundTrip}
+                                                        required={isRoundTrip}
+                                                        value={formData.flightNumberReturn}
+                                                        onChange={handleChange}
+                                                        className={`w-full rounded-xl border-0 bg-white/20 px-4 py-3 pl-12 text-white outline-none backdrop-blur-sm transition-all placeholder:text-white/60 ${
+                                                            isRoundTrip
+                                                                ? "focus:bg-white/30 focus:ring-2 focus:ring-white/50"
+                                                                : "cursor-not-allowed opacity-50"
+                                                        }`}
+                                                    />
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                                        <svg
+                                                            className="h-5 w-5 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                                                            />
+                                                        </svg>
                                                     </div>
 
-                                                    <div className="text-green-800">
-                                                        Return flight price:{" "}
-                                                        <span className="font-bold">
-                                                            {price2} {priceCurrency}
-                                                        </span>
-                                                    </div>
+                                                    {loadingReturnFlight && (
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                                                        </div>
+                                                    )}
+
+                                                    {!loadingReturnFlight && price2 > 0 && (
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                            <span className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
+                                                                {price2} {priceCurrency}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-sm text-green-700">
-                                                    Total amount to pay:{" "}
-                                                    <span className="font-bold">
-                                                        {totalPrice.toFixed(2)} {priceCurrency}
-                                                    </span>
-                                                </p>
-                                            </div>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="mt-2 rounded-lg bg-green-50 p-3">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="font-medium text-green-800">Vol aller ✓</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm text-green-700">
-                                                    Total amount to pay:{" "}
-                                                    <span className="font-bold">
-                                                        {totalPrice.toFixed(2)} {priceCurrency}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
 
-                                <div className="my-4 h-px w-full bg-slate-100" />
+                                    {/* Affichage des infos du vol retour */}
+                                    {price2 > 0 ? (
+                                        <div className="mt-3 rounded-xl bg-white/20 p-4 backdrop-blur-sm">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30">
+                                                        <svg
+                                                            className="h-4 w-4 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M5 13l4 4L19 7"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-white">Round-trip flight confirmed ✓</p>
+                                                        <div className="flex flex-wrap gap-4 text-sm text-white/90">
+                                                            <span>
+                                                                Return flight: <span className="font-bold">{formData.flightNumberReturn}</span>
+                                                            </span>
+                                                            <span>
+                                                                Return price:{" "}
+                                                                <span className="font-bold">
+                                                                    {price2} {priceCurrency}
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm text-white/90">
+                                                        Total to pay:{" "}
+                                                        <span className="text-lg font-bold text-white">
+                                                            {totalPrice.toFixed(2)} {priceCurrency}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-3 rounded-xl bg-white/20 p-4 backdrop-blur-sm">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/30">
+                                                        <svg
+                                                            className="h-4 w-4 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-white">One-way flight ✓</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm text-white/90">
+                                                        Total to pay:{" "}
+                                                        <span className="text-lg font-bold text-white">
+                                                            {totalPrice.toFixed(2)} {priceCurrency}
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Contenu principal avec formulaire et sélection de siège */}
-                            <div className="flex">
+                            {/* Contenu principal avec formulaire et sièges */}
+                            <div className="flex max-h-[70vh] overflow-hidden">
                                 {/* Formulaire (gauche) */}
-                                <div className="flex-1 px-6 pb-6">
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                        {/* Prénom */}
+                                <div className="flex-1 overflow-auto p-8">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                        {/* Prénom avec autocomplete */}
                                         <div className="relative flex flex-col">
-                                            <label className="mb-1 text-sm font-medium text-gray-700">First Name</label>
-
-                                            <input
-                                                type="text"
-                                                ref={setInputRef}
-                                                id="firstName"
-                                                name="firstName"
-                                                value={formData.firstName}
-                                                onChange={handleFirstNameChange}
-                                                onBlur={handleFirstNameBlur}
-                                                autoComplete="off"
-                                                placeholder="First Name"
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-
-                                            {showDropdown && suggestions.length > 0 && (
-                                                <div
-                                                    ref={setDropdownRef}
-                                                    className="absolute top-full z-50 w-full rounded-md border bg-white shadow-md"
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-amber-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
                                                 >
-                                                    {suggestions.map((p) => (
-                                                        <div
-                                                            key={p.id}
-                                                            onClick={() => selectPassenger(p)}
-                                                            className="cursor-pointer px-3 py-2 hover:bg-gray-100"
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                    />
+                                                </svg>
+                                                First Name
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    ref={setInputRef}
+                                                    id="firstName"
+                                                    name="firstName"
+                                                    value={formData.firstName}
+                                                    onChange={handleFirstNameChange}
+                                                    onBlur={handleFirstNameBlur}
+                                                    autoComplete="off"
+                                                    placeholder="Enter first name"
+                                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-12 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                                />
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                                    <div className="h-6 w-6 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 p-1">
+                                                        <svg
+                                                            className="h-4 w-4 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
                                                         >
-                                                            <p className="text-sm font-medium">
-                                                                {p.first_name} {p.last_name}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500">{p.email || p.phone}</p>
-                                                        </div>
-                                                    ))}
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                            />
+                                                        </svg>
+                                                    </div>
                                                 </div>
-                                            )}
+
+                                                {showDropdown && suggestions.length > 0 && (
+                                                    <div
+                                                        ref={setDropdownRef}
+                                                        className="absolute top-full z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl"
+                                                    >
+                                                        {suggestions.map((p) => (
+                                                            <div
+                                                                key={p.id}
+                                                                onClick={() => selectPassenger(p)}
+                                                                className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-amber-50"
+                                                            >
+                                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-100 to-amber-200">
+                                                                    <span className="text-xs font-semibold text-amber-700">
+                                                                        {p.first_name.charAt(0).toUpperCase()}
+                                                                    </span>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-slate-800">
+                                                                        {p.first_name} {p.last_name}
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-500">{p.email || p.phone}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
-                                                                                {/* Deuxième prénom */}
+                                        {/* Middle Name */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="middleName"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Middle Name
-                                            </label>
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">Middle Name</label>
                                             <input
                                                 type="text"
                                                 id="middleName"
                                                 name="middleName"
-                                                placeholder="Middle Name"
+                                                placeholder="Middle name"
                                                 value={formData.middleName}
                                                 autoComplete="off"
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
-                                        {/* Nom */}
+                                        {/* Last Name */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="lastName"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Last Name
-                                            </label>
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">Last Name</label>
                                             <input
                                                 type="text"
                                                 id="lastName"
                                                 name="lastName"
-                                                placeholder="Last Name"
+                                                placeholder="Last name"
                                                 value={formData.lastName}
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
-                                        {/* Date de naissance */}
+                                        {/* Date of Birth */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="dateOfBirth"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Date of birth
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-amber-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                Date of Birth
                                             </label>
-                                            <input
-                                                type="date"
-                                                id="dateOfBirth"
-                                                name="dateOfBirth"
-                                                value={formData.dateOfBirth}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="date"
+                                                    id="dateOfBirth"
+                                                    name="dateOfBirth"
+                                                    value={formData.dateOfBirth}
+                                                    required
+                                                    onChange={handleChange}
+                                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-12 text-slate-700 shadow-sm transition-all focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                                />
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                                    <div className="h-6 w-6 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 p-1">
+                                                        <svg
+                                                            className="h-4 w-4 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        {/* Adresse */}
+                                        {/* Address */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="address"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Adress
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-emerald-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                                    />
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                                    />
+                                                </svg>
+                                                Address
                                             </label>
                                             <input
                                                 type="text"
                                                 id="address"
                                                 name="address"
-                                                placeholder="Adress"
+                                                placeholder="Full address"
                                                 value={formData.address}
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
                                         {/* ID Type */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="idTypeClient"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-blue-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                                    />
+                                                </svg>
                                                 ID Type
                                             </label>
                                             <select
@@ -1858,7 +2021,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                 name="idTypeClient"
                                                 value={formData.idTypeClient}
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             >
                                                 <option value="passport">Passport</option>
                                                 <option value="nimu">NINU</option>
@@ -1868,15 +2031,12 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                                         {/* ID Number */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="idClient"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">
                                                 {formData.idTypeClient === "nimu"
-                                                    ? "ID NINU"
+                                                    ? "NINU ID"
                                                     : formData.idTypeClient === "licens"
-                                                      ? "ID LICENSE"
-                                                      : "ID PASSPORT"}
+                                                      ? "License ID"
+                                                      : "Passport Number"}
                                             </label>
                                             <input
                                                 type="text"
@@ -1886,22 +2046,32 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                     formData.idTypeClient === "nimu"
                                                         ? "000-000-000-0"
                                                         : formData.idTypeClient === "licens"
-                                                          ? "ID LICENSE"
-                                                          : "ID PASSPORT"
+                                                          ? "License number"
+                                                          : "Passport number"
                                                 }
                                                 value={formData.idClient}
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
-                                        {/* Pays */}
+                                        {/* Country */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="country"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-red-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
                                                 Country
                                             </label>
                                             <input
@@ -1912,18 +2082,13 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                 required
                                                 value={formData.country}
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
-                                        {/* Nationalité */}
+                                        {/* Nationality */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="nationality"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Nationality
-                                            </label>
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">Nationality</label>
                                             <input
                                                 type="text"
                                                 id="nationality"
@@ -1932,56 +2097,124 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                 value={formData.nationality}
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
                                         {/* Email */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="email"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                E-mail
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-orange-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                Email
                                             </label>
-                                            <input
-                                                type="email"
-                                                id="email"
-                                                name="email"
-                                                placeholder="E-mail"
-                                                value={formData.email}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="email"
+                                                    id="email"
+                                                    name="email"
+                                                    placeholder="Email address"
+                                                    value={formData.email}
+                                                    required
+                                                    onChange={handleChange}
+                                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-12 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                                />
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                                    <div className="h-6 w-6 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 p-1">
+                                                        <svg
+                                                            className="h-4 w-4 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        {/* Téléphone */}
+                                        {/* Phone */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="phone"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-green-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                                    />
+                                                </svg>
                                                 Phone
                                             </label>
-                                            <input
-                                                type="text"
-                                                id="phone"
-                                                name="phone"
-                                                placeholder="Phone"
-                                                value={formData.phone}
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    id="phone"
+                                                    name="phone"
+                                                    placeholder="Phone number"
+                                                    value={formData.phone}
+                                                    required
+                                                    onChange={handleChange}
+                                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-12 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                                />
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                                    <div className="h-6 w-6 rounded-full bg-gradient-to-r from-green-400 to-green-500 p-1">
+                                                        <svg
+                                                            className="h-4 w-4 text-white"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        {/* Méthode de paiement */}
+                                        {/* Payment Method */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="paymentMethod"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-amber-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
                                                 Payment Method
                                             </label>
                                             <select
@@ -1989,92 +2222,85 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                                 name="paymentMethod"
                                                 value={formData.paymentMethod}
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             >
                                                 <option value="cash">Cash</option>
                                                 <option value="card">Card</option>
                                                 <option value="cheque">Check</option>
                                                 <option value="virement">Bank Transfer</option>
                                                 <option value="transfert">Deposit</option>
-                                                <option value="contrat">Contrat</option>
+                                                <option value="contrat">Contract</option>
                                             </select>
                                         </div>
 
                                         {/* UnPaid */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="unpaid"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                UnPaid
-                                            </label>
-                                            <div className="pt-1">
-                                                <label className="relative inline-flex cursor-pointer items-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="unpaid"
-                                                        name="unpaid"
-                                                        value="pending"
-                                                        required
-                                                        onChange={handleChange}
-                                                        className="peer sr-only"
-                                                    />
-                                                    <div className="peer h-6 w-11 rounded-full bg-gray-300 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500"></div>
-                                                    <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-5"></div>
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">Payment Status</label>
+                                            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                <label className="flex cursor-pointer items-center justify-between">
+                                                    <span className="text-sm font-medium text-slate-700">Mark as Unpaid</span>
+                                                    <div className="relative inline-flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="unpaid"
+                                                            name="unpaid"
+                                                            value="pending"
+                                                            required
+                                                            onChange={handleChange}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="peer h-7 w-14 rounded-full bg-slate-200 transition-all peer-checked:bg-amber-500 peer-focus:ring-2 peer-focus:ring-amber-500/50"></div>
+                                                        <div className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-all peer-checked:translate-x-7"></div>
+                                                    </div>
                                                 </label>
                                             </div>
                                         </div>
 
-                                        {/* Prix du vol */}
+                                        {/* Price Display */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="price"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Flight Price
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="price"
-                                                name="price"
-                                                value={`${totalPrice.toFixed(2)} ${priceCurrency}`}
-                                                readOnly
-                                                className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm outline-none"
-                                            />
-                                            {isRoundTrip && price2 > 0 && (
-                                                <p className="mt-1 text-xs text-gray-500">
-                                                    Aller: {price1.toFixed(2)} {priceCurrency} + Retour: {price2.toFixed(2)} {priceCurrency}
-                                                </p>
-                                            )}
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">Total Price</label>
+                                            <div className="rounded-xl border border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+                                                <div className="text-center">
+                                                    <div className="text-2xl font-bold text-amber-700">
+                                                        {totalPrice.toFixed(2)} {priceCurrency}
+                                                    </div>
+                                                    {isRoundTrip && price2 > 0 && (
+                                                        <p className="mt-1 text-xs text-amber-600">
+                                                            Outbound: {price1.toFixed(2)} {priceCurrency} + Return: {price2.toFixed(2)}{" "}
+                                                            {priceCurrency}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
 
+                                        {/* Payment Details (Cash only) */}
                                         {formData.paymentMethod === "cash" && (
                                             <>
                                                 <div className="flex flex-col">
-                                                    <label className="mb-1 text-sm font-medium text-gray-700">Payment currency</label>
+                                                    <label className="mb-2 text-sm font-semibold text-slate-700">Payment Currency</label>
                                                     <select
                                                         name="devisePayment"
                                                         value={formData.devisePayment}
                                                         onChange={handleChange}
-                                                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                                     >
                                                         <option value="usd">USD</option>
                                                         <option value="htg">GOURDE</option>
                                                     </select>
                                                 </div>
 
-                                                {/* Taux du jour */}
                                                 <div className="flex flex-col">
-                                                    <label className="mb-1 text-sm font-medium text-gray-700">Taux du jour</label>
+                                                    <label className="mb-2 text-sm font-semibold text-slate-700">Exchange Rate</label>
                                                     <input
                                                         type="number"
                                                         name="taux_jour"
                                                         value={formData.taux_jour}
                                                         onChange={handleChange}
                                                         disabled={formData.devisePayment !== "htg"}
-                                                        placeholder="Ex: 135"
-                                                        className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none ${
-                                                            formData.devisePayment !== "htg" ? "cursor-not-allowed bg-gray-100" : ""
+                                                        placeholder="e.g., 135"
+                                                        className={`w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30 ${
+                                                            formData.devisePayment !== "htg" ? "cursor-not-allowed bg-slate-50" : "bg-white"
                                                         }`}
                                                     />
                                                 </div>
@@ -2083,103 +2309,111 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
 
                                         {/* Company Name */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="companyName"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-blue-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                                    />
+                                                </svg>
                                                 Company Name
                                             </label>
                                             <input
                                                 type="text"
                                                 id="companyName"
                                                 name="companyName"
-                                                placeholder="Company Name"
+                                                placeholder="Company name"
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
                                         {/* Reference Number */}
                                         <div className="flex flex-col">
-                                            <label
-                                                htmlFor="reference"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Reference Number
-                                            </label>
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">Reference Number</label>
                                             <input
                                                 type="text"
                                                 id="reference"
                                                 name="reference"
-                                                placeholder="Reference Number"
+                                                placeholder="Reference number"
                                                 required
                                                 onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                                             />
                                         </div>
 
-                                        {/* Emergency contact person name */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="nom_urgence"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Emergency contact person name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="nom_urgence"
-                                                name="nom_urgence"
-                                                value={formData.nom_urgence}
-                                                placeholder="Emergency contact person name"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
+                                        {/* Emergency Contact */}
+                                        <div className="md:col-span-3">
+                                            <div className="rounded-2xl border border-rose-100 bg-gradient-to-r from-rose-50 to-pink-50 p-6">
+                                                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-rose-800">
+                                                    <svg
+                                                        className="h-5 w-5 text-rose-500"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+                                                        />
+                                                    </svg>
+                                                    Emergency Contact Information
+                                                </h3>
+                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                                    <div className="flex flex-col">
+                                                        <label className="mb-2 text-sm font-medium text-rose-700">Contact Name</label>
+                                                        <input
+                                                            type="text"
+                                                            id="nom_urgence"
+                                                            name="nom_urgence"
+                                                            value={formData.nom_urgence}
+                                                            placeholder="Contact name"
+                                                            required
+                                                            onChange={handleChange}
+                                                            className="w-full rounded-xl border border-rose-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/30"
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <label className="mb-2 text-sm font-medium text-rose-700">Contact Email</label>
+                                                        <input
+                                                            type="text"
+                                                            id="email_urgence"
+                                                            name="email_urgence"
+                                                            value={formData.email_urgence}
+                                                            placeholder="Contact email"
+                                                            required
+                                                            onChange={handleChange}
+                                                            className="w-full rounded-xl border border-rose-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/30"
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <label className="mb-2 text-sm font-medium text-rose-700">Contact Phone</label>
+                                                        <input
+                                                            type="text"
+                                                            id="tel_urgence"
+                                                            name="tel_urgence"
+                                                            value={formData.tel_urgence}
+                                                            placeholder="Contact phone"
+                                                            required
+                                                            onChange={handleChange}
+                                                            className="w-full rounded-xl border border-rose-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/30"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        {/* Emergency contact email */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="email_urgence"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Emergency contact email
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="email_urgence"
-                                                name="email_urgence"
-                                                value={formData.email_urgence}
-                                                placeholder="Emergency contact email"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Emergency contact number */}
-                                        <div className="flex flex-col">
-                                            <label
-                                                htmlFor="tel_urgence"
-                                                className="mb-1 text-sm font-medium text-gray-700"
-                                            >
-                                                Emergency contact number
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="tel_urgence"
-                                                name="tel_urgence"
-                                                value={formData.tel_urgence}
-                                                placeholder="Emergency contact number"
-                                                required
-                                                onChange={handleChange}
-                                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                                            />
-                                        </div>
-
-                                        {/* Nombre de passagers (hidden) */}
+                                        {/* Hidden field */}
                                         <input
                                             type="hidden"
                                             id="passengerCount"
@@ -2190,106 +2424,160 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                             onChange={handleChange}
                                         />
 
-                                        {/* Bouton */}
+                                        {/* Submit Button */}
                                         <div className="md:col-span-3">
-                                            <button
-                                                onClick={handleSubmit}
-                                                disabled={createTicket}
-                                                className="mt-2 w-full rounded-md bg-gradient-to-r from-amber-500 to-amber-600 py-2.5 text-sm font-semibold text-white transition-colors hover:from-amber-600 hover:to-amber-500 hover:text-black disabled:bg-gray-400"
-                                            >
-                                                {createTicket ? "Saving..." : "Confirm and Create the Ticket"}
-                                            </button>
+                                            <div className="relative pt-6">
+                                                
+                                                <button
+                                                    onClick={handleSubmit}
+                                                    disabled={createTicket}
+                                                    className="relative w-full rounded-2xl bg-gradient-to-r from-amber-500  to-orange-500 px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                                                >
+                                                    <span className="flex items-center justify-center gap-3">
+                                                        {createTicket ? (
+                                                            <>
+                                                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                                                Creating Ticket...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg
+                                                                    className="h-5 w-5"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    stroke="currentColor"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                                    />
+                                                                </svg>
+                                                                Confirm & Create Ticket
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Section Sélection de Siège (droite) */}
-                                <div className="w-96 border-l border-gray-200 bg-gray-50 p-4">
-                                    <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-gray-800">Seat Selection</h3>
-                                        <p className="text-xs text-gray-600">Type plane {flight.airline}</p>
+                                <div className="w-96 border-l border-slate-200 bg-gradient-to-b from-slate-50 to-white p-6">
+                                    <div className="mb-6">
+                                        <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold text-slate-800">
+                                            <svg
+                                                className="h-5 w-5 text-amber-500"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                                />
+                                            </svg>
+                                            Seat Selection
+                                        </h3>
+                                        <p className="text-sm text-slate-600">
+                                            Aircraft: {flight.airline} • Available: {flight.seats_available} seats
+                                        </p>
                                     </div>
 
-                                    {/* Visualisation de la cabine */}
-                                    <div className="mb-4">
-                                        <div className="mb-2 flex justify-between">
-                                            <div className="text-xs font-medium text-gray-700">Left</div>
-                                            <div className="text-xs font-medium text-gray-700">Right</div>
+                                    {/* Visualisation de la cabine améliorée */}
+                                    <div className="mb-6">
+                                        <div className="mb-4 flex justify-between px-2">
+                                            <div className="text-sm font-medium text-slate-700">Left Side</div>
+                                            <div className="text-sm font-medium text-slate-700">Right Side</div>
                                         </div>
 
                                         {/* Rangées de sièges */}
-                                        <div className="max-h-96 space-y-1 overflow-y-auto pr-2">
-                                            {Array.from({ length: Math.floor(flight.total_seat/6) }).map((_, rowIndex) => (
+                                        <div className="max-h-[300px] space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4">
+                                            {Array.from({ length: Math.floor(flight.total_seat / 6) }).map((_, rowIndex) => (
                                                 <div
                                                     key={rowIndex}
                                                     className="flex items-center"
                                                 >
-                                                    <div className="w-6 text-center text-xs font-medium text-gray-600">{rowIndex + 1}</div>
-                                                    <div className="ml-1 flex flex-1 justify-between">
+                                                    <div className="w-8 text-center text-sm font-bold text-amber-600">{rowIndex + 1}</div>
+                                                    <div className="ml-2 flex flex-1 justify-between">
                                                         {/* Sièges gauche (A, B, C) */}
-                                                        <div className="flex space-x-0.5">
-                                                            {["A", "B", "C"].map((seat: string) => {
+                                                        <div className="flex space-x-2">
+                                                            {["A", "B", "C"].map((seat) => {
                                                                 const seatId = `${rowIndex + 1}${seat}`;
                                                                 const isOccupied = occupiedSeats.includes(seatId);
                                                                 const isSelected = formData.selectedSeat === seatId;
+                                                                const isWindow = seat === "A" || seat === "F";
                                                                 return (
                                                                     <button
                                                                         key={seat}
                                                                         type="button"
                                                                         onClick={() => handleSeatSelect(seatId)}
                                                                         disabled={isOccupied}
-                                                                        className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
+                                                                        className={`relative h-10 w-10 rounded-lg text-sm font-semibold transition-all ${
                                                                             isSelected
-                                                                                ? "bg-amber-500 text-white"
+                                                                                ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-lg"
                                                                                 : isOccupied
-                                                                                ? "cursor-not-allowed bg-red-600 text-white"
-                                                                                : "bg-white text-gray-700 hover:bg-gray-100"
-                                                                        } border ${
-                                                                            isSelected
-                                                                                ? "border-amber-500"
-                                                                                : isOccupied
-                                                                                ? "border-gray-300"
-                                                                                : "border-gray-300"
+                                                                                  ? "cursor-not-allowed bg-gradient-to-br from-red-400 to-red-500 text-white opacity-80"
+                                                                                  : `bg-gradient-to-br from-white to-slate-50 text-slate-700 shadow-sm hover:shadow-md ${
+                                                                                        isWindow
+                                                                                            ? "border-2 border-blue-300"
+                                                                                            : "border border-slate-300"
+                                                                                    }`
                                                                         }`}
-                                                                        title={isOccupied ? `Siège ${seatId} occupé` : `Siège ${seatId} disponible`}
+                                                                        title={`Seat ${seatId}${isWindow ? " (Window)" : ""}`}
                                                                     >
                                                                         {seat}
+                                                                        {isWindow && !isOccupied && !isSelected && (
+                                                                            <div className="absolute -right-1 -top-1">
+                                                                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
+                                                                            </div>
+                                                                        )}
                                                                     </button>
                                                                 );
                                                             })}
                                                         </div>
 
                                                         {/* Allée */}
-                                                        <div className="w-8"></div>
+                                                        <div className="flex w-12 items-center justify-center">
+                                                            <div className="h-1 w-full rounded-full bg-slate-200"></div>
+                                                        </div>
 
                                                         {/* Sièges droite (D, E, F) */}
-                                                        <div className="flex space-x-0.5">
-                                                            {["D", "E", "F"].map((seat: string) => {
+                                                        <div className="flex space-x-2">
+                                                            {["D", "E", "F"].map((seat) => {
                                                                 const seatId = `${rowIndex + 1}${seat}`;
                                                                 const isOccupied = occupiedSeats.includes(seatId);
                                                                 const isSelected = formData.selectedSeat === seatId;
+                                                                const isWindow = seat === "A" || seat === "F";
                                                                 return (
                                                                     <button
                                                                         key={seat}
                                                                         type="button"
                                                                         onClick={() => handleSeatSelect(seatId)}
                                                                         disabled={isOccupied}
-                                                                        className={`h-6 w-6 rounded text-[10px] font-medium transition-colors ${
+                                                                        className={`relative h-10 w-10 rounded-lg text-sm font-semibold transition-all ${
                                                                             isSelected
-                                                                                ? "bg-amber-500 text-white"
+                                                                                ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-lg"
                                                                                 : isOccupied
-                                                                                ? "cursor-not-allowed bg-red-600 text-white"
-                                                                                : "bg-white text-gray-700 hover:bg-gray-100"
-                                                                        } border ${
-                                                                            isSelected
-                                                                                ? "border-amber-500"
-                                                                                : isOccupied
-                                                                                ? "border-gray-300"
-                                                                                : "border-gray-300"
+                                                                                  ? "cursor-not-allowed bg-gradient-to-br from-red-400 to-red-500 text-white opacity-80"
+                                                                                  : `bg-gradient-to-br from-white to-slate-50 text-slate-700 shadow-sm hover:shadow-md ${
+                                                                                        isWindow
+                                                                                            ? "border-2 border-blue-300"
+                                                                                            : "border border-slate-300"
+                                                                                    }`
                                                                         }`}
-                                                                        title={isOccupied ? `Siège ${seatId} occupé` : `Siège ${seatId} disponible`}
+                                                                        title={`Seat ${seatId}${isWindow ? " (Window)" : ""}`}
                                                                     >
                                                                         {seat}
+                                                                        {isWindow && !isOccupied && !isSelected && (
+                                                                            <div className="absolute -right-1 -top-1">
+                                                                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
+                                                                            </div>
+                                                                        )}
                                                                     </button>
                                                                 );
                                                             })}
@@ -2300,55 +2588,74 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                         </div>
                                     </div>
 
-                                    {/* Légende */}
-                                    <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3">
-                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Legend</h4>
-                                        <div className="grid grid-cols-2 gap-1 text-[10px]">
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-gray-300 bg-white"></div>
-                                                <span className="text-gray-600">Available</span>
+                                    {/* Légende améliorée */}
+                                    <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
+                                        <h4 className="mb-3 text-sm font-semibold text-slate-800">Seat Legend</h4>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-6 w-6 rounded-lg border border-slate-300 bg-gradient-to-br from-white to-slate-50"></div>
+                                                <span className="text-xs text-slate-600">Available</span>
                                             </div>
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-amber-500 bg-amber-500"></div>
-                                                <span className="text-gray-600">Selected</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500"></div>
+                                                <span className="text-xs text-slate-600">Selected</span>
                                             </div>
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-red-600 bg-red-600"></div>
-                                                <span className="text-gray-600">Unavailable</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-red-400 to-red-500"></div>
+                                                <span className="text-xs text-slate-600">Unavailable</span>
                                             </div>
-                                            <div className="flex items-center">
-                                                <div className="mr-1 h-3 w-3 rounded border border-blue-300 bg-blue-100"></div>
-                                                <span className="text-gray-600">Window</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-6 w-6 rounded-lg border-2 border-blue-300 bg-gradient-to-br from-white to-slate-50"></div>
+                                                <span className="text-xs text-slate-600">Window Seat</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Siège sélectionné */}
-                                    <div className="rounded-lg border border-gray-200 bg-white p-3">
-                                        <h4 className="mb-1 text-xs font-semibold text-gray-700">Selected seat</h4>
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                {formData.selectedSeat ? (
-                                                    <>
-                                                        <div className="text-sm font-bold text-amber-600">{formData.selectedSeat}</div>
-                                                        <div className="text-xs text-gray-600">
-                                                            Rangée {formData.selectedSeat.slice(0, -1)}, Siège {formData.selectedSeat.slice(-1)}
+                                    <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+                                        <h4 className="mb-3 text-sm font-semibold text-slate-800">Selected Seat</h4>
+                                        {formData.selectedSeat ? (
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-purple-500">
+                                                            <span className="text-lg font-bold text-white">{formData.selectedSeat}</span>
                                                         </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="text-xs text-gray-500">No seat selected</div>
-                                                )}
-                                            </div>
-                                            {formData.selectedSeat && (
+                                                        <div>
+                                                            <p className="font-bold text-slate-800">Seat {formData.selectedSeat}</p>
+                                                            <p className="text-xs text-slate-600">
+                                                                Row {formData.selectedSeat.slice(0, -1)}, Seat {formData.selectedSeat.slice(-1)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleSeatSelect("")}
-                                                    className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 hover:bg-gray-200"
+                                                    className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
                                                 >
-                                                    Changer
+                                                    Change
                                                 </button>
-                                            )}
-                                        </div>
+                                            </div>
+                                        ) : (
+                                            <div className="py-3 text-center">
+                                                <svg
+                                                    className="mx-auto h-8 w-8 text-slate-400"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
+                                                <p className="mt-2 text-sm text-slate-500">No seat selected yet</p>
+                                                <p className="text-xs text-slate-400">Please select a seat from the map</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
