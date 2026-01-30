@@ -5833,8 +5833,549 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
 });
 
 
+// app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) => {
+//   const flightId = req.params.id;
 
+//   const allowedFields = [
+   
+//     "departure_time",
+//     "arrival_time",
 
+//   ];
+
+//   const setFields: string[] = [];
+//   const values: any[] = [];
+
+//   for (const field of allowedFields) {
+//     if (req.body[field] !== undefined) {
+//       setFields.push(`${field} = ?`);
+//       values.push(req.body[field]);
+//     }
+//   }
+
+//   if (setFields.length === 0) {
+//     return res.status(400).json({ error: "Aucun champ à mettre à jour" });
+//   }
+
+//   try {
+//     const [result] = await pool.execute<ResultSetHeader>(
+//       `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
+//       [...values, flightId]
+//     );
+
+//     // Récupérer le vol mis à jour
+//     const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [flightId]);
+
+//     if (rows.length === 0) {
+//       return res.status(404).json({ error: "Vol non trouvé" });
+//     }
+
+//     res.status(200).json(rows[0]);
+//   } catch (error: unknown) {
+//     if (error instanceof Error) {
+//       console.error(error);
+//       res.status(500).json({ error: "Erreur MySQL", details: error.message });
+//     } else {
+//       res.status(500).json({ error: "Erreur inconnue" });
+//     }
+//   }
+// });
+
+app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) => {
+  const flightId = req.params.id;
+
+  const allowedFields = [
+    "departure_time",
+    "arrival_time",
+  ];
+
+  const setFields: string[] = [];
+  const values: any[] = [];
+  const changes: { field: string, oldValue: any, newValue: any }[] = [];
+
+  let connection: mysql.PoolConnection | undefined;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // First, get the current flight data with location information
+    const [currentFlights] = await connection.execute<mysql.RowDataPacket[]>(
+      `SELECT f.*, 
+              dep.city as departure_city, dep.code as departure_code,
+              arr.city as arrival_city, arr.code as arrival_code
+       FROM flights f
+       LEFT JOIN locations dep ON f.departure_location_id = dep.id
+       LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE f.id = ?`,
+      [flightId]
+    );
+
+    if (!Array.isArray(currentFlights) || currentFlights.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ 
+        success: false,
+        error: "Vol non trouvé" 
+      });
+    }
+
+    const currentFlight = currentFlights[0] as any;
+
+    // Prepare update fields and track changes
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined && req.body[field] !== currentFlight[field]) {
+        setFields.push(`${field} = ?`);
+        values.push(req.body[field]);
+        
+        // Track the change for email notification
+        changes.push({
+          field: field,
+          oldValue: currentFlight[field],
+          newValue: req.body[field]
+        });
+      }
+    }
+
+    if (setFields.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({ 
+        success: false,
+        error: "Aucun champ à mettre à jour" 
+      });
+    }
+
+    // Update the flight
+    const [result] = await connection.execute<mysql.ResultSetHeader>(
+      `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
+      [...values, flightId]
+    );
+
+    // Get the updated flight with location information
+    const [updatedFlights] = await connection.execute<mysql.RowDataPacket[]>(
+      `SELECT f.*, 
+              dep.city as departure_city, dep.code as departure_code,
+              arr.city as arrival_city, arr.code as arrival_code
+       FROM flights f
+       LEFT JOIN locations dep ON f.departure_location_id = dep.id
+       LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE f.id = ?`,
+      [flightId]
+    );
+
+    if (updatedFlights.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ 
+        success: false,
+        error: "Vol non trouvé après mise à jour" 
+      });
+    }
+
+    const updatedFlight = updatedFlights[0] as any;
+
+    // Récupérer tous les passagers du vol via les bookings
+    const [passengersData] = await connection.execute(
+      `SELECT DISTINCT p.email, p.first_name, p.last_name, 
+              b.booking_reference,
+              f.flight_number,
+              dep.city as departure_city, dep.code as departure_code,
+              arr.city as arrival_city, arr.code as arrival_code,
+              DATE_FORMAT(?, '%Y-%m-%d %H:%i') as old_departure,
+              DATE_FORMAT(?, '%Y-%m-%d %H:%i') as old_arrival,
+              DATE_FORMAT(f.departure_time, '%Y-%m-%d %H:%i') as new_departure,
+              DATE_FORMAT(f.arrival_time, '%Y-%m-%d %H:%i') as new_arrival
+       FROM flights f
+       LEFT JOIN locations dep ON f.departure_location_id = dep.id
+       LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+       JOIN bookings b ON f.id = b.flight_id
+       JOIN passengers p ON b.id = p.booking_id
+       WHERE f.id = ?`,
+      [
+        currentFlight.departure_time,
+        currentFlight.arrival_time,
+        flightId
+      ]
+    );
+
+    const passengers = passengersData as any[];
+
+    // Envoyer les emails aux passagers
+    if (passengers.length > 0 && changes.length > 0) {
+      const emailPromises = passengers.map(async (passenger) => {
+        try {
+          // Formater les dates pour l'affichage
+          const formatDateForDisplay = (dateString: string) => {
+            try {
+              const date = new Date(dateString);
+              return date.toLocaleString('fr-FR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            } catch (error) {
+              return dateString;
+            }
+          };
+
+          // Formater la date pour l'affichage court (juste date + heure)
+          const formatShortDateTime = (dateString: string) => {
+            try {
+              const date = new Date(dateString);
+              return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            } catch (error) {
+              return dateString;
+            }
+          };
+
+          // Générer la section des changements
+          let changesHtml = '';
+          let hasDepartureChange = false;
+          let hasArrivalChange = false;
+          let oldDepartureFormatted = '';
+          let newDepartureFormatted = '';
+          let oldArrivalFormatted = '';
+          let newArrivalFormatted = '';
+
+          changes.forEach(change => {
+            let fieldLabel = '';
+            let oldValueDisplay = change.oldValue;
+            let newValueDisplay = change.newValue;
+
+            switch (change.field) {
+              case 'departure_time':
+                fieldLabel = 'Heure de départ';
+                oldValueDisplay = formatDateForDisplay(change.oldValue);
+                newValueDisplay = formatDateForDisplay(change.newValue);
+                oldDepartureFormatted = formatShortDateTime(change.oldValue);
+                newDepartureFormatted = formatShortDateTime(change.newValue);
+                hasDepartureChange = true;
+                break;
+              case 'arrival_time':
+                fieldLabel = 'Heure d\'arrivée';
+                oldValueDisplay = formatDateForDisplay(change.oldValue);
+                newValueDisplay = formatDateForDisplay(change.newValue);
+                oldArrivalFormatted = formatShortDateTime(change.oldValue);
+                newArrivalFormatted = formatShortDateTime(change.newValue);
+                hasArrivalChange = true;
+                break;
+              default:
+                fieldLabel = change.field;
+            }
+
+            changesHtml += `
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${fieldLabel}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; color: #dc3545;">
+                  <del>${oldValueDisplay}</del>
+                </td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; color: #28a745; font-weight: bold;">
+                  ${newValueDisplay}
+                </td>
+              </tr>
+            `;
+          });
+
+          // Créer un résumé des changements pour le sujet de l'email
+          let changeSummary = '';
+          if (hasDepartureChange && hasArrivalChange) {
+            changeSummary = `départ de ${oldDepartureFormatted} à ${newDepartureFormatted} et arrivée de ${oldArrivalFormatted} à ${newArrivalFormatted}`;
+          } else if (hasDepartureChange) {
+            changeSummary = `départ de ${oldDepartureFormatted} à ${newDepartureFormatted}`;
+          } else if (hasArrivalChange) {
+            changeSummary = `arrivée de ${oldArrivalFormatted} à ${newArrivalFormatted}`;
+          }
+
+          const emailHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Modification de votre vol - Trogon Airways</title>
+              <style>
+                body { 
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+                  line-height: 1.6; 
+                  color: #333; 
+                  margin: 0; 
+                  padding: 0; 
+                  background-color: #f5f5f5;
+                }
+                .container { 
+                  max-width: 800px; 
+                  margin: 0 auto; 
+                  background-color: white;
+                }
+                .header { 
+                  background-color: #1A237E; 
+                  color: white; 
+                  padding: 30px 20px; 
+                  text-align: center;
+                }
+                .logo { 
+                  height: 55px; 
+                  vertical-align: middle; 
+                  margin-bottom: 15px;
+                }
+                .content { 
+                  padding: 30px 20px;
+                }
+                .alert-box { 
+                  background-color: #fff3cd; 
+                  border-left: 4px solid #ffc107; 
+                  padding: 15px; 
+                  margin: 20px 0; 
+                  border-radius: 0 5px 5px 0;
+                }
+                .flight-info { 
+                  background-color: #f8f9fa; 
+                  border: 1px solid #dee2e6; 
+                  border-radius: 8px; 
+                  padding: 20px; 
+                  margin: 20px 0;
+                }
+                .changes-table { 
+                  width: 100%; 
+                  border-collapse: collapse; 
+                  margin: 20px 0;
+                }
+                .changes-table th { 
+                  background-color: #e9ecef; 
+                  padding: 12px; 
+                  text-align: left; 
+                  border-bottom: 2px solid #dee2e6;
+                }
+                .footer { 
+                  background-color: #f8f9fa; 
+                  padding: 20px; 
+                  text-align: center; 
+                  color: #6c757d; 
+                  font-size: 0.9em;
+                }
+                .contact-box { 
+                  background-color: #e3f2fd; 
+                  padding: 15px; 
+                  border-radius: 5px; 
+                  margin: 20px 0;
+                }
+                .badge { 
+                  display: inline-block; 
+                  padding: 5px 12px; 
+                  border-radius: 20px; 
+                  font-size: 0.8em; 
+                  font-weight: bold; 
+                  margin-bottom: 10px;
+                }
+                .badge-warning { 
+                  background-color: #ffc107; 
+                  color: #856404;
+                }
+                .route { 
+                  font-size: 1.2em; 
+                  font-weight: bold; 
+                  color: #1A237E; 
+                  margin: 10px 0;
+                }
+                @media (max-width: 600px) {
+                  .content { padding: 20px 15px; }
+                  .flight-info { padding: 15px; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <!-- Header -->
+                <div class="header">
+                  <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways" class="logo">
+                  <h1 style="margin: 0; font-size: 1.8em;">Modification de votre vol</h1>
+                </div>
+
+                <!-- Content -->
+                <div class="content">
+                  <p>Cher(e) <strong>${passenger.first_name} ${passenger.last_name}</strong>,</p>
+                  
+                  <div class="alert-box">
+                    <span class="badge badge-warning">IMPORTANT</span>
+                    <p style="margin: 5px 0; font-weight: bold; font-size: 1.1em;">Votre vol a été modifié</p>
+                    <p style="margin: 5px 0;">Nous vous informons que des changements ont été apportés à votre réservation.</p>
+                  </div>
+
+                  <!-- Flight Information -->
+                  <div class="flight-info">
+                    <h2 style="margin-top: 0; color: #1A237E;">Détails du vol</h2>
+                    <div class="route">
+                      ${passenger.departure_city} (${passenger.departure_code}) → ${passenger.arrival_city} (${passenger.arrival_code})
+                    </div>
+                    <p><strong>Référence de réservation :</strong> <span style="color: #1A237E; font-weight: bold;">${passenger.booking_reference}</span></p>
+                    <p><strong>Numéro de vol :</strong> <span style="color: #1A237E; font-weight: bold;">${passenger.flight_number}</span></p>
+                  </div>
+
+                  <!-- Changes Table -->
+                  ${changes.length > 0 ? `
+                  <h3 style="color: #856404; margin-top: 30px;">Changements apportés :</h3>
+                  <table class="changes-table">
+                    <thead>
+                      <tr>
+                        <th>Élément</th>
+                        <th>Ancienne valeur</th>
+                        <th>Nouvelle valeur</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${changesHtml}
+                    </tbody>
+                  </table>
+                  ` : ''}
+
+                  <!-- Important Information -->
+                  <div class="contact-box">
+                    <h3 style="margin-top: 0; color: #0c5460;">Instructions importantes :</h3>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                      <li>Arrivez à l'aéroport au moins <strong>2 heures</strong> avant le nouvel horaire de départ</li>
+                      <li>Présentez votre pièce d'identité et votre référence de réservation au comptoir d'enregistrement</li>
+                      <li>Votre siège assigné et vos services restent inchangés</li>
+                      <li>Consultez notre site web pour les dernières mises à jour concernant votre vol</li>
+                    </ul>
+                  </div>
+
+                  <!-- Options -->
+                  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #1A237E;">Vos options :</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0;">
+                      <div style="flex: 1; min-width: 200px; background-color: white; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
+                        <strong>✓ Accepter les changements</strong>
+                        <p style="margin: 5px 0 0; font-size: 0.9em;">Votre réservation est automatiquement mise à jour avec les nouveaux horaires.</p>
+                      </div>
+                      <div style="flex: 1; min-width: 200px; background-color: white; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
+                        <strong>✎ Modifier votre réservation</strong>
+                        <p style="margin: 5px 0 0; font-size: 0.9em;">Choisissez un autre vol sans frais de modification.</p>
+                      </div>
+                      <div style="flex: 1; min-width: 200px; background-color: white; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
+                        <strong>✕ Annuler et obtenir un remboursement</strong>
+                        <p style="margin: 5px 0 0; font-size: 0.9em;">Remboursement complet selon notre politique d'annulation.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Contact Information -->
+                  <div style="margin: 20px 0; padding: 20px; background-color: #1A237E; color: white; border-radius: 8px;">
+                    <h3 style="margin-top: 0;">Service client disponible 24h/24</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px;">
+                      <div style="flex: 1; min-width: 150px;">
+                        <div style="font-size: 1.5em;">📞</div>
+                        <strong>Téléphone</strong>
+                        <p style="margin: 5px 0;">+509 334104004</p>
+                      </div>
+                      <div style="flex: 1; min-width: 150px;">
+                        <div style="font-size: 1.5em;">✉️</div>
+                        <strong>Email</strong>
+                        <p style="margin: 5px 0;">info@trogonairways.com</p>
+                      </div>
+                      <div style="flex: 1; min-width: 150px;">
+                        <div style="font-size: 1.5em;">🌐</div>
+                        <strong>Site web</strong>
+                        <p style="margin: 5px 0;">trogonairways.com</p>
+                      </div>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 0.9em; opacity: 0.9;">
+                      Pour toute modification ou annulation, contactez-nous dans les <strong>24 heures</strong>.
+                    </p>
+                  </div>
+
+                  <p style="font-style: italic; text-align: center; margin-top: 30px; color: #6c757d;">
+                    Nous nous excusons pour la gêne occasionnée et vous remercions de votre compréhension.
+                  </p>
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                  <p><strong>Merci de choisir Trogon Airways</strong></p>
+                  <p>Cordialement,<br><strong>L'équipe Trogon Airways</strong></p>
+                  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+                    <p style="font-size: 0.8em; color: #adb5bd;">
+                      Cet email a été envoyé automatiquement. Merci de ne pas y répondre.<br>
+                      Pour toute question, contactez notre service client.
+                    </p>
+                    <p style="font-size: 0.8em; color: #adb5bd; margin-top: 10px;">
+                      © ${new Date().getFullYear()} Trogon Airways. Tous droits réservés.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `;
+
+          // Utiliser votre fonction sendEmail existante
+          const emailResult = await sendEmail(
+            passenger.email,
+            `Trogon Airways - Modification du vol ${passenger.flight_number} (${changeSummary})`,
+            emailHtml
+          );
+
+          console.log(`✅ Email de modification envoyé à ${passenger.email}`);
+          return { email: passenger.email, success: true, result: emailResult };
+        } catch (emailError) {
+          console.error(`❌ Erreur envoi email de modification à ${passenger.email}:`, emailError);
+          return { email: passenger.email, success: false, error: emailError };
+        }
+      });
+
+      // Attendre l'envoi de tous les emails
+      const emailResults = await Promise.allSettled(emailPromises);
+      
+      // Log des résultats
+      const successfulEmails = emailResults.filter(r => 
+        r.status === 'fulfilled' && r.value.success
+      ).length;
+      
+      const failedEmails = emailResults.filter(r => 
+        r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
+      ).length;
+      
+      console.log(`📧 Emails de modification envoyés : ${successfulEmails} réussis, ${failedEmails} échecs`);
+    }
+
+    await connection.commit();
+    
+    res.status(200).json({
+      success: true,
+      message: "Vol modifié avec succès",
+      flight: updatedFlight,
+      changes: changes.map(change => ({
+        field: change.field,
+        oldValue: change.oldValue,
+        newValue: change.newValue
+      })),
+      emailsSent: passengers.length,
+      passengerCount: passengers.length,
+      
+    });
+
+  } catch (error: any) {
+    console.error("❌ Erreur modification du vol:", error);
+    if (connection) {
+      await connection.rollback();
+    }
+    res.status(500).json({
+      success: false,
+      error: "Échec de la modification du vol",
+      details: process.env.NODE_ENV !== "production" ? error.message : undefined
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
 
 app.get("/api/flights/:flightNumber", async (req: Request, res: Response) => {
   try {
@@ -6262,8 +6803,6 @@ LEFT JOIN passengers p
 
 
 
-
-
 app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, transactionType, currency, status, name } = req.query;
@@ -6345,8 +6884,6 @@ app.get("/api/booking-helico-search", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erreur lors de la recherche" });
   }
 });
-
-
 
 
 // app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
@@ -9614,53 +10151,7 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
   }
 });
 
-app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) => {
-  const flightId = req.params.id;
 
-  const allowedFields = [
-   
-    "departure_time",
-    "arrival_time",
-
-  ];
-
-  const setFields: string[] = [];
-  const values: any[] = [];
-
-  for (const field of allowedFields) {
-    if (req.body[field] !== undefined) {
-      setFields.push(`${field} = ?`);
-      values.push(req.body[field]);
-    }
-  }
-
-  if (setFields.length === 0) {
-    return res.status(400).json({ error: "Aucun champ à mettre à jour" });
-  }
-
-  try {
-    const [result] = await pool.execute<ResultSetHeader>(
-      `UPDATE flights SET ${setFields.join(", ")} WHERE id = ?`,
-      [...values, flightId]
-    );
-
-    // Récupérer le vol mis à jour
-    const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [flightId]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Vol non trouvé" });
-    }
-
-    res.status(200).json(rows[0]);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(error);
-      res.status(500).json({ error: "Erreur MySQL", details: error.message });
-    } else {
-      res.status(500).json({ error: "Erreur inconnue" });
-    }
-  }
-});
 
 // Route pour supprimer un vol
 app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {

@@ -490,7 +490,7 @@ const FlightTable = () => {
             await fetchFlights();
 
             setRescheduleFlight(null);
-            setShowModal(false);
+            setShowModalReschedule(false);
 
             toast.success(`Reschedule update successful`, {
                 style: {
@@ -2490,7 +2490,7 @@ const FlightTable = () => {
 
                                                 try {
                                                    
-                                                    await handleUpdateRescheduleFlight(resCheduleFlight?.id, flightDataReschedule);
+                                                    await handleUpdateRescheduleFlight(resCheduleFlight.id, flightDataReschedule);
                                                    
                                                 } catch (err) {
                                                     console.error("Erreur dans le formulaire:", err);
