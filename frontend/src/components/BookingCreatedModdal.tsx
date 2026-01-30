@@ -24,7 +24,7 @@ type Flight = {
     status: string;
     selectedSeat: string;
     total_seat: number;
-    seats_available:number
+    seats_available: number;
 };
 
 type BookingCreatedModalProps = {
@@ -1613,8 +1613,7 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                 <span className="absolute -inset-1 rounded-full bg-slate-100/50 transition-all group-hover:bg-slate-200/50" />
                             </button>
 
-                            
-                            <div className="relative bg-gradient-to-r  from-amber-500 via-orange-500 to-red-500 px-8 pb-6 pt-8">
+                            <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 px-8 pb-6 pt-8">
                                 <div className="absolute -bottom-1 left-0 right-0 h-4 bg-gradient-to-t from-white/20 to-transparent" />
 
                                 <div className="flex items-start justify-between">
@@ -2427,11 +2426,10 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                         {/* Submit Button */}
                                         <div className="md:col-span-3">
                                             <div className="relative pt-6">
-                                                
                                                 <button
                                                     onClick={handleSubmit}
                                                     disabled={createTicket}
-                                                    className="relative w-full rounded-2xl bg-gradient-to-r from-amber-500  to-orange-500 px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                                                    className="relative w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                                                 >
                                                     <span className="flex items-center justify-center gap-3">
                                                         {createTicket ? (

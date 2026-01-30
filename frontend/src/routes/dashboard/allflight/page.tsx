@@ -1332,6 +1332,15 @@ const FlightTable = () => {
                                                 <div className="relative">
                                                     <input
                                                         type="text"
+                                                        name="type"
+                                                        placeholder="Numéro de vol"
+                                                        className="w-full rounded-full border px-3 py-2"
+                                                        value="helicopter"
+                                                        required
+                                                        hidden
+                                                    />
+                                                    <input
+                                                        type="text"
                                                         name="flight_number"
                                                         placeholder="e.g., AA1234"
                                                         defaultValue={editingFlight?.flight_number || flightNumber}
@@ -2483,15 +2492,12 @@ const FlightTable = () => {
                                                 const flightDataReschedule = {
                                                     departure_time: formData.get("departure_time") as string,
                                                     arrival_time: formData.get("arrival_time") as string,
-                                                   
                                                 };
 
                                                 console.log("Données à envoyer:", flightDataReschedule);
 
                                                 try {
-                                                   
                                                     await handleUpdateRescheduleFlight(resCheduleFlight.id, flightDataReschedule);
-                                                   
                                                 } catch (err) {
                                                     console.error("Erreur dans le formulaire:", err);
                                                 } finally {
