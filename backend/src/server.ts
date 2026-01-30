@@ -6200,33 +6200,33 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
 
                 <!-- Content -->
                 <div class="content">
-                  <p>Cher(e) <strong>${passenger.first_name} ${passenger.last_name}</strong>,</p>
+                  <p>Dear, <strong>${passenger.first_name} ${passenger.last_name}</strong>,</p>
                   
                   <div class="alert-box">
                     <span class="badge badge-warning">IMPORTANT</span>
                     <p style="margin: 5px 0; font-weight: bold; font-size: 1.1em;">Votre vol a été modifié</p>
-                    <p style="margin: 5px 0;">Nous vous informons que des changements ont été apportés à votre réservation.</p>
+                    <p style="margin: 5px 0;">We would like to inform you that changes have been made to your reservation.</p>
                   </div>
 
                   <!-- Flight Information -->
                   <div class="flight-info">
-                    <h2 style="margin-top: 0; color: #1A237E;">Détails du vol</h2>
+                    <h2 style="margin-top: 0; color: #1A237E;">Flight details</h2>
                     <div class="route">
                       ${passenger.departure_city} (${passenger.departure_code}) → ${passenger.arrival_city} (${passenger.arrival_code})
                     </div>
-                    <p><strong>Référence de réservation :</strong> <span style="color: #1A237E; font-weight: bold;">${passenger.booking_reference}</span></p>
-                    <p><strong>Numéro de vol :</strong> <span style="color: #1A237E; font-weight: bold;">${passenger.flight_number}</span></p>
+                    <p><strong>Booking reference :</strong> <span style="color: #1A237E; font-weight: bold;">${passenger.booking_reference}</span></p>
+                    <p><strong>Flight number:</strong> <span style="color: #1A237E; font-weight: bold;">${passenger.flight_number}</span></p>
                   </div>
 
                   <!-- Changes Table -->
                   ${changes.length > 0 ? `
-                  <h3 style="color: #856404; margin-top: 30px;">Changements apportés :</h3>
+                  <h3 style="color: #856404; margin-top: 30px;">Changes made :</h3>
                   <table class="changes-table">
                     <thead>
                       <tr>
-                        <th>Élément</th>
-                        <th>Ancienne valeur</th>
-                        <th>Nouvelle valeur</th>
+                        <th>Element</th>
+                        <th>Old value</th>
+                        <th>New value</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -6237,12 +6237,12 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
 
                   <!-- Important Information -->
                   <div class="contact-box">
-                    <h3 style="margin-top: 0; color: #0c5460;">Instructions importantes :</h3>
+                    <h3 style="margin-top: 0; color: #0c5460;">Important instructions:</h3>
                     <ul style="margin: 10px 0; padding-left: 20px;">
-                      <li>Arrivez à l'aéroport au moins <strong>2 heures</strong> avant le nouvel horaire de départ</li>
-                      <li>Présentez votre pièce d'identité et votre référence de réservation au comptoir d'enregistrement</li>
-                      <li>Votre siège assigné et vos services restent inchangés</li>
-                      <li>Consultez notre site web pour les dernières mises à jour concernant votre vol</li>
+                      <li>Arrive at the airport at least <strong>2 hours</strong> before the new departure time</li>
+                      <li>Present your ID and booking reference at the check-in desk.</li>
+                      <li>Your assigned seat and services remain unchanged.</li>
+                      <li>Check our website for the latest updates regarding your flight</li>
                     </ul>
                   </div>
 
@@ -6251,16 +6251,16 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
                     <h3 style="margin-top: 0; color: #1A237E;">Vos options :</h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0;">
                       <div style="flex: 1; min-width: 200px; background-color: white; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
-                        <strong>✓ Accepter les changements</strong>
-                        <p style="margin: 5px 0 0; font-size: 0.9em;">Votre réservation est automatiquement mise à jour avec les nouveaux horaires.</p>
+                        <strong>✓ Accept the changes</strong>
+                        <p style="margin: 5px 0 0; font-size: 0.9em;">Your reservation is automatically updated with the new times.</p>
                       </div>
                       <div style="flex: 1; min-width: 200px; background-color: white; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
-                        <strong>✎ Modifier votre réservation</strong>
-                        <p style="margin: 5px 0 0; font-size: 0.9em;">Choisissez un autre vol sans frais de modification.</p>
+                        <strong>✎ Modify your reservation</strong>
+                        <p style="margin: 5px 0 0; font-size: 0.9em;">Choose another flight with no change fees.</p>
                       </div>
                       <div style="flex: 1; min-width: 200px; background-color: white; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
-                        <strong>✕ Annuler et obtenir un remboursement</strong>
-                        <p style="margin: 5px 0 0; font-size: 0.9em;">Remboursement complet selon notre politique d'annulation.</p>
+                        <strong>✕ Cancel and get a refund</strong>
+                        <p style="margin: 5px 0 0; font-size: 0.9em;">Full refund according to our cancellation policy.</p>
                       </div>
                     </div>
                   </div>
@@ -6271,12 +6271,12 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
                     <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px;">
                       <div style="flex: 1; min-width: 150px;">
                         <div style="font-size: 1.5em;">📞</div>
-                        <strong>Téléphone</strong>
+                        <strong>Phone</strong>
                         <p style="margin: 5px 0;">+509 334104004</p>
                       </div>
                       <div style="flex: 1; min-width: 150px;">
                         <div style="font-size: 1.5em;">✉️</div>
-                        <strong>Email</strong>
+                        <strong>E-mail</strong>
                         <p style="margin: 5px 0;">info@trogonairways.com</p>
                       </div>
                       <div style="flex: 1; min-width: 150px;">
@@ -6286,26 +6286,26 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
                       </div>
                     </div>
                     <p style="margin-top: 15px; font-size: 0.9em; opacity: 0.9;">
-                      Pour toute modification ou annulation, contactez-nous dans les <strong>24 heures</strong>.
+                     For any changes or cancellations, please contact us within <strong>24 hours</strong>.
                     </p>
                   </div>
 
                   <p style="font-style: italic; text-align: center; margin-top: 30px; color: #6c757d;">
-                    Nous nous excusons pour la gêne occasionnée et vous remercions de votre compréhension.
+                    We apologize for the inconvenience and thank you for your understanding..
                   </p>
                 </div>
 
                 <!-- Footer -->
                 <div class="footer">
-                  <p><strong>Merci de choisir Trogon Airways</strong></p>
-                  <p>Cordialement,<br><strong>L'équipe Trogon Airways</strong></p>
+                  <p><strong>Thank you for choosing Trogon Airways</strong></p>
+                  <p>Kind regards,<br><strong>The Trogon Airways team</strong></p>
                   <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
                     <p style="font-size: 0.8em; color: #adb5bd;">
-                      Cet email a été envoyé automatiquement. Merci de ne pas y répondre.<br>
-                      Pour toute question, contactez notre service client.
+                      This email was sent automatically. Please do not reply.<br>
+For any questions, please contact our customer service..
                     </p>
                     <p style="font-size: 0.8em; color: #adb5bd; margin-top: 10px;">
-                      © ${new Date().getFullYear()} Trogon Airways. Tous droits réservés.
+                      © ${new Date().getFullYear()} Trogon Airways. All rights reserved.
                     </p>
                   </div>
                 </div>
