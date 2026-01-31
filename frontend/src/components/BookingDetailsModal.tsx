@@ -105,7 +105,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
     // Calculer le nouveau prix total basé sur le nombre de passagers et le prix de base
     const calculateTotalPrice = useCallback((passengers: Passenger[], basePassengerPrice: number) => {
         const total = passengers.length * basePassengerPrice;
-        return `$${total}`;
+        return `${total} ${booking?.currency === "htg" || editedBooking?.currency === "htg" ? "HTG" : "USD"}`;
     }, []);
 
     useEffect(() => {

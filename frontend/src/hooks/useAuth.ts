@@ -146,6 +146,8 @@ export const useAuth = () => {
         createdTicket: hasPermission("createdTicket"),
         dashboard: hasPermission("dashboard"),
         rapport: hasPermission("rapport"),
-        cancelledTicket: hasPermission("cancelledTicket")
+        cancelledTicket: hasPermission("cancelledTicket"),
+        reschedule: hasPermission("reschedule"),
+        cancelFlight: hasPermission("cancelFlight")
     };
 };

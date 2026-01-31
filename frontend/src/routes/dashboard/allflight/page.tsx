@@ -228,6 +228,8 @@ const FlightTable = () => {
     const listePassagers = isAdmin || hasPermission("listePassagers");
     const imprimerTicket = isAdmin || hasPermission("imprimerTicket");
     const createdTicket = isAdmin || hasPermission("createdTicket");
+    const rescheduleFlight = isAdmin || hasPermission("reschedule");
+    const desactiveFlight = isAdmin || hasPermission("cancelFlight");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -465,6 +467,7 @@ const FlightTable = () => {
     };
 
     const handleUpdateRescheduleFlight = async (flightId: number, flightDataReschedule: any) => {
+        setLoadingPassengers(true);
         if (!isAdmin) {
             toast.error("❌ Accès refusé - Admin uniquement");
             return;
@@ -505,6 +508,7 @@ const FlightTable = () => {
             showNotification(err.message || "Erreur inconnue lors de la modification", "error");
         } finally {
             setSubmitting(false);
+            setLoadingPassengers(false);
         }
     };
 
@@ -595,12 +599,52 @@ const FlightTable = () => {
             toast.error("❌ Accès refusé - Admin uniquement");
             return;
         }
+
+        // Créer une notification de confirmation personnalisée
+        const confirmationToast = toast.custom(
+            (t) => (
+                <div className="max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-xl">
+                    <h3 className="mb-2 text-lg font-semibold text-gray-900">Confirmer la suppression</h3>
+                    <p className="mb-4 text-gray-600">Êtes-vous sûr de vouloir supprimer ce vol ? Cette action est irréversible.</p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t.id);
+                            }}
+                            className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            onClick={async () => {
+                                toast.dismiss(t.id);
+                                await performDelete(flightId);
+                            }}
+                            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                        >
+                            Supprimer
+                        </button>
+                    </div>
+                </div>
+            ),
+            {
+                duration: Infinity, // Rester jusqu'à action de l'utilisateur
+            },
+        );
+    };
+
+    // Fonction séparée pour la suppression
+    const performDelete = async (flightId: number) => {
         try {
-            const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, { method: "DELETE" });
+            const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, {
+                method: "DELETE",
+            });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Erreur suppression");
+
             setFlights((prev) => prev.filter((f) => f.id !== flightId));
             await fetchFlights();
+
             toast.success(`Vol supprimé`, {
                 style: {
                     background: "#28a745",
@@ -613,6 +657,30 @@ const FlightTable = () => {
             showNotification(err.message || "Erreur inconnue", "error");
         }
     };
+
+    // const deleteFlight = async (flightId: number) => {
+    //     if (!isAdmin) {
+    //         toast.error("❌ Accès refusé - Admin uniquement");
+    //         return;
+    //     }
+    //     try {
+    //         const res = await fetch(`https://steve-airways.onrender.com/api/deleteflights/${flightId}`, { method: "DELETE" });
+    //         const data = await res.json();
+    //         if (!res.ok) throw new Error(data.error || "Erreur suppression");
+    //         setFlights((prev) => prev.filter((f) => f.id !== flightId));
+    //         await fetchFlights();
+    //         toast.success(`Vol supprimé`, {
+    //             style: {
+    //                 background: "#28a745",
+    //                 color: "#fff",
+    //                 border: "1px solid #1e7e34",
+    //             },
+    //             iconTheme: { primary: "#fff", secondary: "#1e7e34" },
+    //         });
+    //     } catch (err: any) {
+    //         showNotification(err.message || "Erreur inconnue", "error");
+    //     }
+    // };
 
     const handleSearch = async () => {
         try {
@@ -1000,44 +1068,48 @@ const FlightTable = () => {
                                                                 </>
                                                             )}
 
-                                                            <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-sky-700 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    handleRescheduleClick(flight);
+                                                            {rescheduleFlight && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-sky-700 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            handleRescheduleClick(flight);
 
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    stroke-width="2"
-                                                                    stroke-linecap="round"
-                                                                    stroke-linejoin="round"
-                                                                    class="lucide lucide-clipboard-clock-icon lucide-clipboard-clock"
-                                                                >
-                                                                    <path d="M16 14v2.2l1.6 1" />
-                                                                    <path d="M16 4h2a2 2 0 0 1 2 2v.832" />
-                                                                    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2" />
-                                                                    <circle
-                                                                        cx="16"
-                                                                        cy="16"
-                                                                        r="6"
-                                                                    />
-                                                                    <rect
-                                                                        x="8"
-                                                                        y="2"
-                                                                        width="8"
-                                                                        height="4"
-                                                                        rx="1"
-                                                                    />
-                                                                </svg>
-                                                                Reschedule
-                                                            </button>
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <svg
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            width="20"
+                                                                            height="20"
+                                                                            viewBox="0 0 24 24"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            stroke-width="2"
+                                                                            stroke-linecap="round"
+                                                                            stroke-linejoin="round"
+                                                                            class="lucide lucide-clipboard-clock-icon lucide-clipboard-clock"
+                                                                        >
+                                                                            <path d="M16 14v2.2l1.6 1" />
+                                                                            <path d="M16 4h2a2 2 0 0 1 2 2v.832" />
+                                                                            <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2" />
+                                                                            <circle
+                                                                                cx="16"
+                                                                                cy="16"
+                                                                                r="6"
+                                                                            />
+                                                                            <rect
+                                                                                x="8"
+                                                                                y="2"
+                                                                                width="8"
+                                                                                height="4"
+                                                                                rx="1"
+                                                                            />
+                                                                        </svg>
+                                                                        Reschedule
+                                                                    </button>
+                                                                </>
+                                                            )}
 
                                                             {createdTicket && (
                                                                 <>
@@ -1068,18 +1140,20 @@ const FlightTable = () => {
                                                                     </button>
                                                                 </>
                                                             )}
+                                                            {desactiveFlight && (
+                                                                <>
+                                                                    <button
+                                                                        className="flex w-full gap-2 px-4 py-2 text-left text-blue-900 hover:bg-gray-100"
+                                                                        onClick={() => {
+                                                                            handleCancelClick(flight);
 
-                                                            <button
-                                                                className="flex w-full gap-2 px-4 py-2 text-left text-blue-900 hover:bg-gray-100"
-                                                                onClick={() => {
-                                                                    handleCancelClick(flight);
-
-                                                                    setOpenDropdown(null);
-                                                                }}
-                                                            >
-                                                                <NoFlightIcon /> Cancel the Flight
-                                                            </button>
-
+                                                                            setOpenDropdown(null);
+                                                                        }}
+                                                                    >
+                                                                        <NoFlightIcon /> Cancel the Flight
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                             {deleteFlights && (
                                                                 <>
                                                                     <button

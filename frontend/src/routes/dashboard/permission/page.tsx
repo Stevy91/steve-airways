@@ -23,6 +23,8 @@ const permissionsData = [
             { id: "addFlights", label: "1.5 - Add Flights" },
             { id: "deleteFlights", label: "1.6 - Delete Flights" },
             { id: "editFlights", label: "1.7 - Edit Flights" },
+            { id: "reschedule", label: "1.7 - Reschedule Flight" },
+            { id: "cancelFlight", label: "1.7 - Cancel Flights" },
             { id: "listePassagers", label: "1.8 - Listes Passagers" },
             { id: "editBookings", label: "1.9 - Edit Bookings" },
             { id: "imprimerTicket", label: "2.0 - Imprimer Ticket" },
@@ -122,6 +124,8 @@ export default function PermissionsPage() {
             "deleteFlights",
             "dashboard",
             "user",
+            "reschedule",
+            "cancelFlight",
         ];
 
         // S'assurer que toutes les permissions sont présentes

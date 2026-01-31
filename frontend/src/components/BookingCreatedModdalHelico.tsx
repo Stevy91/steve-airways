@@ -297,7 +297,7 @@ const generateEmailContent = (bookingData: BookingData, bookingReference: string
         <p><strong>Important: **</strong> Please arrive at the airport at least 1 hour before your departure time. All passengers must present a valid ID at check-in.</p>
         <p><strong>Baggage Limitation: **</strong>The maximum allowance for passenger baggage is 20 lb. <strong>Luggage dimensions 35*55*25, Carry on, soft skin</strong></p>
         <p><strong>Remarks: **</strong> The company declines all responsibility for flight delays, cancellations, or changes resulting from circumstances beyond its control, such as, technical problems, strikes, or any other problems. The customer is responsible for their own personal arrangements (airport arrival time, travel formalities, etc.). No refund or compensation can be claimed in the event of a missed flight for these reasons.</p>
-        <p><strong>Remarks 2: **</strong> Any cancellation on the day of or the day before your trip will result in a 50% cancellation fee being charged.</p>
+        <p><strong>Remarks 2: **</strong> No refund will be given for flights cancelled due to force majeure or technical reasons beyond the airline's control. The ticket price will be retained as a voucher (credit) with the airline, valid for future use in accordance with the applicable fare conditions.</p>
         <p>We look forward to welcoming you on board.</p>
         <p>Sincerely,<br>The Trogon Airways Team</p>
       </div>
@@ -449,7 +449,7 @@ imputable à des circonstances indépendantes de sa volonté dû à des problèm
 incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à
 l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué
 pour ces raisons.</p>
-        <p><strong>Remarques 2: **</strong> Toute annulation le jour même ou la veille de votre voyage, entraînera une retenue de 50% du montant total à titre de frais d'annulation.</p>
+        <p><strong>Remarques 2: **</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
         <p>Nous nous réjouissons de vous accueillir à bord.</p>
         <p>Cordialement,<br>L'équipe de Trogon Airways</p>
       </div>
