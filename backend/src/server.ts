@@ -4772,6 +4772,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
       };
 
+      
+
       // Insérer les nouveaux passagers et envoyer les emails
       for (const passenger of passengers) {
         await connection.query(
