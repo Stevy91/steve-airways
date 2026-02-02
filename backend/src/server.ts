@@ -4769,7 +4769,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         } catch (error) {
           return "Invalid time";
         }
-        
+
       };
 
       // Insérer les nouveaux passagers et envoyer les emails
@@ -4780,7 +4780,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             date_of_birth, idClient, idTypeClient, gender, title, address, type,
             type_vol, typecharter, type_v, country, nationality,
             phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             booking.id,
             passenger.firstName || passenger.name || '',
