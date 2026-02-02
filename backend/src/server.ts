@@ -4756,6 +4756,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         }
       };
 
+      
+
       const formatTimeSafely = (dateString: string) => {
         try {
           const date = new Date(dateString);
@@ -4772,7 +4774,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
       };
 
-      
+
 
       // Insérer les nouveaux passagers et envoyer les emails
       for (const passenger of passengers) {
