@@ -509,7 +509,11 @@ const handlePassengerChange = (index: number, field: keyof Passenger, value: str
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={onClose}
+                         onClick={() => {
+                            onClose();
+                            setIsEditing(false);
+                                                
+                        }}
                     />
 
                     {/* Dialog */}
@@ -523,6 +527,7 @@ const handlePassengerChange = (index: number, field: keyof Passenger, value: str
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                       
                     >
                         <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-white via-white to-slate-50 shadow-2xl shadow-slate-900/30 ring-1 ring-white/50">
                             {/* Header avec gradient bleu foncé pour détails */}
@@ -613,7 +618,11 @@ const handlePassengerChange = (index: number, field: keyof Passenger, value: str
 
                                         {/* Bouton fermer identique */}
                                         <button
-                                            onClick={onClose}
+                                            onClick={() => {
+                                                onClose();
+                                                setIsEditing(false);
+                                                                    
+                                            }}
                                             className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/30 active:scale-95"
                                             aria-label="Close"
                                         >
@@ -1257,7 +1266,12 @@ const handlePassengerChange = (index: number, field: keyof Passenger, value: str
                                     <div className="flex items-center justify-end gap-4">
                                         <button
                                             type="button"
-                                            onClick={onClose}
+                                            
+                                            onClick={() => {
+                                                onClose();
+                                                setIsEditing(false);
+                                                
+                                            }}
                                             className="rounded-xl border border-slate-300 bg-white px-6 py-3 font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md"
                                         >
                                             Close

@@ -4776,7 +4776,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         await connection.query(
           `INSERT INTO passengers (
             booking_id, first_name, middle_name, last_name,
-            date_of_birth, gender, title, address, type,
+            date_of_birth, idClient, idTypeClient, gender, title, address, type,
             type_vol, typecharter, type_v, country, nationality,
             phone, email, nom_urgence, email_urgence, tel_urgence, created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -4786,6 +4786,8 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
             passenger.middleName || null,
             passenger.lastName || '',
             passenger.dateOfBirth || passenger.dob || null,
+            passenger.idClient || "",
+            passenger.idTypeClient || "",
             passenger.gender || "other",
             passenger.title || "Mr",
             passenger.address || null,
