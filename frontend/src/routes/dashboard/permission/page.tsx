@@ -7,12 +7,12 @@ import { useParams } from "react-router-dom";
 const permissionsData = [
     {
         id: "dashboard",
-        label: "0 - TABLEAU DE BORD",
+        label: "0 - DASHBOARD",
         children: [],
     },
     {
         id: "user",
-        label: "1 - UTILISATEUR",
+        label: "1 - USER",
         children: [
             { id: "listeFlightsPlane", label: "1.1 - Listes Flights Plane" },
             { id: "listeBookingsPlane", label: "1.2 - Listes Bookings Plane" },
@@ -273,7 +273,7 @@ export default function PermissionsPage() {
                     fontWeight: "bold",
                 }}
             >
-                Gestion des permissions pour l'utilisateur 
+                Managing permissions for the user <span className="text-red-600">{stats?.name}</span>
             </h2>
 
             {/* Champ utilisateur */}
@@ -401,7 +401,7 @@ export default function PermissionsPage() {
                         opacity: loading ? 0.7 : 1,
                     }}
                 >
-                    {loading ? "⏳ Enregistrement..." : "💾 Enregistrer permissions"}
+                    {loading ? "⏳ Processing..." : "💾 Save permissions"}
                 </button>
 
                 {/* Messages */}
@@ -444,76 +444,76 @@ export default function PermissionsPage() {
 
             {/* Prévisualisation */}
             {/* <div style={{ 
-        marginTop: 30, 
-        padding: 20, 
-        backgroundColor: "#f8f9fa", 
-        borderRadius: 8,
-        border: "1px solid #dee2e6"
-      }}>
-        <h3 style={{ marginTop: 0 }}>📋 Prévisualisation</h3>
-        <p style={{ marginBottom: 10, color: "#6c757d" }}>
-          Format qui sera enregistré dans la BDD :
-        </p>
-        <div style={{ 
-          padding: 15, 
-          backgroundColor: "white", 
-          border: "1px solid #ced4da",
-          borderRadius: 4,
-          fontFamily: "'Courier New', monospace",
-          fontSize: 14,
-          minHeight: 60,
-          wordBreak: "break-all"
-        }}>
-          {(() => {
-            const permissions = buildPermissionsPayload();
-            const activePermissions: string[] = [];
-            
-            Object.entries(permissions).forEach(([key, value]) => {
-              if (value === true) {
-                activePermissions.push(key);
-              }
-            });
-            
-            return activePermissions.join(', ') || 'Aucune permission activée';
-          })()}
-        </div>
-        
-        <div style={{ marginTop: 15, fontSize: 12, color: "#6c757d" }}>
-          <strong>Note :</strong> Seules les permissions cochées seront enregistrées sous forme de texte (ex: "listeFlightsPlane, editBookings")
-        </div>
-      </div> */}
+                marginTop: 30, 
+                padding: 20, 
+                backgroundColor: "#f8f9fa", 
+                borderRadius: 8,
+                border: "1px solid #dee2e6"
+            }}>
+                <h3 style={{ marginTop: 0 }}>📋 Prévisualisation</h3>
+                <p style={{ marginBottom: 10, color: "#6c757d" }}>
+                Format qui sera enregistré dans la BDD :
+                </p>
+                <div style={{ 
+                padding: 15, 
+                backgroundColor: "white", 
+                border: "1px solid #ced4da",
+                borderRadius: 4,
+                fontFamily: "'Courier New', monospace",
+                fontSize: 14,
+                minHeight: 60,
+                wordBreak: "break-all"
+                }}>
+                {(() => {
+                    const permissions = buildPermissionsPayload();
+                    const activePermissions: string[] = [];
+                    
+                    Object.entries(permissions).forEach(([key, value]) => {
+                    if (value === true) {
+                        activePermissions.push(key);
+                    }
+                    });
+                    
+                    return activePermissions.join(', ') || 'Aucune permission activée';
+                })()}
+                </div>
+                
+                <div style={{ marginTop: 15, fontSize: 12, color: "#6c757d" }}>
+                <strong>Note :</strong> Seules les permissions cochées seront enregistrées sous forme de texte (ex: "listeFlightsPlane, editBookings")
+                </div>
+            </div> */}
 
-            {/* Debug - Optionnel */}
-            {/* <details style={{ marginTop: 30 }}>
-        <summary style={{ 
-          cursor: "pointer", 
-          padding: "10px", 
-          backgroundColor: "#e9ecef", 
-          borderRadius: 4 
-        }}>
-          🔧 Mode Debug
-        </summary>
-        <div style={{ 
-          marginTop: 10, 
-          padding: 15, 
-          backgroundColor: "#f8f9fa", 
-          borderRadius: 4 
-        }}>
-          <pre style={{ 
-            fontSize: 12, 
-            backgroundColor: "white", 
-            padding: 10, 
-            borderRadius: 4,
-            overflow: "auto"
-          }}>
-            {JSON.stringify({
-              userId,
-              permissions: buildPermissionsPayload(),
-              checkedState: checked
-            }, null, 2)}
-          </pre>
-        </div>
-      </details> */}
+                    {/* Debug - Optionnel */}
+                    {/* <details style={{ marginTop: 30 }}>
+                            <summary style={{ 
+                            cursor: "pointer", 
+                            padding: "10px", 
+                            backgroundColor: "#e9ecef", 
+                            borderRadius: 4 
+                            }}>
+                            🔧 Mode Debug
+                            </summary>
+                            <div style={{ 
+                                marginTop: 10, 
+                                padding: 15, 
+                                backgroundColor: "#f8f9fa", 
+                                borderRadius: 4 
+                                }}>
+                                <pre style={{ 
+                                    fontSize: 12, 
+                                    backgroundColor: "white", 
+                                    padding: 10, 
+                                    borderRadius: 4,
+                                    overflow: "auto"
+                                }}>
+                                    {JSON.stringify({
+                                    userId,
+                                    permissions: buildPermissionsPayload(),
+                                    checkedState: checked
+                                    }, null, 2)}
+                                </pre>
+                           </div>
+                        </details> */}
         </div>
     );
 }

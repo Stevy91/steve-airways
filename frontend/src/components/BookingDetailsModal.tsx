@@ -29,6 +29,8 @@ export type Passenger = {
     gender?: string;
     title?: string;
     phone?: string;
+    idTypeClient?: string;
+    idClient?: string;
     nationality?: string;
     nom_urgence?: string;
     email_urgence?: string;
@@ -151,20 +153,59 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
         }
     };
 
-    const handlePassengerChange = (index: number, field: keyof Passenger, value: string) => {
-        if (!editedBooking) return;
+    const formatNimuLicens = (value: string): string => {
+    const numbers = value.replace(/\D/g, "");
+    const trimmed = numbers.slice(0, 10);
+    const parts = [];
+    if (trimmed.length > 0) parts.push(trimmed.slice(0, 3));
+    if (trimmed.length > 3) parts.push(trimmed.slice(3, 6));
+    if (trimmed.length > 6) parts.push(trimmed.slice(6, 9));
+    if (trimmed.length > 9) parts.push(trimmed.slice(9, 10));
+    return parts.join("-");
+};
 
-        const updatedPassengers = [...editedBooking.passengers];
-        updatedPassengers[index] = {
-            ...updatedPassengers[index],
-            [field]: value,
-        };
+    // const handlePassengerChange = (index: number, field: keyof Passenger, value: string, name: string) => {
+    //     if (!editedBooking) return;
+        
 
-        setEditedBooking({
-            ...editedBooking,
-            passengers: updatedPassengers,
-        });
+    //     const updatedPassengers = [...editedBooking.passengers];
+    //     updatedPassengers[index] = {
+    //         ...updatedPassengers[index],
+    //         [field]: value,
+    //     };
+
+
+    //     setEditedBooking({
+    //         ...editedBooking,
+    //         passengers: updatedPassengers,
+    //     });
+    // };
+
+
+
+const handlePassengerChange = (index: number, field: keyof Passenger, value: string, name: string) => {
+    if (!editedBooking) return;
+
+    const updatedPassengers = [...editedBooking.passengers];
+    
+    // Si c'est un NINU et qu'on modifie l'ID, formater la valeur
+    let formattedValue = value;
+    if (name === "idClient" && updatedPassengers[index]?.idTypeClient === "nimu") {
+        formattedValue = formatNimuLicens(value);
+    }
+    
+    updatedPassengers[index] = {
+        ...updatedPassengers[index],
+        [field]: formattedValue,
     };
+
+    setEditedBooking({
+        ...editedBooking,
+        passengers: updatedPassengers,
+    });
+};
+
+
 
     const handleFlightChange = (index: number, field: keyof Flight, value: string) => {
         if (!editedBooking) return;
@@ -198,6 +239,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
             country: "",
             nationality: "",
             nom_urgence: "",
+            idTypeClient: "",
             email_urgence: "",
             tel_urgence: "",
             phone: "",
@@ -867,7 +909,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">First Name</label>
                                                             <input
                                                                 value={passenger.firstName || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "firstName", e.target.value, "firstName")}
                                                                 placeholder="First name"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -876,7 +918,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">Middle Name</label>
                                                             <input
                                                                 value={passenger.middleName || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "middleName", e.target.value, 'middleName')}
                                                                 placeholder="Middle name"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -885,7 +927,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">Last Name</label>
                                                             <input
                                                                 value={passenger.lastName || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "lastName", e.target.value, "lastName")}
                                                                 placeholder="Last name"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -895,7 +937,94 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <input
                                                                 type="date"
                                                                 value={passenger.dob || passenger.dateOfBirth || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "dob", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "dob", e.target.value, "dob")}
+                                                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
+                                                            />
+                                                        </div>
+                                                         <div className="flex flex-col">
+                                                            <label className="mb-2 text-sm font-medium text-slate-700">Address</label>
+                                                            <input
+                                                                type="text"
+                                                                value={passenger.address || ""}
+                                                                placeholder="Address"
+                                                                onChange={(e) => handlePassengerChange(idx, "address", e.target.value, "address")}
+                                                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
+                                                            />
+                                                        </div>
+                                                                                                {/* ID Type */}
+                                        <div className="flex flex-col">
+                                            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg
+                                                    className="h-4 w-4 text-blue-500"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                                    />
+                                                </svg>
+                                                ID Type
+                                            </label>
+                                            <select
+                                                id="idTypeClient"
+                                                name="idTypeClient"
+                                                value={passenger.idTypeClient || ""}
+                                                onChange={(e) => handlePassengerChange(idx, "idTypeClient", e.target.value, "idTypeClient")}
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                            >
+                                                <option value="passport">Passport</option>
+                                                <option value="nimu">NINU</option>
+                                                <option value="licens">License</option>
+                                            </select>
+                                        </div>
+
+                                        {/* ID Number */}
+                                        <div className="flex flex-col">
+                                            <label className="mb-2 text-sm font-semibold text-slate-700">
+                                                {passenger.idTypeClient === "nimu"
+                                                    ? "NINU ID"
+                                                    : passenger.idTypeClient === "licens"
+                                                      ? "License ID"
+                                                      : "Passport Number"}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="idClient"
+                                                name="idClient"
+                                                placeholder={
+                                                    passenger.idTypeClient === "nimu"
+                                                        ? "000-000-000-0"
+                                                        : passenger.idTypeClient === "licens"
+                                                          ? "License number"
+                                                          : "Passport number"
+                                                }
+                                                value={passenger.idClient}
+                                                required
+                                                 onChange={(e) => handlePassengerChange(idx, "idClient", e.target.value, "idClient")}
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+                                            />
+                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <label className="mb-2 text-sm font-medium text-slate-700">Country</label>
+                                                            <input
+                                                                type="text"
+                                                                value={passenger.country || ""}
+                                                                placeholder="Country"
+                                                                onChange={(e) => handlePassengerChange(idx, "country", e.target.value, "country")}
+                                                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <label className="mb-2 text-sm font-medium text-slate-700">Nationality</label>
+                                                            <input
+                                                                type="text"
+                                                                value={passenger.nationality || ""}
+                                                                placeholder="Nationality"
+                                                                onChange={(e) => handlePassengerChange(idx, "nationality", e.target.value, "nationality")}
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
                                                         </div>
@@ -904,7 +1033,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <input
                                                                 type="email"
                                                                 value={passenger.email || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "email", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "email", e.target.value, "email",)}
                                                                 placeholder="Email"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -913,7 +1042,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">Phone</label>
                                                             <input
                                                                 value={passenger.phone || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "phone", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "phone", e.target.value, "phone")}
                                                                 placeholder="Phone"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -922,7 +1051,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">Emergency Contact Name</label>
                                                             <input
                                                                 value={passenger.nom_urgence || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "nom_urgence", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "nom_urgence", e.target.value, "nom_urgence")}
                                                                 placeholder="Emergency contact name"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -931,7 +1060,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">Emergency Email</label>
                                                             <input
                                                                 value={passenger.email_urgence || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "email_urgence", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "email_urgence", e.target.value, "email_urgence")}
                                                                 placeholder="Emergency email"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
@@ -940,7 +1069,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ open, data, o
                                                             <label className="mb-2 text-sm font-medium text-slate-700">Emergency Phone</label>
                                                             <input
                                                                 value={passenger.tel_urgence || ""}
-                                                                onChange={(e) => handlePassengerChange(idx, "tel_urgence", e.target.value)}
+                                                                onChange={(e) => handlePassengerChange(idx, "tel_urgence", e.target.value, "tel_urgence")}
                                                                 placeholder="Emergency phone"
                                                                 className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30"
                                                             />
