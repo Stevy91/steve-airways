@@ -4769,6 +4769,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         } catch (error) {
           return "Invalid time";
         }
+        
       };
 
       // Insérer les nouveaux passagers et envoyer les emails
