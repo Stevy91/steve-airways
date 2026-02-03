@@ -2362,8 +2362,7 @@ const FlightTableCharter = () => {
                                             <div>
                                                 <h3 className="font-bold text-red-700">Important Notice</h3>
                                                 <p className="mt-1 text-sm text-red-600">
-                                                    This action cannot be undone. All passengers will be notified and refunds will be processed
-                                                    according to our cancellation policy.
+                                                    This action cannot be undone. All passengers will be notified.
                                                 </p>
                                             </div>
                                         </div>
@@ -2507,7 +2506,7 @@ const FlightTableCharter = () => {
                                         </div>
 
                                         {/* Note additionnelle */}
-                                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        {/* <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                                             <div className="flex items-start gap-3">
                                                 <svg
                                                     className="mt-0.5 h-5 w-5 text-slate-500"
@@ -2529,7 +2528,7 @@ const FlightTableCharter = () => {
                                                     </p>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                             </div>

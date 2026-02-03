@@ -5303,7 +5303,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
               text-align: center;
             ">
       <img src="https://trogonairways.com/logo-trogonpng.png" alt="" style="height: 55px; vertical-align: middle" />
-      <p style="margin: 5px 0 0; font-size: 1.2em">${flightChanged ? 'Votre vol a été modifié' : 'Votre réservation est confirmée'}</p>
+      <p style="margin: 5px 0 0; font-size: 1.2em">${flightChanged ? 'Your flight has been changed' : 'Votre réservation est confirmée'}</p>
     </div>
 
     <div style="padding: 8px">
@@ -5752,7 +5752,6 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
               <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h4>Available options:</h4>
                 <ul>
-                  <li>You will be fully refunded within 7 to 10 business days</li>
                   <li>You can contact our customer service to book another flight.</li>
                   <li>See our cancellation policy for more details.</li>
                 </ul>
@@ -6268,7 +6267,7 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
                   
                   <div class="alert-box">
                     <span class="badge badge-warning">IMPORTANT</span>
-                    <p style="margin: 5px 0; font-weight: bold; font-size: 1.1em;">Votre vol a été modifié</p>
+                    <p style="margin: 5px 0; font-weight: bold; font-size: 1.1em;">Your flight has been changed</p>
                     <p style="margin: 5px 0;">We would like to inform you that changes have been made to your reservation..</p>
                   </div>
 
@@ -6322,7 +6321,7 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
                   </div>
 
                   <!-- Options -->
-                  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                 <!--  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3 style="margin-top: 0; color: #1A237E;">Your options :</h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0;">
                       ${isFlightDeactivated ? `
@@ -6354,7 +6353,7 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
                       </div>
                       `}
                     </div>
-                  </div>
+                  </div> -->
 
                   <!-- Contact Information -->
                   <div style="margin: 20px 0; padding: 20px; background-color: #1A237E; color: white; border-radius: 8px;">
@@ -6804,7 +6803,7 @@ For any questions, please contact our customer service.
                   
 //                   <div class="alert-box">
 //                     <span class="badge badge-warning">IMPORTANT</span>
-//                     <p style="margin: 5px 0; font-weight: bold; font-size: 1.1em;">Votre vol a été modifié</p>
+//                     <p style="margin: 5px 0; font-weight: bold; font-size: 1.1em;">Your flight has been changed</p>
 //                     <p style="margin: 5px 0;">We would like to inform you that changes have been made to your reservation.</p>
 //                   </div>
 
