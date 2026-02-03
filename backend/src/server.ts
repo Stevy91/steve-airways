@@ -5748,7 +5748,7 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
                 <p>${cancelNotes}</p>
               </div>
               ` : ''}
-              
+
 
               <div style="background-color: #dbeafe; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h4>Available options:</h4>
@@ -5762,7 +5762,6 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
               <p>📞 +509 334104004</p>
               <p>✉️ info@trogonairways.com.com</p>
               
-             
               </div>
 
 
