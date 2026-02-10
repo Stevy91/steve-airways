@@ -15,23 +15,23 @@ const permissionsData = [
         label: "1 - USER",
         children: [
             { id: "listeFlightsPlane", label: "1.1 - Listes Flights Plane" },
-            { id: "listeBookingsPlane", label: "1.2 - Listes Bookings Plane" },
             { id: "listeFlightsHelico", label: "1.2 - Listes Flights Helico" },
             { id: "charter", label: "1.3 - Listes Charter" },
-            { id: "listeBookingsHelico", label: "1.4 - Listes Bookings Helico" },
-            { id: "listeUsers", label: "1.4 - Users" },
-            { id: "addFlights", label: "1.5 - Add Flights" },
-            { id: "deleteFlights", label: "1.6 - Delete Flights" },
+            { id: "listeBookingsPlane", label: "1.4 - Listes Bookings Plane" },
+            { id: "listeBookingsHelico", label: "1.5 - Listes Bookings Helico" },
+            { id: "addFlights", label: "1.6 - Add Flights" },
             { id: "editFlights", label: "1.7 - Edit Flights" },
-            { id: "reschedule", label: "1.7 - Reschedule Flight" },
-            { id: "cancelFlight", label: "1.7 - Cancel Flights" },
-            { id: "listePassagers", label: "1.8 - Listes Passagers" },
-            { id: "editBookings", label: "1.9 - Edit Bookings" },
-            { id: "imprimerTicket", label: "2.0 - Imprimer Ticket" },
-            { id: "cancelledTicket", label: "2.1 - Cancelled Ticket" },
-            { id: "createdTicket", label: "2.2 - Created Ticket" },
-            { id: "manifestPdf", label: "2.3 - Manifest PDF" },
-            { id: "rapport", label: "2.4 - Bookings Rapport" },
+            { id: "deleteFlights", label: "1.8 - Delete Flights" },
+            { id: "cancelFlight", label: "1.9 - Cancel Flights" },
+            { id: "editBookings", label: "2.0 - Edit Bookings" },
+            { id: "reschedule", label: "2.1 - Reschedule Flight" },
+            { id: "listePassagers", label: "2.2 - Listes Passagers" },
+            { id: "createdTicket", label: "2.3 - Created Ticket" },
+            { id: "imprimerTicket", label: "2.4 - Imprimer Ticket" },
+            { id: "cancelledTicket", label: "2.5 - Cancelled Ticket" },
+            { id: "manifestPdf", label: "2.6 - Manifest PDF" },
+            { id: "rapport", label: "2.7 - Bookings Rapport" },
+            { id: "listeUsers", label: "2.8 - Users" },
         ],
     },
 ];
@@ -483,8 +483,8 @@ export default function PermissionsPage() {
                 </div>
             </div> */}
 
-                    {/* Debug - Optionnel */}
-                    {/* <details style={{ marginTop: 30 }}>
+            {/* Debug - Optionnel */}
+            {/* <details style={{ marginTop: 30 }}>
                             <summary style={{ 
                             cursor: "pointer", 
                             padding: "10px", 

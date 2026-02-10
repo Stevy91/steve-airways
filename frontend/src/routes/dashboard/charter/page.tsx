@@ -73,7 +73,7 @@ const FlightTableCharter = () => {
     const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
     const [stats, setStats] = useState<any>(null);
     const [showModalCancel, setShowModalCancel] = useState(false);
-
+    const [loadingPdf, setLoadingPdf] = useState(false);
     const [cancelFlight, setCancelFlight] = useState<Flight | null>(null);
     const [resCheduleFlight, setRescheduleFlight] = useState<Flight | null>(null);
     const [showModalReschedule, setShowModalReschedule] = useState(false);
@@ -199,7 +199,7 @@ const FlightTableCharter = () => {
             toast.error("Aucun vol sélectionné");
             return;
         }
-
+        setLoadingPdf(true);
         try {
             const response = await fetch(`https://steve-airways.onrender.com/api/generate/${flightId}/passengers-list`);
             if (!response.ok) throw new Error("Erreur serveur");
@@ -216,6 +216,8 @@ const FlightTableCharter = () => {
         } catch (err) {
             console.error("Erreur lors du téléchargement:", err);
             toast.error("Erreur lors du téléchargement du PDF");
+        }finally {
+            setLoadingPdf(false);
         }
     };
 
@@ -2212,20 +2214,49 @@ const FlightTableCharter = () => {
                                                             disabled={!selectedFlightId || passengers.length === 0}
                                                             className="relative flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 px-8 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                                                         >
-                                                            <svg
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={2}
-                                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                                />
-                                                            </svg>
-                                                            Download Passenger List (PDF)
+                                                                                                                       <span className="flex items-center justify-center gap-3">
+                                                                {loadingPdf ? (
+                                                                    <>
+                                                                        <svg
+                                                                            className="h-5 w-5 animate-spin"
+                                                                            fill="none"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <circle
+                                                                                className="opacity-25"
+                                                                                cx="12"
+                                                                                cy="12"
+                                                                                r="10"
+                                                                                stroke="currentColor"
+                                                                                strokeWidth="4"
+                                                                            />
+                                                                            <path
+                                                                                className="opacity-75"
+                                                                                fill="currentColor"
+                                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                                                            />
+                                                                        </svg>
+                                                                        Processing...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <svg
+                                                                            className="h-5 w-5"
+                                                                            fill="none"
+                                                                            viewBox="0 0 24 24"
+                                                                            stroke="currentColor"
+                                                                        >
+                                                                            <path
+                                                                                strokeLinecap="round"
+                                                                                strokeLinejoin="round"
+                                                                                strokeWidth={2}
+                                                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                                            />
+                                                                        </svg>
+                                                                        Download Passenger List (PDF)
+                                                                    </>
+                                                                )}
+                                                            </span>
                                                         </button>
                                                     </div>
                                                 </div>

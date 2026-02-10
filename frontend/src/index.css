@@ -110,3 +110,184 @@
 .recharts-tooltip-item {
     @apply text-base font-medium !text-blue-500 dark:!text-blue-600;
 }
+@layer utilities {
+    @keyframes gradient {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .animate-gradient {
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+    }
+
+    .animate-slideIn {
+        animation: slideIn 0.3s ease-out;
+    }
+}
+
+/* Scrollbar stylisée */
+.sidebar-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #3b82f6 transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+    border-radius: 10px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #60a5fa, #a78bfa);
+}
+
+/* Améliorations pour les classes existantes */
+.sidebar-group-title {
+    @apply overflow-hidden text-ellipsis text-base font-medium text-white dark:text-slate-50 transition-colors duration-300;
+}
+
+.bgSidebar {
+    background-color: #123088;
+    background-image: linear-gradient(135deg, #123088 0%, #1e40af 50%, #1e3a8a 100%);
+}
+
+.sidebar-item {
+    @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-slate-50 transition-all duration-300;
+    &:hover {
+        @apply bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white shadow-md;
+        transform: translateX(4px);
+    }
+    &.active {
+        @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg;
+        transform: translateX(0);
+    }
+}
+
+.sidebar-item-dashboard {
+    @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 rounded-lg p-3 text-base font-medium text-white transition-all duration-300;
+    &:hover {
+        @apply bg-gradient-to-r from-amber-500/20 to-orange-500/20 shadow-lg;
+        transform: scale(1.02);
+    }
+    &.active {
+        @apply bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg;
+        transform: scale(1.02);
+    }
+}
+
+@layer components {
+
+    .submenu-link {
+        position: relative;
+        z-index: 1;
+        cursor: pointer;
+    }
+
+    .submenu-link::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: -1;
+    }
+    /* Animation améliorée */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(-20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(-10px) scale(0.95);
+        }
+    }
+
+    .animate-slideInRight {
+        animation: slideInRight 0.15s ease-out;
+    }
+
+    .animate-fadeOut {
+        animation: fadeOut 0.15s ease-in;
+    }
+
+    /* Flèche améliorée */
+    .submenu-arrow {
+        filter: drop-shadow(-2px 0 2px rgba(0, 0, 0, 0.3));
+    }
+
+    /* Conteneur du sous-menu avec hauteur adaptative */
+    .submenu-container {
+        max-height: min(400px, calc(100vh - 100px));
+    }
+
+    /* Effet de verre amélioré */
+    .glass-submenu {
+        backdrop-filter: blur(20px) saturate(180%);
+        background: linear-gradient(
+            135deg,
+            rgba(30, 41, 59, 0.95) 0%,
+            rgba(15, 23, 42, 0.95) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 
+            0 25px 50px -12px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+}
+
+@layer utilities {
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .animate-slideInRight {
+        animation: slideInRight 0.2s ease-out;
+    }
+}

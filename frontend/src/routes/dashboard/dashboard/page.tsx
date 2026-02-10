@@ -19,6 +19,7 @@ type Booking = {
     passenger_count: number;
     contact_email: string;
     type_vol: string;
+    typecharter: string;
     type_v: string;
 };
 
@@ -222,7 +223,7 @@ const DashboardPage = () => {
     }
 
     return (
-        <div className="flex flex-col gap-y-4">
+        <div className="flex flex-col gap-y-4 p-6">
             <h1 className="title">Dashboard</h1>
 
             {/* Filtres de date */}
@@ -591,7 +592,7 @@ const DashboardPage = () => {
                                                 <p className="text-sky-700">{booking.booking_reference}</p>
                                             </td>
                                             <td className="table-cell text-center">
-                                                <p className="text-sky-700">{booking.type_vol === "plane" ? "Avion" : "Hélicoptère"}</p>
+                                                   <p className="text-sky-700">{booking.typecharter === "helicopter" ? "Charter Hélicoptère" : booking.typecharter === "plane" ? "Charter Avion" : booking.type_vol === "plane" ? "Avion" : "Hélicoptère" }</p>
                                             </td>
                                             <td className="table-cell text-center">{booking.contact_email}</td>
                                             <td className="table-cell text-center">

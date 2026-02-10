@@ -202,7 +202,7 @@ const router = createBrowserRouter([
         { 
             index: true, 
             element: (
-                <ProtectedRoute requiredAnyPermission={["dashboard", "listeFlightsPlane", "listeFlightsHelico", "charter"]}>
+                <ProtectedRoute requiredPermission="dashboard">
                     <DashboardPage />
                 </ProtectedRoute>
             ) 

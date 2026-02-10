@@ -134,7 +134,7 @@ const ViewBookingCharter = () => {
     if (!stats) return null;
 
     return (
-        <div className="flex flex-col gap-y-4">
+        <div className="flex flex-col gap-y-4 p-6">
             <h1 className="title">View bookings all types of charters</h1>
             {/* Filtres */}
 

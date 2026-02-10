@@ -3932,7 +3932,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
           <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
-          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur..</p>
+          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
           <p>Cordialement,<br>L'équipe de Trogon Airways</p>
         </div>`  :  `
@@ -3940,7 +3940,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong></p>
           <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
-          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur..</p>
+          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
           <p>Cordialement,<br>L'équipe de Trogon Airways</p>
         </div>` :
@@ -3949,7 +3949,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
           <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
-          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur..</p>
+          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
           <p>Cordialement,<br>L'équipe de Trogon Airways</p>
         </div>` : `
@@ -3957,7 +3957,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong></p>
           <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
-          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur..</p>
+          <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
           <p>Cordialement,<br>L'équipe de Trogon Airways</p>
         </div>`}
@@ -8099,7 +8099,7 @@ app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
     const { flightNumb, tailNumber, dateDeparture } = req.query;
 
     // Conditions dynamiques
-    let conditions = " WHERE f.typecharter IN ('helicopter', 'plane') ";
+    let conditions = " WHERE f.typecharter= 'plane' OR f.typecharter = 'helicopter' ";
     const params: any[] = [];
 
   

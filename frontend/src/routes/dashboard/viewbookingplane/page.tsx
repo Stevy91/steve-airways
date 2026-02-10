@@ -136,7 +136,7 @@ const ViewBookingPlane = () => {
     if (!stats) return null;
 
     return (
-        <div className="flex flex-col gap-y-4">
+        <div className="flex flex-col gap-y-4 p-6">
             <h1 className="title">View Booking Air Plane</h1>
             {/* Filtres */}
 
