@@ -8099,7 +8099,7 @@ app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
     const { flightNumb, tailNumber, dateDeparture } = req.query;
 
     // Conditions dynamiques
-    let conditions = " WHERE f.typecharter= 'plane' OR f.typecharter = 'helicopter' ";
+    let conditions = " WHERE f.typecharter= 'plane' ";
     const params: any[] = [];
 
   
