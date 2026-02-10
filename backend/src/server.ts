@@ -8514,7 +8514,7 @@ ORDER BY f.departure_time
       </head>
       <body>
         <div class="header-info">
-          <h1>MANIFESTE DE VOL - HÉLICOPTÈRE</h1>
+          <h1>MANIFESTE DE VOL</h1>
           <div class="date-display">${formattedDate}</div>
           
         </div>
