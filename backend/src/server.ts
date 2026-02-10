@@ -8095,33 +8095,26 @@ app.get("/api/flighttablecharter", async (req: Request, res: Response) => {
 
 app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
   try {
-    // const { startDate, endDate, transactionType, status, name } = req.query;
     const { flightNumb, tailNumber, dateDeparture } = req.query;
 
     // Conditions dynamiques
-    let conditions = " WHERE f.typecharter= 'plane' ";
+    let conditions = " WHERE (f.typecharter = 'plane' OR f.typecharter = 'helicopter') ";
     const params: any[] = [];
 
-  
     if (flightNumb) {
-      conditions += "  AND f.flight_number = ? ";
+      conditions += " AND f.flight_number = ? ";
       params.push(flightNumb);
     }
 
-   
     if (tailNumber) {
-      conditions += "  AND f.airline = ? ";
+      conditions += " AND f.airline = ? ";
       params.push(tailNumber);
     }
 
-   
     if (dateDeparture) {
-     
       conditions += " AND DATE(f.departure_time) = ? ";
       params.push(dateDeparture);
     }
-
-   
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT 
@@ -8133,7 +8126,7 @@ app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
                 f.departure_time,
                 f.arrival_time,
                 f.price,
-                f.total_seat
+                f.total_seat, 
                 f.seats_available,
                 dep.name AS departure_airport_name,
                 dep.city AS departure_city,
@@ -8152,9 +8145,7 @@ app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
       params
     );
 
-       
-
-    // Formater les données
+   
     const formattedFlights = rows.map((flight) => ({
       id: flight.id,
       flight_number: flight.flight_number,
@@ -8172,11 +8163,8 @@ app.get("/api/flight-charter-search", async (req: Request, res: Response) => {
       arrival_city: flight.arrival_city,
     }));
 
-
-     // 👉 IMPORTANT : envoyer TOUTES les réservations
+    
     res.json({ bookings: formattedFlights });
-
-   
 
   } catch (error) {
     console.error("Erreur recherche booking:", error);
