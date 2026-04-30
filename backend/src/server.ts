@@ -10962,21 +10962,21 @@ app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) 
     const flight = flightRows[0];
     const bookingRef = `MANUAL-${Math.floor(100000 + Math.random() * 900000)}`;
     const [bookingResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO bookings (booking_reference, flight_id, total_price, currency, status, passenger_count, contact_email, contact_phone, payment_method, type_vol, created_by, admin_notes)
+      `INSERT INTO bookings (booking_reference, flight_id, total_price, currency, status, passenger_count, contact_email, contact_phone, payment_method, type_vol, user_created_booking, adminNotes)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
       [bookingRef, flightId, totalPrice, currency || 'USD', 'confirmed', passengers.length, contactInfo.email, contactInfo.phone, paymentMethod || 'cash', flight_type || flight.type, agentId, notes || '']
     );
     const bookingId = bookingResult.insertId;
     for (const p of passengers) {
       await connection.execute(
-        `INSERT INTO passengers (booking_id, first_name, last_name, date_of_birth, passport_number, nationality, seat_number)
+        `INSERT INTO passengers (booking_id, first_name, last_name, date_of_birth, idClient, nationality, selectedSeat)
          VALUES (?,?,?,?,?,?,?)`,
         [bookingId, p.first_name, p.last_name, p.date_of_birth || null, p.passport_number || null, p.nationality || null, p.seat_number || null]
       );
     }
     await connection.execute<ResultSetHeader>(
-      `INSERT INTO payments (booking_id, amount, currency, payment_method, status, transaction_id) VALUES (?,?,?,?,?,?)`,
-      [bookingId, totalPrice, currency || 'USD', paymentMethod || 'cash', 'completed', `MANUAL-${Date.now()}`]
+      `INSERT INTO payments (booking_id, amount, currency, payment_method, payment_status, transaction_reference) VALUES (?,?,?,?,?,?)`,
+      [bookingId, totalPrice, currency || 'USD', paymentMethod || 'cash', 'confirmed', `MANUAL-${Date.now()}`]
     );
     await connection.commit();
     await logAudit(agentId, agentName, 'MANUAL_BOOKING', 'booking', bookingRef, `Réservation manuelle créée: ${bookingRef} - ${passengers.length} passager(s)`, req.ip);
@@ -11000,9 +11000,9 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
     let where = "WHERE 1=1";
     const params: any[] = [];
     if (q) {
-      where += " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.passport_number LIKE ? OR p.nationality LIKE ?)";
+      where += " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.idClient LIKE ? OR p.nationality LIKE ? OR b.booking_reference LIKE ?)";
       const like = `%${q}%`;
-      params.push(like, like, like, like);
+      params.push(like, like, like, like, like);
     }
     if (flight_id) { where += " AND b.flight_id=?"; params.push(flight_id); }
     if (booking_ref) { where += " AND b.booking_reference LIKE ?"; params.push(`%${booking_ref}%`); }
@@ -11011,10 +11011,16 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
     );
     const total = countRows[0].total;
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT p.*, b.booking_reference, b.status as booking_status, b.type_vol, f.flight_number, f.departure_time, f.from, f.to
+      `SELECT p.id, p.first_name, p.last_name, p.date_of_birth,
+              p.idClient AS passport_number, p.nationality, p.selectedSeat AS seat_number,
+              b.booking_reference, b.status AS booking_status, b.type_vol,
+              f.flight_number, f.departure_time,
+              l1.name AS \`from\`, l2.name AS \`to\`
        FROM passengers p
-       LEFT JOIN bookings b ON p.booking_id=b.id
-       LEFT JOIN flights f ON b.flight_id=f.id
+       LEFT JOIN bookings b ON p.booking_id = b.id
+       LEFT JOIN flights f ON b.flight_id = f.id
+       LEFT JOIN locations l1 ON f.departure_location_id = l1.id
+       LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
        ${where}
        ORDER BY p.id DESC LIMIT ? OFFSET ?`,
       [...params, Number(limit), offset]
@@ -11038,7 +11044,14 @@ app.get("/api/roles-list", authMiddleware, adminOnly, async (req: any, res: Resp
     rows.forEach((u: any) => {
       if (!roleGroups[u.role]) roleGroups[u.role] = [];
       let perms: string[] = [];
-      try { perms = JSON.parse(u.permissions || '[]'); } catch {}
+      try {
+        const raw = u.permissions || '';
+        if (raw.startsWith('[')) {
+          perms = JSON.parse(raw);
+        } else if (raw.trim()) {
+          perms = raw.split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+      } catch {}
       roleGroups[u.role].push({ ...u, permissions: perms });
     });
     res.json({ users: rows, roleGroups });
@@ -11053,7 +11066,7 @@ app.put("/api/roles-list/:userId", authMiddleware, adminOnly, async (req: any, r
   try {
     await pool.execute(
       "UPDATE users SET role=?, permissions=? WHERE id=?",
-      [role, JSON.stringify(permissions || []), userId]
+      [role, Array.isArray(permissions) ? permissions.join(',') : (permissions || ''), userId]
     );
     await logAudit(req.user.id, req.user.name , 'UPDATE_ROLE', 'user', userId, `Rôle changé: ${role}`, req.ip);
     res.json({ success: true, message: "Rôle et permissions mis à jour" });
@@ -11075,7 +11088,7 @@ app.get("/api/refunds", authMiddleware, async (req: any, res: Response) => {
     if (status) { where += " AND b.status=?"; params.push(status); }
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT b.booking_reference, b.status, b.total_price, b.currency, b.contact_email, b.created_at, b.type_vol,
-              p.payment_intent_id, p.payment_method, p.amount as paid_amount, p.status as payment_status
+              b.payment_intent_id, p.payment_method, p.amount as paid_amount, p.payment_status
        FROM bookings b
        LEFT JOIN payments p ON p.booking_id=b.id
        ${where}
@@ -11093,7 +11106,7 @@ app.post("/api/refunds/:reference", authMiddleware, async (req: any, res: Respon
   const { reason, amount } = req.body;
   try {
     const [bookings] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT b.*, p.payment_intent_id, p.amount as paid_amount FROM bookings b LEFT JOIN payments p ON p.booking_id=b.id WHERE b.booking_reference=?`,
+      `SELECT b.*, p.amount as paid_amount FROM bookings b LEFT JOIN payments p ON p.booking_id=b.id WHERE b.booking_reference=?`,
       [reference]
     );
     if (!bookings.length) return res.status(404).json({ error: "Réservation non trouvée" });
@@ -11110,7 +11123,7 @@ app.post("/api/refunds/:reference", authMiddleware, async (req: any, res: Respon
       [reference]
     );
     await pool.execute(
-      "UPDATE payments SET status='refunded' WHERE booking_id=?",
+      "UPDATE payments SET payment_status='refunded' WHERE booking_id=?",
       [booking.id]
     );
     await logAudit(req.user.id, req.user.name || req.user.username, 'REFUND', 'booking', reference, `Remboursement: ${refund.id} - ${reason || ''}`, req.ip);
@@ -11184,45 +11197,76 @@ app.put("/api/settings", authMiddleware, adminOnly, async (req: any, res: Respon
 app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response) => {
   const { start_date, end_date, type_vol, currency } = req.query;
   try {
+    // Filtres sur bookings (currency stockée en minuscules dans la DB)
     let where = "WHERE b.status NOT IN ('cancelled')";
     const params: any[] = [];
     if (start_date) { where += " AND DATE(b.created_at) >= ?"; params.push(start_date); }
     if (end_date) { where += " AND DATE(b.created_at) <= ?"; params.push(end_date); }
     if (type_vol) { where += " AND b.type_vol=?"; params.push(type_vol); }
-    if (currency) { where += " AND b.currency=?"; params.push(currency); }
-    // Revenus par mois
+    if (currency) { where += " AND UPPER(IFNULL(p.currency, b.currency))=UPPER(?)"; params.push(currency); }
+
+    const joinPayments = `FROM bookings b LEFT JOIN payments p ON p.booking_id=b.id`;
+
+    // Revenus par mois — utilise payments.amount (vrai montant encaissé)
     const [byMonth] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT DATE_FORMAT(b.created_at,'%Y-%m') as month, b.currency, COUNT(*) as bookings, SUM(b.total_price) as revenue
-       FROM bookings b ${where} GROUP BY month, b.currency ORDER BY month ASC`, params
+      `SELECT DATE_FORMAT(b.created_at,'%Y-%m') as month,
+              UPPER(IFNULL(p.currency, b.currency)) as currency,
+              COUNT(DISTINCT b.id) as bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as revenue
+       ${joinPayments} ${where}
+       GROUP BY month, UPPER(IFNULL(p.currency, b.currency))
+       ORDER BY month ASC`, params
     );
     // Revenus par type de vol
     const [byType] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT b.type_vol, b.currency, COUNT(*) as bookings, SUM(b.total_price) as revenue
-       FROM bookings b ${where} GROUP BY b.type_vol, b.currency`, params
+      `SELECT b.type_vol,
+              UPPER(IFNULL(p.currency, b.currency)) as currency,
+              COUNT(DISTINCT b.id) as bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as revenue
+       ${joinPayments} ${where}
+       GROUP BY b.type_vol, UPPER(IFNULL(p.currency, b.currency))`, params
     );
     // Revenus par route (départ → arrivée)
     const [byRoute] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT f.from as departure, f.to as destination, COUNT(*) as bookings, SUM(b.total_price) as revenue, b.currency
-       FROM bookings b LEFT JOIN flights f ON b.flight_id=f.id ${where} GROUP BY f.from, f.to, b.currency ORDER BY revenue DESC LIMIT 10`, params
+      `SELECT l1.name as departure, l2.name as destination,
+              COUNT(DISTINCT b.id) as bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as revenue,
+              UPPER(IFNULL(p.currency, b.currency)) as currency
+       ${joinPayments}
+       LEFT JOIN flights f ON b.flight_id=f.id
+       LEFT JOIN locations l1 ON f.departure_location_id=l1.id
+       LEFT JOIN locations l2 ON f.arrival_location_id=l2.id
+       ${where}
+       GROUP BY l1.name, l2.name, UPPER(IFNULL(p.currency, b.currency))
+       ORDER BY revenue DESC LIMIT 10`, params
     );
-    // Totaux
+    // Totaux globaux
     const [totals] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT b.currency, COUNT(*) as total_bookings, SUM(b.total_price) as total_revenue,
-              AVG(b.total_price) as avg_booking_value, SUM(b.passenger_count) as total_passengers
-       FROM bookings b ${where} GROUP BY b.currency`, params
+      `SELECT UPPER(IFNULL(p.currency, b.currency)) as currency,
+              COUNT(DISTINCT b.id) as total_bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as total_revenue,
+              AVG(IFNULL(p.amount, b.total_price)) as avg_booking_value,
+              SUM(b.passenger_count) as total_passengers
+       ${joinPayments} ${where}
+       GROUP BY UPPER(IFNULL(p.currency, b.currency))`, params
     );
     // Par méthode de paiement
     const [byPayment] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT b.payment_method, COUNT(*) as count, SUM(b.total_price) as amount, b.currency
-       FROM bookings b ${where} GROUP BY b.payment_method, b.currency`, params
+      `SELECT IFNULL(p.payment_method, b.payment_method) as payment_method,
+              COUNT(DISTINCT b.id) as count,
+              SUM(IFNULL(p.amount, b.total_price)) as amount,
+              UPPER(IFNULL(p.currency, b.currency)) as currency
+       ${joinPayments} ${where}
+       GROUP BY IFNULL(p.payment_method, b.payment_method), UPPER(IFNULL(p.currency, b.currency))`, params
     );
-    // Par statut
+    // Par statut (tous statuts, pas de filtre currency)
+    let whereStatus = "WHERE 1=1";
+    const statusParams: any[] = [];
+    if (start_date) { whereStatus += " AND DATE(created_at) >= ?"; statusParams.push(start_date); }
+    if (end_date) { whereStatus += " AND DATE(created_at) <= ?"; statusParams.push(end_date); }
+    if (type_vol) { whereStatus += " AND type_vol=?"; statusParams.push(type_vol); }
     const [byStatus] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT b.status, COUNT(*) as count FROM bookings b WHERE 1=1
-       ${start_date ? ' AND DATE(b.created_at) >= ?' : ''}
-       ${end_date ? ' AND DATE(b.created_at) <= ?' : ''}
-       GROUP BY b.status`,
-      [...(start_date ? [start_date] : []), ...(end_date ? [end_date] : [])]
+      `SELECT status, COUNT(*) as count FROM bookings ${whereStatus} GROUP BY status`, statusParams
     );
     res.json({ byMonth, byType, byRoute, totals, byPayment, byStatus });
   } catch (err: any) {

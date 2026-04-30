@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 const API = "https://steve-airways.onrender.com";
 
-type Flight = { id: number; flight_number: string; from: string; to: string; departure_time: string; price: number; seats_available: string; type: string; };
+type Flight = { id: number; flight_number: string; from: string; to: string; departure_time: string; departure: string; price: number; seats_available: string; type: string; };
 type Passenger = { first_name: string; last_name: string; date_of_birth: string; passport_number: string; nationality: string; seat_number: string; };
 
 const emptyPassenger = (): Passenger => ({ first_name: "", last_name: "", date_of_birth: "", passport_number: "", nationality: "", seat_number: "" });
@@ -39,7 +39,7 @@ export default function ManualBookingPage() {
       const endpoint = flightType === "plane" ? "/api/flighttableplane" : flightType === "helicopter" ? "/api/flighttablehelico" : "/api/flighttablecharter";
       const res = await fetch(`${API}${endpoint}`);
       const data = await res.json();
-      const list = data.flights || data || [];
+      const list = data.recentBookings || data.flights || [];
       setFlights(list);
       setFilteredFlights(list);
     } catch { toast.error("Impossible de charger les vols"); }
