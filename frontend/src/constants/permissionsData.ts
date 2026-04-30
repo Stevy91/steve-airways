@@ -2,41 +2,54 @@ const permissionsData = [
   {
     id: "dashboard",
     label: "0 - TABLEAU DE BORD",
-    children: []
+    children: [],
   },
   {
     id: "user",
     label: "1 - UTILISATEUR",
     children: [
-      { id: "user.add", label: "1.1 - Ajouter" },
-      { id: "user.list", label: "1.2 - Lister" },
-      { id: "user.edit", label: "1.3 - Modifier" },
-      { id: "user.block", label: "1.4 - Bloquer / Débloquer" },
-      { id: "user.access", label: "1.5 - Accès" },
-      { id: "user.delete", label: "1.6 - Supprimer" }
-    ]
+      { id: "listeFlightsPlane", label: "1.1 - Listes Flights Avion" },
+      { id: "listeFlightsHelico", label: "1.2 - Listes Flights Hélico" },
+      { id: "charter", label: "1.3 - Listes Charter" },
+      { id: "listeBookingsPlane", label: "1.4 - Listes Bookings Avion" },
+      { id: "listeBookingsHelico", label: "1.5 - Listes Bookings Hélico" },
+      { id: "addFlights", label: "1.6 - Ajouter des Vols" },
+      { id: "editFlights", label: "1.7 - Modifier des Vols" },
+      { id: "deleteFlights", label: "1.8 - Supprimer des Vols" },
+      { id: "cancelFlight", label: "1.9 - Annuler des Vols" },
+      { id: "editBookings", label: "2.0 - Modifier Réservations" },
+      { id: "reschedule", label: "2.1 - Reprogrammer Vols" },
+      { id: "listePassagers", label: "2.2 - Liste des Passagers" },
+      { id: "createdTicket", label: "2.3 - Créer Ticket" },
+      { id: "imprimerTicket", label: "2.4 - Imprimer Ticket" },
+      { id: "cancelledTicket", label: "2.5 - Annuler Ticket" },
+      { id: "manifestPdf", label: "2.6 - Manifest PDF" },
+      { id: "rapport", label: "2.7 - Rapports Financiers" },
+      { id: "listeUsers", label: "2.8 - Gestion Utilisateurs" },
+    ],
   },
   {
-    id: "agent",
-    label: "3 - AGENT",
+    id: "reservations",
+    label: "3 - RÉSERVATIONS",
     children: [
-      { id: "agent.add", label: "3.1 - Ajouter" },
-      { id: "agent.list", label: "3.2 - Lister" },
-      { id: "agent.edit", label: "3.3 - Modifier" },
-      { id: "agent.block", label: "3.4 - Bloquer / Débloquer" },
-      { id: "agent.transaction", label: "3.5 - Transaction" }
-    ]
+      { id: "manualBooking", label: "3.1 - Réservation Manuelle" },
+      { id: "refunds", label: "3.2 - Remboursements" },
+    ],
   },
   {
-    id: "client",
-    label: "4 - CLIENT",
+    id: "destinations",
+    label: "4 - DESTINATIONS",
     children: [
-      { id: "client.add", label: "4.1 - Ajouter" },
-      { id: "client.list", label: "4.2 - Lister" },
-      { id: "client.edit", label: "4.3 - Modifier" },
-      { id: "client.block", label: "4.4 - Bloquer / Débloquer" },
-      { id: "client.transaction", label: "4.5 - Transaction" },
-      { id: "client.delete", label: "4.6 - Supprimer" }
-    ]
-  }
+      { id: "locations", label: "4.1 - Gérer Destinations/Aéroports" },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "5 - MARKETING",
+    children: [
+      { id: "promoCodes", label: "5.1 - Codes Promo" },
+    ],
+  },
 ];
+
+export default permissionsData;

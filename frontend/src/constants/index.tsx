@@ -1,4 +1,4 @@
-import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List, Helicopter } from "lucide-react";
+import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List, MapPin, PlusCircle, ClipboardList, Tag, BarChart2, RefreshCcw, ShieldCheck, UserCircle } from "lucide-react";
 import { HelicopterIcon } from "../components/icons/HelicopterIcon";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -69,7 +69,7 @@ function useLang() {
 
 export const NavbarLinks = (
   lang: string,
-  auth: {
+  auth?: {
     isAdmin: boolean;
     hasPermission: (perm: string) => boolean;
   }
@@ -89,6 +89,12 @@ const {
   const listeFlightsPlane = isAdmin || hasPermission("listeFlightsPlane");
   const listeFlightsHelico = isAdmin || hasPermission("listeFlightsHelico");
   const charter = isAdmin || hasPermission("charter");
+  const canManualBooking = isAdmin || hasPermission("manualBooking");
+  const canPassengers = isAdmin || hasPermission("listePassagers");
+  const canLocations = isAdmin || hasPermission("locations");
+  const canRefunds = isAdmin || hasPermission("refunds");
+  const canPromoCodes = isAdmin || hasPermission("promoCodes");
+  const canRapport = isAdmin || hasPermission("rapport");
 
   return [
     dashboard && {
@@ -98,7 +104,6 @@ const {
       ],
     },
 
-   
     listeFlightsPlane && {
       title: "Air plane",
       icon: Plane,
@@ -124,13 +129,59 @@ const {
       ],
     },
 
-    // 👇 USERS — CONDITIONNEL
+    // ✅ NOUVELLES SECTIONS
+    canManualBooking && {
+      title: "Réservations",
+      icon: PlusCircle,
+      links: [
+        { label: "Réservation manuelle", icon: PlusCircle, path: `/${lang}/dashboard/manual-booking` },
+        canPassengers && { label: "Passagers", icon: Users, path: `/${lang}/dashboard/passengers` },
+        canRefunds && { label: "Remboursements", icon: RefreshCcw, path: `/${lang}/dashboard/refunds` },
+      ].filter(Boolean),
+    },
+
+    canLocations && {
+      title: "Destinations",
+      icon: MapPin,
+      links: [
+        { label: "Gérer destinations", icon: MapPin, path: `/${lang}/dashboard/locations` },
+      ],
+    },
+
+    canRapport && {
+      title: "Rapports",
+      icon: BarChart2,
+      links: [
+        { label: "Rapports financiers", icon: BarChart2, path: `/${lang}/dashboard/reports` },
+      ],
+    },
+
+    canPromoCodes && {
+      title: "Marketing",
+      icon: Tag,
+      links: [
+        { label: "Codes promo", icon: Tag, path: `/${lang}/dashboard/promo-codes` },
+      ],
+    },
+
+    // 👇 USERS & ADMIN
     canSeeUsers && {
-      title: "Users",
+      title: "Administration",
       icon: Users,
       links: [
-        { label: "All Users", icon: UserRound, path: `/${lang}/dashboard/user` },
-        // { label: "Role Manager", icon: Lock, path: `/${lang}/dashboard/roleUser` },
+        { label: "Utilisateurs", icon: UserRound, path: `/${lang}/dashboard/user` },
+        isAdmin && { label: "Rôles & Permissions", icon: ShieldCheck, path: `/${lang}/dashboard/roles` },
+        isAdmin && { label: "Journal d'audit", icon: ClipboardList, path: `/${lang}/dashboard/audit-logs` },
+        isAdmin && { label: "Paramètres", icon: Settings, path: `/${lang}/dashboard/settings` },
+      ].filter(Boolean),
+    },
+
+    // Mon profil — toujours visible
+    {
+      title: "Mon compte",
+      icon: UserCircle,
+      links: [
+        { label: "Mon profil", icon: UserCircle, path: `/${lang}/dashboard/profile` },
       ],
     },
   ].filter(Boolean);

@@ -10785,6 +10785,533 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
 });
 
 
+// ============================================================
+// =================== MODULES MANQUANTS =====================
+// ============================================================
+
+// Initialisation des tables manquantes au démarrage
+async function initMissingTables() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        user_name VARCHAR(100),
+        action VARCHAR(100) NOT NULL,
+        entity_type VARCHAR(50),
+        entity_id VARCHAR(100),
+        details TEXT,
+        ip_address VARCHAR(50),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_created_at (created_at),
+        INDEX idx_user_id (user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        setting_key VARCHAR(100) UNIQUE NOT NULL,
+        setting_value TEXT,
+        setting_group VARCHAR(50) DEFAULT 'general',
+        description VARCHAR(255),
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await pool.query(`
+      INSERT IGNORE INTO app_settings (setting_key, setting_value, setting_group, description) VALUES
+      ('company_name', 'Trogon Airways', 'general', 'Nom de la compagnie'),
+      ('company_email', 'contact@trogon.com', 'general', 'Email de contact'),
+      ('company_phone', '+509 1234-5678', 'general', 'Téléphone de contact'),
+      ('company_address', 'Port-au-Prince, Haiti', 'general', 'Adresse'),
+      ('default_currency', 'USD', 'finance', 'Devise par défaut'),
+      ('tax_rate', '10', 'finance', 'Taux de taxe (%)'),
+      ('booking_fee', '5', 'finance', 'Frais de réservation (%)'),
+      ('max_seats_per_booking', '9', 'booking', 'Nombre max de passagers par réservation'),
+      ('cancellation_deadline_hours', '24', 'booking', 'Délai annulation avant vol (heures)'),
+      ('refund_policy_days', '7', 'booking', 'Délai max remboursement (jours)')
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS promo_codes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type ENUM('percentage','fixed') NOT NULL DEFAULT 'percentage',
+        discount_value DECIMAL(10,2) NOT NULL,
+        min_amount DECIMAL(10,2) DEFAULT 0,
+        max_uses INT DEFAULT NULL,
+        used_count INT DEFAULT 0,
+        valid_from DATE,
+        valid_until DATE,
+        applies_to ENUM('all','plane','helicopter','charter') DEFAULT 'all',
+        is_active TINYINT(1) DEFAULT 1,
+        description VARCHAR(255),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    console.log('✅ Tables manquantes initialisées');
+  } catch (err) {
+    console.error('❌ Erreur init tables:', err);
+  }
+}
+initMissingTables();
+
+// Middleware pour logger les actions dans audit_logs
+async function logAudit(userId: number | null, userName: string, action: string, entityType: string, entityId: string | number | null, details: string, ip: string) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, user_name, action, entity_type, entity_id, details, ip_address) VALUES (?,?,?,?,?,?,?)`,
+      [userId, userName, action, entityType, entityId ? String(entityId) : null, details, ip]
+    );
+  } catch (e) { /* non bloquant */ }
+}
+
+// ============================================================
+// 1. GESTION DES DESTINATIONS / AÉROPORTS (CRUD complet)
+// ============================================================
+
+app.post("/api/locations", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { name, code, city, country } = req.body;
+  if (!name || !code) return res.status(400).json({ error: "name et code sont requis" });
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(
+      "INSERT INTO locations (name, code, city, country) VALUES (?,?,?,?)",
+      [name, code.toUpperCase(), city || null, country || null]
+    );
+    await logAudit(req.user.id, req.user.name || req.user.username, 'CREATE_LOCATION', 'location', result.insertId, `Créé: ${name} (${code})`, req.ip);
+    res.status(201).json({ success: true, id: result.insertId, message: "Destination créée" });
+  } catch (err: any) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: "Ce code de destination existe déjà" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+app.put("/api/locations/:id", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { name, code, city, country } = req.body;
+  try {
+    const [result] = await pool.execute<OkPacket>(
+      "UPDATE locations SET name=?, code=?, city=?, country=? WHERE id=?",
+      [name, code?.toUpperCase(), city, country, id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: "Destination non trouvée" });
+    await logAudit(req.user.id, req.user.name || req.user.username, 'UPDATE_LOCATION', 'location', id, `Modifié: ${name}`, req.ip);
+    res.json({ success: true, message: "Destination mise à jour" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+app.delete("/api/locations/:id", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    const [loc] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM locations WHERE id=?", [id]);
+    if (!loc.length) return res.status(404).json({ error: "Destination non trouvée" });
+    const [result] = await pool.execute<OkPacket>("DELETE FROM locations WHERE id=?", [id]);
+    await logAudit(req.user.id, req.user.name || req.user.username, 'DELETE_LOCATION', 'location', id, `Supprimé: ${loc[0].name}`, req.ip);
+    res.json({ success: true, message: "Destination supprimée" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 2. PROFIL UTILISATEUR (mise à jour)
+// ============================================================
+
+app.put("/api/profile", authMiddleware, async (req: any, res: Response) => {
+  const userId = req.user.id;
+  const { name, phone, current_password, new_password } = req.body;
+  try {
+    const [rows] = await pool.query<User[]>("SELECT * FROM users WHERE id=?", [userId]);
+    if (!rows.length) return res.status(404).json({ error: "Utilisateur non trouvé" });
+    const user = rows[0];
+    let updateFields = "name=?, phone=?";
+    let values: any[] = [name, phone];
+    if (new_password) {
+      if (!current_password) return res.status(400).json({ error: "Mot de passe actuel requis" });
+      const valid = await bcrypt.compare(current_password, user.password_hash);
+      if (!valid) return res.status(400).json({ error: "Mot de passe actuel incorrect" });
+      const hashed = await bcrypt.hash(new_password, 10);
+      updateFields += ", password_hash=?";
+      values.push(hashed);
+    }
+    values.push(userId);
+    await pool.execute(`UPDATE users SET ${updateFields} WHERE id=?`, values);
+    await logAudit(userId, name, 'UPDATE_PROFILE', 'user', userId, 'Profil mis à jour', req.ip);
+    res.json({ success: true, message: "Profil mis à jour" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 3. CRÉATION MANUELLE DE RÉSERVATION PAR UN AGENT
+// ============================================================
+
+app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) => {
+  const connection = await pool.getConnection();
+  const agentId = req.user.id;
+  const agentName = req.user.name || req.user.username;
+  try {
+    await connection.beginTransaction();
+    const { flightId, passengers, contactInfo, totalPrice, currency, paymentMethod, notes, flight_type } = req.body;
+    if (!flightId || !passengers?.length || !contactInfo || !totalPrice) {
+      return res.status(400).json({ error: "Champs requis manquants" });
+    }
+    const [flightRows] = await connection.query<mysql.RowDataPacket[]>("SELECT * FROM flights WHERE id=?", [flightId]);
+    if (!flightRows.length) return res.status(404).json({ error: "Vol non trouvé" });
+    const flight = flightRows[0];
+    const bookingRef = `MANUAL-${Math.floor(100000 + Math.random() * 900000)}`;
+    const [bookingResult] = await connection.execute<ResultSetHeader>(
+      `INSERT INTO bookings (booking_reference, flight_id, total_price, currency, status, passenger_count, contact_email, contact_phone, payment_method, type_vol, created_by, admin_notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [bookingRef, flightId, totalPrice, currency || 'USD', 'confirmed', passengers.length, contactInfo.email, contactInfo.phone, paymentMethod || 'cash', flight_type || flight.type, agentId, notes || '']
+    );
+    const bookingId = bookingResult.insertId;
+    for (const p of passengers) {
+      await connection.execute(
+        `INSERT INTO passengers (booking_id, first_name, last_name, date_of_birth, passport_number, nationality, seat_number)
+         VALUES (?,?,?,?,?,?,?)`,
+        [bookingId, p.first_name, p.last_name, p.date_of_birth || null, p.passport_number || null, p.nationality || null, p.seat_number || null]
+      );
+    }
+    await connection.execute<ResultSetHeader>(
+      `INSERT INTO payments (booking_id, amount, currency, payment_method, status, transaction_id) VALUES (?,?,?,?,?,?)`,
+      [bookingId, totalPrice, currency || 'USD', paymentMethod || 'cash', 'completed', `MANUAL-${Date.now()}`]
+    );
+    await connection.commit();
+    await logAudit(agentId, agentName, 'MANUAL_BOOKING', 'booking', bookingRef, `Réservation manuelle créée: ${bookingRef} - ${passengers.length} passager(s)`, req.ip);
+    res.status(201).json({ success: true, booking_reference: bookingRef, booking_id: bookingId, message: "Réservation créée" });
+  } catch (err: any) {
+    await connection.rollback();
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// ============================================================
+// 4. GESTION DES PASSAGERS (vue globale)
+// ============================================================
+
+app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
+  const { q, flight_id, booking_ref, page = 1, limit = 20 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  try {
+    let where = "WHERE 1=1";
+    const params: any[] = [];
+    if (q) {
+      where += " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.passport_number LIKE ? OR p.nationality LIKE ?)";
+      const like = `%${q}%`;
+      params.push(like, like, like, like);
+    }
+    if (flight_id) { where += " AND b.flight_id=?"; params.push(flight_id); }
+    if (booking_ref) { where += " AND b.booking_reference LIKE ?"; params.push(`%${booking_ref}%`); }
+    const [countRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT COUNT(*) as total FROM passengers p LEFT JOIN bookings b ON p.booking_id=b.id ${where}`, params
+    );
+    const total = countRows[0].total;
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT p.*, b.booking_reference, b.status as booking_status, b.type_vol, f.flight_number, f.departure_time, f.from, f.to
+       FROM passengers p
+       LEFT JOIN bookings b ON p.booking_id=b.id
+       LEFT JOIN flights f ON b.flight_id=f.id
+       ${where}
+       ORDER BY p.id DESC LIMIT ? OFFSET ?`,
+      [...params, Number(limit), offset]
+    );
+    res.json({ passengers: rows, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 5. GESTION DES RÔLES (Role Manager)
+// ============================================================
+
+app.get("/api/roles-list", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      "SELECT id, username, name, email, role, phone, permissions FROM users ORDER BY role, name"
+    );
+    const roleGroups: Record<string, any[]> = {};
+    rows.forEach((u: any) => {
+      if (!roleGroups[u.role]) roleGroups[u.role] = [];
+      let perms: string[] = [];
+      try { perms = JSON.parse(u.permissions || '[]'); } catch {}
+      roleGroups[u.role].push({ ...u, permissions: perms });
+    });
+    res.json({ users: rows, roleGroups });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.put("/api/roles-list/:userId", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { userId } = req.params;
+  const { role, permissions } = req.body;
+  try {
+    await pool.execute(
+      "UPDATE users SET role=?, permissions=? WHERE id=?",
+      [role, JSON.stringify(permissions || []), userId]
+    );
+    await logAudit(req.user.id, req.user.name || req.user.username, 'UPDATE_ROLE', 'user', userId, `Rôle changé: ${role}`, req.ip);
+    res.json({ success: true, message: "Rôle et permissions mis à jour" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 6. REMBOURSEMENTS STRIPE
+// ============================================================
+
+app.get("/api/refunds", authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+    let where = "WHERE p.payment_method != 'cash'";
+    const params: any[] = [];
+    if (status) { where += " AND b.status=?"; params.push(status); }
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.booking_reference, b.status, b.total_price, b.currency, b.contact_email, b.created_at, b.type_vol,
+              p.payment_intent_id, p.payment_method, p.amount as paid_amount, p.status as payment_status
+       FROM bookings b
+       LEFT JOIN payments p ON p.booking_id=b.id
+       ${where}
+       ORDER BY b.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, Number(limit), offset]
+    );
+    res.json({ refunds: rows });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+app.post("/api/refunds/:reference", authMiddleware, async (req: any, res: Response) => {
+  const { reference } = req.params;
+  const { reason, amount } = req.body;
+  try {
+    const [bookings] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.*, p.payment_intent_id, p.amount as paid_amount FROM bookings b LEFT JOIN payments p ON p.booking_id=b.id WHERE b.booking_reference=?`,
+      [reference]
+    );
+    if (!bookings.length) return res.status(404).json({ error: "Réservation non trouvée" });
+    const booking = bookings[0];
+    if (!booking.payment_intent_id) return res.status(400).json({ error: "Aucun paiement Stripe associé (paiement cash ou en attente)" });
+    const refundAmount = amount ? Math.round(Number(amount) * 100) : undefined;
+    const refund = await stripe.refunds.create({
+      payment_intent: booking.payment_intent_id,
+      ...(refundAmount ? { amount: refundAmount } : {}),
+      reason: 'requested_by_customer',
+    });
+    await pool.execute(
+      "UPDATE bookings SET status='refunded' WHERE booking_reference=?",
+      [reference]
+    );
+    await pool.execute(
+      "UPDATE payments SET status='refunded' WHERE booking_id=?",
+      [booking.id]
+    );
+    await logAudit(req.user.id, req.user.name || req.user.username, 'REFUND', 'booking', reference, `Remboursement: ${refund.id} - ${reason || ''}`, req.ip);
+    res.json({ success: true, refund_id: refund.id, amount: refund.amount / 100, status: refund.status });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur remboursement", details: err.message });
+  }
+});
+
+// ============================================================
+// 7. AUDIT LOGS
+// ============================================================
+
+app.get("/api/audit-logs", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { page = 1, limit = 30, action, entity_type, user_id, start_date, end_date } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  try {
+    let where = "WHERE 1=1";
+    const params: any[] = [];
+    if (action) { where += " AND action LIKE ?"; params.push(`%${action}%`); }
+    if (entity_type) { where += " AND entity_type=?"; params.push(entity_type); }
+    if (user_id) { where += " AND user_id=?"; params.push(user_id); }
+    if (start_date) { where += " AND created_at >= ?"; params.push(start_date); }
+    if (end_date) { where += " AND created_at <= ?"; params.push(end_date + ' 23:59:59'); }
+    const [countRows] = await pool.query<mysql.RowDataPacket[]>(`SELECT COUNT(*) as total FROM audit_logs ${where}`, params);
+    const total = countRows[0].total;
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM audit_logs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...params, Number(limit), offset]
+    );
+    res.json({ logs: rows, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 8. PARAMÈTRES / SETTINGS
+// ============================================================
+
+app.get("/api/settings", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM app_settings ORDER BY setting_group, setting_key");
+    res.json({ settings: rows });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.put("/api/settings", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { settings } = req.body; // Array of { setting_key, setting_value }
+  if (!Array.isArray(settings)) return res.status(400).json({ error: "Format invalide" });
+  try {
+    for (const s of settings) {
+      await pool.execute(
+        "UPDATE app_settings SET setting_value=? WHERE setting_key=?",
+        [s.setting_value, s.setting_key]
+      );
+    }
+    await logAudit(req.user.id, req.user.name || req.user.username, 'UPDATE_SETTINGS', 'settings', null, `${settings.length} paramètre(s) mis à jour`, req.ip);
+    res.json({ success: true, message: "Paramètres sauvegardés" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 9. RAPPORTS FINANCIERS DÉTAILLÉS
+// ============================================================
+
+app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response) => {
+  const { start_date, end_date, type_vol, currency } = req.query;
+  try {
+    let where = "WHERE b.status NOT IN ('cancelled')";
+    const params: any[] = [];
+    if (start_date) { where += " AND DATE(b.created_at) >= ?"; params.push(start_date); }
+    if (end_date) { where += " AND DATE(b.created_at) <= ?"; params.push(end_date); }
+    if (type_vol) { where += " AND b.type_vol=?"; params.push(type_vol); }
+    if (currency) { where += " AND b.currency=?"; params.push(currency); }
+    // Revenus par mois
+    const [byMonth] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT DATE_FORMAT(b.created_at,'%Y-%m') as month, b.currency, COUNT(*) as bookings, SUM(b.total_price) as revenue
+       FROM bookings b ${where} GROUP BY month, b.currency ORDER BY month ASC`, params
+    );
+    // Revenus par type de vol
+    const [byType] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.type_vol, b.currency, COUNT(*) as bookings, SUM(b.total_price) as revenue
+       FROM bookings b ${where} GROUP BY b.type_vol, b.currency`, params
+    );
+    // Revenus par route (départ → arrivée)
+    const [byRoute] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT f.from as departure, f.to as destination, COUNT(*) as bookings, SUM(b.total_price) as revenue, b.currency
+       FROM bookings b LEFT JOIN flights f ON b.flight_id=f.id ${where} GROUP BY f.from, f.to, b.currency ORDER BY revenue DESC LIMIT 10`, params
+    );
+    // Totaux
+    const [totals] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.currency, COUNT(*) as total_bookings, SUM(b.total_price) as total_revenue,
+              AVG(b.total_price) as avg_booking_value, SUM(b.passenger_count) as total_passengers
+       FROM bookings b ${where} GROUP BY b.currency`, params
+    );
+    // Par méthode de paiement
+    const [byPayment] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.payment_method, COUNT(*) as count, SUM(b.total_price) as amount, b.currency
+       FROM bookings b ${where} GROUP BY b.payment_method, b.currency`, params
+    );
+    // Par statut
+    const [byStatus] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.status, COUNT(*) as count FROM bookings b WHERE 1=1
+       ${start_date ? ' AND DATE(b.created_at) >= ?' : ''}
+       ${end_date ? ' AND DATE(b.created_at) <= ?' : ''}
+       GROUP BY b.status`,
+      [...(start_date ? [start_date] : []), ...(end_date ? [end_date] : [])]
+    );
+    res.json({ byMonth, byType, byRoute, totals, byPayment, byStatus });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 10. CODES PROMO / RÉDUCTIONS
+// ============================================================
+
+app.get("/api/promo-codes", authMiddleware, async (req: any, res: Response) => {
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM promo_codes ORDER BY created_at DESC");
+    res.json({ promoCodes: rows });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.post("/api/promo-codes", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, description } = req.body;
+  if (!code || !discount_type || !discount_value) return res.status(400).json({ error: "code, discount_type et discount_value requis" });
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO promo_codes (code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, description)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
+      [code.toUpperCase(), discount_type, discount_value, min_amount || 0, max_uses || null, valid_from || null, valid_until || null, applies_to || 'all', description || '']
+    );
+    await logAudit(req.user.id, req.user.name || req.user.username, 'CREATE_PROMO', 'promo_code', result.insertId, `Code créé: ${code}`, req.ip);
+    res.status(201).json({ success: true, id: result.insertId, message: "Code promo créé" });
+  } catch (err: any) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: "Ce code promo existe déjà" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+app.put("/api/promo-codes/:id", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, description, is_active } = req.body;
+  try {
+    await pool.execute(
+      `UPDATE promo_codes SET code=?, discount_type=?, discount_value=?, min_amount=?, max_uses=?, valid_from=?, valid_until=?, applies_to=?, description=?, is_active=? WHERE id=?`,
+      [code?.toUpperCase(), discount_type, discount_value, min_amount || 0, max_uses || null, valid_from || null, valid_until || null, applies_to || 'all', description, is_active !== undefined ? is_active : 1, id]
+    );
+    await logAudit(req.user.id, req.user.name || req.user.username, 'UPDATE_PROMO', 'promo_code', id, `Code modifié: ${code}`, req.ip);
+    res.json({ success: true, message: "Code promo mis à jour" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+app.delete("/api/promo-codes/:id", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    const [promos] = await pool.query<mysql.RowDataPacket[]>("SELECT code FROM promo_codes WHERE id=?", [id]);
+    if (!promos.length) return res.status(404).json({ error: "Code promo non trouvé" });
+    await pool.execute("DELETE FROM promo_codes WHERE id=?", [id]);
+    await logAudit(req.user.id, req.user.name || req.user.username, 'DELETE_PROMO', 'promo_code', id, `Code supprimé: ${promos[0].code}`, req.ip);
+    res.json({ success: true, message: "Code promo supprimé" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+app.post("/api/promo-codes/validate", async (req: Request, res: Response) => {
+  const { code, amount, flight_type } = req.body;
+  if (!code) return res.status(400).json({ error: "Code requis" });
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      "SELECT * FROM promo_codes WHERE code=? AND is_active=1", [code.toUpperCase()]
+    );
+    if (!rows.length) return res.status(404).json({ valid: false, error: "Code promo invalide ou inactif" });
+    const promo = rows[0];
+    const now = new Date();
+    if (promo.valid_from && new Date(promo.valid_from) > now) return res.status(400).json({ valid: false, error: "Ce code n'est pas encore valide" });
+    if (promo.valid_until && new Date(promo.valid_until) < now) return res.status(400).json({ valid: false, error: "Ce code promo a expiré" });
+    if (promo.max_uses && promo.used_count >= promo.max_uses) return res.status(400).json({ valid: false, error: "Ce code a atteint son nombre maximum d'utilisations" });
+    if (promo.applies_to !== 'all' && flight_type && promo.applies_to !== flight_type) return res.status(400).json({ valid: false, error: `Ce code s'applique uniquement aux vols ${promo.applies_to}` });
+    if (amount && promo.min_amount > 0 && Number(amount) < promo.min_amount) return res.status(400).json({ valid: false, error: `Montant minimum requis: ${promo.min_amount}` });
+    const discount = promo.discount_type === 'percentage'
+      ? (Number(amount) * promo.discount_value / 100)
+      : promo.discount_value;
+    res.json({ valid: true, promo, discount: Math.min(discount, Number(amount) || discount), message: "Code promo valide!" });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3009;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -1565,7 +1565,7 @@ const FlightTableCharter = () => {
                                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                                         />
                                                     </svg>
-                                                    Number of Seats
+                                                    Available Seats
                                                 </label>
                                                 <div className="relative">
                                                     <input
@@ -1573,7 +1573,7 @@ const FlightTableCharter = () => {
                                                         name="seats_available"
                                                         placeholder="e.g., 8"
                                                         defaultValue={editingFlight?.seats_available}
-                                                        min="1"
+                                                        
                                                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-12 text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30"
                                                         required
                                                     />
