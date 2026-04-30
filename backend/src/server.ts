@@ -11055,7 +11055,7 @@ app.put("/api/roles-list/:userId", authMiddleware, adminOnly, async (req: any, r
       "UPDATE users SET role=?, permissions=? WHERE id=?",
       [role, JSON.stringify(permissions || []), userId]
     );
-    await logAudit(req.user.id, req.user.name || req.user.username, 'UPDATE_ROLE', 'user', userId, `Rôle changé: ${role}`, req.ip);
+    await logAudit(req.user.id, req.user.name , 'UPDATE_ROLE', 'user', userId, `Rôle changé: ${role}`, req.ip);
     res.json({ success: true, message: "Rôle et permissions mis à jour" });
   } catch (err: any) {
     res.status(500).json({ error: "Erreur serveur", details: err.message });

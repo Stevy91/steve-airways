@@ -9,6 +9,7 @@ type Log = {
   id: number;
   user_id: number;
   user_name: string;
+  name: string;
   action: string;
   entity_type: string;
   entity_id: string;
