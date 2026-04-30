@@ -19,8 +19,12 @@ type Booking = {
     adminNotes: string;
     type_vol: string;
     type_v: string;
+    typecharter?: string;
+    currency?: string;
     created_by_name?: string;
     created_by_email?: string;
+    first_name?: string;
+    last_name?: string;
 };
 
 const ViewBookingCharter = () => {
@@ -116,6 +120,24 @@ const ViewBookingCharter = () => {
             setOpen(true);
         } catch (err) {
             alert("Impossible de récupérer les détails");
+        }
+    };
+
+    // Confirmer le paiement
+    const handleConfirmPayment = async (id: number, ref: string) => {
+        if (!window.confirm(`Confirmer le paiement de la réservation ${ref} ?`)) return;
+        try {
+            const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+            const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${id}/confirm-payment`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Erreur");
+            alert(`✅ Paiement confirmé — ${ref}`);
+            fetchDashboardData();
+        } catch (err: any) {
+            alert(`Erreur: ${err.message}`);
         }
     };
 
@@ -457,7 +479,7 @@ const ViewBookingCharter = () => {
                             </thead>
 
                             <tbody className="table-body">
-                                {currentBookings.map((booking) => (
+                                {currentBookings.map((booking: Booking) => (
                                     <tr
                                         key={booking.id}
                                         className="table-row"
@@ -535,6 +557,14 @@ const ViewBookingCharter = () => {
                                             >
                                                 <Eye className="h-6 w-4" /> View Details
                                             </button>
+                                            {booking.status === "pending" && (
+                                                <button
+                                                    className="mt-1 flex w-full gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 p-2 text-white hover:from-green-600 hover:to-green-500"
+                                                    onClick={() => handleConfirmPayment(booking.id, booking.booking_reference)}
+                                                >
+                                                    Confirmer paiement
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -618,45 +648,49 @@ const ViewBookingCharter = () => {
 const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
     return {
         reference: apiData.booking_reference,
-        contactEmail: apiData.contact_email,
-        bookedOn: new Date(apiData.created_at).toLocaleDateString(),
-        paymentStatus: apiData.status,
-        payment_method: apiData.payment_method,
-        totalPrice: `${apiData.total_price}`,
-        currency: apiData.currency,
-        typeVol: apiData.type_vol,
-        typecharter: apiData.typecharter,
-        typeV: apiData.type_v,
+        contactEmail: apiData.contact_email || "",
+        contactPhone: apiData.contact_phone || "",
+        bookedOn: apiData.created_at ? new Date(apiData.created_at).toLocaleDateString("fr-FR") : "",
+        paymentStatus: apiData.status || apiData.payment_status || "pending",
+        payment_method: apiData.payment_method || "",
+        totalPrice: apiData.total_price ? String(apiData.total_price) : "0",
+        currency: apiData.currency || "USD",
+        id: apiData.id ? String(apiData.id) : undefined,
+        typeVol: apiData.type_vol || "",
+        typeV: apiData.type_v || "",
+        created_by_name: apiData.created_by_name || "",
+        created_by_email: apiData.created_by_email || "",
+        user_created_booking: apiData.user_created_booking,
         adminNotes: apiData.adminNotes || "",
-
-        passengers: apiData.passengers.map((p: any) => ({
-            name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" "),
-            email: p.email,
-            dob: p.date_of_birth,
-            firstName: p.first_name,
-            lastName: p.last_name,
-            middleName: p.middle_name,
-            gender: p.gender,
-            title: p.title,
-            phone: p.phone,
-            nationality: p.nationality,
-            nom_urgence: p.nom_urgence,
-            email_urgence: p.email_urgence,
-            tel_urgence: p.tel_urgence,
-            selectedSeat: p.selectedSeat,
-            idTypeClient:p.idTypeClient,
-            idClient: p.idClient,
-            country: p.country,
-            address: p.address,
-            dateOfBirth: p.dateOfBirth,
-        })),
-
-        flights: apiData.flights.map((f: any) => ({
-            code: f.code,
-            from: f.departure_airport_name,
-            to: f.arrival_airport_name,
-            date: new Date(f.date).toLocaleString(),
-            arrival_date: new Date(f.arrival_date).toLocaleString(),
+        flightId: apiData.flight_id,
+        flights: apiData.flight ? [{
+            code: apiData.flight.flight_number || "",
+            from: apiData.flight.from || apiData.flight.fromCity || "",
+            to: apiData.flight.to || apiData.flight.toCity || "",
+            date: apiData.flight.departure_time || apiData.flight.departure || "",
+            arrival_date: apiData.flight.arrival_time || apiData.flight.arrival || "",
+            flight_number: apiData.flight.flight_number,
+            airline: apiData.flight.airline,
+            price: apiData.flight.price,
+        }] : [],
+        passengers: (apiData.passengers || []).map((p: any) => ({
+            id: p.id,
+            name: `${p.first_name || ""} ${p.last_name || ""}`.trim(),
+            email: p.email || "",
+            dob: p.date_of_birth || "",
+            firstName: p.first_name || "",
+            lastName: p.last_name || "",
+            middleName: p.middle_name || "",
+            phone: p.phone || "",
+            idTypeClient: p.idTypeClient || "",
+            idClient: p.idClient || "",
+            nationality: p.nationality || "",
+            country: p.country || "",
+            address: p.address || "",
+            nom_urgence: p.nom_urgence || "",
+            email_urgence: p.email_urgence || "",
+            tel_urgence: p.tel_urgence || "",
+            selectedSeat: p.selectedSeat || "",
         })),
     };
 };

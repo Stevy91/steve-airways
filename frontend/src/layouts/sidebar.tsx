@@ -41,9 +41,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({ collapsed }, 
     const linksData = NavbarLinks(lang || "en");
     const user = useProfile();
 
-    const links: NavbarLink[] = linksData.filter((link): link is NavbarLink => 
-        Boolean(link) && typeof link === 'object' && 'title' in link
-    );
+    const links = linksData.filter(Boolean) as NavbarLink[];
 
     useEffect(() => {
         const updatePositions = () => {

@@ -10964,7 +10964,7 @@ app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) 
     const [bookingResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO bookings (booking_reference, flight_id, total_price, currency, status, passenger_count, contact_email, contact_phone, payment_method, type_vol, user_created_booking, adminNotes)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [bookingRef, flightId, totalPrice, currency || 'USD', 'confirmed', passengers.length, contactInfo.email, contactInfo.phone, paymentMethod || 'cash', flight_type || flight.type, agentId, notes || '']
+      [bookingRef, flightId, totalPrice, currency || 'USD', 'pending', passengers.length, contactInfo.email, contactInfo.phone, paymentMethod || 'cash', flight_type || flight.type, agentId, notes || '']
     );
     const bookingId = bookingResult.insertId;
     for (const p of passengers) {
@@ -10976,11 +10976,35 @@ app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) 
     }
     await connection.execute<ResultSetHeader>(
       `INSERT INTO payments (booking_id, amount, currency, payment_method, payment_status, transaction_reference) VALUES (?,?,?,?,?,?)`,
-      [bookingId, totalPrice, currency || 'USD', paymentMethod || 'cash', 'confirmed', `MANUAL-${Date.now()}`]
+      [bookingId, totalPrice, currency || 'USD', paymentMethod || 'cash', 'pending', `MANUAL-${Date.now()}`]
     );
     await connection.commit();
     await logAudit(agentId, agentName, 'MANUAL_BOOKING', 'booking', bookingRef, `Réservation manuelle créée: ${bookingRef} - ${passengers.length} passager(s)`, req.ip);
-    res.status(201).json({ success: true, booking_reference: bookingRef, booking_id: bookingId, message: "Réservation créée" });
+    res.status(201).json({ success: true, booking_reference: bookingRef, booking_id: bookingId, flight_type: flight_type || flight.type, message: "Réservation créée en attente de paiement" });
+  } catch (err: any) {
+    await connection.rollback();
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// Confirmer le paiement d'une réservation manuelle (pending → confirmed)
+app.put("/api/bookings/:id/confirm-payment", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const agentId = req.user.id;
+  const agentName = req.user.name || req.user.username;
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query<mysql.RowDataPacket[]>("SELECT * FROM bookings WHERE id=?", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Réservation introuvable" });
+    const booking = rows[0];
+    await connection.execute("UPDATE bookings SET status='confirmed' WHERE id=?", [id]);
+    await connection.execute("UPDATE payments SET payment_status='confirmed' WHERE booking_id=?", [id]);
+    await connection.commit();
+    await logAudit(agentId, agentName, 'CONFIRM_PAYMENT', 'booking', booking.booking_reference, `Paiement confirmé: ${booking.booking_reference}`, req.ip);
+    res.json({ success: true, message: "Paiement confirmé avec succès" });
   } catch (err: any) {
     await connection.rollback();
     res.status(500).json({ error: "Erreur serveur", details: err.message });
