@@ -11802,11 +11802,12 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
       params
     );
 
-    // Grouper par vol
-    const flightsMap: Record<number, any> = {};
+    // Grouper par vol — utilise Map pour préserver l'ordre DESC de la requête SQL
+    // (un Record<number,...> trie les clés numériques en ASC automatiquement)
+    const flightsMap = new Map<number, any>();
     rows.forEach((row: any) => {
-      if (!flightsMap[row.flight_id]) {
-        flightsMap[row.flight_id] = {
+      if (!flightsMap.has(row.flight_id)) {
+        flightsMap.set(row.flight_id, {
           flight_id: row.flight_id,
           flight_number: row.flight_number || `Vol #${row.flight_id}`,
           departure_time: row.departure_time,
@@ -11817,9 +11818,9 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
           to_code: row.to_code,
           type_vol: row.type_vol || 'plane',
           passengers: [],
-        };
+        });
       }
-      flightsMap[row.flight_id].passengers.push({
+      flightsMap.get(row.flight_id).passengers.push({
         id: row.passenger_id,
         first_name: row.first_name || '',
         last_name: row.last_name || '',
@@ -11840,7 +11841,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
       });
     });
 
-    const flights = Object.values(flightsMap).map((f: any) => ({
+    const flights = Array.from(flightsMap.values()).map((f: any) => ({
       ...f,
       total_passengers: f.passengers.length,
       checked_in_count: f.passengers.filter((p: any) => p.checked_in).length,
