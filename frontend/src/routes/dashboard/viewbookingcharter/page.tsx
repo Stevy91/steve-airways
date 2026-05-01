@@ -176,10 +176,161 @@ const ViewBookingCharter = () => {
     };
 
     // Imprimer le reçu de paiement
-    const handlePrintReceipt = (id: number) => {
-        const token = localStorage.getItem("token") || localStorage.getItem("authToken");
-        const url = `https://steve-airways.onrender.com/api/bookings/${id}/payment-receipt?token=${token}`;
-        window.open(url, "_blank", "width=800,height=900");
+    const handlePrintReceipt = async (reference: string, bk: any) => {
+        try {
+            // Fetch full booking details (public endpoint)
+            const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${reference}`);
+            const data = await res.json();
+            const detail = data.booking || {};
+            const passengers: any[] = detail.passengers || [];
+            const flights: any[] = detail.flights || [];
+            const outFlight = flights.find((f: any) => f.id === detail.flight_id);
+            const retFlight  = flights.find((f: any) => f.id === detail.return_flight_id);
+
+            const fmt = (d: string) => { try { return new Date(d).toLocaleString("fr-FR"); } catch { return "N/A"; } };
+            const payLabel = (m: string) =>
+                m === "cash" ? "Espèces" : m === "card" ? "Carte" : m === "cheque" ? "Chèque"
+                : m === "virement" ? "Virement" : m === "transfert" ? "Dépôt" : "Contrat";
+
+            const isRoundTrip = !!detail.return_flight_id;
+            const currency = (detail.currency || "USD").toUpperCase();
+            const total = Number(detail.total_price || 0).toFixed(2);
+            const ref = detail.booking_reference || reference;
+
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Reçu - ${ref}</title>
+  <meta charset="UTF-8">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
+    .receipt-container { max-width:320px; margin:0 auto; background:white; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+    .header { text-align:center; margin-bottom:15px; }
+    .divider { border:none; border-top:1px dashed #ccc; margin:12px 0; }
+    .section-title { font-weight:bold; margin:8px 0 4px; color:#1A237E; font-size:13px; }
+    .info-line { margin:4px 0; font-size:12px; color:#333; }
+    .info-line span.right { float:right; font-weight:bold; }
+    .clearfix::after { content:""; display:table; clear:both; }
+    .total-val { color:#d32f2f; font-weight:bold; font-size:15px; }
+    .barcode { text-align:center; margin:15px 0; }
+    .footer-note { font-size:10px; text-align:center; color:#666; margin-top:12px; line-height:1.5; }
+    .controls { text-align:center; margin-top:16px; padding-top:12px; border-top:1px solid #eee; }
+    button { padding:9px 18px; margin:0 6px; background:#1A237E; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; }
+    button:hover { background:#283593; }
+    @media print {
+      body { background:white; padding:0; }
+      .receipt-container { box-shadow:none; max-width:80mm; }
+      .controls { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-container">
+    <div class="header">
+      <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways" style="height:45px;margin-bottom:6px;"/>
+      <div style="font-weight:bold;font-size:15px;color:#1A237E;">TROGON AIRWAYS</div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">
+        Reçu de réservation<br/>
+        ${new Date().toLocaleDateString("fr-FR", { weekday:"long", year:"numeric", month:"long", day:"numeric", hour:"2-digit", minute:"2-digit" })}
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="info-line clearfix">
+      <span>Caissier:</span>
+      <span class="right">${bk.created_by_name || "Agent"}</span>
+    </div>
+
+    <hr class="divider"/>
+
+    <div style="text-align:center;font-weight:bold;font-size:13px;color:#1A237E;margin:8px 0;">
+      ${isRoundTrip ? "Billet Aller-Retour" : "Billet Aller Simple"}
+    </div>
+    <div style="text-align:center;font-size:11px;color:#555;">
+      Réf: <strong>${ref}</strong>
+    </div>
+
+    <hr class="divider"/>
+
+    ${outFlight ? `
+    <div class="section-title">VOL ALLER</div>
+    <div class="info-line">${outFlight.departure_airport_name || outFlight.dep_name || ""} (${outFlight.departure_code || outFlight.dep_code || ""}) → ${outFlight.arrival_airport_name || outFlight.arr_name || ""} (${outFlight.arrival_code || outFlight.arr_code || ""})</div>
+    <div class="info-line">Vol N°: ${outFlight.flight_number}</div>
+    <div class="info-line">Départ: ${fmt(outFlight.departure_time)}</div>
+    <div class="info-line">Arrivée: ${fmt(outFlight.arrival_time)}</div>
+    ` : ""}
+
+    ${retFlight ? `
+    <hr class="divider"/>
+    <div class="section-title">VOL RETOUR</div>
+    <div class="info-line">${retFlight.departure_airport_name || retFlight.dep_name || ""} (${retFlight.departure_code || retFlight.dep_code || ""}) → ${retFlight.arrival_airport_name || retFlight.arr_name || ""} (${retFlight.arrival_code || retFlight.arr_code || ""})</div>
+    <div class="info-line">Vol N°: ${retFlight.flight_number}</div>
+    <div class="info-line">Départ: ${fmt(retFlight.departure_time)}</div>
+    <div class="info-line">Arrivée: ${fmt(retFlight.arrival_time)}</div>
+    ` : ""}
+
+    <hr class="divider"/>
+
+    <div class="section-title">PASSAGER(S)</div>
+    ${passengers.map((p: any) => `
+      <div class="info-line">${p.first_name || ""} ${p.last_name || ""}</div>
+    `).join("") || `<div class="info-line">${bk.first_name || ""} ${bk.last_name || ""}</div>`}
+
+    <hr class="divider"/>
+
+    <div class="section-title">PAIEMENT</div>
+    <div class="info-line clearfix">
+      <span>TOTAL:</span>
+      <span class="right total-val">${total} ${currency}</span>
+    </div>
+    <div class="info-line clearfix">
+      <span>Mode:</span>
+      <span class="right">${payLabel(detail.payment_method || bk.payment_method)}</span>
+    </div>
+    ${detail.transaction_reference && !detail.transaction_reference.startsWith("MANUAL-") ? `
+    <div class="info-line clearfix">
+      <span>Réf. paiement:</span>
+      <span class="right" style="font-size:11px;">${detail.transaction_reference}</span>
+    </div>` : ""}
+    <div class="info-line clearfix">
+      <span>Statut:</span>
+      <span class="right" style="color:green;font-weight:bold;">
+        ${detail.status === "confirmed" ? "Confirmé" : detail.status === "pending" ? "En attente" : "Annulé"}
+      </span>
+    </div>
+
+    <div class="barcode">
+      <img src="https://barcode.tec-it.com/barcode.ashx?data=${ref}&code=Code128&dpi=96&dataseparator="
+           alt="Barcode ${ref}" style="max-width:100%;height:auto;"/>
+    </div>
+
+    <div class="footer-note">
+      <strong>IMPORTANT</strong><br/>
+      • Présentez ce reçu à l'enregistrement<br/>
+      • Arrivez 1h avant le départ<br/>
+      • Pièces d'identité obligatoires<br/>
+      <br/>
+      Tél: +509 3341 0404 / +509 2995 0404<br/>
+      www.trogonairways.com
+    </div>
+
+    <div class="controls">
+      <button onclick="window.print()">🖨️ Imprimer</button>
+      <button onclick="window.close()">Fermer</button>
+    </div>
+  </div>
+</body>
+</html>`;
+
+            const win = window.open("", "_blank", "width=420,height=850");
+            if (win) { win.document.write(htmlContent); win.document.close(); }
+            else { alert("Veuillez autoriser les popups pour imprimer le reçu."); }
+        } catch (err) {
+            alert("Erreur lors de la génération du reçu.");
+            console.error(err);
+        }
     };
 
     if (loading) {
@@ -627,7 +778,7 @@ const ViewBookingCharter = () => {
                                                 {booking.status === "confirmed" && (
                                                     <button
                                                         className="flex w-full items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-2 py-1.5 text-white text-xs font-medium hover:from-blue-600 hover:to-indigo-700"
-                                                        onClick={() => handlePrintReceipt(booking.id)}
+                                                        onClick={() => handlePrintReceipt(booking.booking_reference, booking)}
                                                     >
                                                         <Printer className="h-3.5 w-3.5 flex-shrink-0" /> Reçu paiement
                                                     </button>
