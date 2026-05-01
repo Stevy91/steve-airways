@@ -72,26 +72,45 @@ export const useAuth = () => {
             return;
         }
 
-        try {
-            const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
-            
-            // Parser les permissions
-            if (parsedUser.permissions) {
-                const parsedPerms = parsePermissions(parsedUser.permissions);
-                setPermissions(parsedPerms);
+        // Fonction async séparée pour pouvoir utiliser await
+        const initAuth = async () => {
+            try {
+                const parsedUser = JSON.parse(userData);
+                setUser(parsedUser);
+
+                // 1️⃣ Appliquer les permissions du localStorage immédiatement (render rapide)
+                if (parsedUser.permissions) {
+                    setPermissions(parsePermissions(parsedUser.permissions));
+                }
+
+                // 2️⃣ Rafraîchir les permissions depuis le serveur (l'admin peut les avoir modifiées)
+                try {
+                    const freshRes = await fetch("https://steve-airways.onrender.com/api/profile", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (freshRes.ok) {
+                        const freshUser = await freshRes.json();
+                        if (freshUser && freshUser.permissions !== undefined) {
+                            setPermissions(parsePermissions(freshUser.permissions));
+                            const updatedUser = { ...parsedUser, permissions: freshUser.permissions };
+                            localStorage.setItem("user", JSON.stringify(updatedUser));
+                            setUser(updatedUser);
+                        }
+                    }
+                } catch (_freshErr) {
+                    // Non bloquant — on conserve les permissions du localStorage
+                }
+
+            } catch (error) {
+                console.error("Erreur auth:", error);
+                logout();
+            } finally {
+                setLoading(false);
+                resetTimer();
             }
-            
-            // NE PAS faire de redirection automatique ici
-            // La redirection sera gérée par les routes protégées
-            
-        } catch (error) {
-            console.error("Erreur de parsing utilisateur:", error);
-            logout();
-        } finally {
-            setLoading(false);
-            resetTimer();
-        }
+        };
+
+        initAuth();
 
         // 👂 Écoute activité utilisateur
         const events = ["click", "mousemove", "keydown", "scroll"];

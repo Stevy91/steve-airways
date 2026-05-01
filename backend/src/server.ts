@@ -4191,6 +4191,8 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     }
 
     // 1. Récupérer les réservations avec un typage explicite
+    // NOTE: on récupère TOUTES les réservations pour les stats de statut,
+    // mais on exclut cancelled/refunded du calcul du revenu (voir ci-dessous)
     const [bookingRows] = await pool.query<mysql.RowDataPacket[]>(`
       SELECT 
         id, 
@@ -4243,8 +4245,10 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
     let totalRevenueUSD = 0;
     let totalRevenueHTG = 0;
     
-    // Séparer les revenus par devise
+    // Séparer les revenus par devise — exclure les réservations annulées/remboursées
+    const EXCLUDED_STATUSES = ['cancelled', 'canceled', 'refunded', 'annulé'];
     bookings.forEach(booking => {
+      if (EXCLUDED_STATUSES.includes((booking.status || '').toLowerCase())) return;
       if (booking.currency === 'usd') {
         totalRevenueUSD += booking.total_price;
       } else if (booking.currency === 'htg') {

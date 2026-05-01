@@ -7,31 +7,53 @@ import { useParams } from "react-router-dom";
 const permissionsData = [
     {
         id: "dashboard",
-        label: "0 - DASHBOARD",
+        label: "0 - TABLEAU DE BORD",
         children: [],
     },
     {
         id: "user",
-        label: "1 - USER",
+        label: "1 - VOLS & RÉSERVATIONS",
         children: [
-            { id: "listeFlightsPlane", label: "1.1 - Listes Flights Plane" },
-            { id: "listeFlightsHelico", label: "1.2 - Listes Flights Helico" },
-            { id: "charter", label: "1.3 - Listes Charter" },
-            { id: "listeBookingsPlane", label: "1.4 - Listes Bookings Plane" },
-            { id: "listeBookingsHelico", label: "1.5 - Listes Bookings Helico" },
-            { id: "addFlights", label: "1.6 - Add Flights" },
-            { id: "editFlights", label: "1.7 - Edit Flights" },
-            { id: "deleteFlights", label: "1.8 - Delete Flights" },
-            { id: "cancelFlight", label: "1.9 - Cancel Flights" },
-            { id: "editBookings", label: "2.0 - Edit Bookings" },
-            { id: "reschedule", label: "2.1 - Reschedule Flight" },
-            { id: "listePassagers", label: "2.2 - Listes Passagers" },
-            { id: "createdTicket", label: "2.3 - Created Ticket" },
+            { id: "listeFlightsPlane", label: "1.1 - Vols Avion" },
+            { id: "listeFlightsHelico", label: "1.2 - Vols Hélicoptère" },
+            { id: "charter", label: "1.3 - Charter" },
+            { id: "listeBookingsPlane", label: "1.4 - Réservations Avion" },
+            { id: "listeBookingsHelico", label: "1.5 - Réservations Hélico" },
+            { id: "addFlights", label: "1.6 - Ajouter des Vols" },
+            { id: "editFlights", label: "1.7 - Modifier des Vols" },
+            { id: "deleteFlights", label: "1.8 - Supprimer des Vols" },
+            { id: "cancelFlight", label: "1.9 - Annuler des Vols" },
+            { id: "editBookings", label: "2.0 - Modifier Réservations" },
+            { id: "reschedule", label: "2.1 - Reprogrammer Vols" },
+            { id: "listePassagers", label: "2.2 - Liste des Passagers" },
+            { id: "createdTicket", label: "2.3 - Créer Ticket" },
             { id: "imprimerTicket", label: "2.4 - Imprimer Ticket" },
-            { id: "cancelledTicket", label: "2.5 - Cancelled Ticket" },
+            { id: "cancelledTicket", label: "2.5 - Annuler Ticket" },
             { id: "manifestPdf", label: "2.6 - Manifest PDF" },
-            { id: "rapport", label: "2.7 - Bookings Rapport" },
-            { id: "listeUsers", label: "2.8 - Users" },
+            { id: "rapport", label: "2.7 - Rapports Financiers" },
+            { id: "listeUsers", label: "2.8 - Gestion Utilisateurs" },
+        ],
+    },
+    {
+        id: "reservations",
+        label: "3 - RÉSERVATIONS MANUELLES",
+        children: [
+            { id: "manualBooking", label: "3.1 - Réservation Manuelle" },
+            { id: "refunds", label: "3.2 - Remboursements" },
+        ],
+    },
+    {
+        id: "destinations",
+        label: "4 - DESTINATIONS",
+        children: [
+            { id: "locations", label: "4.1 - Gérer Destinations / Aéroports" },
+        ],
+    },
+    {
+        id: "marketing",
+        label: "5 - MARKETING",
+        children: [
+            { id: "promoCodes", label: "5.1 - Codes Promo" },
         ],
     },
 ];
@@ -104,33 +126,16 @@ export default function PermissionsPage() {
     const buildPermissionsPayload = () => {
         const payload: Record<string, boolean> = {};
 
-        // Liste complète des permissions attendues par le backend
-        const allPermissions = [
-            "listeFlightsPlane",
-            "listeBookingsPlane",
-            "listeFlightsHelico",
-            "listeBookingsHelico",
-            "listeUsers",
-            "charter",
-            "addFlights",
-            "rapport",
-            "cancelledTicket",
-            "editFlights",
-            "listePassagers",
-            "editBookings",
-            "imprimerTicket",
-            "createdTicket",
-            "manifestPdf",
-            "deleteFlights",
-            "dashboard",
-            "user",
-            "reschedule",
-            "cancelFlight",
-        ];
-
-        // S'assurer que toutes les permissions sont présentes
-        allPermissions.forEach((permission) => {
-            payload[permission] = checked[permission] === true;
+        // Construction dynamique à partir de permissionsData (toujours synchronisé)
+        permissionsData.forEach((group) => {
+            if (group.children.length === 0) {
+                // Groupe sans enfants = permission directe (ex: dashboard)
+                payload[group.id] = checked[group.id] === true;
+            } else {
+                group.children.forEach((child) => {
+                    payload[child.id] = checked[child.id] === true;
+                });
+            }
         });
 
         return payload;
