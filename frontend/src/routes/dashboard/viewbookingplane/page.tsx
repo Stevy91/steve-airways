@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { ChevronLeftIcon, ChevronRightIcon, Eye } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, Eye, Printer } from "lucide-react";
 import BookingDetailsModal, { BookingDetails } from "../../../components/BookingDetailsModal";
+import ConfirmPaymentModal from "../../../components/ConfirmPaymentModal";
+import CancelBookingModal from "../../../components/CancelBookingModal";
 import { useTheme } from "../../../contexts/theme-context";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -39,6 +41,16 @@ const ViewBookingPlane = () => {
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<BookingDetails | undefined>(undefined);
+
+    // Modal — Confirmer paiement
+    const [confirmModal, setConfirmModal] = useState<{ open: boolean; id: number; ref: string; pax: number; price: number; currency: string }>({
+        open: false, id: 0, ref: "", pax: 0, price: 0, currency: "USD"
+    });
+
+    // Modal — Annuler réservation
+    const [cancelModal, setCancelModal] = useState<{ open: boolean; id: number; ref: string }>({
+        open: false, id: 0, ref: ""
+    });
 
     // Champs filtres
     const [startDate, setStartDate] = useState("");
@@ -123,44 +135,51 @@ const ViewBookingPlane = () => {
         }
     };
 
-    // Confirmer le paiement — décrémente les sièges + envoie email billet
-    const handleConfirmPayment = async (id: number, ref: string, passengerCount: number) => {
-        const ok = window.confirm(
-            `Confirmer le paiement de la réservation ${ref} ?\n\n` +
-            `• ${passengerCount} passager(s) seront enregistrés\n` +
-            `• Les sièges seront déduits du vol\n` +
-            `• Un e-billet sera envoyé par email au(x) passager(s)\n\n` +
-            `Cette action est irréversible.`
-        );
-        if (!ok) return;
-        try {
-            const token = localStorage.getItem("token") || localStorage.getItem("authToken");
-            const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${id}/confirm-payment`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                // Erreur de sièges — message clair
-                if (res.status === 409) {
-                    alert(
-                        `❌ Confirmation impossible\n\n${data.error}\n` +
-                        (data.details ? `\nDétails: ${data.details}` : "") +
-                        (data.flightNumber ? `\nVol: ${data.flightNumber}` : "")
-                    );
-                } else {
-                    throw new Error(data.error || "Erreur serveur");
-                }
-                return;
-            }
-            const emailMsg = data.emails_sent > 0
-                ? `\n📧 E-billet envoyé à ${data.emails_sent} adresse(s)`
-                : "\n⚠️ Email non envoyé (vérifiez l'adresse)";
-            alert(`✅ Paiement confirmé — ${ref}\n• ${data.seats_decremented} siège(s) déduits du vol${emailMsg}`);
-            fetchDashboardData();
-        } catch (err: any) {
-            alert(`❌ Erreur: ${err.message}`);
+    // Confirmer le paiement via modal
+    const handleConfirmPayment = async (paymentReference: string) => {
+        const { id, ref } = confirmModal;
+        const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+        const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${id}/confirm-payment`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ paymentReference: paymentReference || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(
+                data.error + (data.details ? `\n${data.details}` : "") +
+                (data.flightNumber ? `\nVol: ${data.flightNumber}` : "")
+            );
         }
+        const emailMsg = data.emails_sent > 0
+            ? `E-billet envoyé à ${data.emails_sent} adresse(s)`
+            : "Email non envoyé — vérifiez l'adresse";
+        alert(`✅ Paiement confirmé — ${ref}\n• ${data.seats_decremented} siège(s) déduits\n• ${emailMsg}`);
+        setConfirmModal(m => ({ ...m, open: false }));
+        fetchDashboardData();
+    };
+
+    // Annuler une réservation pending via modal
+    const handleCancelBooking = async (reason: string) => {
+        const { id, ref } = cancelModal;
+        const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+        const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${id}/cancel-pending`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ cancelReason: reason || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur serveur");
+        alert(`Réservation ${ref} annulée.`);
+        setCancelModal(m => ({ ...m, open: false }));
+        fetchDashboardData();
+    };
+
+    // Imprimer le reçu de paiement
+    const handlePrintReceipt = (id: number) => {
+        const token = localStorage.getItem("token") || localStorage.getItem("authToken");
+        const url = `https://steve-airways.onrender.com/api/bookings/${id}/payment-receipt?token=${token}`;
+        window.open(url, "_blank", "width=800,height=900");
     };
 
     if (loading) {
@@ -574,20 +593,47 @@ const ViewBookingPlane = () => {
                                                     <Eye className="h-6 w-4" /> View Details
                                                 </button>
                                             )} */}
-                                            <button
-                                                className="flex w-full gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 p-2 text-white hover:from-amber-600 hover:to-amber-500 hover:text-black"
-                                                onClick={() => handleViewDetails(booking.id)}
-                                            >
-                                                <Eye className="h-6 w-4" /> View Details
-                                            </button>
-                                            {booking.status === "pending" && (
+                                            <div className="flex flex-col gap-1 min-w-[140px]">
+                                                {/* Voir détails */}
                                                 <button
-                                                    className="mt-1 flex w-full gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 p-2 text-white hover:from-green-600 hover:to-green-500"
-                                                    onClick={() => handleConfirmPayment(booking.id, booking.booking_reference, booking.passenger_count)}
+                                                    className="flex w-full items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-2 py-1.5 text-white text-xs font-medium hover:from-amber-600 hover:to-amber-500"
+                                                    onClick={() => handleViewDetails(booking.id)}
                                                 >
-                                                    Confirmer paiement
+                                                    <Eye className="h-3.5 w-3.5 flex-shrink-0" /> Voir détails
                                                 </button>
-                                            )}
+
+                                                {/* Confirmer paiement (pending only) */}
+                                                {booking.status === "pending" && (
+                                                    <button
+                                                        className="flex w-full items-center gap-1.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 px-2 py-1.5 text-white text-xs font-medium hover:from-green-600 hover:to-emerald-700"
+                                                        onClick={() => setConfirmModal({ open: true, id: booking.id, ref: booking.booking_reference, pax: booking.passenger_count, price: booking.total_price, currency: booking.currency || "USD" })}
+                                                    >
+                                                        <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                                                        Confirmer paiement
+                                                    </button>
+                                                )}
+
+                                                {/* Annuler (pending only) */}
+                                                {booking.status === "pending" && (
+                                                    <button
+                                                        className="flex w-full items-center gap-1.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-2 py-1.5 text-white text-xs font-medium hover:from-red-600 hover:to-red-700"
+                                                        onClick={() => setCancelModal({ open: true, id: booking.id, ref: booking.booking_reference })}
+                                                    >
+                                                        <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        Annuler
+                                                    </button>
+                                                )}
+
+                                                {/* Reçu (confirmed only) */}
+                                                {booking.status === "confirmed" && (
+                                                    <button
+                                                        className="flex w-full items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-2 py-1.5 text-white text-xs font-medium hover:from-blue-600 hover:to-indigo-700"
+                                                        onClick={() => handlePrintReceipt(booking.id)}
+                                                    >
+                                                        <Printer className="h-3.5 w-3.5 flex-shrink-0" /> Reçu paiement
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -664,6 +710,21 @@ const ViewBookingPlane = () => {
                     onClose={() => setOpen(false)}
                     onSave={() => {}}
                     bookingModify={fetchDashboardData}
+                />
+                <ConfirmPaymentModal
+                    open={confirmModal.open}
+                    bookingRef={confirmModal.ref}
+                    passengerCount={confirmModal.pax}
+                    totalPrice={confirmModal.price}
+                    currency={confirmModal.currency}
+                    onConfirm={handleConfirmPayment}
+                    onClose={() => setConfirmModal(m => ({ ...m, open: false }))}
+                />
+                <CancelBookingModal
+                    open={cancelModal.open}
+                    bookingRef={cancelModal.ref}
+                    onConfirm={handleCancelBooking}
+                    onClose={() => setCancelModal(m => ({ ...m, open: false }))}
                 />
             </div>
         </div>

@@ -613,15 +613,51 @@ export default function ManualBookingPage() {
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
+          {/* Accès rapide par type */}
+          <div className={`rounded-xl border p-4 ${dark ? "border-slate-700 bg-slate-800/50" : "border-gray-200 bg-gray-50"}`}>
+            <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${dark ? "text-slate-400" : "text-gray-500"}`}>
+              Voir les réservations par type
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => navigate("/en/dashboard/bookings-plane")}
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-medium transition-all ${dark ? "border-slate-600 hover:border-blue-500 hover:bg-blue-900/20 text-slate-300" : "border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-gray-600"}`}
+              >
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+                <span>Avion</span>
+              </button>
+              <button
+                onClick={() => navigate("/en/dashboard/bookings-helico")}
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-medium transition-all ${dark ? "border-slate-600 hover:border-purple-500 hover:bg-purple-900/20 text-slate-300" : "border-gray-200 hover:border-purple-400 hover:bg-purple-50 text-gray-600"}`}
+              >
+                <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                </svg>
+                <span>Hélicoptère</span>
+              </button>
+              <button
+                onClick={() => navigate("/en/dashboard/bookings-charter")}
+                className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-medium transition-all ${dark ? "border-slate-600 hover:border-emerald-500 hover:bg-emerald-900/20 text-slate-300" : "border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 text-gray-600"}`}
+              >
+                <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span>Charter</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Actions principales */}
+          <div className="flex gap-3">
             <button onClick={resetAll}
               className={`flex-1 px-4 py-2.5 rounded-xl border font-medium text-sm transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
               + Nouvelle réservation
             </button>
             <button onClick={goToBookings}
               className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity">
-              Voir les réservations →
+              Voir mes réservations →
             </button>
           </div>
         </div>

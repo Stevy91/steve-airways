@@ -11318,11 +11318,13 @@ app.put("/api/bookings/:id/confirm-payment", authMiddleware, async (req: any, re
     }
 
     // ── 5. Confirmer la réservation et le paiement
+    const { paymentReference } = req.body;
     await connection.execute(
       "UPDATE bookings SET status='confirmed' WHERE id=?", [id]
     );
     await connection.execute(
-      "UPDATE payments SET payment_status='confirmed' WHERE booking_id=?", [id]
+      `UPDATE payments SET payment_status='confirmed'${paymentReference ? ", transaction_reference=?" : ""} WHERE booking_id=?`,
+      paymentReference ? [paymentReference, id] : [id]
     );
 
     // ── 6. Notification
@@ -11377,6 +11379,302 @@ app.put("/api/bookings/:id/confirm-payment", authMiddleware, async (req: any, re
     res.status(500).json({ error: "Erreur serveur", details: err.message });
   } finally {
     connection.release();
+  }
+});
+
+// ============================================================
+// ANNULER UNE RÉSERVATION EN ATTENTE
+// ============================================================
+app.put("/api/bookings/:id/cancel-pending", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { cancelReason } = req.body;
+  const agentId = req.user.id;
+  const agentName = req.user.name || req.user.username;
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT * FROM bookings WHERE id=?", [id]
+    );
+    if (!rows.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Réservation introuvable" });
+    }
+    const booking = rows[0];
+
+    if (booking.status === "confirmed") {
+      await connection.rollback();
+      return res.status(409).json({ error: "Impossible d\'annuler une réservation déjà confirmée. Utilisez le remboursement." });
+    }
+    if (booking.status === "cancelled") {
+      await connection.rollback();
+      return res.status(409).json({ error: "Cette réservation est déjà annulée." });
+    }
+
+    // Mettre à jour le statut
+    await connection.execute(
+      "UPDATE bookings SET status='cancelled', adminNotes=CONCAT(IFNULL(adminNotes,''), ?) WHERE id=?",
+      [cancelReason ? `\n[ANNULÉ] ${cancelReason}` : "\n[ANNULÉ par agent]", id]
+    );
+    await connection.execute(
+      "UPDATE payments SET payment_status='cancelled' WHERE booking_id=?", [id]
+    );
+
+    // Libérer les sièges si la réservation était déjà confirmée (cas edge)
+    // Pour les réservations pending, les sièges n\'ont pas été déduits donc rien à libérer
+
+    // Notification
+    try {
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at) VALUES (?,?,?,?,?)`,
+        ["cancelled", `Réservation annulée: ${booking.booking_reference}`, booking.id, false, new Date()]
+      );
+    } catch (_) {}
+
+    await connection.commit();
+
+    // Envoyer email d\'annulation au client
+    try {
+      const [paxRows] = await pool.query<mysql.RowDataPacket[]>(
+        "SELECT email, first_name, last_name FROM passengers WHERE booking_id=?", [id]
+      );
+      const recipients = new Set<string>();
+      if (booking.contact_email) recipients.add(booking.contact_email);
+      paxRows.forEach((p: any) => { if (p.email) recipients.add(p.email); });
+      const pax0 = paxRows[0] as any;
+      const cancelHtml = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #ddd;border-radius:8px;overflow:hidden;">
+        <div style="background:#7f1d1d;color:white;padding:24px;text-align:center;">
+          <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways" style="height:50px;"/>
+          <p style="margin:8px 0 0;font-size:1.1em;font-weight:bold;">Réservation Annulée / Booking Cancelled</p>
+        </div>
+        <div style="padding:24px;">
+          <p>Cher(e) ${pax0 ? pax0.first_name + " " + pax0.last_name : "Client"},</p>
+          <p>Votre réservation <strong>${booking.booking_reference}</strong> a été annulée.</p>
+          ${cancelReason ? `<p><strong>Motif:</strong> ${cancelReason}</p>` : ""}
+          <p>Pour toute question, contactez-nous:<br/>
+            📞 +509 334104004<br/>
+            ✉️ info@trogonairways.com</p>
+          <hr style="border:1px solid #eee;margin:16px 0;"/>
+          <p><em>Dear ${pax0 ? pax0.first_name + " " + pax0.last_name : "Customer"}, your booking <strong>${booking.booking_reference}</strong> has been cancelled.</em></p>
+          <p style="color:#777;font-size:0.9em;">Trogon Airways — The Trogon Airways Team</p>
+        </div>
+      </div>`;
+      for (const email of recipients) {
+        await sendEmail(email, `Trogon Airways — Réservation Annulée / Cancelled — ${booking.booking_reference}`, cancelHtml);
+      }
+    } catch (emailErr: any) {
+      console.error("⚠️ Email annulation:", emailErr.message);
+    }
+
+    await logAudit(agentId, agentName, "CANCEL_BOOKING", "booking", booking.booking_reference,
+      `Réservation annulée: ${booking.booking_reference}${cancelReason ? " — " + cancelReason : ""}`, req.ip);
+
+    res.json({ success: true, message: "Réservation annulée avec succès", booking_reference: booking.booking_reference });
+  } catch (err: any) {
+    await connection.rollback();
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// ============================================================
+// REÇU DE PAIEMENT — HTML imprimable
+// ============================================================
+app.get("/api/bookings/:id/payment-receipt", async (req: any, res: Response) => {
+  // Accept token via query param for direct browser window.open() calls
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  // Inline auth check
+  const jwt = require("jsonwebtoken");
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).send("<h3>Non autorisé</h3>");
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_key_trogon_airways");
+    req.user = decoded;
+  } catch {
+    return res.status(401).send("<h3>Token invalide</h3>");
+  }
+  const { id } = req.params;
+  try {
+    const [bookingRows]: any = await pool.query(
+      `SELECT b.*, p2.payment_status, p2.transaction_reference AS payment_ref, p2.payment_method AS pay_method
+       FROM bookings b
+       LEFT JOIN payments p2 ON p2.booking_id = b.id
+       WHERE b.id = ? LIMIT 1`, [id]
+    );
+    if (!bookingRows.length) return res.status(404).json({ error: "Réservation introuvable" });
+    const b = bookingRows[0];
+
+    const [paxRows]: any = await pool.query(
+      "SELECT first_name, last_name, nationality, idClient FROM passengers WHERE booking_id=? ORDER BY id ASC", [id]
+    );
+
+    const [flightRows]: any = await pool.query(
+      `SELECT f.flight_number, f.departure_time, f.arrival_time,
+              dep.name AS dep_name, dep.code AS dep_code,
+              arr.name AS arr_name, arr.code AS arr_code
+       FROM flights f
+       JOIN locations dep ON dep.id = f.departure_location_id
+       JOIN locations arr ON arr.id = f.arrival_location_id
+       WHERE f.id = ? LIMIT 1`, [b.flight_id]
+    );
+    const flight = flightRows[0];
+
+    const payLabel = (m: string) =>
+      m === "cash" ? "Espèces / Cash" :
+      m === "card" ? "Carte de crédit / Credit Card" :
+      m === "cheque" ? "Chèque / Bank Check" :
+      m === "virement" ? "Virement bancaire / Bank Transfer" :
+      m === "transfert" ? "Dépôt / Deposit" : m || "N/A";
+
+    const fmt = (d: string) => { try { return new Date(d).toLocaleString("fr-FR"); } catch { return "N/A"; } };
+    const receiptNum = `RCP-${b.booking_reference}`;
+    const now = new Date().toLocaleString("fr-FR");
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Reçu ${receiptNum}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; color:#1a1a1a; background:#fff; }
+    .page { max-width:720px; margin:0 auto; padding:32px; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1A237E; padding-bottom:16px; margin-bottom:24px; }
+    .logo-section img { height:50px; }
+    .logo-section h1 { color:#1A237E; font-size:1.4em; margin-top:4px; }
+    .receipt-meta { text-align:right; }
+    .receipt-meta .receipt-num { font-size:1.3em; font-weight:bold; color:#1A237E; }
+    .receipt-meta .date { font-size:0.85em; color:#555; }
+    .badge { display:inline-block; padding:3px 12px; border-radius:20px; font-size:0.8em; font-weight:bold; }
+    .badge-confirmed { background:#dcfce7; color:#166534; }
+    .badge-pending   { background:#fef9c3; color:#854d0e; }
+    .badge-cancelled { background:#fee2e2; color:#991b1b; }
+    h3 { font-size:0.75em; text-transform:uppercase; letter-spacing:1px; color:#6b7280; margin-bottom:8px; }
+    .section { margin-bottom:20px; }
+    table.info { width:100%; border-collapse:collapse; }
+    table.info td { padding:7px 10px; font-size:0.92em; }
+    table.info td:first-child { color:#6b7280; width:45%; }
+    table.info td:last-child { font-weight:600; }
+    table.info tr:nth-child(even) td { background:#f9fafb; }
+    .total-box { background:#1A237E; color:white; border-radius:8px; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; margin:20px 0; }
+    .total-box .label { font-size:1em; opacity:0.85; }
+    .total-box .amount { font-size:1.8em; font-weight:bold; }
+    .footer { border-top:1px solid #eee; padding-top:16px; margin-top:24px; font-size:0.8em; color:#9ca3af; text-align:center; }
+    .watermark { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-35deg); font-size:6em; font-weight:900; opacity:0.04; color:#1A237E; pointer-events:none; z-index:0; }
+    @media print {
+      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .no-print { display:none; }
+    }
+  </style>
+</head>
+<body>
+<div class="watermark">TROGON AIRWAYS</div>
+<div class="page">
+  <div class="header">
+    <div class="logo-section">
+      <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways"/>
+      <h1>REÇU DE PAIEMENT</h1>
+      <div style="font-size:0.8em;color:#6b7280;">PAYMENT RECEIPT</div>
+    </div>
+    <div class="receipt-meta">
+      <div class="receipt-num">${receiptNum}</div>
+      <div class="date">Émis le / Issued: ${now}</div>
+      <div style="margin-top:6px;">
+        <span class="badge badge-${b.status === "confirmed" ? "confirmed" : b.status === "cancelled" ? "cancelled" : "pending"}">
+          ${b.status === "confirmed" ? "PAYÉ / PAID" : b.status === "cancelled" ? "ANNULÉ" : "EN ATTENTE"}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="section">
+      <h3>Client</h3>
+      <table class="info">
+        ${paxRows.map((p: any) => `<tr><td>Passager</td><td>${p.first_name} ${p.last_name}</td></tr>`).join("")}
+        <tr><td>Email</td><td>${b.contact_email || "N/A"}</td></tr>
+        <tr><td>Téléphone</td><td>${b.contact_phone || "N/A"}</td></tr>
+      </table>
+    </div>
+    <div class="section">
+      <h3>Réservation / Booking</h3>
+      <table class="info">
+        <tr><td>Référence</td><td>${b.booking_reference}</td></tr>
+        <tr><td>Date création</td><td>${fmt(b.created_at)}</td></tr>
+        <tr><td>Type</td><td>${b.type_vol === "helicopter" ? "Hélicoptère" : b.type_vol === "charter" ? "Charter" : "Avion"}</td></tr>
+        <tr><td>Trajet</td><td>${b.type_v === "roundtrip" ? "Aller-Retour" : "Aller Simple"}</td></tr>
+        <tr><td>Passagers</td><td>${b.passenger_count}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  ${flight ? `
+  <div class="section">
+    <h3>Vol / Flight</h3>
+    <table class="info">
+      <tr><td>Vol N°</td><td>${flight.flight_number}</td></tr>
+      <tr><td>Départ</td><td>${flight.dep_name} (${flight.dep_code})</td></tr>
+      <tr><td>Arrivée</td><td>${flight.arr_name} (${flight.arr_code})</td></tr>
+      <tr><td>Date départ</td><td>${fmt(flight.departure_time)}</td></tr>
+      <tr><td>Date arrivée</td><td>${fmt(flight.arrival_time)}</td></tr>
+    </table>
+  </div>` : ""}
+
+  <div class="section">
+    <h3>Paiement / Payment</h3>
+    <table class="info">
+      <tr><td>Mode de paiement</td><td>${payLabel(b.payment_method || b.pay_method)}</td></tr>
+      ${b.payment_ref ? `<tr><td>Référence paiement</td><td><strong>${b.payment_ref}</strong></td></tr>` : ""}
+      <tr><td>Devise</td><td>${(b.currency || "USD").toUpperCase()}</td></tr>
+    </table>
+  </div>
+
+  <div class="total-box">
+    <span class="label">TOTAL PAYÉ / TOTAL PAID</span>
+    <span class="amount">${Number(b.total_price).toLocaleString("fr-FR", {minimumFractionDigits:2})} ${(b.currency || "USD").toUpperCase()}</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;">
+    <div>
+      <p style="font-size:0.85em;color:#6b7280;margin-bottom:4px;">Signature du caissier / Cashier signature:</p>
+      <div style="border-bottom:1px solid #d1d5db;margin-top:32px;"></div>
+    </div>
+    <div>
+      <p style="font-size:0.85em;color:#6b7280;margin-bottom:4px;">Cachet / Stamp:</p>
+      <div style="border:1px dashed #d1d5db;height:60px;border-radius:4px;"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Trogon Airways • info@trogonairways.com • +509 334104004 • trogonairways.com</p>
+    <p style="margin-top:4px;">Ce reçu est un justificatif de paiement officiel. / This receipt is an official proof of payment.</p>
+  </div>
+
+  <div class="no-print" style="text-align:center;margin-top:24px;">
+    <button onclick="window.print()" style="background:#1A237E;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:1em;cursor:pointer;">
+      🖨️ Imprimer / Print
+    </button>
+  </div>
+</div>
+<script>
+  // Auto-print si paramètre print=1
+  if (new URLSearchParams(window.location.search).get('print') === '1') {
+    window.onload = () => setTimeout(() => window.print(), 500);
+  }
+</script>
+</body>
+</html>`;
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(html);
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 

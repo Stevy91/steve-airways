@@ -135,6 +135,9 @@ const {
       icon: PlusCircle,
       links: [
         { label: "Réservation manuelle", icon: PlusCircle, path: `/${lang}/dashboard/manual-booking` },
+        { label: "Réservations Avion", icon: List, path: `/${lang}/dashboard/bookings-plane` },
+        { label: "Réservations Hélico", icon: List, path: `/${lang}/dashboard/bookings-helico` },
+        { label: "Réservations Charter", icon: List, path: `/${lang}/dashboard/bookings-charter` },
         canPassengers && { label: "Passagers", icon: Users, path: `/${lang}/dashboard/passengers` },
         canRefunds && { label: "Remboursements", icon: RefreshCcw, path: `/${lang}/dashboard/refunds` },
       ].filter(Boolean),
