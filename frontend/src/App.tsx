@@ -1,7 +1,6 @@
 import { ThemeProvider } from "./contexts/theme-context";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import Layout from "./routes/dashboard/layout";
-import DashboardPage from "./routes/dashboard/dashboard/page";
 import LayoutHome from "./routes/layout";
 import HomePage from "./routes/home/page";
 
@@ -32,6 +31,7 @@ import BookingPending from "./routes/confirmationpending/page";
 import BookingExpired from "./routes/confirmationexpired/page";
 import Unauthorized from "./components/Unauthorized";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardIndexGuard from "./components/DashboardIndexGuard";
 
 // ✅ Nouveaux modules
 import LocationsPage from "./routes/dashboard/locations/page";
@@ -81,11 +81,7 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: (
-                    <ProtectedRoute requiredPermission="dashboard">
-                        <DashboardPage />
-                    </ProtectedRoute>
-                ),
+                element: <DashboardIndexGuard />,
             },
             {
                 path: "analytics",

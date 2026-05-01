@@ -11733,21 +11733,28 @@ app.get("/api/roles-list", authMiddleware, adminOnly, async (req: any, res: Resp
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       "SELECT id, username, name, email, role, phone, permissions FROM users ORDER BY role, name"
     );
-    const roleGroups: Record<string, any[]> = {};
-    rows.forEach((u: any) => {
-      if (!roleGroups[u.role]) roleGroups[u.role] = [];
-      let perms: string[] = [];
+
+    // Parser les permissions CSV → tableau pour chaque utilisateur
+    const parseRawPerms = (raw: string): string[] => {
+      if (!raw || !raw.trim()) return [];
       try {
-        const raw = u.permissions || '';
-        if (raw.startsWith('[')) {
-          perms = JSON.parse(raw);
-        } else if (raw.trim()) {
-          perms = raw.split(',').map((s: string) => s.trim()).filter(Boolean);
-        }
-      } catch {}
-      roleGroups[u.role].push({ ...u, permissions: perms });
+        if (raw.trim().startsWith('[')) return JSON.parse(raw);
+        return raw.split(',').map((s: string) => s.trim()).filter(Boolean);
+      } catch { return []; }
+    };
+
+    const users = rows.map((u: any) => ({
+      ...u,
+      permissions: parseRawPerms(u.permissions || ''),
+    }));
+
+    const roleGroups: Record<string, any[]> = {};
+    users.forEach((u: any) => {
+      if (!roleGroups[u.role]) roleGroups[u.role] = [];
+      roleGroups[u.role].push(u);
     });
-    res.json({ users: rows, roleGroups });
+
+    res.json({ users, roleGroups });
   } catch (err: any) {
     res.status(500).json({ error: "Erreur serveur" });
   }

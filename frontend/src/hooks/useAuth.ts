@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const INACTIVITY_TIME = 60 * 60 * 1000; // 60 minutes (corrigé 58*60*1000 = 58 minutes)
+const INACTIVITY_TIME = 60 * 60 * 1000; // 60 minutes
 
 export const useAuth = () => {
     const navigate = useNavigate();
@@ -14,25 +14,19 @@ export const useAuth = () => {
     const [permissions, setPermissions] = useState<string[]>([]);
     const logoutTimer = useRef<NodeJS.Timeout | null>(null);
 
-    // Fonction pour parser les permissions
+    // Parser les permissions (CSV string ou tableau)
     const parsePermissions = useCallback((permissionsString: string | string[]): string[] => {
         if (!permissionsString) return [];
-        
         if (Array.isArray(permissionsString)) {
             return permissionsString.filter(p => p && p.trim().length > 0);
         }
-        
         if (typeof permissionsString === 'string') {
-            return permissionsString
-                .split(',')
-                .map(p => p.trim())
-                .filter(p => p.length > 0);
+            return permissionsString.split(',').map(p => p.trim()).filter(p => p.length > 0);
         }
-        
         return [];
     }, []);
 
-    // 🔐 Logout function
+    // Logout
     const logout = useCallback(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("authToken");
@@ -42,14 +36,11 @@ export const useAuth = () => {
         navigate(`/${currentLang}/login`);
     }, [navigate, currentLang]);
 
-    // 🔄 Reset inactivity timer
+    // Reset inactivity timer
     const resetTimer = useCallback(() => {
-        if (logoutTimer.current) {
-            clearTimeout(logoutTimer.current);
-        }
-
+        if (logoutTimer.current) clearTimeout(logoutTimer.current);
         logoutTimer.current = setTimeout(() => {
-            console.log("⏰ Session expirée (inactivité)");
+            console.log("Session expirée (inactivité)");
             logout();
         }, INACTIVITY_TIME);
     }, [logout]);
@@ -58,32 +49,29 @@ export const useAuth = () => {
         const token = localStorage.getItem("token") || localStorage.getItem("authToken");
         const userData = localStorage.getItem("user");
 
-        // Si pas de token, rediriger vers login
         if (!token) {
             navigate(`/${currentLang}/login`);
             setLoading(false);
             return;
         }
 
-        // Si pas de données utilisateur, déconnecter
         if (!userData) {
             logout();
             setLoading(false);
             return;
         }
 
-        // Fonction async séparée pour pouvoir utiliser await
         const initAuth = async () => {
             try {
                 const parsedUser = JSON.parse(userData);
                 setUser(parsedUser);
 
-                // 1️⃣ Appliquer les permissions du localStorage immédiatement (render rapide)
+                // Appliquer les permissions du localStorage immédiatement
                 if (parsedUser.permissions) {
                     setPermissions(parsePermissions(parsedUser.permissions));
                 }
 
-                // 2️⃣ Rafraîchir les permissions depuis le serveur (l'admin peut les avoir modifiées)
+                // Rafraîchir depuis le serveur (l'admin peut avoir modifié les permissions)
                 try {
                     const freshRes = await fetch("https://steve-airways.onrender.com/api/profile", {
                         headers: { Authorization: `Bearer ${token}` },
@@ -98,9 +86,8 @@ export const useAuth = () => {
                         }
                     }
                 } catch (_freshErr) {
-                    // Non bloquant — on conserve les permissions du localStorage
+                    // Non bloquant - on conserve les permissions du localStorage
                 }
-
             } catch (error) {
                 console.error("Erreur auth:", error);
                 logout();
@@ -112,27 +99,20 @@ export const useAuth = () => {
 
         initAuth();
 
-        // 👂 Écoute activité utilisateur
         const events = ["click", "mousemove", "keydown", "scroll"];
-        events.forEach(event =>
-            window.addEventListener(event, resetTimer)
-        );
+        events.forEach(event => window.addEventListener(event, resetTimer));
 
         return () => {
             if (logoutTimer.current) clearTimeout(logoutTimer.current);
-            events.forEach(event =>
-                window.removeEventListener(event, resetTimer)
-            );
+            events.forEach(event => window.removeEventListener(event, resetTimer));
         };
     }, [navigate, currentLang, logout, resetTimer, parsePermissions]);
 
-    // Fonction utilitaire pour vérifier une permission
     const hasPermission = useCallback((permission: string): boolean => {
-        if (user?.role === "admin") return true; // Les admins ont toutes les permissions
+        if (user?.role === "admin") return true;
         return permissions.includes(permission);
     }, [user, permissions]);
 
-    // Vérifier si l'utilisateur a au moins une permission
     const hasAnyPermission = useCallback((requiredPermissions: string[]): boolean => {
         if (user?.role === "admin") return true;
         return requiredPermissions.some(permission => permissions.includes(permission));
@@ -147,26 +127,30 @@ export const useAuth = () => {
         hasPermission,
         hasAnyPermission,
         logout,
-        
-        // Permissions individuelles pour compatibilité
+
+        // Permissions individuelles
+        dashboard: hasPermission("dashboard"),
         listeFlightsPlane: hasPermission("listeFlightsPlane"),
         listeFlightsHelico: hasPermission("listeFlightsHelico"),
-        listeBookingsHelico: hasPermission("listeBookingsHelico"),
-        listeBookingsPlane: hasPermission("listeBookingsPlane"),
-        listeUsers: hasPermission("listeUsers"),
         charter: hasPermission("charter"),
-        addFlights: hasPermission("addFlights"),
-        deleteFlights: hasPermission("deleteFlights"),
-        manifestPdf: hasPermission("manifestPdf"),
-        editFlights: hasPermission("editFlights"),
+        listeBookingsPlane: hasPermission("listeBookingsPlane"),
+        listeBookingsHelico: hasPermission("listeBookingsHelico"),
+        manualBooking: hasPermission("manualBooking"),
         listePassagers: hasPermission("listePassagers"),
+        listeUsers: hasPermission("listeUsers"),
+        addFlights: hasPermission("addFlights"),
+        editFlights: hasPermission("editFlights"),
+        deleteFlights: hasPermission("deleteFlights"),
+        cancelFlight: hasPermission("cancelFlight"),
         editBookings: hasPermission("editBookings"),
-        imprimerTicket: hasPermission("imprimerTicket"),
-        createdTicket: hasPermission("createdTicket"),
-        dashboard: hasPermission("dashboard"),
-        rapport: hasPermission("rapport"),
-        cancelledTicket: hasPermission("cancelledTicket"),
         reschedule: hasPermission("reschedule"),
-        cancelFlight: hasPermission("cancelFlight")
+        createdTicket: hasPermission("createdTicket"),
+        imprimerTicket: hasPermission("imprimerTicket"),
+        cancelledTicket: hasPermission("cancelledTicket"),
+        manifestPdf: hasPermission("manifestPdf"),
+        rapport: hasPermission("rapport"),
+        refunds: hasPermission("refunds"),
+        locations: hasPermission("locations"),
+        promoCodes: hasPermission("promoCodes"),
     };
 };

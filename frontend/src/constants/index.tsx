@@ -90,11 +90,17 @@ const {
   const listeFlightsHelico = isAdmin || hasPermission("listeFlightsHelico");
   const charter = isAdmin || hasPermission("charter");
   const canManualBooking = isAdmin || hasPermission("manualBooking");
+  const canViewBookingsPlane = isAdmin || hasPermission("listeBookingsPlane");
+  const canViewBookingsHelico = isAdmin || hasPermission("listeBookingsHelico");
+  const canViewBookingsCharter = isAdmin || hasPermission("charter");
   const canPassengers = isAdmin || hasPermission("listePassagers");
   const canLocations = isAdmin || hasPermission("locations");
   const canRefunds = isAdmin || hasPermission("refunds");
   const canPromoCodes = isAdmin || hasPermission("promoCodes");
   const canRapport = isAdmin || hasPermission("rapport");
+
+  // La section "Réservations" s'affiche dès qu'au moins une sous-permission est accordée
+  const showReservationsSection = canManualBooking || canViewBookingsPlane || canViewBookingsHelico || canViewBookingsCharter || canPassengers || canRefunds;
 
   return [
     dashboard && {
@@ -129,15 +135,15 @@ const {
       ],
     },
 
-    // ✅ NOUVELLES SECTIONS
-    canManualBooking && {
+    // ✅ SECTION RÉSERVATIONS — chaque lien a sa propre permission
+    showReservationsSection && {
       title: "Réservations",
       icon: PlusCircle,
       links: [
-        { label: "Réservation manuelle", icon: PlusCircle, path: `/${lang}/dashboard/manual-booking` },
-        { label: "Réservations Avion", icon: List, path: `/${lang}/dashboard/bookings-plane` },
-        { label: "Réservations Hélico", icon: List, path: `/${lang}/dashboard/bookings-helico` },
-        { label: "Réservations Charter", icon: List, path: `/${lang}/dashboard/bookings-charter` },
+        canManualBooking && { label: "Réservation manuelle", icon: PlusCircle, path: `/${lang}/dashboard/manual-booking` },
+        canViewBookingsPlane && { label: "Réservations Avion", icon: List, path: `/${lang}/dashboard/bookings-plane` },
+        canViewBookingsHelico && { label: "Réservations Hélico", icon: List, path: `/${lang}/dashboard/bookings-helico` },
+        canViewBookingsCharter && { label: "Réservations Charter", icon: List, path: `/${lang}/dashboard/bookings-charter` },
         canPassengers && { label: "Passagers", icon: Users, path: `/${lang}/dashboard/passengers` },
         canRefunds && { label: "Remboursements", icon: RefreshCcw, path: `/${lang}/dashboard/refunds` },
       ].filter(Boolean),
@@ -446,20 +452,5 @@ export const flightAirSteve = [
         status: "Publish",
         date: "06/13/2025",
     },
-     {
-        number: 1,
-        name: "Steve Saint Hubert",
-        code: 'VJd43',
-        airportFrom: "Cayes",
-        airportTo: "Cap",
-        departureTime: "06/13/2025 16:59",
-        arrivalTime: "06/13/2025 16:59",
-        duration: "4",
-        status: "Publish",
-        date: "06/13/2025",
-    },
-  
-   
 ];
-
 
