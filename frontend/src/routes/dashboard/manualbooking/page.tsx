@@ -178,10 +178,18 @@ export default function ManualBookingPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.message || "Erreur");
+      if (!res.ok) {
+        if (res.status === 409) {
+          // Problème de sièges
+          throw new Error(
+            data.error + (data.details ? `\n${data.details}` : "")
+          );
+        }
+        throw new Error(data.error || data.message || "Erreur serveur");
+      }
       setResult({ ...data, flight_type: flightType });
       setStep(4);
-      toast.success("Reservation creee — en attente de paiement");
+      toast.success("Réservation créée — en attente de confirmation du paiement");
     } catch (err: any) { toast.error(err.message || "Erreur serveur"); }
     finally { setSubmitting(false); }
   };
@@ -261,13 +269,16 @@ export default function ManualBookingPage() {
               {filteredFlights.length === 0
                 ? <p className={`text-center py-6 ${textSub}`}>Aucun vol disponible</p>
                 : filteredFlights.map(f => (
-                  <button key={f.id} onClick={() => setSelectedFlight(f)}
+                  <button key={f.id} onClick={() => { if (Number(f.seats_available) === 0) return; setSelectedFlight(f); }}
                     className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedFlight?.id === f.id ? "border-blue-500 bg-blue-500/10" : dark ? "border-slate-600 hover:border-blue-500/50" : "border-gray-200 hover:border-blue-300"}`}>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className={`font-semibold text-sm ${textMain}`}>{f.flight_number || `Vol #${f.id}`} — {f.from} vers {f.to}</p>
                         <p className={`text-xs ${textSub}`}>
-                          {(f.departure_time || f.departure) ? new Date(f.departure_time || f.departure).toLocaleString("fr-FR") : ""} · {f.seats_available} sieges dispo
+                          {(f.departure_time || f.departure) ? new Date(f.departure_time || f.departure).toLocaleString("fr-FR") : ""}
+                        </p>
+                        <p className={`text-xs font-semibold ${Number(f.seats_available) === 0 ? "text-red-500" : Number(f.seats_available) <= 5 ? "text-amber-500" : "text-green-600"}`}>
+                          {Number(f.seats_available) === 0 ? "COMPLET — Aucun siège disponible" : `${f.seats_available} siège(s) disponible(s) sur ${f.total_seat}`}
                         </p>
                       </div>
                       <span className="font-bold text-blue-500">{Number(f.price).toFixed(2)} $</span>
@@ -545,36 +556,72 @@ export default function ManualBookingPage() {
 
       {/* STEP 4 — Confirmation */}
       {step === 4 && result && (
-        <div className={`rounded-2xl border p-8 text-center space-y-5 ${cardBg}`}>
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
-            <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className={`rounded-2xl border p-8 space-y-5 ${cardBg}`}>
+          {/* Header */}
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 border-2 border-amber-400 flex items-center justify-center mx-auto">
+              <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className={`text-xl font-bold ${textMain}`}>Réservation créée</h2>
+              <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${dark ? "bg-amber-900/40 text-amber-300" : "bg-amber-100 text-amber-700"}`}>
+                EN ATTENTE DE PAIEMENT
+              </span>
+            </div>
           </div>
-          <div>
-            <h2 className={`text-xl font-bold ${textMain}`}>Reservation creee !</h2>
-            <p className={`text-sm mt-1 ${dark ? "text-amber-400" : "text-amber-600"} font-medium`}>En attente de confirmation du paiement</p>
-          </div>
-          <p className={textSub}>Reference de reservation :</p>
-          <div className="inline-block px-6 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
+
+          {/* Booking reference */}
+          <div className={`rounded-xl border p-4 text-center ${dark ? "border-blue-700/40 bg-blue-900/10" : "border-blue-200 bg-blue-50"}`}>
+            <p className={`text-xs uppercase tracking-widest mb-1 ${textSub}`}>Référence de réservation</p>
             <span className="text-2xl font-mono font-bold text-blue-500">{result.booking_reference}</span>
           </div>
-          <p className={`text-sm ${textSub}`}>{selectedFlight?.from} vers {selectedFlight?.to} · {totalPrice.toFixed(2)} {priceCurrency}</p>
 
-          <div className={`rounded-2xl border p-4 text-left ${dark ? "border-amber-800/40 bg-amber-900/10" : "border-amber-100 bg-amber-50"}`}>
-            <p className={`text-sm font-semibold mb-1 ${dark ? "text-amber-300" : "text-amber-700"}`}>Prochaine etape</p>
-            <p className={`text-sm ${dark ? "text-amber-200/70" : "text-amber-600"}`}>
-              Allez dans la liste des reservations pour confirmer le paiement une fois qu'il est recu.
+          {/* Flight summary */}
+          <div className={`rounded-xl border divide-y ${dark ? "border-slate-700 divide-slate-700" : "border-gray-200 divide-gray-100"}`}>
+            <div className="flex justify-between items-center px-4 py-3">
+              <span className={`text-sm ${textSub}`}>Itinéraire</span>
+              <span className={`text-sm font-semibold ${textMain}`}>{selectedFlight?.from} → {selectedFlight?.to}</span>
+            </div>
+            <div className="flex justify-between items-center px-4 py-3">
+              <span className={`text-sm ${textSub}`}>Vol</span>
+              <span className={`text-sm font-semibold ${textMain}`}>{selectedFlight?.flight_number}</span>
+            </div>
+            <div className="flex justify-between items-center px-4 py-3">
+              <span className={`text-sm ${textSub}`}>Passager(s)</span>
+              <span className={`text-sm font-semibold ${textMain}`}>{formData.firstName} {formData.lastName}</span>
+            </div>
+            <div className="flex justify-between items-center px-4 py-3">
+              <span className={`text-sm ${textSub}`}>Montant</span>
+              <span className="text-sm font-bold text-blue-500">{totalPrice.toFixed(2)} {priceCurrency}</span>
+            </div>
+            <div className="flex justify-between items-center px-4 py-3">
+              <span className={`text-sm ${textSub}`}>Mode de paiement</span>
+              <span className={`text-sm font-semibold ${textMain}`}>{formData.paymentMethod}</span>
+            </div>
+          </div>
+
+          {/* Next step instructions */}
+          <div className={`rounded-xl border p-4 ${dark ? "border-amber-700/40 bg-amber-900/10" : "border-amber-200 bg-amber-50"}`}>
+            <p className={`text-sm font-bold mb-2 ${dark ? "text-amber-300" : "text-amber-700"}`}>⏳ Prochaine étape</p>
+            <p className={`text-sm ${dark ? "text-amber-200/80" : "text-amber-700"}`}>
+              La réservation est enregistrée <strong>sans déduire les sièges</strong>. 
+              Une fois le paiement reçu, allez dans la liste des réservations et cliquez 
+              <strong> "Confirmer paiement"</strong> — cela déduira les sièges et enverra 
+              automatiquement l'e-billet au client.
             </p>
           </div>
 
-          <div className="flex gap-3 justify-center pt-2">
-            <button onClick={resetAll} className={`px-5 py-2.5 rounded-xl border font-medium text-sm ${dark ? "border-slate-600 text-slate-300" : "border-gray-300 text-gray-600"}`}>
-              Nouvelle reservation
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <button onClick={resetAll}
+              className={`flex-1 px-4 py-2.5 rounded-xl border font-medium text-sm transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+              + Nouvelle réservation
             </button>
             <button onClick={goToBookings}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold text-sm hover:opacity-90">
-              Voir les reservations →
+              className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity">
+              Voir les réservations →
             </button>
           </div>
         </div>

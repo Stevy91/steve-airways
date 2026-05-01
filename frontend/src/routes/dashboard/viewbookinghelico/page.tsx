@@ -122,9 +122,16 @@ const ViewBookingHelico = () => {
         }
     };
 
-    // Confirmer le paiement
-    const handleConfirmPayment = async (id: number, ref: string) => {
-        if (!window.confirm(`Confirmer le paiement de la réservation ${ref} ?`)) return;
+    // Confirmer le paiement — décrémente les sièges + envoie email billet
+    const handleConfirmPayment = async (id: number, ref: string, passengerCount: number) => {
+        const ok = window.confirm(
+            `Confirmer le paiement de la réservation ${ref} ?\n\n` +
+            `• ${passengerCount} passager(s) seront enregistrés\n` +
+            `• Les sièges seront déduits du vol\n` +
+            `• Un e-billet sera envoyé par email au(x) passager(s)\n\n` +
+            `Cette action est irréversible.`
+        );
+        if (!ok) return;
         try {
             const token = localStorage.getItem("token") || localStorage.getItem("authToken");
             const res = await fetch(`https://steve-airways.onrender.com/api/bookings/${id}/confirm-payment`, {
@@ -132,11 +139,26 @@ const ViewBookingHelico = () => {
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Erreur");
-            alert(`✅ Paiement confirmé — ${ref}`);
+            if (!res.ok) {
+                // Erreur de sièges — message clair
+                if (res.status === 409) {
+                    alert(
+                        `❌ Confirmation impossible\n\n${data.error}\n` +
+                        (data.details ? `\nDétails: ${data.details}` : "") +
+                        (data.flightNumber ? `\nVol: ${data.flightNumber}` : "")
+                    );
+                } else {
+                    throw new Error(data.error || "Erreur serveur");
+                }
+                return;
+            }
+            const emailMsg = data.emails_sent > 0
+                ? `\n📧 E-billet envoyé à ${data.emails_sent} adresse(s)`
+                : "\n⚠️ Email non envoyé (vérifiez l'adresse)";
+            alert(`✅ Paiement confirmé — ${ref}\n• ${data.seats_decremented} siège(s) déduits du vol${emailMsg}`);
             fetchDashboardData();
         } catch (err: any) {
-            alert(`Erreur: ${err.message}`);
+            alert(`❌ Erreur: ${err.message}`);
         }
     };
 
@@ -561,7 +583,7 @@ const ViewBookingHelico = () => {
                                             {booking.status === "pending" && (
                                                 <button
                                                     className="mt-1 flex w-full gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 p-2 text-white hover:from-green-600 hover:to-green-500"
-                                                    onClick={() => handleConfirmPayment(booking.id, booking.booking_reference)}
+                                                    onClick={() => handleConfirmPayment(booking.id, booking.booking_reference, booking.passenger_count)}
                                                 >
                                                     Confirmer paiement
                                                 </button>

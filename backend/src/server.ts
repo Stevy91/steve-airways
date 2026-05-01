@@ -3799,7 +3799,7 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
           <p>
             Cher(e) ${passengers.map((p: any) => p.first_name + " " + p.last_name).join(", ")}
           </p>
-          <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile à l'aéroport.</p>
+          <p>Merci d'avoir choisi Trogon Airways. Veuillez trouver ci-dessous votre billet électronique. Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile à l&apos;aéroport.</p>
         </div>
 
         <!-- Section E-Ticket -->
@@ -3929,37 +3929,37 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
         <!-- Fin Section E-Ticket -->
          ${booking.typecharter ? booking.typecharter === "plane" ? `
         <div style="padding: 20px; font-size: 0.9em; color: #555;">
-          <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
+          <p><strong>Important:</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
-          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
+          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l&apos;aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
           <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
-          <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+          <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
         </div>`  :  `
         <div style="padding: 20px; font-size: 0.9em; color: #555;">
-          <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
+          <p><strong>Important:</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong></p>
-          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
+          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l&apos;aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
           <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
-          <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+          <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
         </div>` :
         booking.type_vol === "plane" ? `
          <div style="padding: 20px; font-size: 0.9em; color: #555;">
-          <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
+          <p><strong>Important:</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong></p>
-          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
+          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l&apos;aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
           <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
-          <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+          <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
         </div>` : `
         <div style="padding: 20px; font-size: 0.9em; color: #555;">
-          <p><strong>Important:</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement.</p>
+          <p><strong>Important:</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement.</p>
           <p><strong>Limitation des bagages:</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong></p>
-          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
+          <p><strong>Remarques:</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure d'arrivée à l&apos;aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.</p>
           <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
           <p>Nous nous réjouissons de vous accueillir à bord.</p>
-          <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+          <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
         </div>`}
 
       </div>
@@ -5312,7 +5312,7 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         ${flightChanged ?
             'Votre réservation de vol a été modifiée. Veuillez trouver votre nouveau billet électronique ci-dessous.' :
             'Merci d\'avoir choisi Trogon Airways. Veuillez trouver votre billet électronique ci-dessous.'}
-        Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile à l'aéroport.
+        Nous vous recommandons d'imprimer cette section ou de la présenter sur votre appareil mobile à l&apos;aéroport.
       </p>
     </div>
 
@@ -5438,23 +5438,23 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
     <!-- End E-Ticket Section -->
 
           ${typecharter ? typecharter === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-      <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
-        les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+      <p><strong>Important: **</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous
+        les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement..</p>
       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong>
       </p>
       <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
         modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques,
         grèves ou tout autre incident ne relevant pas de sa responsabilité.
-        Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage,
+        Le client est responsable de ses propres dispositions (heure d'arrivée à l&apos;aéroport, formalités de voyage,
         etc.).
         Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
       </p>
       <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
       <p>Nous nous réjouissons de vous accueillir à bord.</p>
-      <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
     </div>` :`<div style="padding: 20px; font-size: 0.9em; color: #555;">
-      <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
-        les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+      <p><strong>Important: **</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous
+        les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement..</p>
       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong>
       </p>
       <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
@@ -5462,30 +5462,30 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
         incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure
         d'arrivée à
-        l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol
+        l&apos;aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol
         manqué
         pour ces raisons.</p>
       <p><strong>Remarques 2: **</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
       <p>Nous nous réjouissons de vous accueillir à bord.</p>
-      <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
     </div>` : typeVol === "plane" ? `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-      <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
-        les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+      <p><strong>Important: **</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous
+        les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement..</p>
       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 30 lb. <strong>Mallette dimension 65*40*25</strong>
       </p>
       <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
         modification de vol imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques,
         grèves ou tout autre incident ne relevant pas de sa responsabilité.
-        Le client est responsable de ses propres dispositions (heure d'arrivée à l'aéroport, formalités de voyage,
+        Le client est responsable de ses propres dispositions (heure d'arrivée à l&apos;aéroport, formalités de voyage,
         etc.).
         Aucun remboursement ni indemnisation ne sera accordé en cas de vol manqué pour ces raisons.
       </p>
       <p><strong>Remarques 2:</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
       <p>Nous nous réjouissons de vous accueillir à bord.</p>
-      <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
     </div>` : `<div style="padding: 20px; font-size: 0.9em; color: #555;">
-      <p><strong>Important: **</strong> Veuillez vous présenter à l'aéroport au moins une heure avant votre départ. Tous
-        les passagers doivent présenter une pièce d'identité valide lors de l'enregistrement..</p>
+      <p><strong>Important: **</strong> Veuillez vous présenter à l&apos;aéroport au moins une heure avant votre départ. Tous
+        les passagers doivent présenter une pièce d&apos;identité valide lors de l'enregistrement..</p>
       <p><strong>Limitation des bagages: **</strong> La franchise maximale pour les bagages des passagers est de 20 lb. <strong>Mallette dimension 35*55*25, Carry on, soft skin</strong>
       </p>
       <p><strong>Remarques:**</strong> La compagnie décline toute responsabilité en cas de retard, d'annulation ou de
@@ -5493,12 +5493,12 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
         imputable à des circonstances indépendantes de sa volonté dû à des problèmes techniques, grèves ou tout autre
         incident ne relevant pas de sa responsabilité. Le client est responsable de ses propres dispositions (heure
         d'arrivée à
-        l'aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol
+        l&apos;aéroport, formalités de voyage, etc.). Aucun remboursement ni indemnisation ne sera accordé en cas de vol
         manqué
         pour ces raisons.</p>
       <p><strong>Remarques 2: **</strong> Tout vol annulé pour cas de force majeure ou pour des raisons techniques indépendantes de la volonté de la compagnie ne donne lieu à aucun remboursement. Le montant du billet sera conservé sous forme d’avoir (crédit) auprès de la compagnie, valable pour une utilisation ultérieure conformément aux conditions tarifaires en vigueur.</p>
       <p>Nous nous réjouissons de vous accueillir à bord.</p>
-      <p>Cordialement,<br>L'équipe de Trogon Airways</p>
+      <p>Cordialement,<br>L&apos;équipe de Trogon Airways</p>
     </div>`}
 
   </div>
@@ -10947,40 +10947,282 @@ app.put("/api/profile", authMiddleware, async (req: any, res: Response) => {
 // 3. CRÉATION MANUELLE DE RÉSERVATION PAR UN AGENT
 // ============================================================
 
+// ============================================================
+// HELPER — build e-ticket HTML email (bilingual EN + FR)
+// ============================================================
+async function buildBookingConfirmationEmail(bookingId: number): Promise<string> {
+  const [bookingRows]: any = await pool.query(
+    `SELECT b.*, p2.payment_method AS pay_method
+     FROM bookings b
+     LEFT JOIN payments p2 ON p2.booking_id = b.id
+     WHERE b.id = ? LIMIT 1`, [bookingId]
+  );
+  if (!bookingRows.length) throw new Error("Réservation introuvable pour email");
+  const booking = bookingRows[0];
+
+  const [passengerRows]: any = await pool.query(
+    "SELECT * FROM passengers WHERE booking_id = ?", [bookingId]
+  );
+  const passengers: any[] = passengerRows;
+
+  const flightIds = [booking.flight_id, booking.return_flight_id].filter(Boolean);
+  let outboundFlight: any = null;
+  let returnFlight: any = null;
+  if (flightIds.length > 0) {
+    const placeholders = flightIds.map(() => '?').join(',');
+    const [flightsResult]: any = await pool.query(
+      `SELECT f.*, dep.name AS dep_name, dep.code AS dep_code, arr.name AS arr_name, arr.code AS arr_code
+       FROM flights f
+       JOIN locations dep ON dep.id = f.departure_location_id
+       JOIN locations arr ON arr.id = f.arrival_location_id
+       WHERE f.id IN (${placeholders})`, flightIds
+    );
+    outboundFlight = flightsResult.find((f: any) => f.id === booking.flight_id) || null;
+    returnFlight   = flightsResult.find((f: any) => f.id === booking.return_flight_id) || null;
+  }
+
+  const fmt = (d: string | null, f: string): string => {
+    if (!d) return 'N/A';
+    try { return format(parseISO(d), f); } catch { return 'N/A'; }
+  };
+
+  const qr = `https://barcode.tec-it.com/barcode.ashx?data=${booking.booking_reference}&code=Code128&dpi=96`;
+  const payLabel = (m: string) =>
+    m === 'cash' ? 'Cash' : m === 'card' ? 'Credit/Debit Card' : m === 'cheque' ? 'Bank Check'
+    : m === 'virement' ? 'Bank Transfer' : m === 'transfert' ? 'Deposit' : m || 'N/A';
+  const volLabel = booking.type_vol === 'helicopter' ? 'Helicopter' : 'Airplane';
+  const tripLabel = booking.return_flight_id ? 'Round Trip' : 'One Way';
+  const pNames = passengers.map((p: any) => `${p.first_name} ${p.last_name}`).join(', ');
+
+  const outboundBlock = (lang: 'en'|'fr') => outboundFlight ? `
+    <div style="padding:12px;background:#f0f4ff;border-radius:6px;margin-bottom:8px;">
+      <strong style="color:#1A237E;">${lang==='en'?'Outbound Flight':'Vol Aller'}</strong><br/>
+      <b>${lang==='en'?'From':'De'}:</b> ${outboundFlight.dep_name} (${outboundFlight.dep_code})<br/>
+      <b>${lang==='en'?'To':'À'}:</b> ${outboundFlight.arr_name} (${outboundFlight.arr_code})<br/>
+      <b>${lang==='en'?'Date':'Date'}:</b> ${fmt(outboundFlight.departure_time,'EEE dd MMM yyyy')}<br/>
+      <b>${lang==='en'?'Departure':'Départ'}:</b> ${fmt(outboundFlight.departure_time,'HH:mm')}<br/>
+      <b>${lang==='en'?'Arrival':'Arrivée'}:</b> ${fmt(outboundFlight.arrival_time,'HH:mm')}<br/>
+      <b>${lang==='en'?'Flight #':'Vol #'}:</b> ${outboundFlight.flight_number}
+    </div>` : '';
+
+  const returnBlock = (lang: 'en'|'fr') => returnFlight ? `
+    <div style="padding:12px;background:#f0f4ff;border-radius:6px;margin-bottom:8px;">
+      <strong style="color:#1A237E;">${lang==='en'?'Return Flight':'Vol Retour'}</strong><br/>
+      <b>${lang==='en'?'From':'De'}:</b> ${returnFlight.dep_name} (${returnFlight.dep_code})<br/>
+      <b>${lang==='en'?'To':'À'}:</b> ${returnFlight.arr_name} (${returnFlight.arr_code})<br/>
+      <b>${lang==='en'?'Date':'Date'}:</b> ${fmt(returnFlight.departure_time,'EEE dd MMM yyyy')}<br/>
+      <b>${lang==='en'?'Departure':'Départ'}:</b> ${fmt(returnFlight.departure_time,'HH:mm')}<br/>
+      <b>${lang==='en'?'Arrival':'Arrivée'}:</b> ${fmt(returnFlight.arrival_time,'HH:mm')}<br/>
+      <b>${lang==='en'?'Flight #':'Vol #'}:</b> ${returnFlight.flight_number}
+    </div>` : '';
+
+  const passengerBlock = (lang: 'en'|'fr') => passengers.map((p: any) => `
+    <tr>
+      <td style="padding:8px;border:1px solid #ddd;">${p.first_name} ${p.last_name}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${p.nationality || '-'}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${p.idClient || '-'}</td>
+      <td style="padding:8px;border:1px solid #ddd;">${p.selectedSeat || '-'}</td>
+    </tr>`).join('');
+
+  const card = (lang: 'en'|'fr') => `
+  <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;border:1px solid #ddd;border-radius:8px;overflow:hidden;">
+    <div style="background:#1A237E;color:white;padding:24px;text-align:center;">
+      <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways" style="height:55px;vertical-align:middle;"/>
+      <p style="margin:8px 0 0;font-size:1.2em;font-weight:bold;">
+        ${lang==='en'?'Your Booking is Confirmed':'Votre Réservation est Confirmée'}
+      </p>
+    </div>
+    <div style="padding:20px;">
+      <p>${lang==='en'?`Dear ${pNames},`:`Cher(e) ${pNames},`}</p>
+      <p>${lang==='en'
+        ?'Thank you for choosing Trogon Airways. Please find your e-ticket below.'
+        :'Merci de choisir Trogon Airways. Veuillez trouver votre e-billet ci-dessous.'}</p>
+
+      <div style="background:#f9f9f9;border:2px dashed #1A237E;border-radius:8px;padding:16px;margin:16px 0;">
+        <table width="100%" style="border-collapse:collapse;margin-bottom:12px;">
+          <tr>
+            <td><strong style="color:#1A237E;">${lang==='en'?'Booking Ref':'Référence'}:</strong> ${booking.booking_reference}</td>
+            <td style="text-align:right;"><img src="${qr}" alt="barcode" style="height:45px;"/></td>
+          </tr>
+        </table>
+
+        <table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
+          <tr>
+            <td><b>${lang==='en'?'Trip Type':'Type'}:</b> ${tripLabel}</td>
+            <td><b>${lang==='en'?'Flight Type':'Type Vol'}:</b> ${volLabel}</td>
+            <td><b>${lang==='en'?'Payment':'Paiement'}:</b> ${payLabel(booking.payment_method || booking.pay_method)}</td>
+          </tr>
+        </table>
+
+        ${outboundBlock(lang)}
+        ${returnBlock(lang)}
+
+        <table width="100%" style="border-collapse:collapse;margin:12px 0;">
+          <thead>
+            <tr style="background:#1A237E;color:white;">
+              <th style="padding:8px;text-align:left;">${lang==='en'?'Passenger':'Passager'}</th>
+              <th style="padding:8px;text-align:left;">${lang==='en'?'Nationality':'Nationalité'}</th>
+              <th style="padding:8px;text-align:left;">${lang==='en'?'Passport/ID':'Passeport/ID'}</th>
+              <th style="padding:8px;text-align:left;">${lang==='en'?'Seat':'Siège'}</th>
+            </tr>
+          </thead>
+          <tbody>${passengerBlock(lang)}</tbody>
+        </table>
+
+        <div style="background:#1A237E;color:white;padding:10px;border-radius:6px;text-align:right;">
+          <strong>${lang==='en'?'Total':'Total'}:</strong>
+          ${booking.total_price} ${(booking.currency||'USD').toUpperCase()}
+        </div>
+      </div>
+
+      <div style="font-size:0.85em;color:#555;margin-top:16px;padding:12px;background:#fffde7;border-left:4px solid #f59e0b;border-radius:4px;">
+        <p><strong>${lang==='en'?'Important':'Important'}:</strong>
+          ${lang==='en'
+            ?'Please arrive at the airport at least 1 hour before departure. Valid ID required at check-in.'
+            :'Veuillez vous présenter à l&apos;aéroport au moins 1 heure avant le départ. Pièce d&apos;identité valide requise.'}</p>
+        <p><strong>${lang==='en'?'Baggage':'Bagages'}:</strong>
+          ${lang==='en'
+            ?'Max 20 lb (helicopter) / 30 lb (plane). Carry-on: 35×55×25 cm.'
+            :'Max 20 lb (hélicoptère) / 30 lb (avion). Bagage cabine: 35×55×25 cm.'}</p>
+        <p>${lang==='en'
+          ?'Trogon Airways is not responsible for delays or cancellations due to circumstances beyond its control.'
+          :'Trogon Airways décline toute responsabilité pour les retards ou annulations dus à des circonstances indépendantes de sa volonté.'}</p>
+        <p>${lang==='en'?'Sincerely,':'Cordialement,'}<br/><em>The Trogon Airways Team / L&apos;équipe Trogon Airways</em></p>
+      </div>
+    </div>
+  </div>`;
+
+  return `${card('en')}<hr style="margin:40px 0;border:1px solid #ddd;"/>${card('fr')}`;
+}
+
+// ============================================================
+// RÉSERVATION MANUELLE — création (statut : en attente)
+// ============================================================
 app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) => {
   const connection = await pool.getConnection();
   const agentId = req.user.id;
   const agentName = req.user.name || req.user.username;
   try {
     await connection.beginTransaction();
-    const { flightId, passengers, contactInfo, totalPrice, currency, paymentMethod, notes, flight_type } = req.body;
+
+    const { flightId, passengers, contactInfo, totalPrice, currency, paymentMethod, notes, flight_type, returnFlightNumber } = req.body;
     if (!flightId || !passengers?.length || !contactInfo || !totalPrice) {
+      await connection.rollback();
       return res.status(400).json({ error: "Champs requis manquants" });
     }
-    const [flightRows] = await connection.query<mysql.RowDataPacket[]>("SELECT * FROM flights WHERE id=?", [flightId]);
-    if (!flightRows.length) return res.status(404).json({ error: "Vol non trouvé" });
+
+    // ── 1. Vérifier le vol aller avec verrou
+    const [flightRows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT * FROM flights WHERE id=? FOR UPDATE", [flightId]
+    );
+    if (!flightRows.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Vol non trouvé" });
+    }
     const flight = flightRows[0];
+
+    // ── 2. Vérifier disponibilité des sièges (vol aller)
+    if (flight.seats_available < passengers.length) {
+      await connection.rollback();
+      return res.status(409).json({
+        error: "Pas assez de sièges disponibles",
+        details: `Sièges disponibles: ${flight.seats_available}, demandés: ${passengers.length}`,
+        seatsAvailable: flight.seats_available
+      });
+    }
+
+    // ── 3. Résoudre le vol retour si fourni
+    let returnFlightId: number | null = null;
+    if (returnFlightNumber) {
+      const [retRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT * FROM flights WHERE flight_number=? FOR UPDATE", [returnFlightNumber.toUpperCase().trim()]
+      );
+      if (!retRows.length) {
+        await connection.rollback();
+        return res.status(404).json({ error: `Vol retour introuvable: ${returnFlightNumber}` });
+      }
+      const retFlight = retRows[0];
+      if (retFlight.seats_available < passengers.length) {
+        await connection.rollback();
+        return res.status(409).json({
+          error: "Pas assez de sièges sur le vol retour",
+          details: `Sièges disponibles: ${retFlight.seats_available}, demandés: ${passengers.length}`,
+          seatsAvailable: retFlight.seats_available
+        });
+      }
+      returnFlightId = retFlight.id;
+    }
+
+    // ── 4. Créer la réservation (pending — paiement non encore reçu)
     const bookingRef = `MANUAL-${Math.floor(100000 + Math.random() * 900000)}`;
+    const isRoundTrip = !!returnFlightId;
     const [bookingResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO bookings (booking_reference, flight_id, total_price, currency, status, passenger_count, contact_email, contact_phone, payment_method, type_vol, user_created_booking, adminNotes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [bookingRef, flightId, totalPrice, currency || 'USD', 'pending', passengers.length, contactInfo.email, contactInfo.phone, paymentMethod || 'cash', flight_type || flight.type, agentId, notes || '']
+      `INSERT INTO bookings
+         (booking_reference, flight_id, return_flight_id, total_price, currency, status,
+          passenger_count, contact_email, contact_phone, payment_method, type_vol,
+          user_created_booking, adminNotes, type_v)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        bookingRef, flightId, returnFlightId, totalPrice,
+        currency || 'USD', 'pending',
+        passengers.length, contactInfo.email, contactInfo.phone,
+        paymentMethod || 'cash', flight_type || flight.type,
+        agentId, notes || '',
+        isRoundTrip ? 'roundtrip' : 'onway'
+      ]
     );
     const bookingId = bookingResult.insertId;
+
+    // ── 5. Enregistrer les passagers
     for (const p of passengers) {
       await connection.execute(
-        `INSERT INTO passengers (booking_id, first_name, last_name, date_of_birth, idClient, nationality, selectedSeat)
-         VALUES (?,?,?,?,?,?,?)`,
-        [bookingId, p.first_name, p.last_name, p.date_of_birth || null, p.passport_number || null, p.nationality || null, p.seat_number || null]
+        `INSERT INTO passengers
+           (booking_id, first_name, middle_name, last_name, date_of_birth, idClient,
+            idTypeClient, nationality, selectedSeat, phone, email, address, country,
+            type_vol, type_v, nom_urgence, email_urgence, tel_urgence)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [
+          bookingId,
+          p.first_name, p.middleName || null, p.last_name,
+          p.date_of_birth || null, p.passport_number || null,
+          p.idTypeClient || 'passport', p.nationality || null,
+          p.seat_number || null, p.phone || contactInfo.phone,
+          p.email || contactInfo.email, p.address || null,
+          p.country || null, flight_type || flight.type,
+          isRoundTrip ? 'roundtrip' : 'onway',
+          p.nom_urgence || null, p.email_urgence || null, p.tel_urgence || null
+        ]
       );
     }
+
+    // ── 6. Enregistrer le paiement (pending)
     await connection.execute<ResultSetHeader>(
-      `INSERT INTO payments (booking_id, amount, currency, payment_method, payment_status, transaction_reference) VALUES (?,?,?,?,?,?)`,
+      `INSERT INTO payments (booking_id, amount, currency, payment_method, payment_status, transaction_reference)
+       VALUES (?,?,?,?,?,?)`,
       [bookingId, totalPrice, currency || 'USD', paymentMethod || 'cash', 'pending', `MANUAL-${Date.now()}`]
     );
+
+    // ── 7. Notification
+    try {
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at) VALUES (?,?,?,?,?)`,
+        ['pending', `Réservation manuelle en attente: ${bookingRef} (${passengers.length} pax)`, bookingId, false, new Date()]
+      );
+    } catch (_) {}
+
     await connection.commit();
-    await logAudit(agentId, agentName, 'MANUAL_BOOKING', 'booking', bookingRef, `Réservation manuelle créée: ${bookingRef} - ${passengers.length} passager(s)`, req.ip);
-    res.status(201).json({ success: true, booking_reference: bookingRef, booking_id: bookingId, flight_type: flight_type || flight.type, message: "Réservation créée en attente de paiement" });
+    await logAudit(agentId, agentName, 'MANUAL_BOOKING', 'booking', bookingRef,
+      `Réservation manuelle créée: ${bookingRef} — ${passengers.length} pax — en attente paiement`, req.ip);
+
+    res.status(201).json({
+      success: true,
+      booking_reference: bookingRef,
+      booking_id: bookingId,
+      flight_type: flight_type || flight.type,
+      seats_available: flight.seats_available,
+      message: "Réservation créée — en attente de confirmation du paiement"
+    });
+
   } catch (err: any) {
     await connection.rollback();
     res.status(500).json({ error: "Erreur serveur", details: err.message });
@@ -10989,7 +11231,9 @@ app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) 
   }
 });
 
-// Confirmer le paiement d'une réservation manuelle (pending → confirmed)
+// ============================================================
+// CONFIRMER LE PAIEMENT — pending → confirmed + sièges + email
+// ============================================================
 app.put("/api/bookings/:id/confirm-payment", authMiddleware, async (req: any, res: Response) => {
   const { id } = req.params;
   const agentId = req.user.id;
@@ -10997,14 +11241,137 @@ app.put("/api/bookings/:id/confirm-payment", authMiddleware, async (req: any, re
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [rows] = await connection.query<mysql.RowDataPacket[]>("SELECT * FROM bookings WHERE id=?", [id]);
-    if (!rows.length) return res.status(404).json({ error: "Réservation introuvable" });
+
+    // ── 1. Charger la réservation
+    const [rows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT * FROM bookings WHERE id=?", [id]
+    );
+    if (!rows.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Réservation introuvable" });
+    }
     const booking = rows[0];
-    await connection.execute("UPDATE bookings SET status='confirmed' WHERE id=?", [id]);
-    await connection.execute("UPDATE payments SET payment_status='confirmed' WHERE booking_id=?", [id]);
+
+    if (booking.status === 'confirmed') {
+      await connection.rollback();
+      return res.status(409).json({ error: "Cette réservation est déjà confirmée" });
+    }
+    if (booking.status === 'cancelled') {
+      await connection.rollback();
+      return res.status(409).json({ error: "Impossible de confirmer une réservation annulée" });
+    }
+
+    const passengerCount = booking.passenger_count || 1;
+
+    // ── 2. Vérifier et verrouiller le vol aller
+    const [outboundRows] = await connection.query<mysql.RowDataPacket[]>(
+      "SELECT id, flight_number, seats_available, total_seat FROM flights WHERE id=? FOR UPDATE",
+      [booking.flight_id]
+    );
+    if (!outboundRows.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Vol aller introuvable" });
+    }
+    const outboundFlight = outboundRows[0];
+
+    if (outboundFlight.seats_available < passengerCount) {
+      await connection.rollback();
+      return res.status(409).json({
+        error: "Plus assez de sièges disponibles sur le vol aller",
+        details: `Sièges disponibles: ${outboundFlight.seats_available}, passagers: ${passengerCount}`,
+        seatsAvailable: outboundFlight.seats_available,
+        flightNumber: outboundFlight.flight_number
+      });
+    }
+
+    // ── 3. Vérifier et verrouiller le vol retour si applicable
+    let returnFlightRow: any = null;
+    if (booking.return_flight_id) {
+      const [retRows] = await connection.query<mysql.RowDataPacket[]>(
+        "SELECT id, flight_number, seats_available, total_seat FROM flights WHERE id=? FOR UPDATE",
+        [booking.return_flight_id]
+      );
+      if (retRows.length) {
+        returnFlightRow = retRows[0];
+        if (returnFlightRow.seats_available < passengerCount) {
+          await connection.rollback();
+          return res.status(409).json({
+            error: "Plus assez de sièges disponibles sur le vol retour",
+            details: `Sièges disponibles: ${returnFlightRow.seats_available}, passagers: ${passengerCount}`,
+            seatsAvailable: returnFlightRow.seats_available,
+            flightNumber: returnFlightRow.flight_number
+          });
+        }
+      }
+    }
+
+    // ── 4. Décrémenter les sièges
+    await connection.execute(
+      "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+      [passengerCount, booking.flight_id]
+    );
+    if (booking.return_flight_id && returnFlightRow) {
+      await connection.execute(
+        "UPDATE flights SET seats_available = seats_available - ? WHERE id = ?",
+        [passengerCount, booking.return_flight_id]
+      );
+    }
+
+    // ── 5. Confirmer la réservation et le paiement
+    await connection.execute(
+      "UPDATE bookings SET status='confirmed' WHERE id=?", [id]
+    );
+    await connection.execute(
+      "UPDATE payments SET payment_status='confirmed' WHERE booking_id=?", [id]
+    );
+
+    // ── 6. Notification
+    try {
+      await connection.query(
+        `INSERT INTO notifications (type, message, booking_id, seen, created_at) VALUES (?,?,?,?,?)`,
+        ['confirmed', `Réservation confirmée: ${booking.booking_reference} (${passengerCount} pax)`, booking.id, false, new Date()]
+      );
+    } catch (_) {}
+
     await connection.commit();
-    await logAudit(agentId, agentName, 'CONFIRM_PAYMENT', 'booking', booking.booking_reference, `Paiement confirmé: ${booking.booking_reference}`, req.ip);
-    res.json({ success: true, message: "Paiement confirmé avec succès" });
+
+    // ── 7. Envoyer l'email de confirmation (hors transaction)
+    const emailResults: any[] = [];
+    try {
+      const emailHtml = await buildBookingConfirmationEmail(Number(id));
+      const recipients = new Set<string>();
+      if (booking.contact_email) recipients.add(booking.contact_email);
+
+      // Ajouter les emails des passagers
+      const [paxRows] = await pool.query<mysql.RowDataPacket[]>(
+        "SELECT email FROM passengers WHERE booking_id=?", [id]
+      );
+      paxRows.forEach((p: any) => { if (p.email) recipients.add(p.email); });
+
+      for (const email of recipients) {
+        const result = await sendEmail(
+          email,
+          `Trogon Airways — Booking Confirmed / Réservation Confirmée — ${booking.booking_reference}`,
+          emailHtml
+        );
+        emailResults.push({ email, success: result.success, error: result.error });
+      }
+    } catch (emailErr: any) {
+      console.error("⚠️ Erreur envoi email confirmation:", emailErr.message);
+    }
+
+    await logAudit(agentId, agentName, 'CONFIRM_PAYMENT', 'booking', booking.booking_reference,
+      `Paiement confirmé: ${booking.booking_reference} — ${passengerCount} pax — sièges décrémentés`, req.ip);
+
+    res.json({
+      success: true,
+      message: "Paiement confirmé avec succès — e-billet envoyé",
+      booking_reference: booking.booking_reference,
+      seats_decremented: passengerCount,
+      emails_sent: emailResults.filter(e => e.success).length,
+      email_results: emailResults
+    });
+
   } catch (err: any) {
     await connection.rollback();
     res.status(500).json({ error: "Erreur serveur", details: err.message });
