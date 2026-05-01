@@ -92,7 +92,7 @@ const {
   const canManualBooking = isAdmin || hasPermission("manualBooking");
   const canViewBookingsPlane = isAdmin || hasPermission("listeBookingsPlane");
   const canViewBookingsHelico = isAdmin || hasPermission("listeBookingsHelico");
-  const canViewBookingsCharter = isAdmin || hasPermission("charter");
+  const canViewBookingsCharter = isAdmin || hasPermission("listeBookingsCharter") || hasPermission("charter");
   const canPassengers = isAdmin || hasPermission("listePassagers");
   const canLocations = isAdmin || hasPermission("locations");
   const canRefunds = isAdmin || hasPermission("refunds");
@@ -110,28 +110,30 @@ const {
       ],
     },
 
+    // Section Avion — uniquement la gestion des vols (View Bookings est dans "Réservations")
     listeFlightsPlane && {
       title: "Air plane",
       icon: Plane,
       links: [
         { label: "All flights", icon: List, path: `/${lang}/dashboard/flights` },
-        { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-plane` },
       ],
     },
+
+    // Section Hélico — uniquement la gestion des vols (View Bookings est dans "Réservations")
     listeFlightsHelico && {
       title: "Helico",
       icon: HelicopterIcon,
       links: [
         { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
-        { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-helico` },
       ],
     },
+
+    // Section Charter — uniquement la gestion des vols charter (View Bookings est dans "Réservations")
     charter && {
       title: "Charter",
       icons: [Plane, HelicopterIcon],
       links: [
         { label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter` },
-        { label: "View Bookings", icon: List, path: `/${lang}/dashboard/bookings-charter` },
       ],
     },
 
@@ -428,29 +430,4 @@ export const flightAirSteve = [
         status: "Publish",
         date: "06/13/2025",
     },
-     {
-        number: 1,
-        name: "Steve Saint Hubert",
-        code: 'VJd43',
-        airportFrom: "Cayes",
-        airportTo: "Cap",
-        departureTime: "06/13/2025 16:59",
-        arrivalTime: "06/13/2025 16:59",
-        duration: "4",
-        status: "Publish",
-        date: "06/13/2025",
-    },
-     {
-        number: 1,
-        name: "Steve Saint Hubert",
-        code: 'VJd43',
-        airportFrom: "Cayes",
-        airportTo: "Cap",
-        departureTime: "06/13/2025 16:59",
-        arrivalTime: "06/13/2025 16:59",
-        duration: "4",
-        status: "Publish",
-        date: "06/13/2025",
-    },
 ];
-

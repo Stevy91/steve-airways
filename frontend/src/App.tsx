@@ -134,7 +134,7 @@ const router = createBrowserRouter([
             {
                 path: "bookings-charter",
                 element: (
-                    <ProtectedRoute requiredPermission="charter">
+                    <ProtectedRoute requiredAnyPermission={["charter", "listeBookingsCharter"]}>
                         <ViewBookingCharter />
                     </ProtectedRoute>
                 ),

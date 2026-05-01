@@ -152,5 +152,6 @@ export const useAuth = () => {
         refunds: hasPermission("refunds"),
         locations: hasPermission("locations"),
         promoCodes: hasPermission("promoCodes"),
+        listeBookingsCharter: hasPermission("listeBookingsCharter"),
     };
 };

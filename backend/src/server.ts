@@ -11725,6 +11725,154 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
 });
 
 // ============================================================
+// PASSAGERS AVANCÉS — check-in, siège, groupé par vol
+// ============================================================
+
+// Migration automatique : ajouter les colonnes check-in si elles n'existent pas
+(async () => {
+  try {
+    await pool.execute(`ALTER TABLE passengers ADD COLUMN IF NOT EXISTS checked_in TINYINT(1) NOT NULL DEFAULT 0`);
+    await pool.execute(`ALTER TABLE passengers ADD COLUMN IF NOT EXISTS checked_in_at DATETIME NULL`);
+    await pool.execute(`ALTER TABLE passengers ADD COLUMN IF NOT EXISTS checked_in_by VARCHAR(100) NULL`);
+  } catch (_) { /* colonnes déjà présentes */ }
+})();
+
+// GET /api/passengers/by-flight — passagers groupés par vol (pour le manifest check-in)
+app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { date, q, type_vol } = req.query;
+
+    let where = "WHERE b.status = 'confirmed'";
+    const params: any[] = [];
+
+    if (date) {
+      where += " AND DATE(f.departure_time) = ?";
+      params.push(date);
+    }
+    if (type_vol) {
+      where += " AND b.type_vol = ?";
+      params.push(type_vol);
+    }
+    if (q) {
+      where += ` AND (p.first_name LIKE ? OR p.last_name LIKE ? OR b.booking_reference LIKE ? OR f.flight_number LIKE ?)`;
+      const like = `%${q}%`;
+      params.push(like, like, like, like);
+    }
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT
+         f.id AS flight_id, f.flight_number, f.departure_time, f.arrival_time,
+         f.seats_available, f.capacity,
+         l1.name AS from_city, l1.code AS from_code,
+         l2.name AS to_city, l2.code AS to_code,
+         b.type_vol,
+         p.id AS passenger_id, p.first_name, p.last_name, p.idClient AS passport_number,
+         p.nationality, p.selectedSeat AS seat_number, p.gender, p.title,
+         p.checked_in, p.checked_in_at, p.checked_in_by,
+         b.booking_reference, b.contact_email, b.contact_phone, b.total_price, b.currency
+       FROM passengers p
+       JOIN bookings b ON p.booking_id = b.id
+       JOIN flights f ON b.flight_id = f.id
+       LEFT JOIN locations l1 ON f.departure_location_id = l1.id
+       LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
+       ${where}
+       ORDER BY f.departure_time ASC, f.flight_number, p.last_name ASC`,
+      params
+    );
+
+    // Grouper par vol
+    const flightsMap: Record<number, any> = {};
+    rows.forEach((row: any) => {
+      if (!flightsMap[row.flight_id]) {
+        flightsMap[row.flight_id] = {
+          flight_id: row.flight_id,
+          flight_number: row.flight_number,
+          departure_time: row.departure_time,
+          arrival_time: row.arrival_time,
+          from_city: row.from_city,
+          from_code: row.from_code,
+          to_city: row.to_city,
+          to_code: row.to_code,
+          type_vol: row.type_vol,
+          passengers: [],
+        };
+      }
+      flightsMap[row.flight_id].passengers.push({
+        id: row.passenger_id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        passport_number: row.passport_number,
+        nationality: row.nationality,
+        seat_number: row.seat_number,
+        gender: row.gender,
+        title: row.title,
+        checked_in: !!row.checked_in,
+        checked_in_at: row.checked_in_at,
+        checked_in_by: row.checked_in_by,
+        booking_reference: row.booking_reference,
+        contact_email: row.contact_email,
+        contact_phone: row.contact_phone,
+        total_price: row.total_price,
+        currency: row.currency,
+      });
+    });
+
+    const flights = Object.values(flightsMap).map((f: any) => ({
+      ...f,
+      total_passengers: f.passengers.length,
+      checked_in_count: f.passengers.filter((p: any) => p.checked_in).length,
+    }));
+
+    res.json({ flights, total_flights: flights.length });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// PUT /api/passengers/:id/checkin — toggle check-in
+app.put("/api/passengers/:id/checkin", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { checked_in } = req.body; // true ou false
+  try {
+    const agentName = req.user?.name || req.user?.username || "Agent";
+    await pool.execute(
+      `UPDATE passengers SET
+         checked_in = ?,
+         checked_in_at = ?,
+         checked_in_by = ?
+       WHERE id = ?`,
+      [
+        checked_in ? 1 : 0,
+        checked_in ? new Date() : null,
+        checked_in ? agentName : null,
+        id,
+      ]
+    );
+    res.json({ success: true, checked_in: !!checked_in });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// PUT /api/passengers/:id/seat — assigner un siège
+app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { seat_number } = req.body;
+  if (!seat_number || !seat_number.trim()) {
+    return res.status(400).json({ error: "Numéro de siège requis" });
+  }
+  try {
+    await pool.execute(
+      `UPDATE passengers SET selectedSeat = ? WHERE id = ?`,
+      [seat_number.trim().toUpperCase(), id]
+    );
+    res.json({ success: true, seat_number: seat_number.trim().toUpperCase() });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
 // 5. GESTION DES RÔLES (Role Manager)
 // ============================================================
 
