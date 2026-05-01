@@ -49,10 +49,11 @@ export default function PassengersPage() {
 
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split("T")[0]);
+  const [dateFilter, setDateFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [savingId, setSavingId] = useState<number | null>(null);
   const [seatModal, setSeatModal] = useState<{ open: boolean; passenger: PassengerRow | null }>({ open: false, passenger: null });
@@ -62,6 +63,7 @@ export default function PassengersPage() {
 
   const fetchFlights = useCallback(async () => {
     setLoading(true);
+    setApiError(null);
     try {
       const params = new URLSearchParams();
       if (dateFilter) params.set("date", dateFilter);
@@ -71,13 +73,21 @@ export default function PassengersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
+      if (!res.ok) {
+        const errMsg = data?.details || data?.error || `Erreur serveur (${res.status})`;
+        setApiError(errMsg);
+        setFlights([]);
+        return;
+      }
       setFlights(data.flights || []);
       // Ouvrir tous les vols par défaut si peu de résultats
       if ((data.flights || []).length <= 3) {
         setExpanded(new Set((data.flights || []).map((f: Flight) => f.flight_id)));
       }
-    } catch {
-      toast.error("Erreur de chargement");
+    } catch (err: any) {
+      const msg = err?.message || "Erreur de chargement";
+      setApiError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -349,10 +359,19 @@ export default function PassengersPage() {
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
         </div>
+      ) : apiError ? (
+        <div className={`text-center py-20 rounded-2xl border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700`}>
+          <AlertCircle size={40} className="mx-auto mb-3 text-red-400" />
+          <p className="font-medium text-red-600 dark:text-red-400">Erreur de chargement</p>
+          <p className="text-sm mt-1 text-red-500 dark:text-red-300 max-w-md mx-auto px-4">{apiError}</p>
+          <button onClick={fetchFlights} className="mt-4 px-4 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-colors">
+            Réessayer
+          </button>
+        </div>
       ) : flights.length === 0 ? (
         <div className={`text-center py-20 rounded-2xl border ${cardBg}`}>
           <Plane size={40} className={`mx-auto mb-3 ${textSub}`} />
-          <p className={`font-medium ${textMain}`}>Aucun vol avec passagers confirmés</p>
+          <p className={`font-medium ${textMain}`}>Aucun vol avec passagers</p>
           <p className={`text-sm mt-1 ${textSub}`}>Essayez une autre date ou effacez les filtres</p>
         </div>
       ) : (
@@ -627,23 +646,23 @@ export default function PassengersPage() {
                   className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold text-lg tracking-widest ${
                     dark ? "bg-slate-700 border-slate-600 text-white placeholder-slate-500" : "bg-gray-50 border-gray-300 text-gray-900"
                   }`}
-                />
+                          />
               </div>
-            </div>
-            <div className={`flex gap-3 p-5 pt-0`}>
-              <button
-                onClick={() => setSeatModal({ open: false, passenger: null })}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleAssignSeat}
-                disabled={!seatInput.trim() || savingId !== null}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 disabled:opacity-50 transition-colors"
-              >
-                Confirmer
-              </button>
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setSeatModal({ open: false, passenger: null })}
+                  className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleAssignSeat}
+                  disabled={!seatInput.trim() || savingId !== null}
+                  className="flex-1 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                >
+                  Confirmer
+                </button>
+              </div>
             </div>
           </div>
         </div>

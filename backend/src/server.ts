@@ -11728,13 +11728,16 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
 // PASSAGERS AVANCÉS — check-in, siège, groupé par vol
 // ============================================================
 
-// Migration automatique : ajouter les colonnes check-in si elles n'existent pas
+// Migration automatique : ajouter les colonnes check-in une par une avec try/catch individuels
 (async () => {
-  try {
-    await pool.execute(`ALTER TABLE passengers ADD COLUMN IF NOT EXISTS checked_in TINYINT(1) NOT NULL DEFAULT 0`);
-    await pool.execute(`ALTER TABLE passengers ADD COLUMN IF NOT EXISTS checked_in_at DATETIME NULL`);
-    await pool.execute(`ALTER TABLE passengers ADD COLUMN IF NOT EXISTS checked_in_by VARCHAR(100) NULL`);
-  } catch (_) { /* colonnes déjà présentes */ }
+  const cols = [
+    `ALTER TABLE passengers ADD COLUMN checked_in TINYINT(1) NOT NULL DEFAULT 0`,
+    `ALTER TABLE passengers ADD COLUMN checked_in_at DATETIME NULL`,
+    `ALTER TABLE passengers ADD COLUMN checked_in_by VARCHAR(100) NULL`,
+  ];
+  for (const sql of cols) {
+    try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
+  }
 })();
 
 // GET /api/passengers/by-flight — passagers groupés par vol (pour le manifest check-in)
@@ -11742,41 +11745,60 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
   try {
     const { date, q, type_vol } = req.query;
 
-    let where = "WHERE b.status = 'confirmed'";
+    // Inclure confirmed ET pending (sauf cancelled/refunded)
+    let where = "WHERE b.status NOT IN ('cancelled', 'refunded', 'annulé', 'canceled')";
     const params: any[] = [];
 
-    if (date) {
+    // Filtre date — seulement si explicitement fourni
+    if (date && String(date).trim()) {
       where += " AND DATE(f.departure_time) = ?";
-      params.push(date);
+      params.push(String(date).trim());
     }
-    if (type_vol) {
+    if (type_vol && String(type_vol).trim()) {
       where += " AND b.type_vol = ?";
-      params.push(type_vol);
+      params.push(String(type_vol).trim());
     }
-    if (q) {
-      where += ` AND (p.first_name LIKE ? OR p.last_name LIKE ? OR b.booking_reference LIKE ? OR f.flight_number LIKE ?)`;
-      const like = `%${q}%`;
-      params.push(like, like, like, like);
+    if (q && String(q).trim()) {
+      where += ` AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.idClient LIKE ? OR b.booking_reference LIKE ? OR f.flight_number LIKE ?)`;
+      const like = `%${String(q).trim()}%`;
+      params.push(like, like, like, like, like);
     }
+
+    // Vérifier si la colonne checked_in existe
+    let hasCheckinCol = false;
+    try {
+      await pool.execute("SELECT checked_in FROM passengers LIMIT 1");
+      hasCheckinCol = true;
+    } catch (_) { hasCheckinCol = false; }
+
+    const checkinSelect = hasCheckinCol
+      ? "p.checked_in, p.checked_in_at, p.checked_in_by,"
+      : "0 AS checked_in, NULL AS checked_in_at, NULL AS checked_in_by,";
 
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT
          f.id AS flight_id, f.flight_number, f.departure_time, f.arrival_time,
-         f.seats_available, f.capacity,
-         l1.name AS from_city, l1.code AS from_code,
-         l2.name AS to_city, l2.code AS to_code,
-         b.type_vol,
-         p.id AS passenger_id, p.first_name, p.last_name, p.idClient AS passport_number,
-         p.nationality, p.selectedSeat AS seat_number, p.gender, p.title,
-         p.checked_in, p.checked_in_at, p.checked_in_by,
-         b.booking_reference, b.contact_email, b.contact_phone, b.total_price, b.currency
+         COALESCE(l1.name, 'Départ') AS from_city, COALESCE(l1.code, '???') AS from_code,
+         COALESCE(l2.name, 'Arrivée') AS to_city, COALESCE(l2.code, '???') AS to_code,
+         b.type_vol, b.status AS booking_status,
+         p.id AS passenger_id, p.first_name, p.last_name,
+         COALESCE(p.idClient, '') AS passport_number,
+         COALESCE(p.nationality, '') AS nationality,
+         COALESCE(p.selectedSeat, '') AS seat_number,
+         COALESCE(p.gender, '') AS gender, COALESCE(p.title, '') AS title,
+         ${checkinSelect}
+         b.booking_reference,
+         COALESCE(b.contact_email, '') AS contact_email,
+         COALESCE(b.contact_phone, '') AS contact_phone,
+         COALESCE(b.total_price, 0) AS total_price,
+         COALESCE(b.currency, 'USD') AS currency
        FROM passengers p
        JOIN bookings b ON p.booking_id = b.id
        JOIN flights f ON b.flight_id = f.id
        LEFT JOIN locations l1 ON f.departure_location_id = l1.id
        LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
        ${where}
-       ORDER BY f.departure_time ASC, f.flight_number, p.last_name ASC`,
+       ORDER BY f.departure_time ASC, f.id, p.last_name ASC`,
       params
     );
 
@@ -11786,21 +11808,21 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
       if (!flightsMap[row.flight_id]) {
         flightsMap[row.flight_id] = {
           flight_id: row.flight_id,
-          flight_number: row.flight_number,
+          flight_number: row.flight_number || `Vol #${row.flight_id}`,
           departure_time: row.departure_time,
           arrival_time: row.arrival_time,
           from_city: row.from_city,
           from_code: row.from_code,
           to_city: row.to_city,
           to_code: row.to_code,
-          type_vol: row.type_vol,
+          type_vol: row.type_vol || 'plane',
           passengers: [],
         };
       }
       flightsMap[row.flight_id].passengers.push({
         id: row.passenger_id,
-        first_name: row.first_name,
-        last_name: row.last_name,
+        first_name: row.first_name || '',
+        last_name: row.last_name || '',
         passport_number: row.passport_number,
         nationality: row.nationality,
         seat_number: row.seat_number,
@@ -11810,6 +11832,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
         checked_in_at: row.checked_in_at,
         checked_in_by: row.checked_in_by,
         booking_reference: row.booking_reference,
+        booking_status: row.booking_status,
         contact_email: row.contact_email,
         contact_phone: row.contact_phone,
         total_price: row.total_price,
@@ -12098,113 +12121,19 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
        ${joinPayments} ${where}
        GROUP BY UPPER(IFNULL(p.currency, b.currency))`, params
     );
-    // Par méthode de paiement
-    const [byPayment] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT IFNULL(p.payment_method, b.payment_method) as payment_method,
-              COUNT(DISTINCT b.id) as count,
-              SUM(IFNULL(p.amount, b.total_price)) as amount,
-              UPPER(IFNULL(p.currency, b.currency)) as currency
-       ${joinPayments} ${where}
-       GROUP BY IFNULL(p.payment_method, b.payment_method), UPPER(IFNULL(p.currency, b.currency))`, params
-    );
-    // Par statut (tous statuts, pas de filtre currency)
-    let whereStatus = "WHERE 1=1";
-    const statusParams: any[] = [];
-    if (start_date) { whereStatus += " AND DATE(created_at) >= ?"; statusParams.push(start_date); }
-    if (end_date) { whereStatus += " AND DATE(created_at) <= ?"; statusParams.push(end_date); }
-    if (type_vol) { whereStatus += " AND type_vol=?"; statusParams.push(type_vol); }
-    const [byStatus] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT status, COUNT(*) as count FROM bookings ${whereStatus} GROUP BY status`, statusParams
-    );
-    res.json({ byMonth, byType, byRoute, totals, byPayment, byStatus });
+
+    res.json({
+      by_month: byMonth,
+      by_type: byType,
+      by_route: byRoute,
+      totals,
+    });
   } catch (err: any) {
+    console.error("Reports error:", err);
     res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 
-// ============================================================
-// 10. CODES PROMO / RÉDUCTIONS
-// ============================================================
-
-app.get("/api/promo-codes", authMiddleware, async (req: any, res: Response) => {
-  try {
-    const [rows] = await pool.query<mysql.RowDataPacket[]>("SELECT * FROM promo_codes ORDER BY created_at DESC");
-    res.json({ promoCodes: rows });
-  } catch (err: any) {
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-
-app.post("/api/promo-codes", authMiddleware, adminOnly, async (req: any, res: Response) => {
-  const { code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, description } = req.body;
-  if (!code || !discount_type || !discount_value) return res.status(400).json({ error: "code, discount_type et discount_value requis" });
-  try {
-    const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO promo_codes (code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, description)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-      [code.toUpperCase(), discount_type, discount_value, min_amount || 0, max_uses || null, valid_from || null, valid_until || null, applies_to || 'all', description || '']
-    );
-    await logAudit(req.user.id, req.user.name || req.user.username, 'CREATE_PROMO', 'promo_code', result.insertId, `Code créé: ${code}`, req.ip);
-    res.status(201).json({ success: true, id: result.insertId, message: "Code promo créé" });
-  } catch (err: any) {
-    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: "Ce code promo existe déjà" });
-    res.status(500).json({ error: "Erreur serveur", details: err.message });
-  }
-});
-
-app.put("/api/promo-codes/:id", authMiddleware, adminOnly, async (req: any, res: Response) => {
-  const { id } = req.params;
-  const { code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, description, is_active } = req.body;
-  try {
-    await pool.execute(
-      `UPDATE promo_codes SET code=?, discount_type=?, discount_value=?, min_amount=?, max_uses=?, valid_from=?, valid_until=?, applies_to=?, description=?, is_active=? WHERE id=?`,
-      [code?.toUpperCase(), discount_type, discount_value, min_amount || 0, max_uses || null, valid_from || null, valid_until || null, applies_to || 'all', description, is_active !== undefined ? is_active : 1, id]
-    );
-    await logAudit(req.user.id, req.user.name || req.user.username, 'UPDATE_PROMO', 'promo_code', id, `Code modifié: ${code}`, req.ip);
-    res.json({ success: true, message: "Code promo mis à jour" });
-  } catch (err: any) {
-    res.status(500).json({ error: "Erreur serveur", details: err.message });
-  }
-});
-
-app.delete("/api/promo-codes/:id", authMiddleware, adminOnly, async (req: any, res: Response) => {
-  const { id } = req.params;
-  try {
-    const [promos] = await pool.query<mysql.RowDataPacket[]>("SELECT code FROM promo_codes WHERE id=?", [id]);
-    if (!promos.length) return res.status(404).json({ error: "Code promo non trouvé" });
-    await pool.execute("DELETE FROM promo_codes WHERE id=?", [id]);
-    await logAudit(req.user.id, req.user.name || req.user.username, 'DELETE_PROMO', 'promo_code', id, `Code supprimé: ${promos[0].code}`, req.ip);
-    res.json({ success: true, message: "Code promo supprimé" });
-  } catch (err: any) {
-    res.status(500).json({ error: "Erreur serveur", details: err.message });
-  }
-});
-
-app.post("/api/promo-codes/validate", async (req: Request, res: Response) => {
-  const { code, amount, flight_type } = req.body;
-  if (!code) return res.status(400).json({ error: "Code requis" });
-  try {
-    const [rows] = await pool.query<mysql.RowDataPacket[]>(
-      "SELECT * FROM promo_codes WHERE code=? AND is_active=1", [code.toUpperCase()]
-    );
-    if (!rows.length) return res.status(404).json({ valid: false, error: "Code promo invalide ou inactif" });
-    const promo = rows[0];
-    const now = new Date();
-    if (promo.valid_from && new Date(promo.valid_from) > now) return res.status(400).json({ valid: false, error: "Ce code n'est pas encore valide" });
-    if (promo.valid_until && new Date(promo.valid_until) < now) return res.status(400).json({ valid: false, error: "Ce code promo a expiré" });
-    if (promo.max_uses && promo.used_count >= promo.max_uses) return res.status(400).json({ valid: false, error: "Ce code a atteint son nombre maximum d'utilisations" });
-    if (promo.applies_to !== 'all' && flight_type && promo.applies_to !== flight_type) return res.status(400).json({ valid: false, error: `Ce code s'applique uniquement aux vols ${promo.applies_to}` });
-    if (amount && promo.min_amount > 0 && Number(amount) < promo.min_amount) return res.status(400).json({ valid: false, error: `Montant minimum requis: ${promo.min_amount}` });
-    const discount = promo.discount_type === 'percentage'
-      ? (Number(amount) * promo.discount_value / 100)
-      : promo.discount_value;
-    res.json({ valid: true, promo, discount: Math.min(discount, Number(amount) || discount), message: "Code promo valide!" });
-  } catch (err: any) {
-    res.status(500).json({ error: "Erreur serveur", details: err.message });
-  }
-});
-
-const PORT = process.env.PORT || 3009;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(process.env.PORT || 3000, () => {
+  console.log(`Server running on port ${process.env.PORT || 3000}`);
 });
