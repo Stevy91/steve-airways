@@ -11798,7 +11798,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
        LEFT JOIN locations l1 ON f.departure_location_id = l1.id
        LEFT JOIN locations l2 ON f.arrival_location_id = l2.id
        ${where}
-       ORDER BY f.departure_time ASC, f.id, p.last_name ASC`,
+       ORDER BY f.departure_time DESC, f.id, p.last_name ASC`,
       params
     );
 

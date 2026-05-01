@@ -22,6 +22,7 @@ type PassengerRow = {
   checked_in_at: string | null;
   checked_in_by: string | null;
   booking_reference: string;
+  booking_status: string;
   contact_email: string;
   contact_phone: string;
   total_price: number;
@@ -562,45 +563,57 @@ export default function PassengersPage() {
 
                               {/* Actions */}
                               <td className="px-4 py-3">
-                                <div className="flex items-center gap-1.5">
-                                  {/* Check-in / Undo */}
-                                  <button
-                                    onClick={() => handleCheckin(p, !p.checked_in)}
-                                    disabled={savingId === p.id}
-                                    title={p.checked_in ? "Annuler l'enregistrement" : "Enregistrer le passager"}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
-                                      p.checked_in
-                                        ? dark ? "bg-slate-700 text-slate-300 hover:bg-red-900/30 hover:text-red-400" : "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500"
-                                        : "bg-green-500 text-white hover:bg-green-600"
-                                    }`}
-                                  >
-                                    {savingId === p.id ? (
-                                      <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    ) : p.checked_in ? (
-                                      <><X size={12} /> Annuler</>
-                                    ) : (
-                                      <><UserCheck size={12} /> Check-in</>
-                                    )}
-                                  </button>
+                                {(() => {
+                                  const isConfirmed = p.booking_status === "confirmed";
+                                  return (
+                                    <div className="flex items-center gap-1.5">
+                                      {!isConfirmed && (
+                                        <span className={`text-xs px-2 py-1 rounded-lg font-medium ${dark ? "bg-yellow-900/40 text-yellow-400" : "bg-yellow-50 text-yellow-600"}`}>
+                                          Non confirmé
+                                        </span>
+                                      )}
+                                      {/* Check-in / Undo */}
+                                      <button
+                                        onClick={() => handleCheckin(p, !p.checked_in)}
+                                        disabled={savingId === p.id || !isConfirmed}
+                                        title={!isConfirmed ? "Réservation non confirmée" : p.checked_in ? "Annuler l'enregistrement" : "Enregistrer le passager"}
+                                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                                          p.checked_in
+                                            ? dark ? "bg-slate-700 text-slate-300 hover:bg-red-900/30 hover:text-red-400" : "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500"
+                                            : "bg-green-500 text-white hover:bg-green-600"
+                                        }`}
+                                      >
+                                        {savingId === p.id ? (
+                                          <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                        ) : p.checked_in ? (
+                                          <><X size={12} /> Annuler</>
+                                        ) : (
+                                          <><UserCheck size={12} /> Check-in</>
+                                        )}
+                                      </button>
 
-                                  {/* Assigner siège */}
-                                  <button
-                                    onClick={() => { setSeatModal({ open: true, passenger: p }); setSeatInput(p.seat_number || ""); }}
-                                    title="Modifier le siège"
-                                    className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
-                                  >
-                                    <Edit2 size={13} />
-                                  </button>
+                                      {/* Assigner siège */}
+                                      <button
+                                        onClick={() => { setSeatModal({ open: true, passenger: p }); setSeatInput(p.seat_number || ""); }}
+                                        disabled={!isConfirmed}
+                                        title={!isConfirmed ? "Réservation non confirmée" : "Modifier le siège"}
+                                        className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
+                                      >
+                                        <Edit2 size={13} />
+                                      </button>
 
-                                  {/* Imprimer billet */}
-                                  <button
-                                    onClick={() => handlePrintTicket(p, flight)}
-                                    title="Imprimer le billet"
-                                    className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
-                                  >
-                                    <Printer size={13} />
-                                  </button>
-                                </div>
+                                      {/* Imprimer billet */}
+                                      <button
+                                        onClick={() => handlePrintTicket(p, flight)}
+                                        disabled={!isConfirmed}
+                                        title={!isConfirmed ? "Réservation non confirmée" : "Imprimer le billet"}
+                                        className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
+                                      >
+                                        <Printer size={13} />
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
                               </td>
                             </tr>
                           ))}
@@ -646,7 +659,7 @@ export default function PassengersPage() {
                   className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono font-bold text-lg tracking-widest ${
                     dark ? "bg-slate-700 border-slate-600 text-white placeholder-slate-500" : "bg-gray-50 border-gray-300 text-gray-900"
                   }`}
-                          />
+                />
               </div>
               <div className="flex gap-2 pt-2">
                 <button
