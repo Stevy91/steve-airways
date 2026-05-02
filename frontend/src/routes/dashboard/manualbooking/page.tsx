@@ -14,6 +14,9 @@ type Flight = {
   departure_time: string;
   departure: string;
   price: number;
+  price_economy?: number;
+  price_business?: number | null;
+  price_first?: number | null;
   seats_available: string;
   total_seat: number;
   type: string;
@@ -28,6 +31,7 @@ const emptyForm = () => ({
   companyName: "", reference: "", selectedSeat: "",
   nom_urgence: "", email_urgence: "", tel_urgence: "",
   flightNumberReturn: "", notes: "",
+  cabinClass: "economy",
 });
 
 export default function ManualBookingPage() {
@@ -110,8 +114,14 @@ export default function ManualBookingPage() {
     }, 500);
   };
 
-  // Price calc with HTG support
-  const basePrice = selectedFlight ? Number(selectedFlight.price) : 0;
+  // Price calc with HTG support + cabin class
+  const getClassPrice = (flight: Flight | null, cls: string): number => {
+    if (!flight) return 0;
+    if (cls === "business" && flight.price_business) return Number(flight.price_business);
+    if (cls === "first" && flight.price_first) return Number(flight.price_first);
+    return Number(flight.price_economy ?? flight.price ?? 0);
+  };
+  const basePrice = getClassPrice(selectedFlight, formData.cabinClass);
   const taux = Number(formData.taux_jour) || 0;
   const p1 = formData.devisePayment === "htg" && taux > 0 ? basePrice * taux : basePrice;
   const p2 = formData.devisePayment === "htg" && taux > 0 ? calculatedPrice2 * taux : calculatedPrice2;
@@ -166,6 +176,7 @@ export default function ManualBookingPage() {
             devisePayment: formData.devisePayment,
             taux_jour: formData.taux_jour,
             price: totalPrice.toString(),
+            cabinClass: formData.cabinClass,
           }],
           contactInfo: { name: `${formData.firstName} ${formData.lastName}`, email: formData.email, phone: formData.phone },
           totalPrice,
@@ -398,6 +409,57 @@ export default function ManualBookingPage() {
                     <label className={`text-xs font-semibold ${textSub}`}>Telephone *</label>
                     <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Telephone" className={inputCls} />
                   </div>
+                  {/* Classe de cabine — uniquement pour les vols avion */}
+                  {flightType === "plane" && (
+                    <div className="md:col-span-2 flex flex-col gap-2">
+                      <label className={`text-xs font-semibold ${textSub}`}>Classe de cabine</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { value: "economy", label: "Économie", icon: "✈️", color: "blue",
+                            price: selectedFlight ? (Number(selectedFlight.price_economy ?? selectedFlight.price ?? 0)) : 0 },
+                          { value: "business", label: "Business", icon: "💼", color: "purple",
+                            price: selectedFlight ? (selectedFlight.price_business ? Number(selectedFlight.price_business) : null) : null },
+                          { value: "first", label: "Première Classe", icon: "✦", color: "amber",
+                            price: selectedFlight ? (selectedFlight.price_first ? Number(selectedFlight.price_first) : null) : null },
+                        ].map(cls => {
+                          const active = formData.cabinClass === cls.value;
+                          const unavailable = cls.value !== "economy" && cls.price === null;
+                          const colorMap: Record<string, string> = {
+                            blue: active ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30" : "border-gray-200 dark:border-slate-600",
+                            purple: active ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30" : "border-gray-200 dark:border-slate-600",
+                            amber: active ? "border-amber-500 bg-amber-50 dark:bg-amber-900/30" : "border-gray-200 dark:border-slate-600",
+                          };
+                          const textColor: Record<string, string> = {
+                            blue: active ? "text-blue-700 dark:text-blue-300" : `${textMain}`,
+                            purple: active ? "text-purple-700 dark:text-purple-300" : `${textMain}`,
+                            amber: active ? "text-amber-700 dark:text-amber-300" : `${textMain}`,
+                          };
+                          return (
+                            <button
+                              key={cls.value}
+                              type="button"
+                              disabled={unavailable}
+                              onClick={() => setFormData(f => ({ ...f, cabinClass: cls.value }))}
+                              className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all disabled:opacity-40 disabled:cursor-not-allowed ${colorMap[cls.color]}`}
+                            >
+                              <span className="text-xl">{cls.icon}</span>
+                              <span className={`text-xs font-bold ${textColor[cls.color]}`}>{cls.label}</span>
+                              <span className={`text-xs font-semibold ${cls.price !== null ? "text-green-600 dark:text-green-400" : "text-slate-400"}`}>
+                                {unavailable ? "Non disponible" : `$${(cls.price ?? 0).toFixed(2)}`}
+                              </span>
+                              {active && (
+                                <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-green-500 flex items-center justify-center">
+                                  <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex flex-col gap-1">
                     <label className={`text-xs font-semibold ${textSub}`}>Mode de paiement</label>
                     <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className={inputCls}>

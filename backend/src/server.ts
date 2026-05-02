@@ -2881,7 +2881,10 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
       SELECT 
         id,
         flight_number,
-        price
+        price,
+        price_economy,
+        price_business,
+        price_first
       FROM flights
       WHERE 
         flight_number = ? OR
@@ -2891,8 +2894,6 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
       LIMIT 1
     `, [searchTerm, searchTerm, searchTerm, searchTerm]);
 
-    console.log("📊 Résultats trouvés:", flightRows.length);
-
     if (flightRows.length === 0) {
       return res.status(404).json({ 
         success: false,
@@ -2901,18 +2902,16 @@ app.get("/api/flights/get-price/:flightNumber", async (req: Request, res: Respon
     }
 
     const flight = flightRows[0];
-    
-    console.log("✅ Vol trouvé:", {
-      id: flight.id,
-      flight_number: flight.flight_number,
-      price: flight.price
-    });
+    const priceEconomy = Number(flight.price_economy ?? flight.price ?? 0);
+    const priceBusiness = Number(flight.price_business ?? priceEconomy);
+    const priceFirst = Number(flight.price_first ?? priceEconomy);
 
-    // Retournez simplement le prix, sans currency
     res.json({
       success: true,
-      price: Number(flight.price)
-      // Ne pas inclure currency si la colonne n'existe pas
+      price: priceEconomy,
+      price_economy: priceEconomy,
+      price_business: priceBusiness,
+      price_first: priceFirst,
     });
   } catch (error) {
     console.error("Erreur récupération prix:", error);
@@ -4010,8 +4009,8 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO flights 
              (flight_number, type, charter, typecharter, airline, departure_location_id, arrival_location_id, 
-              departure_time, arrival_time, price, total_seat, seats_available, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              departure_time, arrival_time, price, total_seat, seats_available, price_economy, price_business, price_first, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.body.flight_number ?? null,
         req.body.type ?? null,
@@ -4022,9 +4021,12 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
         req.body.arrival_location_id ?? null,
         req.body.departure_time ?? null,
         req.body.arrival_time ?? null,
-        req.body.price ?? null, 
+        req.body.price_economy ?? req.body.price ?? null,
         req.body.seats_available ?? null,
         req.body.seats_available ?? null,
+        req.body.price_economy ?? req.body.price ?? null,
+        req.body.price_business ?? null,
+        req.body.price_first ?? null,
         now,
       ],
     );
@@ -5892,7 +5894,15 @@ app.put("/api/updaterescheduleflight/:id", async (req: Request, res: Response) =
   const allowedFields = [
     "departure_time",
     "arrival_time",
-    "activeflight"
+    "activeflight",
+    "price",
+    "price_economy",
+    "price_business",
+    "price_first",
+    "seats_available",
+    "total_seat",
+    "airline",
+    "flight_number",
   ];
 
   const setFields: string[] = [];
@@ -7609,6 +7619,9 @@ app.get("/api/flighttablehelico", async (req: Request, res: Response) => {
       departure: flight.departure_time,
       arrival: flight.arrival_time,
       price: flight.price,
+      price_economy: (flight as any).price_economy ?? flight.price,
+      price_business: (flight as any).price_business ?? null,
+      price_first: (flight as any).price_first ?? null,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
       activeflight: flight.activeflight,
@@ -7720,6 +7733,9 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
                 f.departure_time,
                 f.arrival_time,
                 f.price,
+                COALESCE(f.price_economy, f.price) AS price_economy,
+                f.price_business,
+                f.price_first,
                 f.total_seat,
                 f.seats_available,
                 f.activeflight,
@@ -7756,6 +7772,9 @@ app.get("/api/flighttableplane", async (req: Request, res: Response) => {
       departure: flight.departure_time,
       arrival: flight.arrival_time,
       price: flight.price,
+      price_economy: (flight as any).price_economy ?? flight.price,
+      price_business: (flight as any).price_business ?? null,
+      price_first: (flight as any).price_first ?? null,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
       activeflight: flight.activeflight,
@@ -7853,6 +7872,9 @@ app.get("/api/flight-helico-search", async (req: Request, res: Response) => {
       departure: flight.departure_time,
       arrival: flight.arrival_time,
       price: flight.price,
+      price_economy: (flight as any).price_economy ?? flight.price,
+      price_business: (flight as any).price_business ?? null,
+      price_first: (flight as any).price_first ?? null,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
       departure_city: flight.departure_city,
@@ -8638,6 +8660,9 @@ app.get("/api/flight-plane-search", async (req: Request, res: Response) => {
       departure: flight.departure_time,
       arrival: flight.arrival_time,
       price: flight.price,
+      price_economy: (flight as any).price_economy ?? flight.price,
+      price_business: (flight as any).price_business ?? null,
+      price_first: (flight as any).price_first ?? null,
       total_seat: flight.total_seat,
       seats_available: flight.seats_available.toString(),
       departure_city: flight.departure_city,
@@ -11738,6 +11763,24 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
   for (const sql of cols) {
     try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
   }
+})();
+
+// Migration automatique : colonnes prix par classe (economy, business, first)
+(async () => {
+  const cols = [
+    `ALTER TABLE flights ADD COLUMN price_economy DECIMAL(10,2) NULL`,
+    `ALTER TABLE flights ADD COLUMN price_business DECIMAL(10,2) NULL`,
+    `ALTER TABLE flights ADD COLUMN price_first DECIMAL(10,2) NULL`,
+  ];
+  for (const sql of cols) {
+    try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
+  }
+  // Initialiser price_economy = price pour les vols existants qui n'ont pas encore de prix par classe
+  try {
+    await pool.execute(
+      `UPDATE flights SET price_economy = price WHERE price_economy IS NULL AND price IS NOT NULL`
+    );
+  } catch (_) {}
 })();
 
 // GET /api/passengers/by-flight — passagers groupés par vol (pour le manifest check-in)
