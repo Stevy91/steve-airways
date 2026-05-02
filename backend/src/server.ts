@@ -11783,6 +11783,13 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
   } catch (_) {}
 })();
 
+// Migration automatique : colonne cabin_class dans bookings
+(async () => {
+  try {
+    await pool.execute(`ALTER TABLE bookings ADD COLUMN cabin_class VARCHAR(20) DEFAULT 'economy'`);
+  } catch (_) { /* colonne déjà présente */ }
+})();
+
 // GET /api/passengers/by-flight — passagers groupés par vol (pour le manifest check-in)
 app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Response) => {
   try {
@@ -11834,7 +11841,12 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
          COALESCE(b.contact_email, '') AS contact_email,
          COALESCE(b.contact_phone, '') AS contact_phone,
          COALESCE(b.total_price, 0) AS total_price,
-         COALESCE(b.currency, 'USD') AS currency
+         COALESCE(b.currency, 'USD') AS currency,
+         COALESCE(b.cabin_class, 'economy') AS cabin_class,
+         COALESCE(f.price_economy, f.price, 0) AS price_economy,
+         f.price_business,
+         f.price_first,
+         COALESCE(f.total_seat, 0) AS total_seat
        FROM passengers p
        JOIN bookings b ON p.booking_id = b.id
        JOIN flights f ON b.flight_id = f.id
@@ -11860,6 +11872,10 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
           to_city: row.to_city,
           to_code: row.to_code,
           type_vol: row.type_vol || 'plane',
+          price_economy: Number(row.price_economy) || 0,
+          price_business: row.price_business ? Number(row.price_business) : null,
+          price_first: row.price_first ? Number(row.price_first) : null,
+          total_seat: Number(row.total_seat) || 30,
           passengers: [],
         });
       }
@@ -11881,6 +11897,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
         contact_phone: row.contact_phone,
         total_price: row.total_price,
         currency: row.currency,
+        cabin_class: row.cabin_class || 'economy',
       });
     });
 
@@ -11921,19 +11938,42 @@ app.put("/api/passengers/:id/checkin", authMiddleware, async (req: any, res: Res
   }
 });
 
-// PUT /api/passengers/:id/seat — assigner un siège
+// PUT /api/passengers/:id/seat — assigner un siège + optionnellement changer la classe
 app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Response) => {
   const { id } = req.params;
-  const { seat_number } = req.body;
+  const { seat_number, cabin_class, new_price } = req.body;
   if (!seat_number || !seat_number.trim()) {
     return res.status(400).json({ error: "Numéro de siège requis" });
   }
   try {
+    // Mettre à jour le siège du passager
     await pool.execute(
       `UPDATE passengers SET selectedSeat = ? WHERE id = ?`,
       [seat_number.trim().toUpperCase(), id]
     );
-    res.json({ success: true, seat_number: seat_number.trim().toUpperCase() });
+
+    // Mettre à jour la classe + prix dans la réservation si fournis
+    if (cabin_class) {
+      const [rows] = await pool.query<any[]>(
+        `SELECT booking_id FROM passengers WHERE id = ?`, [id]
+      );
+      if (rows.length > 0) {
+        const bookingId = rows[0].booking_id;
+        if (new_price !== undefined && new_price !== null) {
+          await pool.execute(
+            `UPDATE bookings SET cabin_class = ?, total_price = ? WHERE id = ?`,
+            [cabin_class, Number(new_price), bookingId]
+          );
+        } else {
+          await pool.execute(
+            `UPDATE bookings SET cabin_class = ? WHERE id = ?`,
+            [cabin_class, bookingId]
+          );
+        }
+      }
+    }
+
+    res.json({ success: true, seat_number: seat_number.trim().toUpperCase(), cabin_class: cabin_class || null });
   } catch (err: any) {
     res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
