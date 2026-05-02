@@ -11843,6 +11843,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
          COALESCE(b.total_price, 0) AS total_price,
          COALESCE(b.currency, 'USD') AS currency,
          COALESCE(b.cabin_class, 'economy') AS cabin_class,
+         COALESCE(b.payment_method, 'cash') AS payment_method,
          COALESCE(f.price_economy, f.price, 0) AS price_economy,
          f.price_business,
          f.price_first,
@@ -11898,6 +11899,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
         total_price: row.total_price,
         currency: row.currency,
         cabin_class: row.cabin_class || 'economy',
+        payment_method: row.payment_method || 'cash',
       });
     });
 
