@@ -12276,10 +12276,34 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
        GROUP BY UPPER(IFNULL(p.currency, b.currency))`, params
     );
 
+    // Répartition par méthode de paiement
+    const [byPayment] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT IFNULL(p.payment_method, 'Inconnu') as payment_method,
+              COUNT(DISTINCT b.id) as count,
+              SUM(IFNULL(p.amount, b.total_price)) as amount,
+              UPPER(IFNULL(p.currency, b.currency)) as currency
+       ${joinPayments} ${where}
+       GROUP BY p.payment_method, UPPER(IFNULL(p.currency, b.currency))
+       ORDER BY amount DESC`, params
+    );
+    // Répartition par statut
+    const [byStatus] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.status, COUNT(*) as count
+       FROM bookings b
+       WHERE b.status IS NOT NULL
+       ${start_date ? "AND DATE(b.created_at) >= ?" : ""}
+       ${end_date ? "AND DATE(b.created_at) <= ?" : ""}
+       GROUP BY b.status
+       ORDER BY count DESC`,
+      [...(start_date ? [start_date] : []), ...(end_date ? [end_date] : [])]
+    );
+
     res.json({
       by_month: byMonth,
       by_type: byType,
       by_route: byRoute,
+      by_payment: byPayment,
+      by_status: byStatus,
       totals,
     });
   } catch (err: any) {
