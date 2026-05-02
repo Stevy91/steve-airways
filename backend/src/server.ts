@@ -11970,8 +11970,9 @@ app.put("/api/passengers/:id/checkin", authMiddleware, async (req: any, res: Res
 app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Response) => {
   const { id } = req.params;
   const { seat_number, cabin_class, new_price } = req.body;
-  if (!seat_number || !seat_number.trim()) {
-    return res.status(400).json({ error: "Numéro de siège requis" });
+  // seat_number est optionnel — on peut changer uniquement la classe
+  if (!seat_number && !cabin_class) {
+    return res.status(400).json({ error: "Siège ou classe requis" });
   }
   try {
     // Lire l'état avant modification pour l'audit
@@ -11985,11 +11986,13 @@ app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Respon
     const bookingRef = prev.booking_reference || '—';
     const bookingId = prev.booking_id;
 
-    // Mettre à jour le siège du passager
-    await pool.execute(
-      `UPDATE passengers SET selectedSeat = ? WHERE id = ?`,
-      [seat_number.trim().toUpperCase(), id]
-    );
+    // Mettre à jour le siège du passager (seulement si fourni)
+    if (seat_number && seat_number.trim()) {
+      await pool.execute(
+        `UPDATE passengers SET selectedSeat = ? WHERE id = ?`,
+        [seat_number.trim().toUpperCase(), id]
+      );
+    }
 
     // Mettre à jour la classe + prix dans la réservation si fournis
     if (cabin_class && bookingId) {
@@ -12011,7 +12014,7 @@ app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Respon
     const agentName = req.user?.name || 'Inconnu';
     const ip        = req.ip || req.headers['x-forwarded-for'] || '';
     const classChanged = cabin_class && cabin_class !== prevClass;
-    const seatChanged  = seat_number.trim().toUpperCase() !== prevSeat.toUpperCase();
+    const seatChanged  = seat_number && seat_number.trim().toUpperCase() !== prevSeat.toUpperCase();
 
     if (seatChanged) {
       await logAudit(

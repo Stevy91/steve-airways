@@ -298,18 +298,21 @@ export default function PassengersPage() {
 
   const getClassPrice = (flight: Flight | null, cls: string): number => {
     if (!flight) return 0;
-    if (cls === "business" && flight.price_business) return Number(flight.price_business);
-    if (cls === "first" && flight.price_first) return Number(flight.price_first);
+    // Retourne 0 (pas le prix économie) si la classe n'a pas de prix défini
+    if (cls === "business") return flight.price_business ? Number(flight.price_business) : 0;
+    if (cls === "first")    return flight.price_first    ? Number(flight.price_first)    : 0;
     return Number(flight.price_economy ?? 0);
   };
 
   const handleAssignSeat = async () => {
-    if (!seatModal.passenger || !seatInput.trim()) return;
+    if (!seatModal.passenger) return;
+    // Siège : nouveau saisi > siège existant > vide (autorisé si uniquement changement de classe)
+    const effectiveSeat = seatInput.trim() || seatModal.passenger.seat_number || "";
     setSavingId(seatModal.passenger.id);
     const classChanged = cabinClass !== prevClassRef.current;
     const fullNewPrice = getClassPrice(seatModal.flight, cabinClass);
-    // Send the full new class price to backend (booking total_price)
-    const body: any = { seat_number: seatInput, cabin_class: cabinClass };
+    const body: any = { cabin_class: cabinClass };
+    if (effectiveSeat) body.seat_number = effectiveSeat;
     if (classChanged) body.new_price = fullNewPrice;
     try {
       const res = await fetch(`${API}/api/passengers/${seatModal.passenger.id}/seat`, {
@@ -319,7 +322,7 @@ export default function PassengersPage() {
       });
       if (!res.ok) throw new Error();
       const surplus = fullNewPrice - prevPriceRef.current;
-      toast.success(`✅ Siège ${seatInput.toUpperCase()} assigné${classChanged ? ` · Classe → ${classLabel[cabinClass]}` : ""}`);
+      toast.success(`✅ Siège ${effectiveSeat.toUpperCase()} assigné${classChanged ? ` · Classe → ${classLabel[cabinClass]}` : ""}`);
 
       // Auto-open class-change receipt
       if (classChanged && seatModal.passenger && seatModal.flight) {
@@ -327,7 +330,7 @@ export default function PassengersPage() {
           seatModal.passenger, seatModal.flight,
           prevClassRef.current, cabinClass,
           prevPriceRef.current, fullNewPrice,
-          Math.max(0, surplus), surplusPayMethod, seatInput
+          Math.max(0, surplus), surplusPayMethod, effectiveSeat
         );
       }
 
@@ -896,7 +899,12 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-2">
-                  <button onClick={handleAssignSeat} disabled={!seatInput.trim() || savingId !== null}
+                  <button onClick={handleAssignSeat}
+                    disabled={
+                      savingId !== null ||
+                      // Désactivé seulement si rien à faire : ni siège, ni changement de classe
+                      (!seatInput.trim() && !classChanged)
+                    }
                     className="w-full py-2.5 rounded-xl bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 disabled:opacity-50 transition-colors">
                     {savingId !== null ? (
                       <span className="flex items-center justify-center gap-2">
@@ -905,9 +913,9 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
                     ) : classChanged ? `Confirmer · Supplément $${surplus.toFixed(2)}` : "Confirmer le siège"}
                   </button>
 
-                  {classChanged && seatInput.trim() && (
+                  {classChanged && (seatInput.trim() || seatModal.passenger?.seat_number) && (
                     <button type="button"
-                      onClick={() => handlePrintClassChangeReceipt(seatModal.passenger!, seatModal.flight!, prevClassRef.current, cabinClass, prevPriceRef.current, fullNewPrice, surplus, surplusPayMethod, seatInput)}
+                      onClick={() => handlePrintClassChangeReceipt(seatModal.passenger!, seatModal.flight!, prevClassRef.current, cabinClass, prevPriceRef.current, fullNewPrice, surplus, surplusPayMethod, seatInput.trim() || seatModal.passenger?.seat_number || "")}
                       className={`w-full py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${dark ? "border-amber-700/50 text-amber-400 hover:bg-amber-900/20" : "border-amber-200 text-amber-600 hover:bg-amber-50"}`}>
                       <Receipt size={13} /> Aperçu du reçu de supplément
                     </button>
