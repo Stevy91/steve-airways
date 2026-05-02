@@ -265,7 +265,7 @@ export default function PassengersPage() {
     const cls = (p.cabin_class || "economy") as "economy" | "business" | "first";
     setCabinClass(cls);
     prevClassRef.current = cls;
-    prevPriceRef.current = p.total_price || 0;
+    prevPriceRef.current = Number(p.total_price) || 0;
     setSurplusPayMethod(p.payment_method || "cash");
     setOccupiedSeats([]);
   };
