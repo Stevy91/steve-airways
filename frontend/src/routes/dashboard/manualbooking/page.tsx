@@ -6,6 +6,24 @@ import toast from "react-hot-toast";
 
 const API = "https://steve-airways.onrender.com";
 
+type ApiPassenger = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  date_of_birth?: string;
+  idClient?: string;
+  idTypeClient?: string;
+  address?: string;
+  country?: string;
+  nationality?: string;
+  phone?: string;
+  email?: string;
+  nom_urgence?: string;
+  email_urgence?: string;
+  tel_urgence?: string;
+};
+
 type Flight = {
   id: number;
   flight_number: string;
@@ -55,6 +73,11 @@ export default function ManualBookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
   const returnDebounce = useRef<any>(null);
+
+  // Passenger autocomplete
+  const [suggestions, setSuggestions] = useState<ApiPassenger[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchDebounce = useRef<any>(null);
 
   const token = localStorage.getItem("token") || localStorage.getItem("authToken");
 
@@ -140,6 +163,45 @@ export default function ManualBookingPage() {
   };
 
   const handleSeatSelect = (sid: string) => setFormData(f => ({ ...f, selectedSeat: f.selectedSeat === sid ? "" : sid }));
+
+  const handleFirstNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(f => ({ ...f, firstName: value }));
+    clearTimeout(searchDebounce.current);
+    if (value.length < 2) { setSuggestions([]); setShowDropdown(false); return; }
+    searchDebounce.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API}/api/passengers/search?q=${encodeURIComponent(value)}`);
+        const data: ApiPassenger[] = await res.json();
+        setSuggestions(data);
+        setShowDropdown(data.length > 0);
+      } catch { setSuggestions([]); setShowDropdown(false); }
+    }, 250);
+  };
+
+  const handleFirstNameBlur = () => setTimeout(() => { setShowDropdown(false); setSuggestions([]); }, 200);
+
+  const selectPassenger = (p: ApiPassenger) => {
+    setFormData(f => ({
+      ...f,
+      firstName: p.first_name || "",
+      middleName: p.middle_name || "",
+      lastName: p.last_name || "",
+      dateOfBirth: p.date_of_birth || "",
+      idClient: p.idClient || "",
+      idTypeClient: p.idTypeClient || "passport",
+      address: p.address || "",
+      country: p.country || "",
+      nationality: p.nationality || "",
+      phone: p.phone || "",
+      email: p.email || "",
+      nom_urgence: p.nom_urgence || "",
+      email_urgence: p.email_urgence || "",
+      tel_urgence: p.tel_urgence || "",
+    }));
+    setShowDropdown(false);
+    setSuggestions([]);
+  };
 
   const handleSubmit = async () => {
     if (!selectedFlight) return toast.error("Selectionnez un vol");
@@ -362,7 +424,38 @@ export default function ManualBookingPage() {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <div className="flex flex-col gap-1">
                     <label className={`text-xs font-semibold ${textSub}`}>Prenom *</label>
-                    <input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Prenom" className={inputCls} />
+                    <div className="relative">
+                      <input
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleFirstNameChange}
+                        onBlur={handleFirstNameBlur}
+                        autoComplete="off"
+                        placeholder="Prenom"
+                        className={inputCls}
+                      />
+                      {showDropdown && suggestions.length > 0 && (
+                        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl">
+                          {suggestions.map(p => (
+                            <div
+                              key={p.id}
+                              onMouseDown={() => selectPassenger(p)}
+                              className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-blue-50"
+                            >
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 flex-shrink-0">
+                                <span className="text-xs font-semibold text-blue-700">
+                                  {p.first_name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">{p.first_name} {p.last_name}</p>
+                                <p className="text-xs text-slate-500">{p.email || p.phone}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className={`text-xs font-semibold ${textSub}`}>Deuxieme prenom</label>

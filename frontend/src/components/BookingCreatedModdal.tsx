@@ -17,6 +17,9 @@ type Flight = {
     departure: string;
     arrival: string;
     price: number;
+    price_economy?: number;
+    price_business?: number | null;
+    price_first?: number | null;
     type?: string;
     totalPrice: number;
     fromCity: string;
@@ -536,6 +539,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
     const [calculatedPrice2, setCalculatedPrice2] = useState<number>(0);
     const [priceCurrency2, setPriceCurrency2] = useState<string>("USD");
 
+    const [cabinClass, setCabinClass] = useState<"economy" | "business" | "first">("economy");
     const [suggestions, setSuggestions] = useState<ApiPassenger[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
@@ -1012,8 +1016,14 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
         setSuggestions([]);
     };
 
-    // Calcul du prix du vol aller - CORRIGÉ
-    const baseFlightPrice = Number(flight.price) || 0;
+    // Calcul du prix du vol aller selon la classe de cabine
+    const getClassPrice = (f: Flight | null, cls: string): number => {
+        if (!f) return 0;
+        if (cls === "business" && f.price_business) return Number(f.price_business);
+        if (cls === "first" && f.price_first) return Number(f.price_first);
+        return Number(f.price_economy ?? f.price ?? 0);
+    };
+    const baseFlightPrice = getClassPrice(flight, cabinClass);
     const tauxJourNumber = Number(formData.taux_jour) || 0;
 
     const calculatedPrice = formData.devisePayment === "htg" && tauxJourNumber > 0 ? baseFlightPrice * tauxJourNumber : baseFlightPrice;
@@ -1121,6 +1131,7 @@ const BookingCreatedModal: React.FC<BookingCreatedModalProps> = ({ open, onClose
             returnFlightNumber: formData.flightNumberReturn || null,
             isRoundTrip: isRoundTrip,
             selectedSeat: formData.selectedSeat || "",
+            cabinClass: cabinClass,
         };
 
         try {
@@ -2198,6 +2209,61 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                             </div>
                                         </div>
 
+                                        {/* Cabin Class Selector */}
+                                        <div className="col-span-2 flex flex-col">
+                                            <label className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
+                                                </svg>
+                                                Classe de cabine
+                                            </label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {([
+                                                    { value: "economy" as const, label: "Économie", icon: "✈️", color: "blue",
+                                                      price: Number(flight?.price_economy ?? flight?.price ?? 0) },
+                                                    { value: "business" as const, label: "Business", icon: "💼", color: "purple",
+                                                      price: flight?.price_business ? Number(flight.price_business) : null },
+                                                    { value: "first" as const, label: "Première", icon: "✦", color: "amber",
+                                                      price: flight?.price_first ? Number(flight.price_first) : null },
+                                                ]).map(cls => {
+                                                    const active = cabinClass === cls.value;
+                                                    const unavailable = cls.value !== "economy" && cls.price === null;
+                                                    const borderColor = {
+                                                        blue: active ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white hover:border-blue-300",
+                                                        purple: active ? "border-purple-500 bg-purple-50" : "border-slate-200 bg-white hover:border-purple-300",
+                                                        amber: active ? "border-amber-500 bg-amber-50" : "border-slate-200 bg-white hover:border-amber-300",
+                                                    }[cls.color];
+                                                    const labelColor = {
+                                                        blue: active ? "text-blue-700" : "text-slate-700",
+                                                        purple: active ? "text-purple-700" : "text-slate-700",
+                                                        amber: active ? "text-amber-700" : "text-slate-700",
+                                                    }[cls.color];
+                                                    return (
+                                                        <button
+                                                            key={cls.value}
+                                                            type="button"
+                                                            disabled={unavailable}
+                                                            onClick={() => setCabinClass(cls.value)}
+                                                            className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm ${borderColor}`}
+                                                        >
+                                                            <span className="text-xl">{cls.icon}</span>
+                                                            <span className={`text-xs font-bold ${labelColor}`}>{cls.label}</span>
+                                                            <span className={`text-xs font-semibold ${cls.price !== null ? "text-green-600" : "text-slate-400"}`}>
+                                                                {unavailable ? "Non disponible" : `$${(cls.price ?? 0).toFixed(2)}`}
+                                                            </span>
+                                                            {active && (
+                                                                <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-green-500 flex items-center justify-center">
+                                                                    <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                    </svg>
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
                                         {/* Payment Method */}
                                         <div className="flex flex-col">
                                             <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -2586,75 +2652,40 @@ ${totalPrice.toFixed(2)} ${priceCurrency}
                                         </div>
                                     </div>
 
-                                    {/* Légende améliorée */}
-                                    <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
-                                        <h4 className="mb-3 text-sm font-semibold text-slate-800">Seat Legend</h4>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-6 w-6 rounded-lg border border-slate-300 bg-gradient-to-br from-white to-slate-50"></div>
-                                                <span className="text-xs text-slate-600">Available</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500"></div>
-                                                <span className="text-xs text-slate-600">Selected</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-red-400 to-red-500"></div>
-                                                <span className="text-xs text-slate-600">Unavailable</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-6 w-6 rounded-lg border-2 border-blue-300 bg-gradient-to-br from-white to-slate-50"></div>
-                                                <span className="text-xs text-slate-600">Window Seat</span>
-                                            </div>
+                                    {/* Légende des sièges */}
+                                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="h-4 w-4 rounded border border-slate-300 bg-gradient-to-br from-white to-slate-50 shadow-sm"></div>
+                                            <span>Available</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="h-4 w-4 rounded bg-gradient-to-br from-amber-400 to-amber-500"></div>
+                                            <span>Selected</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="h-4 w-4 rounded bg-gradient-to-br from-red-400 to-red-500 opacity-80"></div>
+                                            <span>Occupied</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="h-4 w-4 rounded border-2 border-blue-300 bg-gradient-to-br from-white to-slate-50"></div>
+                                            <span>Window</span>
                                         </div>
                                     </div>
 
                                     {/* Siège sélectionné */}
-                                    <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
-                                        <h4 className="mb-3 text-sm font-semibold text-slate-800">Selected Seat</h4>
-                                        {formData.selectedSeat ? (
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-purple-500">
-                                                            <span className="text-lg font-bold text-white">{formData.selectedSeat}</span>
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-bold text-slate-800">Seat {formData.selectedSeat}</p>
-                                                            <p className="text-xs text-slate-600">
-                                                                Row {formData.selectedSeat.slice(0, -1)}, Seat {formData.selectedSeat.slice(-1)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleSeatSelect("")}
-                                                    className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                                                >
-                                                    Change
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="py-3 text-center">
-                                                <svg
-                                                    className="mx-auto h-8 w-8 text-slate-400"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    />
-                                                </svg>
-                                                <p className="mt-2 text-sm text-slate-500">No seat selected yet</p>
-                                                <p className="text-xs text-slate-400">Please select a seat from the map</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                    {formData.selectedSeat && (
+                                        <div className="mt-4 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 text-center shadow-sm">
+                                            <p className="text-xs font-medium text-amber-600">Selected Seat</p>
+                                            <p className="mt-1 text-3xl font-bold text-amber-700">{formData.selectedSeat}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSeatSelect("")}
+                                                className="mt-2 text-xs text-slate-500 underline hover:text-slate-700"
+                                            >
+                                                Clear selection
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
