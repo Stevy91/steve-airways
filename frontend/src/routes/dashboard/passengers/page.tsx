@@ -382,14 +382,17 @@ export default function PassengersPage() {
       fromCode: flight.from_code, toCode: flight.to_code,
       departureTime: flight.departure_time, arrivalTime: flight.arrival_time,
       totalLabel: "TOTAL",
-      totalAmount: p.total_price || 0,
+      totalAmount: Number(p.total_price) || 0,
       currency: p.currency || "USD",
       paymentMethod: p.payment_method || "cash",
       paymentStatus: p.booking_status === "confirmed" ? "Confirmé" : "En attente",
     });
-    const w = window.open("", "_blank", "width=380,height=720");
+    const w = window.open("", "_blank", "width=380,height=850");
     if (w) { w.document.write(html); w.document.close(); }
+
+    
   };
+
 
   const handlePrintTicket = (p: PassengerRow, flight: Flight) => {
     const dep = new Date(flight.departure_time);

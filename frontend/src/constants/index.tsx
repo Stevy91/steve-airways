@@ -106,25 +106,25 @@ const {
     dashboard && {
       title: "Dashboard",
       links: [
-        { label: "Dashboard", icon: LayoutDashboard, path: `/${lang}/dashboard` },
+        { label: "Tableau de bord", icon: LayoutDashboard, path: `/${lang}/dashboard` },
       ],
     },
 
     // Section Avion — uniquement la gestion des vols (View Bookings est dans "Réservations")
     listeFlightsPlane && {
-      title: "Air plane",
+      title: "Avion",
       icon: Plane,
       links: [
-        { label: "All flights", icon: List, path: `/${lang}/dashboard/flights` },
+        { label: "Tous les vols avion", icon: List, path: `/${lang}/dashboard/flights` },
       ],
     },
 
     // Section Hélico — uniquement la gestion des vols (View Bookings est dans "Réservations")
     listeFlightsHelico && {
-      title: "Helico",
+      title: "Hélico",
       icon: HelicopterIcon,
       links: [
-        { label: "All flights Helico", icon: List, path: `/${lang}/dashboard/flights-helico` },
+        { label: "Tous les vols hélico", icon: List, path: `/${lang}/dashboard/flights-helico` },
       ],
     },
 
@@ -133,7 +133,7 @@ const {
       title: "Charter",
       icons: [Plane, HelicopterIcon],
       links: [
-        { label: "All flights Charter", icon: List, path: `/${lang}/dashboard/flights-charter` },
+        { label: "Tous les vols charter", icon: List, path: `/${lang}/dashboard/flights-charter` },
       ],
     },
 
@@ -142,11 +142,11 @@ const {
       title: "Réservations",
       icon: PlusCircle,
       links: [
-        canManualBooking && { label: "Réservation manuelle", icon: PlusCircle, path: `/${lang}/dashboard/manual-booking` },
-        canViewBookingsPlane && { label: "Réservations Avion", icon: List, path: `/${lang}/dashboard/bookings-plane` },
-        canViewBookingsHelico && { label: "Réservations Hélico", icon: List, path: `/${lang}/dashboard/bookings-helico` },
-        canViewBookingsCharter && { label: "Réservations Charter", icon: List, path: `/${lang}/dashboard/bookings-charter` },
-        canPassengers && { label: "Passagers", icon: Users, path: `/${lang}/dashboard/passengers` },
+        canManualBooking && { label: "Créer une Réservation", icon: PlusCircle, path: `/${lang}/dashboard/manual-booking` },
+        canViewBookingsPlane && { label: "Les réservations avion", icon: List, path: `/${lang}/dashboard/bookings-plane` },
+        canViewBookingsHelico && { label: "Les réservations hélico", icon: List, path: `/${lang}/dashboard/bookings-helico` },
+        canViewBookingsCharter && { label: "Les réservations charter", icon: List, path: `/${lang}/dashboard/bookings-charter` },
+        canPassengers && { label: "Tous les passagers", icon: Users, path: `/${lang}/dashboard/passengers` },
         canRefunds && { label: "Remboursements", icon: RefreshCcw, path: `/${lang}/dashboard/refunds` },
       ].filter(Boolean),
     },

@@ -10725,6 +10725,9 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
     "departure_time",
     "arrival_time",
     "price",
+    "price_economy", 
+    "price_business", 
+    "price_first",
     "seats_available",
     "total_seat",
   ];
