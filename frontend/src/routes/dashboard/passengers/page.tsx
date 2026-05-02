@@ -926,22 +926,3 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
     </div>
   );
 }
-ent, cabinClass, prevPriceRef.current, fullNewPrice, surplus, surplusPayMethod, seatInput)}
-                      className={`w-full py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${dark ? "border-amber-700/50 text-amber-400 hover:bg-amber-900/20" : "border-amber-200 text-amber-600 hover:bg-amber-50"}`}>
-                      <Receipt size={13} /> Aperçu du reçu de supplément
-                    </button>
-                  )}
-
-                  <button onClick={() => setSeatModal({ open: false, passenger: null, flight: null })}
-                    className={`w-full py-2 rounded-xl border text-sm font-medium transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}

@@ -11154,7 +11154,9 @@ app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) 
     const flight = flightRows[0];
 
     // ── 2. Vérifier disponibilité des sièges (vol aller)
-    if (flight.seats_available < passengers.length) {
+    // Les vols charter n'ont pas de contrainte de sièges standard
+    const isCharterFlight = flight_type === 'charter' || !!flight.typecharter || flight.charter === 'charter';
+    if (!isCharterFlight && flight.seats_available < passengers.length) {
       await connection.rollback();
       return res.status(409).json({
         error: "Pas assez de sièges disponibles",
@@ -11188,17 +11190,31 @@ app.post("/api/manual-booking", authMiddleware, async (req: any, res: Response) 
     // ── 4. Créer la réservation (pending — paiement non encore reçu)
     const bookingRef = `MANUAL-${Math.floor(100000 + Math.random() * 900000)}`;
     const isRoundTrip = !!returnFlightId;
+
+    // Pour les vols charter, récupérer le typecharter depuis le vol (plane ou helicopter)
+    const isCharter = flight_type === 'charter' || !!flight.typecharter;
+    const typecharterValue = isCharter
+      ? (flight.typecharter || 'plane')   // 'plane' ou 'helicopter'
+      : null;
+
+    // Classe cabine envoyée par le formulaire (premier passager)
+    const cabinClassValue = passengers[0]?.cabinClass || 'economy';
+
     const [bookingResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO bookings
          (booking_reference, flight_id, return_flight_id, total_price, currency, status,
           passenger_count, contact_email, contact_phone, payment_method, type_vol,
+          typecharter, cabin_class,
           user_created_booking, adminNotes, type_v)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         bookingRef, flightId, returnFlightId, totalPrice,
         currency || 'USD', 'pending',
         passengers.length, contactInfo.email, contactInfo.phone,
-        paymentMethod || 'cash', flight_type || flight.type,
+        paymentMethod || 'cash',
+        isCharter ? null : (flight_type || flight.type),  // type_vol NULL pour charter
+        typecharterValue,                                   // typecharter = plane|helicopter|null
+        cabinClassValue,
         agentId, notes || '',
         isRoundTrip ? 'roundtrip' : 'onway'
       ]
