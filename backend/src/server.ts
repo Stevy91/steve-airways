@@ -12227,7 +12227,12 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
     const params: any[] = [];
     if (start_date) { where += " AND DATE(b.created_at) >= ?"; params.push(start_date); }
     if (end_date) { where += " AND DATE(b.created_at) <= ?"; params.push(end_date); }
-    if (type_vol) { where += " AND b.type_vol=?"; params.push(type_vol); }
+    if (type_vol === 'charter') {
+      where += " AND (b.typecharter IS NOT NULL AND b.typecharter != '')";
+    } else if (type_vol) {
+      where += " AND b.type_vol = ? AND (b.typecharter IS NULL OR b.typecharter = '')";
+      params.push(type_vol);
+    }
     if (currency) { where += " AND UPPER(IFNULL(p.currency, b.currency))=UPPER(?)"; params.push(currency); }
 
     const joinPayments = `FROM bookings b LEFT JOIN payments p ON p.booking_id=b.id`;
