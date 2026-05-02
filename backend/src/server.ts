@@ -11808,8 +11808,15 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
       params.push(String(date).trim());
     }
     if (type_vol && String(type_vol).trim()) {
-      where += " AND b.type_vol = ?";
-      params.push(String(type_vol).trim());
+      const tv = String(type_vol).trim();
+      if (tv === 'charter') {
+        // Les vols charter sont identifiés par b.typecharter IN ('plane','helicopter')
+        where += " AND b.typecharter IN ('plane', 'helicopter')";
+      } else {
+        // Avion ou hélicoptère régulier (pas charter)
+        where += " AND b.type_vol = ? AND (b.typecharter IS NULL OR b.typecharter = '')";
+        params.push(tv);
+      }
     }
     if (q && String(q).trim()) {
       where += ` AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.idClient LIKE ? OR b.booking_reference LIKE ? OR f.flight_number LIKE ?)`;
@@ -11833,7 +11840,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
          f.id AS flight_id, f.flight_number, f.departure_time, f.arrival_time,
          COALESCE(l1.name, 'Départ') AS from_city, COALESCE(l1.code, '???') AS from_code,
          COALESCE(l2.name, 'Arrivée') AS to_city, COALESCE(l2.code, '???') AS to_code,
-         b.type_vol, b.status AS booking_status,
+         b.type_vol, COALESCE(b.typecharter, '') AS typecharter, b.status AS booking_status,
          p.id AS passenger_id, p.first_name, p.last_name,
          COALESCE(p.idClient, '') AS passport_number,
          COALESCE(p.nationality, '') AS nationality,
@@ -11875,7 +11882,7 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
           from_code: row.from_code,
           to_city: row.to_city,
           to_code: row.to_code,
-          type_vol: row.type_vol || 'plane',
+          type_vol: row.typecharter ? 'charter' : (row.type_vol || 'plane'),
           price_economy: Number(row.price_economy) || 0,
           price_business: row.price_business ? Number(row.price_business) : null,
           price_first: row.price_first ? Number(row.price_first) : null,
@@ -11951,6 +11958,17 @@ app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Respon
     return res.status(400).json({ error: "Numéro de siège requis" });
   }
   try {
+    // Lire l'état avant modification pour l'audit
+    const [prevRows] = await pool.query<any[]>(
+      `SELECT p.selectedSeat, b.cabin_class, b.total_price, b.booking_reference, b.id AS booking_id
+       FROM passengers p JOIN bookings b ON p.booking_id = b.id WHERE p.id = ?`, [id]
+    );
+    const prev = prevRows[0] || {};
+    const prevSeat = prev.selectedSeat || '—';
+    const prevClass = prev.cabin_class || 'economy';
+    const bookingRef = prev.booking_reference || '—';
+    const bookingId = prev.booking_id;
+
     // Mettre à jour le siège du passager
     await pool.execute(
       `UPDATE passengers SET selectedSeat = ? WHERE id = ?`,
@@ -11958,25 +11976,46 @@ app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Respon
     );
 
     // Mettre à jour la classe + prix dans la réservation si fournis
-    if (cabin_class) {
-      const [rows] = await pool.query<any[]>(
-        `SELECT booking_id FROM passengers WHERE id = ?`, [id]
-      );
-      if (rows.length > 0) {
-        const bookingId = rows[0].booking_id;
-        if (new_price !== undefined && new_price !== null) {
-          await pool.execute(
-            `UPDATE bookings SET cabin_class = ?, total_price = ? WHERE id = ?`,
-            [cabin_class, Number(new_price), bookingId]
-          );
-        } else {
-          await pool.execute(
-            `UPDATE bookings SET cabin_class = ? WHERE id = ?`,
-            [cabin_class, bookingId]
-          );
-        }
+    if (cabin_class && bookingId) {
+      if (new_price !== undefined && new_price !== null) {
+        await pool.execute(
+          `UPDATE bookings SET cabin_class = ?, total_price = ? WHERE id = ?`,
+          [cabin_class, Number(new_price), bookingId]
+        );
+      } else {
+        await pool.execute(
+          `UPDATE bookings SET cabin_class = ? WHERE id = ?`,
+          [cabin_class, bookingId]
+        );
       }
     }
+
+    // ─── Journal d'audit ───────────────────────────────────────
+    const agentId   = req.user?.id   || null;
+    const agentName = req.user?.name || 'Inconnu';
+    const ip        = req.ip || req.headers['x-forwarded-for'] || '';
+    const classChanged = cabin_class && cabin_class !== prevClass;
+    const seatChanged  = seat_number.trim().toUpperCase() !== prevSeat.toUpperCase();
+
+    if (seatChanged) {
+      await logAudit(
+        agentId, agentName,
+        'SEAT_ASSIGN',
+        'passenger', id,
+        `Réf: ${bookingRef} | Siège: ${prevSeat} → ${seat_number.trim().toUpperCase()}`,
+        String(ip)
+      );
+    }
+    if (classChanged) {
+      await logAudit(
+        agentId, agentName,
+        'CLASS_CHANGE',
+        'booking', bookingId,
+        `Réf: ${bookingRef} | Classe: ${prevClass} → ${cabin_class} | Nouveau tarif: ${new_price ?? '—'} USD`,
+        String(ip)
+      );
+    }
+    // ──────────────────────────────────────────────────────────
 
     res.json({ success: true, seat_number: seat_number.trim().toUpperCase(), cabin_class: cabin_class || null });
   } catch (err: any) {
@@ -12225,4 +12264,129 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
 
 server.listen(process.env.PORT || 3000, () => {
   console.log(`Server running on port ${process.env.PORT || 3000}`);
+});
+
+    // Revenus par statut
+    const [byStatus] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT b.status,
+              UPPER(IFNULL(p.currency, b.currency)) as currency,
+              COUNT(DISTINCT b.id) as bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as revenue
+       ${joinPayments} ${where}
+       GROUP BY b.status, UPPER(IFNULL(p.currency, b.currency))`, params
+    );
+
+    // Revenus par type de vol
+    const [byType] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT CASE WHEN b.typecharter IS NOT NULL AND b.typecharter != '' THEN 'charter' ELSE COALESCE(b.type_vol,'plane') END as type_vol,
+              UPPER(IFNULL(p.currency, b.currency)) as currency,
+              COUNT(DISTINCT b.id) as bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as revenue
+       ${joinPayments} ${where}
+       GROUP BY type_vol, UPPER(IFNULL(p.currency, b.currency))`, params
+    );
+
+    // Totaux globaux
+    const [totals] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT UPPER(IFNULL(p.currency, b.currency)) as currency,
+              COUNT(DISTINCT b.id) as total_bookings,
+              SUM(IFNULL(p.amount, b.total_price)) as total_revenue,
+              AVG(IFNULL(p.amount, b.total_price)) as avg_revenue
+       ${joinPayments} ${where}
+       GROUP BY UPPER(IFNULL(p.currency, b.currency))`, params
+    );
+
+    res.json({
+      by_month: byMonth,
+      by_status: byStatus,
+      by_type: byType,
+      totals: totals,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 10. AUDIT LOGS — consultation
+// ============================================================
+
+app.get("/api/audit-logs", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  try {
+    const { page = 1, limit = 50, action, user_name } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+    let where = "WHERE 1=1";
+    const params: any[] = [];
+    if (action) { where += " AND action = ?"; params.push(action); }
+    if (user_name) { where += " AND user_name LIKE ?"; params.push(`%${user_name}%`); }
+
+    const [countRows] = await pool.query<mysql.RowDataPacket[]>(`SELECT COUNT(*) as total FROM audit_logs ${where}`, params);
+    const total = countRows[0]?.total || 0;
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM audit_logs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...params, Number(limit), offset]
+    );
+
+    res.json({ logs: rows, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ─── Start server ─────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+const server = require("http").createServer(app);
+server.listen(PORT, () => {
+  console.log(`✅ Trogon Airways API running on port ${PORT}`);
+});
+l_revenue,
+              AVG(IFNULL(p.amount, b.total_price)) as avg_revenue
+       ${joinPayments} ${where}
+       GROUP BY UPPER(IFNULL(p.currency, b.currency))`, params
+    );
+
+    res.json({
+      by_month: byMonth,
+      by_status: byStatus,
+      by_type: byType,
+      totals: totals,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ============================================================
+// 10. AUDIT LOGS — consultation
+// ============================================================
+
+app.get("/api/audit-logs", authMiddleware, adminOnly, async (req: any, res: Response) => {
+  try {
+    const { page = 1, limit = 50, action, user_name } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+    let where = "WHERE 1=1";
+    const params: any[] = [];
+    if (action) { where += " AND action = ?"; params.push(action); }
+    if (user_name) { where += " AND user_name LIKE ?"; params.push(`%${user_name}%`); }
+
+    const [countRows] = await pool.query<mysql.RowDataPacket[]>(`SELECT COUNT(*) as total FROM audit_logs ${where}`, params);
+    const total = countRows[0]?.total || 0;
+
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM audit_logs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...params, Number(limit), offset]
+    );
+
+    res.json({ logs: rows, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// ─── Start server ─────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+const server = require("http").createServer(app);
+server.listen(PORT, () => {
+  console.log(`✅ Trogon Airways API running on port ${PORT}`);
 });

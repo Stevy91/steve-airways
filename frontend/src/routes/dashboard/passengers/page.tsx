@@ -57,6 +57,9 @@ const CABIN_CLASSES = [
   { value: "first",    label: "Première Classe", icon: "✦",  color: "amber"  },
 ] as const;
 
+// Rang des classes — on ne peut pas descendre en classe
+const CLASS_RANK: Record<string, number> = { economy: 1, business: 2, first: 3 };
+
 const classBadge: Record<string, string> = {
   economy:  "bg-blue-100 text-blue-700",
   business: "bg-purple-100 text-purple-700",
@@ -366,31 +369,43 @@ export default function PassengersPage() {
       paymentStatus: surplus === 0 ? "Sans supplément" : "Confirmé",
       noteLines,
     });
-    const w = window.open("", "_blank", "width=380,height=720");
-    if (w) { w.document.write(html); w.document.close(); }
+    openReceiptWindow(html, 400, 750);
+  };
+
+  const openReceiptWindow = (html: string, w: number, h: number) => {
+    try {
+      const win = window.open("", "_blank", `width=${w},height=${h},scrollbars=yes`);
+      if (!win) { toast.error("Popup bloquée — autorisez les popups pour ce site dans votre navigateur"); return; }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    } catch (err: any) {
+      toast.error("Impossible d'ouvrir le reçu: " + (err?.message || "erreur inconnue"));
+    }
   };
 
   /** Standard payment receipt (from passenger table row) */
   const handlePrintPaymentReceipt = (p: PassengerRow, flight: Flight) => {
-    const agentName = user?.name || "Agent";
-    const html = buildReceiptHTML({
-      agentName,
-      bookingRef: p.booking_reference,
-      passengerName: `${p.title ? p.title + " " : ""}${p.first_name} ${p.last_name}`,
-      flightNumber: flight.flight_number,
-      fromCity: flight.from_city, toCity: flight.to_city,
-      fromCode: flight.from_code, toCode: flight.to_code,
-      departureTime: flight.departure_time, arrivalTime: flight.arrival_time,
-      totalLabel: "TOTAL",
-      totalAmount: Number(p.total_price) || 0,
-      currency: p.currency || "USD",
-      paymentMethod: p.payment_method || "cash",
-      paymentStatus: p.booking_status === "confirmed" ? "Confirmé" : "En attente",
-    });
-    const w = window.open("", "_blank", "width=380,height=850");
-    if (w) { w.document.write(html); w.document.close(); }
-
-    
+    try {
+      const agentName = user?.name || "Agent";
+      const html = buildReceiptHTML({
+        agentName,
+        bookingRef: p.booking_reference,
+        passengerName: `${p.title ? p.title + " " : ""}${p.first_name} ${p.last_name}`,
+        flightNumber: flight.flight_number,
+        fromCity: flight.from_city, toCity: flight.to_city,
+        fromCode: flight.from_code, toCode: flight.to_code,
+        departureTime: flight.departure_time, arrivalTime: flight.arrival_time,
+        totalLabel: "TOTAL",
+        totalAmount: Number(p.total_price) || 0,
+        currency: p.currency || "USD",
+        paymentMethod: p.payment_method || "cash",
+        paymentStatus: p.booking_status === "confirmed" ? "Confirmé" : "En attente",
+      });
+      openReceiptWindow(html, 400, 870);
+    } catch (err: any) {
+      toast.error("Erreur reçu: " + (err?.message || "erreur inconnue"));
+    }
   };
 
 
@@ -463,8 +478,7 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
     <button onclick="window.print()" style="background:#3b82f6;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;">🖨 Imprimer</button>
   </div>
 </div></body></html>`;
-    const w = window.open("", "_blank", "width=760,height=600");
-    if (w) { w.document.write(html); w.document.close(); }
+    openReceiptWindow(html, 780, 620);
   };
 
   // Styles
@@ -800,7 +814,10 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
                   <div className="flex flex-col gap-2">
                     {CABIN_CLASSES.map(cls => {
                       const price = getClassPrice(seatModal.flight, cls.value);
-                      const unavailable = cls.value !== "economy" && price === 0;
+                      const noPrice   = cls.value !== "economy" && price === 0;
+                      // ⛔ Interdit de descendre en classe inférieure
+                      const isDowngrade = CLASS_RANK[cls.value] < CLASS_RANK[prevClassRef.current];
+                      const unavailable = noPrice || isDowngrade;
                       const active = cabinClass === cls.value;
                       const borderColor = {
                         blue:   active ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"     : "border-slate-200 dark:border-slate-700 hover:border-blue-300",
@@ -812,14 +829,16 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
                         purple: active ? "text-purple-700 dark:text-purple-300" : textMain,
                         amber:  active ? "text-amber-700 dark:text-amber-300"   : textMain,
                       }[cls.color];
+                      const subLabel = isDowngrade ? "⛔ Déclassement interdit" : noPrice ? "Non disponible" : `$${price.toFixed(2)}`;
                       return (
                         <button key={cls.value} type="button" disabled={unavailable} onClick={() => setCabinClass(cls.value)}
+                          title={isDowngrade ? "Impossible de descendre en classe inférieure" : undefined}
                           className={`relative flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed ${borderColor}`}>
                           <span className="text-xl flex-shrink-0">{cls.icon}</span>
                           <div className="flex-1">
                             <p className={`text-sm font-bold ${labelColor}`}>{cls.label}</p>
-                            <p className={`text-xs font-semibold ${unavailable ? "text-slate-400" : "text-green-600 dark:text-green-400"}`}>
-                              {unavailable ? "Non disponible" : `$${price.toFixed(2)}`}
+                            <p className={`text-xs font-semibold ${unavailable ? "text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                              {subLabel}
                             </p>
                           </div>
                           {active && <span className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-green-500 flex items-center justify-center">
@@ -889,6 +908,25 @@ body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; just
                   {classChanged && seatInput.trim() && (
                     <button type="button"
                       onClick={() => handlePrintClassChangeReceipt(seatModal.passenger!, seatModal.flight!, prevClassRef.current, cabinClass, prevPriceRef.current, fullNewPrice, surplus, surplusPayMethod, seatInput)}
+                      className={`w-full py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${dark ? "border-amber-700/50 text-amber-400 hover:bg-amber-900/20" : "border-amber-200 text-amber-600 hover:bg-amber-50"}`}>
+                      <Receipt size={13} /> Aperçu du reçu de supplément
+                    </button>
+                  )}
+
+                  <button onClick={() => setSeatModal({ open: false, passenger: null, flight: null })}
+                    className={`w-full py-2 rounded-xl border text-sm font-medium transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+ent, cabinClass, prevPriceRef.current, fullNewPrice, surplus, surplusPayMethod, seatInput)}
                       className={`w-full py-2 rounded-xl border text-xs font-medium flex items-center justify-center gap-2 transition-colors ${dark ? "border-amber-700/50 text-amber-400 hover:bg-amber-900/20" : "border-amber-200 text-amber-600 hover:bg-amber-50"}`}>
                       <Receipt size={13} /> Aperçu du reçu de supplément
                     </button>
