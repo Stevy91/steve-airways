@@ -12011,7 +12011,7 @@ app.put("/api/passengers/:id/seat", authMiddleware, async (req: any, res: Respon
 
     // ─── Journal d'audit ───────────────────────────────────────
     const agentId   = req.user?.id   || null;
-    const agentName = req.user?.name || 'Inconnu';
+    const agentName = req.user?.name || req.user?.username || req.user?.email || 'Agent';
     const ip        = req.ip || req.headers['x-forwarded-for'] || '';
     const classChanged = cabin_class && cabin_class !== prevClass;
     const seatChanged  = seat_number && seat_number.trim().toUpperCase() !== prevSeat.toUpperCase();
@@ -12166,10 +12166,17 @@ app.get("/api/audit-logs", authMiddleware, adminOnly, async (req: any, res: Resp
     if (user_id) { where += " AND user_id=?"; params.push(user_id); }
     if (start_date) { where += " AND created_at >= ?"; params.push(start_date); }
     if (end_date) { where += " AND created_at <= ?"; params.push(end_date + ' 23:59:59'); }
-    const [countRows] = await pool.query<mysql.RowDataPacket[]>(`SELECT COUNT(*) as total FROM audit_logs ${where}`, params);
+    const [countRows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT COUNT(*) as total FROM audit_logs al ${where}`, params
+    );
     const total = countRows[0].total;
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT * FROM audit_logs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT al.*,
+              COALESCE(u.name, u.username, al.user_name, 'Inconnu') AS agent_name
+       FROM audit_logs al
+       LEFT JOIN users u ON al.user_id = u.id
+       ${where}
+       ORDER BY al.created_at DESC LIMIT ? OFFSET ?`,
       [...params, Number(limit), offset]
     );
     res.json({ logs: rows, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) });

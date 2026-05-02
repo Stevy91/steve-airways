@@ -9,7 +9,7 @@ type Log = {
   id: number;
   user_id: number;
   user_name: string;
-  name: string;
+  agent_name: string;   // nom résolu via JOIN users
   action: string;
   entity_type: string;
   entity_id: string;
@@ -148,8 +148,8 @@ export default function AuditLogsPage() {
                       {new Date(log.created_at).toLocaleString('fr-FR')}
                     </td>
                     <td className="px-4 py-3">
-                      <p className={`font-medium text-xs ${textMain}`}>{log.user_name || "—"}</p>
-                      <p className={`text-xs ${textSub}`}>ID: {log.user_id}</p>
+                      <p className={`font-medium text-xs ${textMain}`}>{log.agent_name || log.user_name || "—"}</p>
+                      <p className={`text-xs ${textSub}`}>ID: {log.user_id || "—"}</p>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${actionColor(log.action)}`}>
