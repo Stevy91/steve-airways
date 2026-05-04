@@ -12233,7 +12233,15 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
       where += " AND b.type_vol = ? AND (b.typecharter IS NULL OR b.typecharter = '')";
       params.push(type_vol);
     }
-    if (currency) { where += " AND UPPER(IFNULL(p.currency, b.currency))=UPPER(?)"; params.push(currency); }
+    if (currency) {
+      if (currency.toUpperCase() === 'USD') {
+        // Match 'usd', 'USD', or NULL (dashboard treats NULL as USD)
+        where += " AND (UPPER(IFNULL(p.currency, IFNULL(b.currency, 'usd'))) = 'USD' OR COALESCE(p.currency, b.currency) IS NULL)";
+      } else {
+        where += " AND UPPER(IFNULL(p.currency, b.currency)) = UPPER(?)";
+        params.push(currency);
+      }
+    }
 
     const joinPayments = `FROM bookings b LEFT JOIN payments p ON p.booking_id=b.id`;
 
