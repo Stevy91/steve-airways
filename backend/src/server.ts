@@ -12594,6 +12594,457 @@ app.post("/api/promo-codes/use", authMiddleware, async (req: any, res: Response)
   }
 });
 
+
+// ============================================================
+// MODULE COLIS — Gestion des colis (envoi/suivi)
+// ============================================================
+
+// Création automatique de la table colis si elle n'existe pas
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS colis (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        tracking_code VARCHAR(50) UNIQUE NOT NULL,
+        sender_name VARCHAR(255) NOT NULL,
+        sender_id_type VARCHAR(50) DEFAULT 'nif',
+        sender_id_number VARCHAR(100),
+        sender_phone VARCHAR(50),
+        recipient_name VARCHAR(255) NOT NULL,
+        recipient_phone VARCHAR(50),
+        recipient_address VARCHAR(255),
+        description VARCHAR(500),
+        weight DECIMAL(8,2),
+        flight_id INT,
+        price DECIMAL(10,2) DEFAULT 0,
+        currency VARCHAR(10) DEFAULT 'USD',
+        payment_method VARCHAR(50) DEFAULT 'cash',
+        status ENUM('en_attente','en_vol','arrive','livre') DEFAULT 'en_attente',
+        notes TEXT,
+        created_by INT,
+        created_by_name VARCHAR(255),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_tracking (tracking_code),
+        INDEX idx_status (status),
+        INDEX idx_flight (flight_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    console.log('✅ Table colis prête');
+  } catch (e) {
+    console.error('❌ Erreur création table colis:', e);
+  }
+})();
+
+// Helper: générer un code de suivi unique
+function generateTrackingCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'COL-';
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+// GET /api/colis — liste avec filtres
+app.get('/api/colis', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { status, search, flight_id, date_from, date_to } = req.query;
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+    if (status) { where += ' AND c.status = ?'; params.push(status); }
+    if (flight_id) { where += ' AND c.flight_id = ?'; params.push(flight_id); }
+    if (date_from) { where += ' AND DATE(c.created_at) >= ?'; params.push(date_from); }
+    if (date_to) { where += ' AND DATE(c.created_at) <= ?'; params.push(date_to); }
+    if (search) {
+      where += ' AND (c.tracking_code LIKE ? OR c.sender_name LIKE ? OR c.recipient_name LIKE ? OR c.sender_id_number LIKE ?)';
+      const s = `%${search}%`;
+      params.push(s, s, s, s);
+    }
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT c.*,
+        f.flight_number, f.departure_time, f.arrival_time, f.type AS flight_type,
+        dep.name AS departure_name, dep.city AS departure_city, dep.code AS departure_code,
+        arr.name AS arrival_name, arr.city AS arrival_city, arr.code AS arrival_code
+       FROM colis c
+       LEFT JOIN flights f ON c.flight_id = f.id
+       LEFT JOIN locations dep ON f.departure_location_id = dep.id
+       LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+       ${where}
+       ORDER BY c.created_at DESC`,
+      params
+    );
+    res.json({ success: true, colis: rows });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
+// GET /api/colis/stats — comptages par statut pour le dashboard
+app.get('/api/colis/stats', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT status, COUNT(*) as count FROM colis GROUP BY status`
+    );
+    const stats = { en_attente: 0, en_vol: 0, arrive: 0, livre: 0, total: 0 };
+    for (const r of rows) {
+      stats[r.status as keyof typeof stats] = Number(r.count);
+      stats.total += Number(r.count);
+    }
+    res.json({ success: true, stats });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
+// POST /api/colis — créer un nouveau colis
+app.post('/api/colis', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const {
+      sender_name, sender_id_type, sender_id_number, sender_phone,
+      recipient_name, recipient_phone, recipient_address,
+      description, weight, flight_id,
+      price, currency, payment_method, notes
+    } = req.body;
+
+    if (!sender_name || !recipient_name) {
+      return res.status(400).json({ error: 'Nom expéditeur et destinataire requis' });
+    }
+
+    // Générer un tracking code unique
+    let tracking_code = generateTrackingCode();
+    let attempts = 0;
+    while (attempts < 5) {
+      const [existing] = await pool.query<mysql.RowDataPacket[]>(
+        'SELECT id FROM colis WHERE tracking_code = ?', [tracking_code]
+      );
+      if (!existing.length) break;
+      tracking_code = generateTrackingCode();
+      attempts++;
+    }
+
+    const [result] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO colis (tracking_code, sender_name, sender_id_type, sender_id_number, sender_phone,
+        recipient_name, recipient_phone, recipient_address, description, weight,
+        flight_id, price, currency, payment_method, notes, created_by, created_by_name,
+        created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, CONVERT_TZ(NOW(),'+00:00','-04:00'))`,
+      [
+        tracking_code,
+        sender_name, sender_id_type || 'nif', sender_id_number || null, sender_phone || null,
+        recipient_name, recipient_phone || null, recipient_address || null,
+        description || null, weight || null,
+        flight_id || null,
+        price || 0, currency || 'USD', payment_method || 'cash',
+        notes || null,
+        req.user?.id || null,
+        req.user?.name || req.user?.username || 'admin'
+      ]
+    );
+
+    await logAudit(
+      req.user?.id, req.user?.name || req.user?.username || 'admin',
+      'CREATE_COLIS', 'colis', result.insertId,
+      `Colis créé — Code: ${tracking_code} — Expéditeur: ${sender_name} — Destinataire: ${recipient_name}`,
+      req.ip || ''
+    );
+
+    const [newColis] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT c.*, f.flight_number, dep.name AS departure_name, arr.name AS arrival_name
+       FROM colis c
+       LEFT JOIN flights f ON c.flight_id = f.id
+       LEFT JOIN locations dep ON f.departure_location_id = dep.id
+       LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE c.id = ?`, [result.insertId]
+    );
+
+    res.status(201).json({ success: true, colis: newColis[0] });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
+// PUT /api/colis/:id — modifier un colis
+app.put('/api/colis/:id', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      sender_name, sender_id_type, sender_id_number, sender_phone,
+      recipient_name, recipient_phone, recipient_address,
+      description, weight, flight_id, price, currency, payment_method, notes
+    } = req.body;
+
+    await pool.execute(
+      `UPDATE colis SET
+        sender_name=?, sender_id_type=?, sender_id_number=?, sender_phone=?,
+        recipient_name=?, recipient_phone=?, recipient_address=?,
+        description=?, weight=?, flight_id=?, price=?, currency=?, payment_method=?, notes=?,
+        updated_at=NOW()
+       WHERE id=?`,
+      [
+        sender_name, sender_id_type, sender_id_number, sender_phone,
+        recipient_name, recipient_phone, recipient_address,
+        description, weight, flight_id || null, price, currency, payment_method, notes,
+        id
+      ]
+    );
+
+    await logAudit(req.user?.id, req.user?.name || 'admin', 'UPDATE_COLIS', 'colis', id, `Colis modifié ID: ${id}`, req.ip || '');
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
+// PUT /api/colis/:id/status — mettre à jour le statut
+app.put('/api/colis/:id/status', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const validStatuses = ['en_attente', 'en_vol', 'arrive', 'livre'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Statut invalide' });
+    }
+    await pool.execute(
+      `UPDATE colis SET status=?, updated_at=CONVERT_TZ(NOW(),'+00:00','-04:00') WHERE id=?`,
+      [status, id]
+    );
+    const statusLabel = { en_attente: 'En attente', en_vol: 'En vol', arrive: 'Arrivé', livre: 'Livré' }[status];
+    await logAudit(req.user?.id, req.user?.name || 'admin', 'UPDATE_COLIS_STATUS', 'colis', id,
+      `Statut colis ID ${id} → ${statusLabel}`, req.ip || '');
+    res.json({ success: true, status });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
+// DELETE /api/colis/:id
+app.delete('/api/colis/:id', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM colis WHERE id=?', [id]);
+    await logAudit(req.user?.id, req.user?.name || 'admin', 'DELETE_COLIS', 'colis', id, `Colis supprimé ID: ${id}`, req.ip || '');
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
+// GET /api/colis/:id/receipt — reçu HTML imprimable avec QR code
+app.get('/api/colis/:id/receipt', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT c.*, f.flight_number, f.departure_time, f.arrival_time, f.type AS flight_type,
+        dep.name AS dep_name, dep.city AS dep_city, dep.code AS dep_code,
+        arr.name AS arr_name, arr.city AS arr_city, arr.code AS arr_code
+       FROM colis c
+       LEFT JOIN flights f ON c.flight_id = f.id
+       LEFT JOIN locations dep ON f.departure_location_id = dep.id
+       LEFT JOIN locations arr ON f.arrival_location_id = arr.id
+       WHERE c.id = ?`, [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Colis introuvable' });
+    const c = rows[0];
+
+    const qrData = encodeURIComponent(c.tracking_code);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`;
+
+    const statusLabel: Record<string, string> = {
+      en_attente: 'En attente', en_vol: 'En vol', arrive: 'Arrivé', livre: 'Livré'
+    };
+    const idTypeLabel: Record<string, string> = {
+      nif: 'NIF', cin: 'CIN', passeport: 'Passeport', permis: 'Permis', nimu: 'NIMU', autre: 'Autre'
+    };
+    const payLabel: Record<string, string> = {
+      cash: 'Espèces', card: 'Carte', cheque: 'Chèque', virement: 'Virement', transfert: 'Dépôt'
+    };
+
+    const fmt = (d: string) => {
+      if (!d) return '—';
+      try { return new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }); }
+      catch { return d; }
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<title>Reçu Colis — ${c.tracking_code}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background:#f0f4f8; padding:20px; }
+  .page { max-width:680px; margin:0 auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.12); }
+  .header { background:linear-gradient(135deg,#1a237e,#283593); color:#fff; padding:24px 28px; display:flex; justify-content:space-between; align-items:center; }
+  .header-left h1 { font-size:1.4em; font-weight:700; letter-spacing:.5px; }
+  .header-left p { font-size:.82em; opacity:.8; margin-top:4px; }
+  .tracking-badge { background:rgba(255,255,255,.18); border:1.5px solid rgba(255,255,255,.4); border-radius:8px; padding:8px 16px; text-align:center; }
+  .tracking-badge .label { font-size:.7em; opacity:.8; text-transform:uppercase; letter-spacing:1px; }
+  .tracking-badge .code { font-size:1.1em; font-weight:800; letter-spacing:2px; margin-top:2px; }
+  .status-bar { display:flex; justify-content:center; gap:0; background:#f8f9fa; border-bottom:1px solid #e0e0e0; }
+  .step { flex:1; text-align:center; padding:10px 6px; font-size:.72em; font-weight:600; color:#999; border-right:1px solid #e0e0e0; position:relative; }
+  .step:last-child { border-right:none; }
+  .step.active { color:#1a237e; background:#e8eaf6; }
+  .step.done { color:#2e7d32; background:#e8f5e9; }
+  .step .dot { width:8px; height:8px; border-radius:50%; background:currentColor; margin:0 auto 4px; }
+  .body { padding:24px 28px; }
+  .section { margin-bottom:20px; }
+  .section-title { font-size:.7em; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#1a237e; padding-bottom:6px; border-bottom:2px solid #e8eaf6; margin-bottom:12px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .info-box { background:#f8f9fb; border-radius:8px; padding:12px 14px; }
+  .info-box .name { font-size:1em; font-weight:700; color:#1a1a2e; }
+  .info-box .detail { font-size:.78em; color:#555; margin-top:3px; line-height:1.6; }
+  .flight-box { background:linear-gradient(135deg,#e8eaf6,#fafafa); border-radius:8px; padding:12px 14px; display:flex; align-items:center; gap:14px; }
+  .flight-route { flex:1; }
+  .route-line { display:flex; align-items:center; gap:8px; font-weight:700; font-size:1em; color:#1a237e; }
+  .route-line span { color:#999; font-size:1.2em; }
+  .flight-meta { font-size:.75em; color:#555; margin-top:4px; }
+  .payment-row { display:flex; justify-content:space-between; align-items:center; background:#fff8e1; border-radius:8px; padding:12px 16px; border:1px solid #ffe082; }
+  .payment-amount { font-size:1.4em; font-weight:800; color:#e65100; }
+  .payment-meta { font-size:.78em; color:#555; text-align:right; }
+  .qr-section { display:flex; justify-content:center; align-items:center; gap:20px; background:#fafafa; border-radius:8px; padding:16px; border:1.5px dashed #c5cae9; }
+  .qr-text { font-size:.75em; color:#555; line-height:1.8; }
+  .footer { background:#1a237e; color:#fff; text-align:center; padding:14px; font-size:.75em; opacity:.9; }
+  .status-pill { display:inline-block; padding:3px 10px; border-radius:12px; font-size:.72em; font-weight:700; }
+  .pill-en_attente { background:#fff3e0; color:#e65100; }
+  .pill-en_vol { background:#e3f2fd; color:#1565c0; }
+  .pill-arrive { background:#e8f5e9; color:#2e7d32; }
+  .pill-livre { background:#f3e5f5; color:#6a1b9a; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .page { box-shadow:none; border-radius:0; }
+    .no-print { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="no-print" style="text-align:center;margin-bottom:16px;">
+  <button onclick="window.print()" style="background:#1a237e;color:#fff;border:none;padding:10px 28px;border-radius:8px;cursor:pointer;font-size:.9em;font-weight:600;">🖨️ Imprimer le reçu</button>
+</div>
+<div class="page">
+  <div class="header">
+    <div class="header-left">
+      <h1>🚀 Trogon Airways — Colis</h1>
+      <p>Reçu d'envoi de colis • ${fmt(c.created_at)}</p>
+    </div>
+    <div class="tracking-badge">
+      <div class="label">Code de suivi</div>
+      <div class="code">${c.tracking_code}</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="status-bar">
+    ${['en_attente','en_vol','arrive','livre'].map(s => {
+      const statuses = ['en_attente','en_vol','arrive','livre'];
+      const curIdx = statuses.indexOf(c.status);
+      const sIdx = statuses.indexOf(s);
+      const labels: Record<string,string> = { en_attente:'En attente', en_vol:'En vol', arrive:'Arrivé', livre:'Livré' };
+      const cls = sIdx < curIdx ? 'done' : sIdx === curIdx ? 'active' : '';
+      return `<div class="step ${cls}"><div class="dot"></div>${labels[s]}</div>`;
+    }).join('')}
+  </div>
+
+  <div class="body">
+    <!-- Expéditeur / Destinataire -->
+    <div class="section">
+      <div class="section-title">Parties concernées</div>
+      <div class="grid2">
+        <div class="info-box">
+          <div style="font-size:.68em;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📤 Expéditeur</div>
+          <div class="name">${c.sender_name}</div>
+          <div class="detail">
+            ${c.sender_id_type ? `${idTypeLabel[c.sender_id_type] || c.sender_id_type}: ${c.sender_id_number || '—'}` : ''}
+            ${c.sender_phone ? `<br/>📞 ${c.sender_phone}` : ''}
+          </div>
+        </div>
+        <div class="info-box">
+          <div style="font-size:.68em;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📥 Destinataire</div>
+          <div class="name">${c.recipient_name}</div>
+          <div class="detail">
+            ${c.recipient_phone ? `📞 ${c.recipient_phone}` : ''}
+            ${c.recipient_address ? `<br/>📍 ${c.recipient_address}` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vol -->
+    ${c.flight_id ? `
+    <div class="section">
+      <div class="section-title">Vol associé</div>
+      <div class="flight-box">
+        <div style="font-size:2em;">✈️</div>
+        <div class="flight-route">
+          <div class="route-line">${c.dep_name || '—'} <span>→</span> ${c.arr_name || '—'}</div>
+          <div class="flight-meta">Vol N° <strong>${c.flight_number}</strong> • Départ: ${fmt(c.departure_time)} • Arrivée: ${fmt(c.arrival_time)}</div>
+        </div>
+        <span class="status-pill pill-${c.status}">${statusLabel[c.status] || c.status}</span>
+      </div>
+    </div>` : ''}
+
+    <!-- Détails colis -->
+    <div class="section">
+      <div class="section-title">Détails du colis</div>
+      <div class="grid2">
+        <div class="info-box">
+          <div class="detail" style="line-height:2;">
+            <strong>Description:</strong> ${c.description || '—'}<br/>
+            <strong>Poids:</strong> ${c.weight ? c.weight + ' kg' : '—'}<br/>
+            <strong>Notes:</strong> ${c.notes || '—'}
+          </div>
+        </div>
+        <div class="info-box">
+          <div class="detail" style="line-height:2;">
+            <strong>Créé par:</strong> ${c.created_by_name || '—'}<br/>
+            <strong>Date d'enregistrement:</strong> ${fmt(c.created_at)}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paiement -->
+    <div class="section">
+      <div class="section-title">Paiement</div>
+      <div class="payment-row">
+        <div>
+          <div style="font-size:.75em;color:#555;">Montant total</div>
+          <div class="payment-amount">${Number(c.price).toFixed(2)} ${(c.currency||'USD').toUpperCase()}</div>
+        </div>
+        <div class="payment-meta">
+          Méthode: <strong>${payLabel[c.payment_method] || c.payment_method || '—'}</strong><br/>
+          Statut: <span class="status-pill pill-${c.status}">${statusLabel[c.status]}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="section">
+      <div class="qr-section">
+        <img src="${qrUrl}" alt="QR ${c.tracking_code}" width="120" height="120"/>
+        <div class="qr-text">
+          <strong style="font-size:.9em;color:#1a237e;">Scannez pour suivre votre colis</strong><br/><br/>
+          Code de suivi: <strong>${c.tracking_code}</strong><br/>
+          Expéditeur: ${c.sender_name}<br/>
+          Destinataire: ${c.recipient_name}<br/>
+          Statut: ${statusLabel[c.status] || c.status}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Trogon Airways • Service Colis • info@trogonairways.com • +509 3341-04004
+  </div>
+</div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
+
 server.listen(process.env.PORT || 3000, () => {
   console.log(`Server running on port ${process.env.PORT || 3000}`);
 });

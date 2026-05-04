@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
 import { useTheme } from "../../../contexts/theme-context";
-import { ShoppingCart, Gift, Tags, Plane, Search, DollarSign, TrendingUp } from "lucide-react";
+import { ShoppingCart, Gift, Tags, Plane, Search, DollarSign, TrendingUp, Package, PackageCheck, Truck } from "lucide-react";
 import { Footer } from "../../../layouts/footer";
 
 import type { Payload } from "recharts/types/component/DefaultTooltipContent";
@@ -55,6 +55,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 const DashboardPage = () => {
     const { theme } = useTheme();
     const [stats, setStats] = useState<DashboardStats2 | null>(null);
+    const [colisStats, setColisStats] = useState({ en_attente: 0, en_vol: 0, arrive: 0, livre: 0, total: 0 });
     const [filteredStats, setFilteredStats] = useState<FilteredStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -98,6 +99,17 @@ const DashboardPage = () => {
             setLoading(true);
 
             const response = await fetch("https://steve-airways.onrender.com/api/dashboard-stats");
+            // Fetch colis stats
+            try {
+                const token = localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+                const colisRes = await fetch("https://steve-airways.onrender.com/api/colis/stats", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (colisRes.ok) {
+                    const colisData = await colisRes.json();
+                    setColisStats(colisData.stats || { en_attente: 0, en_vol: 0, arrive: 0, livre: 0, total: 0 });
+                }
+            } catch (_) {}
 
             if (!response.ok) {
                 throw new Error(`Erreur HTTP: ${response.status}`);
@@ -374,6 +386,73 @@ const DashboardPage = () => {
                     </div>
                 </div>
             </div>
+
+
+            {/* ─── Section Colis ─────────────────────────────────────────────── */}
+            {colisStats.total > 0 && (
+                <div className="rounded-2xl bg-white shadow-sm p-4 border border-slate-100">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="flex items-center gap-2 font-bold text-slate-700 text-sm">
+                            <Package className="h-4 w-4 text-indigo-600" />
+                            Suivi des Colis
+                        </h3>
+                        <a href="./colis" className="text-xs text-indigo-600 hover:underline font-medium">Voir tout →</a>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div className="flex items-center gap-3 rounded-xl bg-orange-50 p-3 border border-orange-100">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+                                <span className="text-lg">⏳</span>
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-orange-700">{colisStats.en_attente}</div>
+                                <div className="text-xs font-medium text-orange-500">En attente</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl bg-blue-50 p-3 border border-blue-100">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                                <Plane className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-blue-700">{colisStats.en_vol}</div>
+                                <div className="text-xs font-medium text-blue-500">En vol</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl bg-green-50 p-3 border border-green-100">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                                <PackageCheck className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-green-700">{colisStats.arrive}</div>
+                                <div className="text-xs font-medium text-green-500">Arrivés ✓</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl bg-purple-50 p-3 border border-purple-100">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+                                <Truck className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-purple-700">{colisStats.livre}</div>
+                                <div className="text-xs font-medium text-purple-500">Livrés ✓</div>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Barre de progression */}
+                    {colisStats.total > 0 && (
+                        <div className="mt-3">
+                            <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                                {colisStats.en_attente > 0 && <div className="bg-orange-400 transition-all" style={{ width: `${(colisStats.en_attente/colisStats.total)*100}%` }} />}
+                                {colisStats.en_vol > 0 && <div className="bg-blue-400 transition-all" style={{ width: `${(colisStats.en_vol/colisStats.total)*100}%` }} />}
+                                {colisStats.arrive > 0 && <div className="bg-green-400 transition-all" style={{ width: `${(colisStats.arrive/colisStats.total)*100}%` }} />}
+                                {colisStats.livre > 0 && <div className="bg-purple-400 transition-all" style={{ width: `${(colisStats.livre/colisStats.total)*100}%` }} />}
+                            </div>
+                            <div className="mt-1 flex justify-between text-xs text-slate-400">
+                                <span>{colisStats.total} colis au total</span>
+                                <span>{colisStats.livre} livrés ({Math.round((colisStats.livre/colisStats.total)*100)}%)</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Graphiques (données globales, non affectées par la recherche) */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-8">

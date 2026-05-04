@@ -1,4 +1,4 @@
-import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List, MapPin, PlusCircle, ClipboardList, Tag, BarChart2, RefreshCcw, ShieldCheck, UserCircle } from "lucide-react";
+import { TowerControl , Plane, Lock, Armchair, Settings, Users, LayoutDashboard, UserRound, House, Info, Contact, List, MapPin, PlusCircle, ClipboardList, Tag, BarChart2, RefreshCcw, ShieldCheck, UserCircle, Package } from "lucide-react";
 import { HelicopterIcon } from "../components/icons/HelicopterIcon";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -98,6 +98,7 @@ const {
   const canRefunds = isAdmin || hasPermission("refunds");
   const canPromoCodes = isAdmin || hasPermission("promoCodes");
   const canRapport = isAdmin || hasPermission("rapport");
+  const canColis = isAdmin || hasPermission("colis");
 
   // La section "Réservations" s'affiche dès qu'au moins une sous-permission est accordée
   const showReservationsSection = canManualBooking || canViewBookingsPlane || canViewBookingsHelico || canViewBookingsCharter || canPassengers || canRefunds;
@@ -156,6 +157,14 @@ const {
       icon: MapPin,
       links: [
         { label: "Gérer destinations", icon: MapPin, path: `/${lang}/dashboard/locations` },
+      ],
+    },
+
+    canColis && {
+      title: "Colis",
+      icon: Package,
+      links: [
+        { label: "Gestion des colis", icon: Package, path: `/${lang}/dashboard/colis` },
       ],
     },
 

@@ -43,6 +43,7 @@ import RefundsPage from "./routes/dashboard/refunds/page";
 import AuditLogsPage from "./routes/dashboard/auditlogs/page";
 import SettingsPage from "./routes/dashboard/settings/page";
 import ReportsPage from "./routes/dashboard/reports/page";
+import ColisPage from "./routes/dashboard/colis/page";
 import PromoCodesPage from "./routes/dashboard/promocodes/page";
 
 const router = createBrowserRouter([
@@ -258,6 +259,14 @@ const router = createBrowserRouter([
                 element: (
                     <ProtectedRoute requiredPermission="rapport">
                         <ReportsPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "colis",
+                element: (
+                    <ProtectedRoute requiredPermission="colis">
+                        <ColisPage />
                     </ProtectedRoute>
                 ),
             },
