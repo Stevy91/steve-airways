@@ -1862,6 +1862,13 @@ app.post("/api/create-ticketdernier", authMiddleware, async (req: any, res: Resp
     // Commit final
     await connection.commit();
 
+    await logAudit(
+      userId,
+      req.user?.name || req.user?.username || 'admin',
+      'CREATE_TICKET', 'booking', bookingResult.insertId,
+      `Ticket créé — Réf: ${bookingReference} — Vol ID: ${flightId} — ${passengers.length} passager(s) — Méthode: ${paymentMethod} — Total: ${totalPrice}`,
+      req.ip || ''
+    );
     // ✅ Réponse succès
     res.status(200).json({
       success: true,
@@ -2289,6 +2296,13 @@ app.post("/api/create-ticket", authMiddleware, async (req: any, res: Response) =
     // Commit final
     await connection.commit();
 
+    await logAudit(
+      userId,
+      req.user?.name || req.user?.username || 'admin',
+      'CREATE_TICKET', 'booking', bookingResult.insertId,
+      `Ticket créé — Réf: ${bookingReference} — Vol ID: ${flightId} — ${passengers.length} passager(s) — Méthode: ${paymentMethod} — Total: ${totalPrice}`,
+      req.ip || ''
+    );
     // ✅ Réponse succès
     res.status(200).json({
       success: true,
@@ -5812,7 +5826,14 @@ app.put("/api/cancelFlight/:id", async (req: Request, res: Response) => {
     }
 
     await connection.commit();
-    
+
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'CANCEL_FLIGHT', 'flight', flightId,
+      `Vol annulé (ID: ${flightId}) — ${passengers.length} passager(s) notifié(s). Notes: ${cancelNotes || ''}`,
+      req.ip || ''
+    );
     res.json({
       success: true,
       message: "Vol désactivé avec succès",
@@ -6460,7 +6481,14 @@ For any questions, please contact our customer service.
     }
 
     await connection.commit();
-    
+
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'RESCHEDULE_FLIGHT', 'flight', flightId,
+      `Vol reprogrammé (ID: ${flightId}) — ${changes.length} changement(s): ${changes.map(c => c.field).join(', ')}`,
+      req.ip || ''
+    );
     res.status(200).json({
       success: true,
       message: "Vol modifié avec succès",
@@ -10759,6 +10787,13 @@ app.put("/api/updateflight/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Vol non trouvé" });
     }
 
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'UPDATE_FLIGHT', 'flight', flightId,
+      `Vol modifié (ID: ${flightId}) — champs: ${setFields.join(', ')}`,
+      req.ip || ''
+    );
     res.status(200).json(rows[0]);
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -10801,6 +10836,13 @@ app.delete("/api/deleteflights/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Aucun vol supprimé" });
     }
 
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'DELETE_FLIGHT', 'flight', flightId,
+      `Vol supprimé (ID: ${flightId})`,
+      req.ip || ''
+    );
     res.status(200).json({
       success: true,
       message: `Vol ${flightId} supprimé avec succès`,
