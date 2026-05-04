@@ -264,7 +264,7 @@ export default function ReportsPage() {
     const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='UTF-8'>${style}</head>
 <body>
-  <h1>Steve Airways — Rapport Financier</h1>
+  <h1>Trogon Airways — Rapport Financier</h1>
   <p class='meta'>Periode : <b>${period}</b> &nbsp;|&nbsp; Type de vol : <b>${volLabel}</b> &nbsp;|&nbsp; Devise : <b>${currency}</b> &nbsp;|&nbsp; Genere le : <b>${genDate}</b></p>
   ${kpiTable}
   ${monthTable}
@@ -303,7 +303,7 @@ export default function ReportsPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.text("Steve Airways", margin, 13);
+      doc.text("Trogon Airways", margin, 13);
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
       doc.text("Rapport Financier", margin, 21);
@@ -461,7 +461,7 @@ export default function ReportsPage() {
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(7);
         doc.setFont("helvetica", "normal");
-        doc.text("Steve Airways — Rapport confidentiel — " + new Date().toLocaleDateString("fr-FR"), margin, 293);
+        doc.text("Trogon Airways — Rapport confidentiel — " + new Date().toLocaleDateString("fr-FR"), margin, 293);
         doc.text("Page " + i + " / " + pageCount, W - margin, 293, { align: "right" });
       }
 

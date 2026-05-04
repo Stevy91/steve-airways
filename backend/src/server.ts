@@ -12332,6 +12332,168 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// PROMO CODES — CRUD + VALIDATE
+// ═══════════════════════════════════════════════════════════════════
+
+// GET /api/promo-codes — lister tous les codes
+app.get("/api/promo-codes", authMiddleware, async (req: any, res: Response) => {
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM promo_codes ORDER BY created_at DESC`
+    );
+    res.json({ promoCodes: rows });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// POST /api/promo-codes — créer un code
+app.post("/api/promo-codes", authMiddleware, async (req: any, res: Response) => {
+  const { code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, is_active, description } = req.body;
+  if (!code || !discount_type || discount_value == null) {
+    return res.status(400).json({ error: "Code, type et valeur de remise requis" });
+  }
+  try {
+    const [result] = await pool.execute<mysql.OkPacket>(
+      `INSERT INTO promo_codes (code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, is_active, description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        code.toUpperCase().trim(),
+        discount_type,
+        Number(discount_value),
+        Number(min_amount) || 0,
+        max_uses ? Number(max_uses) : null,
+        valid_from || null,
+        valid_until || null,
+        applies_to || 'all',
+        is_active !== undefined ? Number(is_active) : 1,
+        description || null,
+      ]
+    );
+    await logAudit(req.user?.id, req.user?.name || req.user?.username || 'admin', 'CREATE_PROMO', 'promo_code', result.insertId, `Code: ${code}`, req.ip);
+    res.json({ success: true, id: result.insertId });
+  } catch (err: any) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: "Ce code existe déjà" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// PUT /api/promo-codes/:id — modifier un code
+app.put("/api/promo-codes/:id", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { code, discount_type, discount_value, min_amount, max_uses, valid_from, valid_until, applies_to, is_active, description } = req.body;
+  try {
+    await pool.execute(
+      `UPDATE promo_codes SET code=?, discount_type=?, discount_value=?, min_amount=?, max_uses=?,
+       valid_from=?, valid_until=?, applies_to=?, is_active=?, description=? WHERE id=?`,
+      [
+        (code || '').toUpperCase().trim(),
+        discount_type,
+        Number(discount_value),
+        Number(min_amount) || 0,
+        max_uses ? Number(max_uses) : null,
+        valid_from || null,
+        valid_until || null,
+        applies_to || 'all',
+        is_active !== undefined ? Number(is_active) : 1,
+        description || null,
+        id,
+      ]
+    );
+    await logAudit(req.user?.id, req.user?.name || req.user?.username || 'admin', 'UPDATE_PROMO', 'promo_code', id, `Mise à jour code ID ${id}`, req.ip);
+    res.json({ success: true });
+  } catch (err: any) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: "Ce code existe déjà" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// DELETE /api/promo-codes/:id — supprimer un code
+app.delete("/api/promo-codes/:id", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    await pool.execute(`DELETE FROM promo_codes WHERE id=?`, [id]);
+    await logAudit(req.user?.id, req.user?.name || req.user?.username || 'admin', 'DELETE_PROMO', 'promo_code', id, `Suppression code ID ${id}`, req.ip);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// POST /api/promo-codes/validate — valider un code lors d'une réservation
+// Body: { code, amount, type_vol }
+// Returns: { valid, discount_amount, discount_type, discount_value, message }
+app.post("/api/promo-codes/validate", authMiddleware, async (req: any, res: Response) => {
+  const { code, amount, type_vol } = req.body;
+  if (!code) return res.status(400).json({ error: "Code requis" });
+  try {
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT * FROM promo_codes WHERE code = ? AND is_active = 1`, [code.toUpperCase().trim()]
+    );
+    if (!rows.length) {
+      return res.json({ valid: false, message: "Code promo invalide ou inactif" });
+    }
+    const promo = rows[0];
+    const now = new Date();
+
+    // Vérifier validité temporelle
+    if (promo.valid_from && new Date(promo.valid_from) > now) {
+      return res.json({ valid: false, message: `Code valide à partir du ${new Date(promo.valid_from).toLocaleDateString('fr-FR')}` });
+    }
+    if (promo.valid_until && new Date(promo.valid_until) < now) {
+      return res.json({ valid: false, message: "Code promo expiré" });
+    }
+
+    // Vérifier limite d'utilisations
+    if (promo.max_uses !== null && promo.used_count >= promo.max_uses) {
+      return res.json({ valid: false, message: "Code promo épuisé (limite atteinte)" });
+    }
+
+    // Vérifier type de vol
+    if (promo.applies_to !== 'all' && type_vol && promo.applies_to !== type_vol) {
+      return res.json({ valid: false, message: `Ce code s'applique uniquement aux vols ${promo.applies_to}` });
+    }
+
+    // Vérifier montant minimum
+    const bookingAmount = Number(amount) || 0;
+    if (promo.min_amount > 0 && bookingAmount < promo.min_amount) {
+      return res.json({ valid: false, message: `Montant minimum requis: ${promo.min_amount} $` });
+    }
+
+    // Calculer la remise
+    let discount_amount = 0;
+    if (promo.discount_type === 'percentage') {
+      discount_amount = (bookingAmount * promo.discount_value) / 100;
+    } else {
+      discount_amount = Math.min(promo.discount_value, bookingAmount);
+    }
+
+    res.json({
+      valid: true,
+      discount_amount: Number(discount_amount.toFixed(2)),
+      discount_type: promo.discount_type,
+      discount_value: promo.discount_value,
+      promo_id: promo.id,
+      message: `Code appliqué : -${promo.discount_type === 'percentage' ? promo.discount_value + '%' : promo.discount_value + '$'}`,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// POST /api/promo-codes/use — incrémenter le compteur d'utilisation après réservation confirmée
+app.post("/api/promo-codes/use", authMiddleware, async (req: any, res: Response) => {
+  const { promo_id } = req.body;
+  if (!promo_id) return res.status(400).json({ error: "promo_id requis" });
+  try {
+    await pool.execute(`UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?`, [promo_id]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
 server.listen(process.env.PORT || 3000, () => {
   console.log(`Server running on port ${process.env.PORT || 3000}`);
 });
