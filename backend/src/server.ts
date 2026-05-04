@@ -12238,7 +12238,7 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
         // Match 'usd', 'USD', or NULL (dashboard treats NULL as USD)
         where += " AND (UPPER(IFNULL(p.currency, IFNULL(b.currency, 'usd'))) = 'USD' OR COALESCE(p.currency, b.currency) IS NULL)";
       } else {
-        where += " AND UPPER(IFNULL(p.currency, b.currency)) = UPPER(?)";
+        where += " AND UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) = UPPER(?)";
         params.push(currency);
       }
     }
@@ -12248,45 +12248,45 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
     // Revenus par mois — utilise payments.amount (vrai montant encaissé)
     const [byMonth] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT DATE_FORMAT(b.created_at,'%Y-%m') as month,
-              UPPER(IFNULL(p.currency, b.currency)) as currency,
+              UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency,
               COUNT(DISTINCT b.id) as bookings,
               SUM(IFNULL(p.amount, b.total_price)) as revenue
        ${joinPayments} ${where}
-       GROUP BY month, UPPER(IFNULL(p.currency, b.currency))
+       GROUP BY month, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))
        ORDER BY month ASC`, params
     );
     // Revenus par type de vol
     const [byType] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT b.type_vol,
-              UPPER(IFNULL(p.currency, b.currency)) as currency,
+              UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency,
               COUNT(DISTINCT b.id) as bookings,
               SUM(IFNULL(p.amount, b.total_price)) as revenue
        ${joinPayments} ${where}
-       GROUP BY b.type_vol, UPPER(IFNULL(p.currency, b.currency))`, params
+       GROUP BY b.type_vol, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))`, params
     );
     // Revenus par route (départ → arrivée)
     const [byRoute] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT l1.name as departure, l2.name as destination,
               COUNT(DISTINCT b.id) as bookings,
               SUM(IFNULL(p.amount, b.total_price)) as revenue,
-              UPPER(IFNULL(p.currency, b.currency)) as currency
+              UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency
        ${joinPayments}
        LEFT JOIN flights f ON b.flight_id=f.id
        LEFT JOIN locations l1 ON f.departure_location_id=l1.id
        LEFT JOIN locations l2 ON f.arrival_location_id=l2.id
        ${where}
-       GROUP BY l1.name, l2.name, UPPER(IFNULL(p.currency, b.currency))
+       GROUP BY l1.name, l2.name, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))
        ORDER BY revenue DESC LIMIT 10`, params
     );
     // Totaux globaux
     const [totals] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT UPPER(IFNULL(p.currency, b.currency)) as currency,
+      `SELECT UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency,
               COUNT(DISTINCT b.id) as total_bookings,
               SUM(IFNULL(p.amount, b.total_price)) as total_revenue,
               AVG(IFNULL(p.amount, b.total_price)) as avg_booking_value,
               SUM(b.passenger_count) as total_passengers
        ${joinPayments} ${where}
-       GROUP BY UPPER(IFNULL(p.currency, b.currency))`, params
+       GROUP BY UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))`, params
     );
 
     // Répartition par méthode de paiement
@@ -12294,9 +12294,9 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
       `SELECT IFNULL(p.payment_method, 'Inconnu') as payment_method,
               COUNT(DISTINCT b.id) as count,
               SUM(IFNULL(p.amount, b.total_price)) as amount,
-              UPPER(IFNULL(p.currency, b.currency)) as currency
+              UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency
        ${joinPayments} ${where}
-       GROUP BY p.payment_method, UPPER(IFNULL(p.currency, b.currency))
+       GROUP BY p.payment_method, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))
        ORDER BY amount DESC`, params
     );
     // Répartition par statut
