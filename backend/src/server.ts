@@ -10988,8 +10988,9 @@ initMissingTables();
 // Middleware pour logger les actions dans audit_logs
 async function logAudit(userId: number | null, userName: string, action: string, entityType: string, entityId: string | number | null, details: string, ip: string) {
   try {
+    // Heure Haïti = UTC-4
     await pool.query(
-      `INSERT INTO audit_logs (user_id, user_name, action, entity_type, entity_id, details, ip_address) VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO audit_logs (user_id, user_name, action, entity_type, entity_id, details, ip_address, created_at) VALUES (?,?,?,?,?,?,?, CONVERT_TZ(NOW(),'+00:00','-04:00'))`,
       [userId, userName, action, entityType, entityId ? String(entityId) : null, details, ip]
     );
   } catch (e) { /* non bloquant */ }
