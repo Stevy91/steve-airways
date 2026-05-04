@@ -12255,18 +12255,23 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
        GROUP BY month, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))
        ORDER BY month ASC`, params
     );
-    // Revenus par type de vol
+    // Revenus par type de vol (charter identifié via typecharter)
     const [byType] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT b.type_vol,
+      `SELECT CASE
+                WHEN b.typecharter IS NOT NULL AND b.typecharter != '' THEN 'charter'
+                ELSE IFNULL(b.type_vol, 'plane')
+              END as type_vol,
               UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency,
               COUNT(DISTINCT b.id) as bookings,
               SUM(IFNULL(p.amount, b.total_price)) as revenue
        ${joinPayments} ${where}
-       GROUP BY b.type_vol, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))`, params
+       GROUP BY CASE WHEN b.typecharter IS NOT NULL AND b.typecharter != '' THEN 'charter' ELSE IFNULL(b.type_vol,'plane') END,
+                UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))`, params
     );
-    // Revenus par route (départ → arrivée)
+    // Revenus par route (départ → arrivée) — NULL = charter/hélico sans trajet fixe
     const [byRoute] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT l1.name as departure, l2.name as destination,
+      `SELECT COALESCE(l1.name, 'Charter / Vol direct') as departure,
+              COALESCE(l2.name, '') as destination,
               COUNT(DISTINCT b.id) as bookings,
               SUM(IFNULL(p.amount, b.total_price)) as revenue,
               UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD'))) as currency
@@ -12275,8 +12280,10 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
        LEFT JOIN locations l1 ON f.departure_location_id=l1.id
        LEFT JOIN locations l2 ON f.arrival_location_id=l2.id
        ${where}
-       GROUP BY l1.name, l2.name, UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))
-       ORDER BY revenue DESC LIMIT 10`, params
+       GROUP BY COALESCE(l1.name, 'Charter / Vol direct'),
+                COALESCE(l2.name, ''),
+                UPPER(IFNULL(p.currency, IFNULL(b.currency, 'USD')))
+       ORDER BY revenue DESC LIMIT 15`, params
     );
     // Totaux globaux
     const [totals] = await pool.query<mysql.RowDataPacket[]>(

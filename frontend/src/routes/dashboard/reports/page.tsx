@@ -110,18 +110,27 @@ export default function ReportsPage() {
 
   useEffect(() => { fetchReports(); }, []);
 
-  const totals: Partial<Totals> = data?.totals?.find((t) => t.currency === currency) || {};
+  // currency matching: backend now normalises NULL → 'USD', but keep fallback
+  const matchCur = (c: string | null) => !currency || (c || 'USD') === currency;
+
+  const totals: Partial<Totals> = data?.totals?.find((t) => matchCur(t.currency)) || {};
   const byMonth = (data?.by_month || [])
-    .filter((m) => !currency || m.currency === currency)
+    .filter((m) => matchCur(m.currency))
     .map((m) => ({ ...m, month: formatMonth(m.month), revenue: Number(m.revenue) || 0, bookings: Number(m.bookings) || 0 }));
   const byType = (data?.by_type || [])
-    .filter((t) => !currency || t.currency === currency)
+    .filter((t) => matchCur(t.currency))
     .map((t) => ({ ...t, revenue: Number(t.revenue) || 0, bookings: Number(t.bookings) || 0 }));
   const byRoute = (data?.by_route || [])
-    .filter((r) => !currency || r.currency === currency)
-    .map((r) => ({ ...r, revenue: Number(r.revenue) || 0, bookings: Number(r.bookings) || 0, route: r.departure + " > " + r.destination }));
+    .filter((r) => matchCur(r.currency))
+    .map((r) => ({
+      ...r,
+      revenue: Number(r.revenue) || 0,
+      bookings: Number(r.bookings) || 0,
+      // "Charter / Vol direct" when departure has no linked destination
+      route: r.destination ? r.departure + " > " + r.destination : r.departure,
+    }));
   const byPayment = (data?.by_payment || [])
-    .filter((p) => !currency || p.currency === currency)
+    .filter((p) => matchCur(p.currency))
     .map((p) => ({ ...p, amount: Number(p.amount) || 0, count: Number(p.count) || 0 }));
   const byStatus = (data?.by_status || [])
     .map((s) => ({ ...s, count: Number(s.count) || 0, name: STATUS_LABELS[s.status] || s.status }));
