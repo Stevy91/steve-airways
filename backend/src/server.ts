@@ -12807,7 +12807,7 @@ app.put('/api/colis/:id/status', authMiddleware, async (req: any, res: Response)
       `UPDATE colis SET status=?, updated_at=CONVERT_TZ(NOW(),'+00:00','-04:00') WHERE id=?`,
       [status, id]
     );
-    const statusLabel = { en_attente: 'En attente', en_vol: 'En vol', arrive: 'Arrivé', livre: 'Livré' }[status];
+    const statusLabel = ({ en_attente: 'En attente', en_vol: 'En vol', arrive: 'Arrivé', livre: 'Livré' } as Record<string, string>)[status];
     await logAudit(req.user?.id, req.user?.name || 'admin', 'UPDATE_COLIS_STATUS', 'colis', id,
       `Statut colis ID ${id} → ${statusLabel}`, req.ip || '');
     res.json({ success: true, status });
