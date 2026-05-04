@@ -812,32 +812,40 @@ const handlePassengerChange = (index: number, field: keyof Passenger, value: str
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                                                                <div>
-                                                                    <div className="text-sm text-slate-600">
-                                                                        <span className="font-semibold text-slate-700">Route: </span>
-                                                                        {flight.from} → {flight.to}
+                                                            <div className="rounded-xl bg-blue-50/50 p-4 space-y-3">
+                                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                                    <div className="text-sm text-slate-700">
+                                                                        <span className="font-semibold">✈ N° vol:</span>{" "}
+                                                                        <span className="font-bold text-blue-700">{flight.code || flight.flight_number || "—"}</span>
                                                                     </div>
-                                                                    <div className="text-sm text-slate-600">
-                                                                        <span className="font-semibold text-slate-700">Date: </span>
-                                                                        {formatDateSafely(flight.date, "EEE, dd MMM yy")} at{" "}
-                                                                        {(() => {
-                                                                            try {
-                                                                                const date = new Date(flight.date);
-                                                                                return isNaN(date.getTime())
-                                                                                    ? "Invalid time"
-                                                                                    : date.toLocaleTimeString("fr-FR", {
-                                                                                          hour: "2-digit",
-                                                                                          minute: "2-digit",
-                                                                                      });
-                                                                            } catch (error) {
-                                                                                return "Invalid time";
-                                                                            }
-                                                                        })()}
+                                                                    {(flight as any).airline && (
+                                                                        <div className="text-sm text-slate-700">
+                                                                            <span className="font-semibold">Compagnie:</span>{" "}{(flight as any).airline}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-sm text-slate-700">
+                                                                    <span className="font-semibold">Route:</span>{" "}
+                                                                    <span className="font-medium text-slate-800">
+                                                                        {flight.from || "—"}{(flight as any).departure_code ? ` (${(flight as any).departure_code})` : ""}
+                                                                        {" → "}
+                                                                        {flight.to || "—"}{(flight as any).arrival_code ? ` (${(flight as any).arrival_code})` : ""}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                                                    <div className="text-sm text-slate-700">
+                                                                        <span className="font-semibold">🛫 Départ:</span>{" "}
+                                                                        {flight.date ? (
+                                                                            <>{formatDateSafely(flight.date, "EEE dd MMM yy")}{" à "}
+                                                                            {new Date(flight.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</>
+                                                                        ) : "—"}
                                                                     </div>
-                                                                    <div className="text-sm text-slate-600">
-                                                                        <span className="font-semibold text-slate-700">Flight Number: </span>
-                                                                        <span className="font-bold text-blue-700">{flight.code}</span>
+                                                                    <div className="text-sm text-slate-700">
+                                                                        <span className="font-semibold">🛬 Arrivée:</span>{" "}
+                                                                        {flight.arrival_date ? (
+                                                                            <>{formatDateSafely(flight.arrival_date, "EEE dd MMM yy")}{" à "}
+                                                                            {new Date(flight.arrival_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</>
+                                                                        ) : "—"}
                                                                     </div>
                                                                 </div>
                                                             </div>

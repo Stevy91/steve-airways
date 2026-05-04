@@ -3097,6 +3097,14 @@ app.post("/api/login", async (req: Request, res: Response) => {
       { expiresIn: "1d" }
     );
 
+    await logAudit(
+      user.id,
+      user.name || user.username,
+      'LOGIN', 'user', user.id,
+      `Connexion réussie — Email: ${user.email} — Rôle: ${user.role}`,
+      req.ip || ''
+    );
+
     res.json({
       success: true,
       token,
@@ -3477,12 +3485,21 @@ app.get("/api/profile", authMiddleware, async (req: any, res: Response) => {
 
 const tokenBlacklist: string[] = [];
 
-app.post("/api/logout", authMiddleware, (req: any, res: Response) => {
+app.post("/api/logout", authMiddleware, async (req: any, res: Response) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
   if (token) {
     tokenBlacklist.push(token); // ajouter à la blacklist
   }
+  try {
+    await logAudit(
+      req.user?.id || null,
+      req.user?.name || req.user?.username || 'inconnu',
+      'LOGOUT', 'user', req.user?.id || null,
+      `Déconnexion — Email: ${req.user?.email || 'N/A'}`,
+      req.ip || ''
+    );
+  } catch (_) {}
   res.json({ success: true, message: "Déconnecté avec succès" });
 });
 
@@ -3990,6 +4007,17 @@ app.get("/api/generate/:reference", async (req: Request, res: Response) => {
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=${reference}.pdf`);
+
+    // Log avant envoi
+    try {
+      await logAudit(
+        null, 'admin',
+        'DOWNLOAD_TICKET', 'booking', reference,
+        `Billet téléchargé — Réf: ${reference}`,
+        req.ip || ''
+      );
+    } catch (_) {}
+
     res.send(pdfBuffer);
 
   } catch (err) {
@@ -4047,6 +4075,18 @@ app.post("/api/addflighttable", async (req: Request, res: Response) => {
     console.log("Résultat INSERT:", result); // Ajouté pour le debug
 
     const [rows] = await pool.query<Flight[]>("SELECT * FROM flights WHERE id = ?", [result.insertId]);
+
+    const flightType = req.body.typecharter
+      ? `charter (${req.body.typecharter})`
+      : (req.body.type === 'helicopter' ? 'hélicoptère' : 'avion');
+
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'CREATE_FLIGHT', 'flight', result.insertId,
+      `Vol créé — N°: ${req.body.flight_number} — Type: ${flightType} — Départ: ${req.body.departure_time} — Arrivée: ${req.body.arrival_time} — Places: ${req.body.seats_available || 0}`,
+      req.ip || ''
+    );
 
     res.status(201).json(rows[0]);
   } catch (error: unknown) {
@@ -5569,6 +5609,14 @@ app.put("/api/bookings/:reference", async (req: Request, res: Response) => {
 
     // ✅ COMMIT
     await connection.commit();
+
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'EDIT_BOOKING', 'booking', reference,
+      `Réservation modifiée — Réf: ${reference} — Vol changé: ${flightChanged || returnFlightChanged ? 'Oui' : 'Non'} — Passagers: ${passengers ? passengers.length : '?'}`,
+      req.ip || ''
+    );
 
     // Réponse
     res.json({
@@ -10613,6 +10661,15 @@ app.put("/api/booking-plane/:reference/payment-status", async (req: Request, res
     console.log(`💾 DEBUG - Commit transaction`);
     await connection.commit();
     console.log(`✅ DEBUG - Transaction commitée`);
+
+    const statusLabel = paymentStatus === "confirmed" ? "Payé" : paymentStatus === "cancelled" ? "Annulé" : "En attente";
+    await logAudit(
+      (req as any).user?.id || null,
+      (req as any).user?.name || (req as any).user?.username || 'admin',
+      'UPDATE_STATUS', 'booking', reference,
+      `Statut mis à jour — Réf: ${reference} — Nouveau statut: ${statusLabel}`,
+      req.ip || ''
+    );
 
     res.json({
       success: true,
