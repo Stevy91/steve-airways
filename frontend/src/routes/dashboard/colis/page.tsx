@@ -255,6 +255,8 @@ export default function ColisPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   // Photo saved separately on delivery-verify
   const [photoSavingId, setPhotoSavingId] = useState<number | null>(null);
+  // Photo preview lightbox
+  const [photoPreview, setPhotoPreview] = useState<{ src: string; code: string } | null>(null);
 
   const filteredFlights = allFlights.filter(f => f.type === form.flightType);
 
@@ -452,6 +454,7 @@ export default function ColisPage() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3 text-left">Code suivi</th>
+                  <th className="px-4 py-3 text-center">Photo</th>
                   <th className="px-4 py-3 text-left">Expéditeur</th>
                   <th className="px-4 py-3 text-left">Destinataire</th>
                   <th className="px-4 py-3 text-left">Vol</th>
@@ -470,6 +473,24 @@ export default function ColisPage() {
                         <button onClick={() => setShowDetail(c)} className="font-mono font-bold text-blue-700 hover:underline">
                           {c.tracking_code}
                         </button>
+                      </td>
+                      {/* ── Photo thumbnail ── */}
+                      <td className="px-4 py-3 text-center">
+                        {c.photo_data ? (
+                          <button
+                            onClick={() => setPhotoPreview({ src: c.photo_data!, code: c.tracking_code })}
+                            className="group relative mx-auto block h-12 w-12 overflow-hidden rounded-xl border-2 border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all"
+                            title="Voir la photo du colis">
+                            <img src={c.photo_data} alt="colis" className="h-full w-full object-cover" />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all rounded-xl">
+                              <span className="text-white text-lg opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-slate-300" title="Aucune photo">
+                            <Camera className="h-5 w-5" />
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-slate-800">{c.sender_name}</div>
@@ -738,6 +759,40 @@ export default function ColisPage() {
           onEdit={c => { setShowDetail(null); openEdit(c); }}
           onSavePhoto={savePhotoForColis}
         />
+      )}
+
+      {/* ══ PHOTO PREVIEW LIGHTBOX ══ */}
+      {photoPreview && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setPhotoPreview(null)}>
+          <div
+            className="relative max-w-2xl w-full rounded-2xl overflow-hidden shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between bg-black/70 px-4 py-3 backdrop-blur-sm">
+              <div>
+                <div className="text-xs text-white/60 uppercase tracking-wider">Photo du colis</div>
+                <div className="font-mono text-sm font-bold text-white tracking-widest">{photoPreview.code}</div>
+              </div>
+              <button
+                onClick={() => setPhotoPreview(null)}
+                className="rounded-full bg-white/10 p-2 text-white hover:bg-white/25 transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Full image */}
+            <img
+              src={photoPreview.src}
+              alt={`Photo ${photoPreview.code}`}
+              className="w-full max-h-[75vh] object-contain bg-black"
+            />
+            {/* Footer hint */}
+            <div className="bg-black/70 px-4 py-2 text-center text-xs text-white/50">
+              Cliquez en dehors ou sur ✕ pour fermer
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ══ CONFIRM DELETE ══ */}
