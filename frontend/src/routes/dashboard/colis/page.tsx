@@ -296,8 +296,10 @@ export default function ColisPage() {
     }
     setSaving(true);
     try {
+      // On exclut photo_data du body principal — envoi séparé après création
+      const { photo_data, flightType, ...rest } = form;
       const body = {
-        ...form,
+        ...rest,
         weight:    form.weight    ? parseFloat(form.weight as string)    : null,
         price:     parseFloat(form.price as string) || 0,
         flight_id: form.flight_id ? parseInt(form.flight_id as string)   : null,
@@ -305,7 +307,22 @@ export default function ColisPage() {
       const url    = editingColis ? `${API}/api/colis/${editingColis.id}` : `${API}/api/colis`;
       const method = editingColis ? "PUT" : "POST";
       const res = await fetch(url, { method, headers: authH(), body: JSON.stringify(body) });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+      if (!res.ok) {
+        let errMsg = `Erreur serveur (${res.status})`;
+        try { const e = await res.json(); errMsg = e.error || e.details || errMsg; } catch {}
+        throw new Error(errMsg);
+      }
+      const data = await res.json();
+      // Si photo sélectionnée, on l'enregistre séparément
+      if (photo_data) {
+        const colisId = editingColis?.id ?? data.colis?.id;
+        if (colisId) {
+          await fetch(`${API}/api/colis/${colisId}/photo`, {
+            method: "PUT", headers: authH(),
+            body: JSON.stringify({ photo_data }),
+          });
+        }
+      }
       setShowModal(false); setEditingColis(null); setForm(emptyForm()); fetchData();
     } catch (e: any) { alert("Erreur: " + e.message); }
     finally { setSaving(false); }
