@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Package, Plus, Search, Printer, ChevronDown, X, Edit2, Trash2, CheckCircle, Plane, AlertCircle, PackageCheck, Loader2, RefreshCw } from "lucide-react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { Package, Plus, Search, Printer, ChevronDown, X, Edit2, Trash2, CheckCircle, Plane, AlertCircle, PackageCheck, Loader2, RefreshCw, Camera, Upload, Image as ImageIcon } from "lucide-react";
 
 const API = "https://steve-airways.onrender.com";
 
@@ -14,6 +14,7 @@ interface Colis {
   price: number; currency: string; payment_method: string;
   status: "en_attente" | "en_vol" | "arrive" | "livre";
   notes: string; created_by_name: string; created_at: string;
+  photo_data?: string | null;
 }
 interface FlightOption {
   id: number; flight_number: string; type: string;
@@ -44,25 +45,222 @@ const PAY_METHODS = [
 const token = () => localStorage.getItem("token") || localStorage.getItem("authToken") || "";
 const authH = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${token()}` });
 const fmt = (d?: string | null) => { if (!d) return "—"; try { return new Date(d).toLocaleString("fr-FR", { dateStyle:"short", timeStyle:"short" }); } catch { return d; } };
+const fmtDate = (d?: string | null) => { if (!d) return "—"; try { return new Date(d).toLocaleDateString("fr-FR"); } catch { return d || "—"; } };
 const fmtMoney = (n: number, cur: string) => `${Number(n).toFixed(2)} ${(cur||"USD").toUpperCase()}`;
 const emptyForm = () => ({ sender_name:"", sender_id_type:"nif", sender_id_number:"", sender_phone:"", recipient_name:"", recipient_phone:"", recipient_address:"", description:"", weight:"", flight_id:"", flightType:"plane", price:"", currency:"USD", payment_method:"cash", notes:"" });
 
+/* ═══════════════════════════════════════════════
+   RECEIPT MODAL – compact inline, print-ready
+═══════════════════════════════════════════════ */
+function ColisReceiptModal({ colis, onClose }: { colis: Colis; onClose: () => void }) {
+  const [photo, setPhoto]           = useState<string | null>(colis.photo_data || null);
+  const [uploadingPhoto, setUploading] = useState(false);
+  const [photoSaved, setPhotoSaved]   = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const idTypeLabel = (ID_TYPES.find(t => t.value === (colis.sender_id_type || "nif"))?.label) || "ID";
+  const payLabel    = (PAY_METHODS.find(m => m.value === colis.payment_method)?.label) || colis.payment_method;
+  const sc          = STATUS_CONFIG[colis.status];
+  const qrUrl       = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(colis.tracking_code)}&bgcolor=ffffff&color=1e3a5f`;
+
+  const handlePhoto = async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setPhoto(base64);
+      setUploading(true);
+      try {
+        await fetch(`${API}/api/colis/${colis.id}/photo`, {
+          method: "PUT",
+          headers: authH(),
+          body: JSON.stringify({ photo_data: base64 }),
+        });
+        setPhotoSaved(true);
+        setTimeout(() => setPhotoSaved(false), 2000);
+      } catch { /* ignore */ }
+      finally { setUploading(false); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePrint = () => window.print();
+
+  return (
+    <>
+      {/* ── Print CSS ── injected into <head> only while modal is open */}
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          #colis-receipt-print { display: block !important; position: fixed; inset: 0; z-index: 9999; background: white; }
+          #colis-receipt-print .no-print { display: none !important; }
+        }
+      `}</style>
+
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm no-print">
+        {/* Modal wrapper — also the print target */}
+        <div id="colis-receipt-print" className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
+
+          {/* Close button */}
+          <button onClick={onClose} className="no-print absolute right-3 top-3 z-10 rounded-full bg-white/80 p-1 text-slate-500 hover:text-slate-800 shadow"><X className="h-4 w-4" /></button>
+
+          {/* ── RECEIPT HEADER ── */}
+          <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2563eb] px-5 pt-5 pb-4 text-white text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Package className="h-5 w-5 opacity-80" />
+              <span className="text-xs font-bold uppercase tracking-widest opacity-80">Steve Airways</span>
+            </div>
+            <div className="text-xs opacity-60 mb-3">Reçu de transport de colis</div>
+            <div className="font-mono text-xl font-extrabold tracking-widest bg-white/10 rounded-xl px-4 py-2">
+              {colis.tracking_code}
+            </div>
+            <div className="mt-2 text-xs opacity-70">Créé le {fmtDate(colis.created_at)}</div>
+          </div>
+
+          {/* ── BODY ── */}
+          <div className="px-5 pt-4 pb-5 space-y-3 text-sm max-h-[60vh] overflow-y-auto no-print-scroll">
+
+            {/* Statut */}
+            <div className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold ${sc.color}`}>
+              <span>Statut</span>
+              <span>{sc.icon} {sc.label}</span>
+            </div>
+
+            {/* Expéditeur */}
+            <div className="rounded-xl bg-orange-50 border border-orange-100 px-3 py-2.5 space-y-1">
+              <div className="text-xs font-bold text-orange-600 uppercase tracking-wider">📤 Expéditeur</div>
+              <div className="font-semibold text-slate-800">{colis.sender_name}</div>
+              {colis.sender_id_number && (
+                <div className="text-xs text-slate-500">{idTypeLabel}: <span className="font-mono">{colis.sender_id_number}</span></div>
+              )}
+              {colis.sender_phone && <div className="text-xs text-slate-500">📞 {colis.sender_phone}</div>}
+            </div>
+
+            {/* Destinataire */}
+            <div className="rounded-xl bg-blue-50 border border-blue-100 px-3 py-2.5 space-y-1">
+              <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">📥 Destinataire</div>
+              <div className="font-semibold text-slate-800">{colis.recipient_name}</div>
+              {colis.recipient_phone && <div className="text-xs text-slate-500">📞 {colis.recipient_phone}</div>}
+              {colis.recipient_address && <div className="text-xs text-slate-500">📍 {colis.recipient_address}</div>}
+            </div>
+
+            {/* Vol */}
+            {colis.flight_number && (
+              <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5 space-y-1">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">✈️ Vol associé</div>
+                <div className="font-semibold text-slate-800">{colis.flight_number}</div>
+                <div className="text-xs text-slate-500">{colis.dep_name} ({colis.dep_code}) → {colis.arr_name} ({colis.arr_code})</div>
+                <div className="text-xs text-slate-400">🛫 {fmt(colis.departure_time)}</div>
+              </div>
+            )}
+
+            {/* Description + Poids */}
+            {(colis.description || colis.weight) && (
+              <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">📦 Colis</div>
+                {colis.description && <div className="text-slate-700 text-xs">{colis.description}</div>}
+                {colis.weight && <div className="text-xs text-slate-500 mt-0.5">Poids: {colis.weight} kg</div>}
+              </div>
+            )}
+
+            {/* Paiement */}
+            <div className="rounded-xl bg-green-50 border border-green-100 px-3 py-2.5 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-green-700 uppercase tracking-wider">💰 Paiement</div>
+                <div className="text-xs text-green-600 mt-0.5">{payLabel}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xl font-extrabold text-green-800">{fmtMoney(colis.price, colis.currency)}</div>
+              </div>
+            </div>
+
+            {/* ── QR CODE ── */}
+            <div className="flex flex-col items-center gap-1 py-2">
+              <img src={qrUrl} alt="QR Code" className="w-28 h-28 rounded-xl border border-slate-200 shadow-sm" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <div className="font-mono text-[10px] text-slate-400 tracking-widest">{colis.tracking_code}</div>
+            </div>
+
+            {/* ── PHOTO DU COLIS ── */}
+            <div className="rounded-xl border border-dashed border-slate-200 p-3">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">📷 Photo du colis</div>
+              {photo ? (
+                <div className="relative">
+                  <img src={photo} alt="Photo colis" className="w-full max-h-40 object-cover rounded-xl border border-slate-200" />
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40">
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
+                    </div>
+                  )}
+                  {photoSaved && (
+                    <div className="absolute bottom-2 right-2 rounded-full bg-green-500 px-2 py-0.5 text-xs text-white font-semibold">✓ Sauvegardé</div>
+                  )}
+                  <button onClick={() => setPhoto(null)} className="no-print absolute top-1.5 right-1.5 rounded-full bg-red-500 p-0.5 text-white shadow hover:bg-red-600">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="no-print flex gap-2">
+                  {/* Camera capture (mobile) */}
+                  <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex-1 flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 py-3 text-xs text-slate-500 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-colors">
+                    <Camera className="h-5 w-5" />
+                    Prendre photo
+                  </button>
+                  {/* File upload */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 py-3 text-xs text-slate-500 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 transition-colors">
+                    <Upload className="h-5 w-5" />
+                    Importer photo
+                  </button>
+                </div>
+              )}
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
+              <input ref={fileInputRef}   type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
+            </div>
+
+            {/* Footer */}
+            <div className="text-center text-[10px] text-slate-400 pt-1">
+              Steve Airways • {colis.created_by_name || "Agent"} • {fmtDate(colis.created_at)}
+            </div>
+          </div>
+
+          {/* ── ACTIONS ── */}
+          <div className="no-print flex gap-2 border-t border-slate-100 px-5 py-3">
+            <button onClick={handlePrint} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow">
+              <Printer className="h-4 w-4" /> Imprimer
+            </button>
+            <button onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN PAGE
+═══════════════════════════════════════════════ */
 export default function ColisPage() {
-  const [colis, setColis]         = useState<Colis[]>([]);
-  const [stats, setStats]         = useState<Stats>({ en_attente:0, en_vol:0, arrive:0, livre:0, total:0 });
+  const [colis, setColis]           = useState<Colis[]>([]);
+  const [stats, setStats]           = useState<Stats>({ en_attente:0, en_vol:0, arrive:0, livre:0, total:0 });
   const [allFlights, setAllFlights] = useState<FlightOption[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [showModal, setShowModal]   = useState(false);
   const [showDetail, setShowDetail] = useState<Colis | null>(null);
+  const [showReceipt, setShowReceipt] = useState<Colis | null>(null);
   const [editingColis, setEditingColis] = useState<Colis | null>(null);
   const [form, setForm]             = useState(emptyForm());
   const [saving, setSaving]         = useState(false);
   const [statusLoading, setStatusLoading] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  // Filtered flights by selected type
   const filteredFlights = allFlights.filter(f => f.type === form.flightType);
 
   const fetchData = useCallback(async () => {
@@ -121,7 +319,8 @@ export default function ColisPage() {
     setForm({ sender_name:c.sender_name, sender_id_type:c.sender_id_type||"nif", sender_id_number:c.sender_id_number||"", sender_phone:c.sender_phone||"", recipient_name:c.recipient_name, recipient_phone:c.recipient_phone||"", recipient_address:c.recipient_address||"", description:c.description||"", weight:c.weight?String(c.weight):"", flight_id:c.flight_id?String(c.flight_id):"", flightType:flType, price:String(c.price||""), currency:c.currency||"USD", payment_method:c.payment_method||"cash", notes:c.notes||"" });
     setShowModal(true);
   };
-  const printReceipt = (id: number) => window.open(`${API}/api/colis/${id}/receipt?token=${token()}`, "_blank");
+
+  const openReceipt = (c: Colis) => { setShowDetail(null); setShowReceipt(c); };
 
   const statCards = [
     { key:"total",     label:"Total colis",  value:stats.total,      icon:Package,      grad:"from-slate-600 to-slate-700" },
@@ -220,7 +419,7 @@ export default function ColisPage() {
                       <td className="px-4 py-3 text-xs text-slate-500">{fmt(c.created_at)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
-                          <button onClick={() => printReceipt(c.id)} title="Reçu" className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors"><Printer className="h-4 w-4" /></button>
+                          <button onClick={() => openReceipt(c)} title="Reçu" className="rounded-lg p-1.5 text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors"><Printer className="h-4 w-4" /></button>
                           <button onClick={() => openEdit(c)} title="Modifier" className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-100 hover:text-amber-600 transition-colors"><Edit2 className="h-4 w-4" /></button>
                           <button onClick={() => setDeleteConfirm(c.id)} title="Supprimer" className="rounded-lg p-1.5 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
                         </div>
@@ -233,6 +432,9 @@ export default function ColisPage() {
           </div>
         )}
       </div>
+
+      {/* ── RECEIPT MODAL ── */}
+      {showReceipt && <ColisReceiptModal colis={showReceipt} onClose={() => setShowReceipt(null)} />}
 
       {/* ── MODAL CRÉATION / ÉDITION ── */}
       {showModal && (
@@ -430,7 +632,7 @@ export default function ColisPage() {
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button onClick={() => printReceipt(showDetail.id)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><Printer className="h-4 w-4" /> Imprimer le reçu</button>
+                <button onClick={() => openReceipt(showDetail)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"><Printer className="h-4 w-4" /> Imprimer le reçu</button>
                 <button onClick={() => { setShowDetail(null); openEdit(showDetail); }} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"><Edit2 className="h-4 w-4" /> Modifier</button>
               </div>
             </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   BarChart2, TrendingUp, DollarSign, Users, Plane,
   Download, FileText, RefreshCw, ArrowUpRight, ArrowDownRight,
-  Minus, CreditCard, Activity
+  Minus, CreditCard, Activity, Package
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -25,6 +25,12 @@ type Totals = {
   total_passengers: number;
 };
 
+type ColisTotals = {
+  currency: string;
+  colis_count: number;
+  colis_revenue: number;
+};
+
 type ReportData = {
   by_month: any[];
   by_type: any[];
@@ -32,6 +38,7 @@ type ReportData = {
   by_payment: any[];
   by_status: any[];
   totals: Totals[];
+  colis_totals: ColisTotals[];
 };
 
 const fmt = (n: number, cur: string) =>
@@ -148,6 +155,12 @@ export default function ReportsPage() {
   const totalBookings = Number(totals.total_bookings || 0);
   const totalPassengers = Number(totals.total_passengers || 0);
   const avgValue = Number(totals.avg_booking_value || 0);
+
+  // Colis revenue
+  const colisTotals: ColisTotals[] = data?.colis_totals || [];
+  const colisForCurrency = colisTotals.find(c => c.currency === currency) || colisTotals[0] || null;
+  const colisCount   = Number(colisForCurrency?.colis_count   || 0);
+  const colisRevenue = Number(colisForCurrency?.colis_revenue || 0);
 
   // ─── Excel Export (HTML-Excel format, fully formatted) ──────────────────────
   const exportExcel = () => {
@@ -794,13 +807,49 @@ export default function ReportsPage() {
             </div>
           )}
 
+          {/* Colis Revenue */}
+          {colisTotals.length > 0 && (
+            <div className={`rounded-2xl border p-6 ${cardBg}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <Package size={16} className="text-indigo-500" />
+                <div>
+                  <h2 className={`font-bold text-base ${textMain}`}>Revenus Colis</h2>
+                  <p className={`text-xs ${textSub}`}>Transport de colis sur la période sélectionnée</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {colisTotals.map((ct, i) => (
+                  <div key={i} className={`p-4 rounded-xl border relative overflow-hidden ${dark ? "bg-slate-700/30 border-slate-600" : "bg-indigo-50/60 border-indigo-100"}`}>
+                    <div className="w-8 h-8 rounded-xl mb-3 flex items-center justify-center bg-indigo-100">
+                      <Package size={14} className="text-indigo-600" />
+                    </div>
+                    <p className={`text-xs font-semibold ${textSub} mb-1`}>{Number(ct.colis_count)} colis · {ct.currency}</p>
+                    <p className={`text-xl font-bold ${textMain}`}>{fmt(Number(ct.colis_revenue), ct.currency)}</p>
+                    <p className={`text-xs ${textSub} mt-1`}>Revenus transport de colis</p>
+                  </div>
+                ))}
+                {/* Combined total if multi-currency */}
+                {colisTotals.length > 1 && (
+                  <div className={`p-4 rounded-xl border relative overflow-hidden ${dark ? "bg-slate-700/30 border-slate-600" : "bg-indigo-100 border-indigo-200"}`}>
+                    <div className="w-8 h-8 rounded-xl mb-3 flex items-center justify-center bg-indigo-200">
+                      <Package size={14} className="text-indigo-700" />
+                    </div>
+                    <p className={`text-xs font-semibold ${textSub} mb-1`}>{colisTotals.reduce((s, c) => s + Number(c.colis_count), 0)} colis · Tous</p>
+                    <p className={`text-xl font-bold text-indigo-700`}>Multidevise</p>
+                    <p className={`text-xs ${textSub} mt-1`}>{colisTotals.map(c => fmt(Number(c.colis_revenue), c.currency)).join(" + ")}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Summary Banner */}
           <div className="rounded-2xl p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-blue-100">Resume de la periode</p>
                 <p className="text-3xl font-bold mt-1">{fmt(totalRevenue, currency)}</p>
-                <p className="text-sm text-blue-100 mt-1">{totalBookings} reservations · {totalPassengers} passagers</p>
+                <p className="text-sm text-blue-100 mt-1">{totalBookings} reservations · {totalPassengers} passagers{colisCount > 0 ? ` · ${colisCount} colis` : ""}</p>
               </div>
               <div className="flex gap-6 flex-wrap">
                 <div className="text-center">
@@ -829,6 +878,4 @@ export default function ReportsPage() {
       )}
     </div>
   );
-}
-
 }

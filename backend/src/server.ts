@@ -4315,6 +4315,18 @@ app.get("/api/dashboard-stats", async (req: Request, res: Response) => {
       }
     });
     
+    // Ajouter le revenu des colis
+    try {
+      const [colisRevRows] = await pool.query<mysql.RowDataPacket[]>(
+        `SELECT currency, SUM(price) as total FROM colis WHERE status != 'annule' GROUP BY currency`
+      );
+      for (const row of colisRevRows) {
+        const cur = (row.currency || 'USD').toLowerCase();
+        if (cur === 'htg') totalRevenueHTG += Number(row.total || 0);
+        else totalRevenueUSD += Number(row.total || 0);
+      }
+    } catch (_) {}
+
     const totalBookings = bookings.length;
     const flightsAvailable = flights.length;
     const averageBookingValueUSD = totalBookings > 0 ? totalRevenueUSD / totalBookings : 0;
@@ -12418,6 +12430,17 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
       [...(start_date ? [start_date] : []), ...(end_date ? [end_date] : [])]
     );
 
+    // Revenus colis (filtrés par date si demandé)
+    let colisWhere = "WHERE 1=1";
+    const colisParams: any[] = [];
+    if (start_date) { colisWhere += " AND DATE(created_at) >= ?"; colisParams.push(start_date); }
+    if (end_date)   { colisWhere += " AND DATE(created_at) <= ?"; colisParams.push(end_date); }
+    if (currency)   { colisWhere += " AND UPPER(IFNULL(currency,'USD')) = UPPER(?)"; colisParams.push(currency); }
+    const [colisTotals] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT UPPER(IFNULL(currency,'USD')) as currency, COUNT(*) as colis_count, SUM(price) as colis_revenue
+       FROM colis ${colisWhere} GROUP BY UPPER(IFNULL(currency,'USD'))`, colisParams
+    );
+
     res.json({
       by_month: byMonth,
       by_type: byType,
@@ -12425,6 +12448,7 @@ app.get("/api/reports/financial", authMiddleware, async (req: any, res: Response
       by_payment: byPayment,
       by_status: byStatus,
       totals,
+      colis_totals: colisTotals,
     });
   } catch (err: any) {
     console.error("Reports error:", err);
@@ -12625,6 +12649,7 @@ app.post("/api/promo-codes/use", authMiddleware, async (req: any, res: Response)
         created_by_name VARCHAR(255),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        photo_data LONGTEXT,
         INDEX idx_tracking (tracking_code),
         INDEX idx_status (status),
         INDEX idx_flight (flight_id)
@@ -12828,6 +12853,19 @@ app.delete('/api/colis/:id', authMiddleware, async (req: any, res: Response) => 
   }
 });
 
+
+
+// PUT /api/colis/:id/photo — sauvegarder la photo du colis (base64)
+app.put('/api/colis/:id/photo', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { photo_data } = req.body;
+    await pool.execute('UPDATE colis SET photo_data=? WHERE id=?', [photo_data || null, id]);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Erreur serveur', details: e.message });
+  }
+});
 
 // GET /api/colis/flights-list — vols disponibles pour un colis (avion ou helico)
 app.get('/api/colis/flights-list', authMiddleware, async (req: any, res: Response) => {
