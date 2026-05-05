@@ -16,6 +16,7 @@ import {
     Calendar,
     Filter,
     Receipt,
+    Package,
 } from "lucide-react";
 import { useTheme } from "../../../contexts/theme-context";
 import { useProfile } from "../../../hooks/useProfile";
@@ -43,6 +44,12 @@ type PassengerRow = {
     currency: string;
     cabin_class: string;
     payment_method: string;
+    bag_count_hold:  number;
+    bag_weight_hold: number | null;
+    bag_count_cabin: number;
+    excess_fee:      number;
+    excess_currency: string;
+    bag_tag:         string | null;
 };
 
 type Flight = {
@@ -236,6 +243,14 @@ export default function PassengersPage() {
     const prevClassRef = useRef<string>("economy");
     const prevPriceRef = useRef<number>(0);
 
+    // Baggage modal
+    const [bagModal, setBagModal] = useState<{ open: boolean; passenger: PassengerRow | null; flight: Flight | null }>({
+        open: false, passenger: null, flight: null,
+    });
+    const [bagForm, setBagForm] = useState({ bag_count_hold: 0, bag_weight_hold: "", bag_count_cabin: 0, excess_fee: "", excess_currency: "USD" });
+    const [savingBag, setSavingBag] = useState(false);
+    const [savedTag, setSavedTag] = useState<string | null>(null);
+
     const token = localStorage.getItem("token");
 
     const fetchFlights = useCallback(async () => {
@@ -299,6 +314,45 @@ export default function PassengersPage() {
         prevPriceRef.current = Number(p.total_price) || 0;
         setSurplusPayMethod(p.payment_method || "cash");
         setOccupiedSeats([]);
+    };
+
+    const openBagModal = (p: PassengerRow, f: Flight) => {
+        setBagModal({ open: true, passenger: p, flight: f });
+        setBagForm({
+            bag_count_hold: p.bag_count_hold || 0,
+            bag_weight_hold: p.bag_weight_hold != null ? String(p.bag_weight_hold) : "",
+            bag_count_cabin: p.bag_count_cabin || 0,
+            excess_fee: p.excess_fee ? String(p.excess_fee) : "",
+            excess_currency: p.excess_currency || "USD",
+        });
+        setSavedTag(p.bag_tag || null);
+    };
+
+    const handleSaveBaggage = async () => {
+        if (!bagModal.passenger) return;
+        setSavingBag(true);
+        try {
+            const res = await fetch(`${API}/api/passengers/${bagModal.passenger.id}/baggage`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                    bag_count_hold:  Number(bagForm.bag_count_hold),
+                    bag_weight_hold: bagForm.bag_weight_hold ? parseFloat(bagForm.bag_weight_hold) : null,
+                    bag_count_cabin: Number(bagForm.bag_count_cabin),
+                    excess_fee:      bagForm.excess_fee ? parseFloat(bagForm.excess_fee) : 0,
+                    excess_currency: bagForm.excess_currency,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Erreur serveur");
+            setSavedTag(data.bag_tag || null);
+            toast.success("Bagages enregistrés ✓");
+            fetchFlights();
+        } catch (e: any) {
+            toast.error(e.message);
+        } finally {
+            setSavingBag(false);
+        }
     };
 
     const toggleExpand = (id: number) => {
@@ -922,6 +976,20 @@ button.close:hover { background:#cbd5e1; }
                                                                         <Clock size={13} /> En attente
                                                                     </span>
                                                                 )}
+                                                                {/* Résumé bagages */}
+                                                                {p.bag_tag && (
+                                                                    <div className="mt-1.5 rounded-lg bg-amber-50 border border-amber-100 px-2 py-1 text-xs">
+                                                                        <div className="font-mono font-bold text-amber-700">{p.bag_tag}</div>
+                                                                        <div className="text-amber-600">
+                                                                            {p.bag_count_hold > 0 && `🧳 ${p.bag_count_hold} soute`}
+                                                                            {p.bag_weight_hold != null && ` · ${p.bag_weight_hold}kg`}
+                                                                            {p.bag_count_cabin > 0 && ` · 🎒 ${p.bag_count_cabin} cabine`}
+                                                                        </div>
+                                                                        {p.excess_fee > 0 && (
+                                                                            <div className="text-red-600 font-semibold">Surpoids: {p.excess_fee} {p.excess_currency}</div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                             </td>
 
                                                             <td className="px-4 py-3">
@@ -937,29 +1005,25 @@ button.close:hover { background:#cbd5e1; }
                                                                                 </span>
                                                                             )}
 
-                                                                            {/* Check-in */}
+                                                                            {/* Check-in — ouvre le modal bagages pour les passagers non enregistrés */}
                                                                             <button
-                                                                                onClick={() => handleCheckin(p, !p.checked_in)}
+                                                                                onClick={() => p.checked_in ? handleCheckin(p, false) : openBagModal(p, flight)}
                                                                                 disabled={savingId === p.id || !isConfirmed}
                                                                                 title={
                                                                                     !isConfirmed
                                                                                         ? "Réservation non confirmée"
                                                                                         : p.checked_in
                                                                                           ? "Annuler l'enregistrement"
-                                                                                          : "Enregistrer le passager"
+                                                                                          : "Enregistrer le passager + bagages"
                                                                                 }
                                                                                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40 ${p.checked_in ? (dark ? "bg-slate-700 text-slate-300 hover:bg-red-900/30 hover:text-red-400" : "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500") : "bg-green-500 text-white hover:bg-green-600"}`}
                                                                             >
                                                                                 {savingId === p.id ? (
                                                                                     <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                                                                 ) : p.checked_in ? (
-                                                                                    <>
-                                                                                        <X size={12} /> Annuler
-                                                                                    </>
+                                                                                    <><X size={12} /> Annuler</>
                                                                                 ) : (
-                                                                                    <>
-                                                                                        <UserCheck size={12} /> Check-in
-                                                                                    </>
+                                                                                    <><UserCheck size={12} /> Check-in</>
                                                                                 )}
                                                                             </button>
 
@@ -975,6 +1039,19 @@ button.close:hover { background:#cbd5e1; }
                                                                                 className={`rounded-lg p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${dark ? "text-slate-400 hover:bg-slate-700" : "text-gray-500 hover:bg-gray-100"}`}
                                                                             >
                                                                                 <Edit2 size={13} />
+                                                                            </button>
+
+                                                                            {/* Bagages — toujours visible */}
+                                                                            <button
+                                                                                onClick={() => openBagModal(p, flight)}
+                                                                                disabled={!isConfirmed}
+                                                                                title={p.bag_tag ? `Bagages enregistrés: ${p.bag_tag}` : "Enregistrer les bagages"}
+                                                                                className={`relative rounded-lg p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${p.bag_tag ? (dark ? "text-amber-400 hover:bg-amber-900/30" : "text-amber-600 hover:bg-amber-50") : (dark ? "text-slate-400 hover:bg-slate-700" : "text-gray-500 hover:bg-gray-100")}`}
+                                                                            >
+                                                                                <Package size={13} />
+                                                                                {p.bag_tag && (
+                                                                                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-400 ring-1 ring-white" />
+                                                                                )}
                                                                             </button>
 
                                                                             {/* Reçu de paiement */}
@@ -1340,6 +1417,160 @@ button.close:hover { background:#cbd5e1; }
                     </div>
                 </div>
             )}
+
+            {/* ═══════════════════════════════════════════════════
+                MODAL BAGAGES + CHECK-IN
+            ═══════════════════════════════════════════════════ */}
+            {bagModal.open && bagModal.passenger && bagModal.flight && (() => {
+                const p = bagModal.passenger!;
+                const f = bagModal.flight!;
+                const isHeli = f.type_vol === "helicopter";
+                // Franchise: 30 lbs avion (13.6 kg) / 20 lbs hélico (9.07 kg)
+                const franchiseKg = isHeli ? 9.07 : 13.6;
+                const franchiseLbs = isHeli ? 20 : 30;
+                const weightKg = parseFloat(bagForm.bag_weight_hold) || 0;
+                const excessKg = Math.max(0, weightKg - franchiseKg);
+                const alreadyCheckedIn = p.checked_in;
+
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                        <div className={`relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${dark ? "bg-slate-800" : "bg-white"}`}>
+                            {/* Header */}
+                            <div className="flex items-center justify-between bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4 text-white">
+                                <div>
+                                    <div className="flex items-center gap-2 font-bold text-base">
+                                        <Package size={18} />
+                                        {alreadyCheckedIn ? "Bagages enregistrés" : "Check-in + Bagages"}
+                                    </div>
+                                    <div className="text-xs opacity-80 mt-0.5">
+                                        {p.first_name} {p.last_name} · {f.flight_number}
+                                    </div>
+                                </div>
+                                <button onClick={() => { setBagModal({ open: false, passenger: null, flight: null }); setSavedTag(null); }}
+                                    className="rounded-full bg-white/20 p-1.5 hover:bg-white/30 transition-colors">
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            <div className="p-5 space-y-4">
+                                {/* Franchise info */}
+                                <div className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm ${dark ? "bg-blue-900/30 border border-blue-700/40" : "bg-blue-50 border border-blue-100"}`}>
+                                    <span className="text-2xl">{isHeli ? "🚁" : "✈️"}</span>
+                                    <div>
+                                        <div className={`font-semibold ${dark ? "text-blue-300" : "text-blue-800"}`}>
+                                            Franchise incluse : {franchiseLbs} lbs ({franchiseKg} kg)
+                                        </div>
+                                        <div className={`text-xs ${dark ? "text-blue-400" : "text-blue-500"}`}>
+                                            {isHeli ? "Hélicoptère · Mallette 35×55×25 cm, Carry-on" : "Avion · Mallette 65×40×25 cm"}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Bagages en soute */}
+                                <div className={`rounded-xl border p-4 space-y-3 ${dark ? "border-slate-700 bg-slate-700/30" : "border-slate-200 bg-slate-50"}`}>
+                                    <div className={`text-xs font-bold uppercase tracking-wider ${dark ? "text-slate-300" : "text-slate-500"}`}>🧳 Bagages en soute</div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1">
+                                            <label className={`block text-xs font-medium mb-1 ${dark ? "text-slate-400" : "text-slate-600"}`}>Nombre de bagages</label>
+                                            <div className="flex items-center gap-2">
+                                                <button type="button"
+                                                    onClick={() => setBagForm(f => ({ ...f, bag_count_hold: Math.max(0, f.bag_count_hold - 1) }))}
+                                                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-lg font-bold transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-600" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}>−</button>
+                                                <span className={`w-8 text-center text-lg font-bold ${dark ? "text-white" : "text-slate-800"}`}>{bagForm.bag_count_hold}</span>
+                                                <button type="button"
+                                                    onClick={() => setBagForm(f => ({ ...f, bag_count_hold: f.bag_count_hold + 1 }))}
+                                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white text-lg font-bold hover:bg-amber-600 transition-colors">+</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className={`block text-xs font-medium mb-1 ${dark ? "text-slate-400" : "text-slate-600"}`}>Poids total (kg)</label>
+                                            <input
+                                                type="number" step="0.1" min="0"
+                                                value={bagForm.bag_weight_hold}
+                                                onChange={e => setBagForm(f => ({ ...f, bag_weight_hold: e.target.value }))}
+                                                placeholder="0.0"
+                                                className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 ${dark ? "border-slate-600 bg-slate-700 text-white placeholder-slate-500" : "border-slate-200 bg-white text-slate-800"}`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Surpoids */}
+                                    {excessKg > 0 && (
+                                        <div className={`rounded-xl border px-3 py-2.5 ${dark ? "border-red-700/40 bg-red-900/20" : "border-red-200 bg-red-50"}`}>
+                                            <div className={`text-xs font-semibold ${dark ? "text-red-400" : "text-red-700"}`}>
+                                                ⚠️ Surpoids : {excessKg.toFixed(2)} kg au-dessus de la franchise
+                                            </div>
+                                            <div className="mt-2 flex gap-2">
+                                                <input
+                                                    type="number" step="0.01" min="0"
+                                                    value={bagForm.excess_fee}
+                                                    onChange={e => setBagForm(f => ({ ...f, excess_fee: e.target.value }))}
+                                                    placeholder="Frais surpoids"
+                                                    className={`flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:border-red-400 ${dark ? "border-slate-600 bg-slate-700 text-white" : "border-red-200 bg-white text-slate-800"}`}
+                                                />
+                                                <select value={bagForm.excess_currency}
+                                                    onChange={e => setBagForm(f => ({ ...f, excess_currency: e.target.value }))}
+                                                    className={`rounded-xl border px-3 py-2 text-sm outline-none ${dark ? "border-slate-600 bg-slate-700 text-white" : "border-red-200 bg-white"}`}>
+                                                    <option>USD</option>
+                                                    <option>HTG</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Bagages cabine */}
+                                <div className={`rounded-xl border p-4 ${dark ? "border-slate-700 bg-slate-700/30" : "border-slate-200 bg-slate-50"}`}>
+                                    <div className={`text-xs font-bold uppercase tracking-wider mb-3 ${dark ? "text-slate-300" : "text-slate-500"}`}>🎒 Bagages cabine</div>
+                                    <div className="flex items-center gap-2">
+                                        <button type="button"
+                                            onClick={() => setBagForm(f => ({ ...f, bag_count_cabin: Math.max(0, f.bag_count_cabin - 1) }))}
+                                            className={`flex h-8 w-8 items-center justify-center rounded-lg border text-lg font-bold transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-600" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}>−</button>
+                                        <span className={`w-8 text-center text-lg font-bold ${dark ? "text-white" : "text-slate-800"}`}>{bagForm.bag_count_cabin}</span>
+                                        <button type="button"
+                                            onClick={() => setBagForm(f => ({ ...f, bag_count_cabin: f.bag_count_cabin + 1 }))}
+                                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white text-lg font-bold hover:bg-blue-600 transition-colors">+</button>
+                                        <span className={`ml-2 text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>bagage(s) en cabine</span>
+                                    </div>
+                                </div>
+
+                                {/* Étiquette générée */}
+                                {savedTag && (
+                                    <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${dark ? "border-green-700/40 bg-green-900/20" : "border-green-200 bg-green-50"}`}>
+                                        <div>
+                                            <div className={`text-xs font-semibold ${dark ? "text-green-400" : "text-green-700"}`}>✓ Étiquette bagage</div>
+                                            <div className={`font-mono text-lg font-bold tracking-widest ${dark ? "text-green-300" : "text-green-800"}`}>{savedTag}</div>
+                                        </div>
+                                        <Package size={24} className={dark ? "text-green-500" : "text-green-600"} />
+                                    </div>
+                                )}
+
+                                {/* Boutons */}
+                                <div className="flex gap-3 pt-1">
+                                    <button
+                                        onClick={async () => {
+                                            await handleSaveBaggage();
+                                            if (!alreadyCheckedIn) await handleCheckin(p, true);
+                                        }}
+                                        disabled={savingBag}
+                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 text-sm font-bold text-white hover:from-amber-600 hover:to-orange-600 disabled:opacity-60 transition-all shadow">
+                                        {savingBag
+                                            ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> Enregistrement...</>
+                                            : alreadyCheckedIn
+                                                ? <><Package size={15} /> Mettre à jour les bagages</>
+                                                : <><UserCheck size={15} /> Check-in + Enregistrer bagages</>}
+                                    </button>
+                                    <button
+                                        onClick={() => { setBagModal({ open: false, passenger: null, flight: null }); setSavedTag(null); }}
+                                        className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                                        Fermer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 }

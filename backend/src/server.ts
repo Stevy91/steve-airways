@@ -11885,6 +11885,30 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
 // PASSAGERS AVANCÉS — check-in, siège, groupé par vol
 // ============================================================
 
+// Migration automatique : photo_data sur colis (si table existait avant la colonne)
+(async () => {
+  try {
+    await pool.execute(`ALTER TABLE colis ADD COLUMN photo_data LONGTEXT NULL`);
+    console.log('✅ Colonne photo_data ajoutée à colis');
+  } catch (_) { /* déjà présente */ }
+})();
+
+// Migration automatique : colonnes bagages sur passagers
+(async () => {
+  const cols = [
+    `ALTER TABLE passengers ADD COLUMN bag_count_hold   TINYINT    NOT NULL DEFAULT 0`,
+    `ALTER TABLE passengers ADD COLUMN bag_weight_hold  DECIMAL(6,2)        DEFAULT NULL`,
+    `ALTER TABLE passengers ADD COLUMN bag_count_cabin  TINYINT    NOT NULL DEFAULT 0`,
+    `ALTER TABLE passengers ADD COLUMN excess_fee       DECIMAL(10,2)       DEFAULT 0`,
+    `ALTER TABLE passengers ADD COLUMN excess_currency  VARCHAR(10)         DEFAULT 'USD'`,
+    `ALTER TABLE passengers ADD COLUMN bag_tag          VARCHAR(30)         DEFAULT NULL`,
+  ];
+  for (const sql of cols) {
+    try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
+  }
+  console.log('✅ Colonnes bagages prêtes sur passengers');
+})();
+
 // Migration automatique : ajouter les colonnes check-in une par une avec try/catch individuels
 (async () => {
   const cols = [
@@ -11986,7 +12010,13 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
          COALESCE(f.price_economy, f.price, 0) AS price_economy,
          f.price_business,
          f.price_first,
-         COALESCE(f.total_seat, 0) AS total_seat
+         COALESCE(f.total_seat, 0) AS total_seat,
+         COALESCE(p.bag_count_hold, 0)  AS bag_count_hold,
+         p.bag_weight_hold               AS bag_weight_hold,
+         COALESCE(p.bag_count_cabin, 0) AS bag_count_cabin,
+         COALESCE(p.excess_fee, 0)      AS excess_fee,
+         COALESCE(p.excess_currency, 'USD') AS excess_currency,
+         p.bag_tag                       AS bag_tag
        FROM passengers p
        JOIN bookings b ON p.booking_id = b.id
        JOIN flights f ON b.flight_id = f.id
@@ -12039,6 +12069,12 @@ app.get("/api/passengers/by-flight", authMiddleware, async (req: any, res: Respo
         currency: row.currency,
         cabin_class: row.cabin_class || 'economy',
         payment_method: row.payment_method || 'cash',
+        bag_count_hold:  Number(row.bag_count_hold  || 0),
+        bag_weight_hold: row.bag_weight_hold ? Number(row.bag_weight_hold) : null,
+        bag_count_cabin: Number(row.bag_count_cabin || 0),
+        excess_fee:      Number(row.excess_fee      || 0),
+        excess_currency: row.excess_currency || 'USD',
+        bag_tag:         row.bag_tag || null,
       });
     });
 
@@ -12074,6 +12110,48 @@ app.put("/api/passengers/:id/checkin", authMiddleware, async (req: any, res: Res
       ]
     );
     res.json({ success: true, checked_in: !!checked_in });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
+  }
+});
+
+// PUT /api/passengers/:id/baggage — enregistrer les bagages au check-in
+app.put("/api/passengers/:id/baggage", authMiddleware, async (req: any, res: Response) => {
+  const { id } = req.params;
+  const {
+    bag_count_hold = 0,
+    bag_weight_hold = null,
+    bag_count_cabin = 0,
+    excess_fee = 0,
+    excess_currency = 'USD',
+    bag_tag = null,
+  } = req.body;
+  try {
+    // Générer un tag automatique si non fourni
+    let tag = bag_tag;
+    if (!tag && (bag_count_hold > 0 || bag_count_cabin > 0)) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+      tag = 'SAW-' + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+    await pool.execute(
+      `UPDATE passengers SET
+         bag_count_hold  = ?,
+         bag_weight_hold = ?,
+         bag_count_cabin = ?,
+         excess_fee      = ?,
+         excess_currency = ?,
+         bag_tag         = ?
+       WHERE id = ?`,
+      [bag_count_hold, bag_weight_hold || null, bag_count_cabin, excess_fee || 0, excess_currency || 'USD', tag, id]
+    );
+    const agentName = req.user?.name || req.user?.username || 'Agent';
+    await logAudit(
+      req.user?.id, agentName,
+      'RECORD_BAGGAGE', 'passenger', Number(id),
+      `Bagages enregistrés — Soute: ${bag_count_hold} sac(s) ${bag_weight_hold ? bag_weight_hold + 'kg' : ''} — Cabine: ${bag_count_cabin} — Tag: ${tag || '—'} — Surpoids: ${excess_fee} ${excess_currency}`,
+      req.ip || ''
+    );
+    res.json({ success: true, bag_tag: tag });
   } catch (err: any) {
     res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
@@ -12688,8 +12766,8 @@ app.get('/api/colis', authMiddleware, async (req: any, res: Response) => {
     const [rows] = await pool.query<mysql.RowDataPacket[]>(
       `SELECT c.*,
         f.flight_number, f.departure_time, f.arrival_time, f.type AS flight_type,
-        dep.name AS departure_name, dep.city AS departure_city, dep.code AS departure_code,
-        arr.name AS arrival_name, arr.city AS arrival_city, arr.code AS arrival_code
+        dep.name AS dep_name, dep.city AS dep_city, dep.code AS dep_code,
+        arr.name AS arr_name, arr.city AS arr_city, arr.code AS arr_code
        FROM colis c
        LEFT JOIN flights f ON c.flight_id = f.id
        LEFT JOIN locations dep ON f.departure_location_id = dep.id
@@ -12774,7 +12852,9 @@ app.post('/api/colis', authMiddleware, async (req: any, res: Response) => {
     );
 
     const [newColis] = await pool.query<mysql.RowDataPacket[]>(
-      `SELECT c.*, f.flight_number, dep.name AS departure_name, arr.name AS arrival_name
+      `SELECT c.*, f.flight_number,
+         dep.name AS dep_name, dep.code AS dep_code,
+         arr.name AS arr_name, arr.code AS arr_code
        FROM colis c
        LEFT JOIN flights f ON c.flight_id = f.id
        LEFT JOIN locations dep ON f.departure_location_id = dep.id

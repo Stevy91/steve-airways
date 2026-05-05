@@ -113,7 +113,7 @@ const {
 
     // Section Avion — uniquement la gestion des vols (View Bookings est dans "Réservations")
     listeFlightsPlane && {
-      title: "Avion",
+      title: "Ajouter des vols Avions",
       icon: Plane,
       links: [
         { label: "Tous les vols avion", icon: List, path: `/${lang}/dashboard/flights` },
@@ -122,7 +122,7 @@ const {
 
     // Section Hélico — uniquement la gestion des vols (View Bookings est dans "Réservations")
     listeFlightsHelico && {
-      title: "Hélico",
+      title: "Ajouter des vols Hélico",
       icon: HelicopterIcon,
       links: [
         { label: "Tous les vols hélico", icon: List, path: `/${lang}/dashboard/flights-helico` },
@@ -131,7 +131,7 @@ const {
 
     // Section Charter — uniquement la gestion des vols charter (View Bookings est dans "Réservations")
     charter && {
-      title: "Charter",
+      title: "Ajouter des vols Charter",
       icons: [Plane, HelicopterIcon],
       links: [
         { label: "Tous les vols charter", icon: List, path: `/${lang}/dashboard/flights-charter` },
