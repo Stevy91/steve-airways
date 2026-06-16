@@ -104,7 +104,7 @@ function printColisReceipt(c: Colis) {
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="logo-text">✈ STEVE AIRWAYS</div>
+    <div class="logo-text">✈ TROGON AIRWAYS</div>
     <div class="sub">
       Reçu de transport de colis<br/>
       ${new Date().toLocaleDateString("fr-FR",{weekday:"long",year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}
@@ -171,7 +171,7 @@ function printColisReceipt(c: Colis) {
     • Le code QR permet de tracer votre colis<br/>
     • Présentez ce reçu lors de la récupération<br/>
     <br/>
-    Steve Airways • Tél: +509 3341 0404<br/>
+    TROGON Airways • Tél: +509 3341 0404<br/>
     www.steveairways.com
   </div>
 

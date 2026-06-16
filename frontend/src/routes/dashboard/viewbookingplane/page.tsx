@@ -196,6 +196,9 @@ const ViewBookingPlane = () => {
             const currency = (detail.currency || "USD").toUpperCase();
             const total = Number(detail.total_price || 0).toFixed(2);
             const ref = detail.booking_reference || reference;
+            const totalExcess = passengers.reduce((sum: number, p: any) => sum + (Number(p.excess_fee) || 0), 0);
+            const excessCurrency = passengers.find((p: any) => Number(p.excess_fee) > 0)?.excess_currency || currency;
+            const grandTotal = (Number(total) + totalExcess).toFixed(2);
 
             const htmlContent = `<!DOCTYPE html>
 <html>
@@ -275,15 +278,35 @@ const ViewBookingPlane = () => {
 
     <div class="section-title">PASSAGER(S)</div>
     ${passengers.map((p: any) => `
-      <div class="info-line">${p.first_name || ""} ${p.last_name || ""}</div>
+      <div class="info-line">${p.first_name || ""} ${p.last_name || ""}${p.cabin_class && p.cabin_class !== "economy" ? ` <span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${p.cabin_class === "business" ? "#ede9fe" : "#fef3c7"};color:${p.cabin_class === "business" ? "#7c3aed" : "#d97706"};">${p.cabin_class === "business" ? "Business" : "Première"}</span>` : ""}</div>
     `).join("") || `<div class="info-line">${bk.first_name || ""} ${bk.last_name || ""}</div>`}
+
+    ${passengers.some((p: any) => p.bag_tag) ? `
+    <hr class="divider"/>
+    <div class="section-title" style="color:#b45309;">🧳 BAGAGES</div>
+    ${passengers.filter((p: any) => p.bag_tag).map((p: any) => `
+      <div class="info-line" style="margin-top:6px;"><strong>${p.first_name || ""} ${p.last_name || ""}</strong></div>
+      <div class="info-line clearfix">
+        <span>Étiquette:</span>
+        <span class="right" style="font-family:monospace;font-weight:bold;">${p.bag_tag}</span>
+      </div>
+      ${p.bag_count_hold > 0 ? `<div class="info-line clearfix"><span>Soute:</span><span class="right">${p.bag_count_hold} bagage(s)${p.bag_weight_hold != null ? " · " + p.bag_weight_hold + " kg" : ""}</span></div>` : ""}
+      ${p.bag_count_cabin > 0 ? `<div class="info-line clearfix"><span>Cabine:</span><span class="right">${p.bag_count_cabin} bagage(s)</span></div>` : ""}
+      ${Number(p.excess_fee) > 0 ? `<div class="info-line clearfix"><span style="color:#dc2626;">Surpoids:</span><span class="right" style="color:#dc2626;font-weight:bold;">${Number(p.excess_fee).toFixed(2)} ${p.excess_currency || "USD"}</span></div>` : ""}
+    `).join("")}
+    ` : ""}
 
     <hr class="divider"/>
 
     <div class="section-title">PAIEMENT</div>
     <div class="info-line clearfix">
-      <span>TOTAL:</span>
-      <span class="right total-val">${total} ${currency}</span>
+      <span>Billet(s):</span>
+      <span class="right">${total} ${currency}</span>
+    </div>
+    ${totalExcess > 0 ? `<div class="info-line clearfix"><span style="color:#dc2626;">Surpoids:</span><span class="right" style="color:#dc2626;font-weight:bold;">+${totalExcess.toFixed(2)} ${excessCurrency}</span></div>` : ""}
+    <div class="info-line clearfix">
+      <span><strong>TOTAL:</strong></span>
+      <span class="right total-val">${grandTotal} ${currency}</span>
     </div>
     <div class="info-line clearfix">
       <span>Mode:</span>
@@ -901,35 +924,31 @@ const mapApiBookingToBookingDetails = (apiData: any): BookingDetails => {
         adminNotes: apiData.adminNotes || "",
         flightId: apiData.flight_id,
         flights: (apiData.flights || []).map((f: any) => ({
-            code: f.code || f.flight_number || "",
-            from: f.departure_city || f.departure_airport_name || f.from || "",
-            to: f.arrival_city || f.arrival_airport_name || f.to || "",
-            date: f.date || f.departure_time || "",
-            arrival_date: f.arrival_date || f.arrival_time || "",
-            flight_number: f.code || f.flight_number || "",
-            airline: f.airline || "",
-            price: f.price,
-            departure_code: f.departure_code || "",
-            arrival_code: f.arrival_code || "",
+            code: f.flight_number || f.code || "",
+            from: f.departure_airport_name || f.dep_name || f.from_city || "",
+            to: f.arrival_airport_name || f.arr_name || f.to_city || "",
+            date: f.departure_time || "",
+            arrival_date: f.arrival_time || "",
+            id: f.id,
+            flight_number: f.flight_number,
+            airline: f.airline || "Trogon Airways",
+            departure: f.departure_time,
+            arrival: f.arrival_time,
+            price: f.price_economy,
         })),
         passengers: (apiData.passengers || []).map((p: any) => ({
             id: p.id,
             name: `${p.first_name || ""} ${p.last_name || ""}`.trim(),
             email: p.email || "",
             dob: p.date_of_birth || "",
-            firstName: p.first_name || "",
-            lastName: p.last_name || "",
-            middleName: p.middle_name || "",
-            phone: p.phone || "",
-            idTypeClient: p.idTypeClient || "",
-            idClient: p.idClient || "",
-            nationality: p.nationality || "",
-            country: p.country || "",
-            address: p.address || "",
-            nom_urgence: p.nom_urgence || "",
-            email_urgence: p.email_urgence || "",
-            tel_urgence: p.tel_urgence || "",
-            selectedSeat: p.selectedSeat || "",
+            firstName: p.first_name,
+            lastName: p.last_name,
+            gender: p.gender,
+            title: p.title,
+            nationality: p.nationality,
+            idTypeClient: p.id_type,
+            idClient: p.passport_number,
+            selectedSeat: p.seat_number,
         })),
     };
 };

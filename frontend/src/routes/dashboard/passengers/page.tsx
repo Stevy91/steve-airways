@@ -99,6 +99,114 @@ const payMethodLabel: Record<string, string> = {
     contrat: "Contrat",
 };
 
+// ─── Baggage label printer ───────────────────────────────────────────────────
+function printBaggageLabel(opts: {
+    passengerName: string;
+    flightNumber: string;
+    fromCode: string;
+    toCode: string;
+    fromCity: string;
+    toCity: string;
+    departureTime: string;
+    bagTag: string;
+    bagCountHold: number;
+    bagWeightHold: number | null;
+    bookingRef: string;
+}) {
+    const dep = new Date(opts.departureTime).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" });
+    const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${opts.bagTag}&code=Code128&dpi=96&dataseparator=`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Étiquette — ${opts.bagTag}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; background:#f0f4f8; display:flex; justify-content:center; align-items:flex-start; padding:24px; }
+  .label { background:white; border:3px solid #1e3a5f; border-radius:12px; width:340px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.15); }
+  .label-header { background:#1e3a5f; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; }
+  .airline-name { font-size:15px; font-weight:900; letter-spacing:1px; }
+  .label-type { font-size:10px; opacity:.7; text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+  .route-band { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:2px dashed #e2e8f0; background:#f8fafc; }
+  .airport-code { font-size:38px; font-weight:900; color:#1e3a5f; line-height:1; }
+  .airport-name { font-size:11px; color:#64748b; margin-top:3px; }
+  .arrow { font-size:24px; color:#3b82f6; }
+  .tag-section { padding:14px 20px; border-bottom:1px dashed #e2e8f0; text-align:center; }
+  .tag-label { font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .tag-number { font-size:28px; font-weight:900; color:#1e3a5f; letter-spacing:3px; font-family:monospace; }
+  .barcode-section { padding:10px 20px; text-align:center; border-bottom:1px dashed #e2e8f0; }
+  .barcode-section img { max-width:100%; height:50px; }
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .info-cell { padding:10px 16px; border-right:1px dashed #e2e8f0; border-bottom:1px dashed #e2e8f0; }
+  .info-cell:nth-child(2n) { border-right:none; }
+  .info-cell:nth-last-child(-n+2) { border-bottom:none; }
+  .info-cell-label { font-size:9px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+  .info-cell-val { font-size:13px; font-weight:700; color:#1e293b; }
+  .passenger-band { background:#1e3a5f; color:white; padding:10px 16px; text-align:center; }
+  .passenger-name { font-size:16px; font-weight:800; letter-spacing:.5px; }
+  .ref-small { font-size:10px; opacity:.7; margin-top:2px; }
+  .controls { text-align:center; padding:14px; border-top:1px solid #eee; display:flex; gap:10px; justify-content:center; }
+  button { padding:9px 20px; background:#1e3a5f; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; }
+  button.close { background:#e2e8f0; color:#333; }
+  @media print { body{background:white;padding:0;} .label{box-shadow:none;border:2px solid #1e3a5f;} .controls{display:none;} }
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+</style></head><body>
+<div class="label">
+  <div class="label-header">
+    <div>
+      <div class="airline-name">✈ TROGON AIRWAYS</div>
+      <div class="label-type">Étiquette bagage</div>
+    </div>
+    <div style="text-align:right;font-size:11px;opacity:.8;">${dep}</div>
+  </div>
+  <div class="passenger-band">
+    <div class="passenger-name">${opts.passengerName.toUpperCase()}</div>
+    <div class="ref-small">${opts.bookingRef}</div>
+  </div>
+  <div class="route-band">
+    <div>
+      <div class="airport-code">${opts.fromCode}</div>
+      <div class="airport-name">${opts.fromCity}</div>
+    </div>
+    <div class="arrow">→</div>
+    <div style="text-align:right;">
+      <div class="airport-code">${opts.toCode}</div>
+      <div class="airport-name">${opts.toCity}</div>
+    </div>
+  </div>
+  <div class="tag-section">
+    <div class="tag-label">N° Étiquette bagage</div>
+    <div class="tag-number">${opts.bagTag}</div>
+  </div>
+  <div class="barcode-section">
+    <img src="${barcodeUrl}" alt="${opts.bagTag}">
+  </div>
+  <div class="info-grid">
+    <div class="info-cell">
+      <div class="info-cell-label">Vol</div>
+      <div class="info-cell-val">${opts.flightNumber}</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Date départ</div>
+      <div class="info-cell-val">${dep}</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Nb. bagages soute</div>
+      <div class="info-cell-val">${opts.bagCountHold} sac(s)</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Poids total</div>
+      <div class="info-cell-val">${opts.bagWeightHold != null ? opts.bagWeightHold + " kg" : "—"}</div>
+    </div>
+  </div>
+</div>
+<div class="controls">
+  <button onclick="window.print()">🖨️ Imprimer étiquette</button>
+  <button class="close" onclick="window.close()">Fermer</button>
+</div>
+</body></html>`;
+    const win = window.open("", "_blank", "width=440,height=780");
+    if (win) { win.document.write(html); win.document.close(); }
+    else alert("Autorisez les popups pour imprimer l'étiquette.");
+}
+
 // ─── Receipt HTML builder (matches bon.tsx style) ────────────────────────────
 function buildReceiptHTML(opts: {
     agentName: string;
@@ -117,6 +225,15 @@ function buildReceiptHTML(opts: {
     paymentMethod: string;
     paymentStatus: string;
     noteLines?: string[];
+    // Bagages
+    bagTag?: string | null;
+    bagCountHold?: number;
+    bagWeightHold?: number | null;
+    bagCountCabin?: number;
+    excessFee?: number;
+    excessCurrency?: string;
+    // Classe cabin
+    cabinClass?: string;
 }) {
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${opts.bookingRef}&code=Code128&dpi=96&dataseparator=`;
     const now = new Date().toLocaleDateString("fr-FR", {
@@ -165,9 +282,8 @@ button.close:hover { background:#cbd5e1; }
 </style></head><body>
 <div class="receipt-container">
   <div class="header">
-    <img src="https://trogonairways.com/assets/logo/trogon-bird-color.svg" alt="Trogon Airways"
-         onerror="this.style.display='none';document.getElementById('logoText').style.display='block';">
-    <div id="logoText" class="logo-text" style="display:none;">TROGON AIRWAYS</div>
+    <img src="https://trogonairways.com/logo-trogonpng.png" alt="Trogon Airways" style="height:45px;margin-bottom:4px;"
+         onerror="this.style.display='none'">
     <div class="logo-text">TROGON AIRWAYS</div>
     <div class="date-line">Reçu de réservation<br>${now}</div>
   </div>
@@ -187,9 +303,19 @@ button.close:hover { background:#cbd5e1; }
   <div class="divider"></div>
   <div class="section-title">PASSAGER(S)</div>
   <div class="info-line">${opts.passengerName}</div>
+  ${opts.cabinClass && opts.cabinClass !== "economy" ? `<div class="info-line"><span>Classe:</span><span style="float:right;"><span class="badge ${opts.cabinClass === "business" ? "biz" : "fst"}">${opts.cabinClass === "business" ? "Business" : "Première Classe"}</span></span></div>` : ""}
+  ${opts.bagTag ? `
+  <div class="divider"></div>
+  <div class="section-title" style="color:#b45309;">🧳 BAGAGES</div>
+  <div class="info-line"><span>Étiquette:</span><span style="float:right;font-family:monospace;font-weight:bold;color:#1A237E;">${opts.bagTag}</span></div>
+  ${(opts.bagCountHold ?? 0) > 0 ? `<div class="info-line"><span>Soute:</span><span style="float:right;">${opts.bagCountHold} sac(s)${opts.bagWeightHold != null ? " · " + opts.bagWeightHold + " kg" : ""}</span></div>` : ""}
+  ${(opts.bagCountCabin ?? 0) > 0 ? `<div class="info-line"><span>Cabine:</span><span style="float:right;">${opts.bagCountCabin} sac(s)</span></div>` : ""}
+  ${(opts.excessFee ?? 0) > 0 ? `<div class="info-line" style="color:#d32f2f;"><span>⚠ Surpoids:</span><span style="float:right;font-weight:bold;">${Number(opts.excessFee).toFixed(2)} ${(opts.excessCurrency || "USD").toUpperCase()}</span></div>` : ""}
+  ` : ""}
   <div class="divider"></div>
   <div class="section-title">PAIEMENT</div>
   <div class="info-line"><span>${opts.totalLabel}:</span><span style="float:right;" class="total">${opts.totalAmount.toFixed(2)} ${opts.currency.toUpperCase()}</span></div>
+  ${(opts.excessFee ?? 0) > 0 ? `<div class="info-line" style="color:#d32f2f;"><span>Surpoids:</span><span style="float:right;font-weight:bold;">+ ${Number(opts.excessFee).toFixed(2)} ${(opts.excessCurrency||"USD").toUpperCase()}</span></div>` : ""}
   <div class="info-line"><span>Mode:</span><span style="float:right;">${payMethodLabel[opts.paymentMethod] || opts.paymentMethod}</span></div>
   <div class="info-line"><span>Statut:</span><span style="float:right;color:green;font-weight:700;">${opts.paymentStatus}</span></div>
   <div class="barcode">
@@ -511,8 +637,17 @@ export default function PassengersPage() {
                 currency: p.currency || "USD",
                 paymentMethod: p.payment_method || "cash",
                 paymentStatus: p.booking_status === "confirmed" ? "Confirmé" : "En attente",
+                // Bagages
+                bagTag:        p.bag_tag        || null,
+                bagCountHold:  p.bag_count_hold  || 0,
+                bagWeightHold: p.bag_weight_hold ?? null,
+                bagCountCabin: p.bag_count_cabin || 0,
+                excessFee:     p.excess_fee      || 0,
+                excessCurrency:p.excess_currency || "USD",
+                // Classe
+                cabinClass:    p.cabin_class     || "economy",
             });
-            openReceiptWindow(html, 400, 870);
+            openReceiptWindow(html, 400, 900);
         } catch (err: any) {
             toast.error("Erreur reçu: " + (err?.message || "erreur inconnue"));
         }
@@ -521,95 +656,311 @@ export default function PassengersPage() {
     const handlePrintTicket = (p: PassengerRow, flight: Flight) => {
         const dep = new Date(flight.departure_time);
         const arr = new Date(flight.arrival_time);
-        const fmt = (d: Date) => d.toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-        const cabinDisplay = classLabel[p.cabin_class] || "Économie";
+        const fmtDate = (d: Date) => d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+        const fmtTime = (d: Date) => d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+        const cabinDisplay = classLabel[p.cabin_class] || "ÉCONOMIE";
         const classBadgeCls =
             p.cabin_class === "business" ? "#ede9fe;color:#7c3aed" : p.cabin_class === "first" ? "#fef3c7;color:#d97706" : "#dbeafe;color:#1d4ed8";
 
+        const logoUrl = "https://trogonairways.com/logo-carte2.png";
+        const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${p.booking_reference}&code=Code128&dpi=96&dataseparator=`;
+        const passengerName = (p.title ? p.title + " " : "") + p.first_name + " " + p.last_name;
+        const cabinLabel = p.cabin_class === "business" ? "BUSINESS CLASS" : p.cabin_class === "first" ? "PREMIÈRE CLASSE" : "ECONOMY CLASS";
         const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/>
-<title>Billet — ${p.first_name} ${p.last_name}</title>
+<title>Carte d'embarquement — ${p.first_name} ${p.last_name}</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; justify-content:center; padding:30px; }
-.ticket { background:white; border-radius:16px; overflow:hidden; width:680px; box-shadow:0 8px 40px rgba(0,0,0,.15); }
-.header { background:linear-gradient(135deg,#1e40af,#3b82f6); color:white; padding:24px 28px; display:flex; justify-content:space-between; align-items:center; }
-.airline { font-size:22px; font-weight:800; letter-spacing:1px; }
-.ticket-label { font-size:11px; opacity:.7; text-transform:uppercase; letter-spacing:2px; }
-.route { padding:24px 28px; display:flex; align-items:center; gap:12px; border-bottom:1px dashed #e2e8f0; }
-.city { flex:1; }
-.city-code { font-size:36px; font-weight:800; color:#1e293b; }
-.city-name { font-size:13px; color:#64748b; margin-top:2px; }
-.city-time { font-size:15px; font-weight:600; color:#1e293b; margin-top:6px; }
-.arrow { display:flex; flex-direction:column; align-items:center; gap:4px; padding:0 12px; }
-.arrow-line { width:80px; height:2px; background:linear-gradient(90deg,#3b82f6,#8b5cf6); border-radius:2px; }
-.plane-icon { font-size:20px; }
-.controls { text-align:center; margin-top:16px; padding-top:14px; border-top:1px solid #eee; display:flex; gap:10px; justify-content:center; }
-button { padding:9px 20px; background:#1A237E; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; }
-button:hover { background:#283593; }
-button.close { background:#e2e8f0; color:#333; }
-button.close:hover { background:#cbd5e1; }
-.info-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border-bottom:1px dashed #e2e8f0; }
-.info-cell { padding:16px 20px; border-right:1px dashed #e2e8f0; }
-.info-cell:last-child { border-right:none; }
-.info-label { font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
-.info-value { font-size:14px; font-weight:700; color:#1e293b; }
-.class-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; background:${classBadgeCls.split(";")[0]}; color:${classBadgeCls.split("color:")[1]}; }
-.passenger-section { padding:20px 28px; display:flex; justify-content:space-between; align-items:center; }
-.passenger-name { font-size:20px; font-weight:800; color:#1e293b; }
-.passenger-sub { font-size:13px; color:#64748b; margin-top:3px; }
-.status-badge { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; }
-.status-ok { background:#dcfce7; color:#16a34a; }
-.status-pending { background:#fef9c3; color:#ca8a04; }
-.footer { background:#f8fafc; padding:16px 28px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#94a3b8; }
-.ref { font-family:monospace; font-size:13px; color:#3b82f6; font-weight:700; }
-@media print {
-  body { background:white; padding:0; }
-  .ticket { box-shadow:none; width:100%; }
-  .controls { display:none !important; }
-  .header { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#b8d3e8;display:flex;flex-direction:column;align-items:center;padding:28px;}
+.wrap{display:flex;flex-direction:column;align-items:center;}
+
+/* ═══ CARD ═══ */
+.card{
+  display:flex;
+  width:720px;
+  height:272px;
+  background:white;
+  border-radius:12px;
+  overflow:visible;
+  box-shadow:0 6px 28px rgba(0,0,0,.18);
+  position:relative;
 }
-* { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-</style></head><body>
-<div >
-<div class="ticket">
-  <div class="header">
-    <div><div class="airline">✈ TROGON AIRWAYS</div><div class="ticket-label">Carte d'embarquement / Boarding Pass</div></div>
-    <div style="text-align:right;"><div style="font-size:11px;opacity:.7;">Vol / Flight</div><div style="font-size:22px;font-weight:800;">${flight.flight_number || "—"}</div></div>
-  </div>
-  <div class="route">
-    <div class="city"><div class="city-code">${flight.from_code || "—"}</div><div class="city-name">${flight.from_city || "—"}</div><div class="city-time">${fmt(dep)}</div></div>
-    <div class="arrow"><div class="plane-icon">✈</div><div class="arrow-line"></div></div>
-    <div class="city" style="text-align:right;"><div class="city-code">${flight.to_code || "—"}</div><div class="city-name">${flight.to_city || "—"}</div><div class="city-time">${fmt(arr)}</div></div>
-  </div>
-  <div class="info-grid">
-    <div class="info-cell"><div class="info-label">Siège</div><div class="info-value">${p.seat_number || "À assigner"}</div></div>
-    <div class="info-cell"><div class="info-label">Classe</div><div class="info-value"><span class="class-badge">${cabinDisplay}</span></div></div>
-    <div class="info-cell"><div class="info-label">Passeport / ID</div><div class="info-value" style="font-size:12px;">${p.passport_number || "—"}</div></div>
-    <div class="info-cell"><div class="info-label">Check-in</div><div class="info-value">${p.checked_in ? "✅ Effectué" : "⏳ En attente"}</div></div>
-  </div>
-  <div class="passenger-section">
-    <div>
-      <div class="passenger-name">${p.title ? p.title + " " : ""}${p.first_name} ${p.last_name}</div>
-      <div class="passenger-sub">${p.nationality || ""} ${p.passport_number ? "· " + p.passport_number : ""}</div>
-    </div>
-    <div class="status-badge ${p.checked_in ? "status-ok" : "status-pending"}">${p.checked_in ? "✅ Enregistré" : "⏳ Non enregistré"}</div>
-  </div>
-  <div class="footer">
-    <div>Réf: <span class="ref">${p.booking_reference}</span></div>
-    <div>Trogon Airways · Ce billet doit être présenté à l'embarquement</div>
-    
-  </div>
- 
-   
-</div>
-    <div class="controls">
-      <button  onclick="window.print()">🖨 Imprimer</button>
-      <button  class="close" onclick="window.close()">Fermer</button>
-    </div>
+
+/* ═══ MAIN SECTION (490px) ═══ */
+.main{
+  width:490px;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  border-radius:12px 0 0 12px;
+  overflow:hidden;
+}
+
+/* ═══ DIVIDER WITH NOTCHES ═══ */
+.div-wrap{
+  width:2px;
+  flex-shrink:0;
+  position:relative;
+  border-left:2px dashed #8ab3cc;
+}
+.div-wrap::before{
+  content:'';position:absolute;
+  top:-9px;left:-9px;
+  width:16px;height:16px;
+  background:#b8d3e8;
+  border-radius:50%;
+}
+.div-wrap::after{
+  content:'';position:absolute;
+  bottom:-9px;left:-9px;
+  width:16px;height:16px;
+  background:#b8d3e8;
+  border-radius:50%;
+}
+
+/* ═══ STUB (228px) ═══ */
+.stub{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  border-radius:0 12px 12px 0;
+  overflow:hidden;
+}
+
+/* ─── HEADER ROW (55px) ─── */
+.main-hdr{
+  height:55px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  background:white;
+}
+.stub-hdr{
+  height:55px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 12px;
+  background:white;
+}
+/* Airline logo area */
+.airline{display:flex;align-items:center;gap:0;}
+.speed{display:flex;flex-direction:column;gap:3px;margin-right:5px;}
+.sl{height:2px;background:#0c3566;border-radius:1px;}
+.sl1{width:26px;}
+.sl2{width:20px;}
+.sl3{width:14px;}
+.apl{font-size:20px;color:#0099cc;margin-right:5px;line-height:1;}
+.aname{font-size:12px;font-weight:900;color:#0c3566;letter-spacing:.8px;font-style:italic;text-transform:uppercase;white-space:nowrap;}
+
+.bp-title{font-size:17px;font-weight:900;color:#0c3566;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;}
+.class-lbl{font-size:17px;font-weight:900;color:#0c3566;letter-spacing:1.5px;text-transform:uppercase;text-align:center;white-space:nowrap;}
+
+/* ─── BLUE ROUTE BAND (68px) ─── */
+.main-route{
+  height:68px;
+  background:#0099cc;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  flex-shrink:0;
+}
+.stub-route{
+  height:68px;
+  background:#0099cc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.code{font-size:70px;font-weight:900;color:white;letter-spacing:-1px;line-height:1;font-family:'Arial Black',Arial,sans-serif;}
+.stub-codes{font-size:26px;font-weight:900;color:white;letter-spacing:2px;font-family:'Arial Black',Arial,sans-serif;}
+
+/* Arrow: two lines + plane */
+.arrow-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 8px;}
+.a-row{display:flex;align-items:center;width:100%;}
+.a-line{flex:1;height:2px;background:rgba(255,255,255,.75);}
+.a-plane{font-size:20px;color:white;flex-shrink:0;}
+
+/* ─── INFO SECTION (fills rest ~149px) ─── */
+.info{
+  flex:1;
+  display:flex;
+  overflow:hidden;
+}
+/* Left column: NAME DATE BOARDING + barcode */
+.info-left{
+  width:196px;
+  flex-shrink:0;
+  padding:10px 12px 8px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+/* Right column: FLIGHT GATE SEAT (large) */
+.info-right{
+  flex:1;
+  padding:10px 12px 8px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  position:relative;
+}
+
+/* Label-value row (left col): "NAME   Dean M. Winters" */
+.i-row{display:flex;align-items:baseline;gap:8px;}
+.i-lbl{font-size:12px;font-weight:600;color:#0c3566;text-transform:uppercase;letter-spacing:.5px;min-width:46px;flex-shrink:0;}
+
+.i-val{font-size:12px;font-weight:400;color:#222;}
+
+/* Barcode */
+.bc-wrap{margin-top:4px;}
+.bc-img{height:38px;width:158px;object-fit:fill;display:block;}
+.bc-num{font-family:monospace;font-size:8px;color:#666;letter-spacing:.5px;margin-top:2px;}
+
+/* Label + big value rows (right col) */
+.f-row{display:flex;align-items:baseline;gap:8px;margin-bottom:1px;}
+.f-lbl{font-size:10px;font-weight:900;color:#0c3566;text-transform:uppercase;letter-spacing:.5px;min-width:46px;flex-shrink:0;}
+.f-val{font-size:28px;font-weight:900;color:#0c3566;line-height:1;font-family:'Arial Black',Arial,sans-serif;white-space:nowrap;}
+.f-val-sm{font-size:14px;font-weight:900;color:#0c3566;line-height:1;font-family:'Arial Black',Arial,sans-serif;white-space:nowrap;}
+
+/* Footer: website + plane (bottom right of info-right) */
+.info-foot{
+  position:absolute;
+  bottom:7px;right:8px;
+  display:flex;align-items:center;gap:4px;
+  font-size:8px;color:#8ab;letter-spacing:.8px;font-weight:700;
+}
+
+/* ─── STUB INFO ─── */
+.stub-info{
+  flex:1;
+  padding:9px 12px 6px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+/* Inline pairs: "FLIGHT GA6657   GATE 5" */
+.s-line{display:flex;align-items:baseline;gap:10px;}
+.s-lbl{font-size:9px;font-weight:900;color:#0c3566;text-transform:uppercase;letter-spacing:.4px;}
+.s-val{font-size:8px;font-weight:900;color:#0c3566;font-family:'Arial Black',Arial,sans-serif;}
+.s-sep{flex:1;}
+/* Name/Date rows */
+.s-full{display:flex;align-items:baseline;gap:8px;margin-top:2px;}
+.s-full .s-lbl{min-width:44px;}
+.s-full .s-val{font-size:8px;font-family:Arial,sans-serif;font-weight:400;color:#222;}
+
+/* Stub barcode */
+.stub-bc{
+  padding:5px 12px 9px;
+  border-top:1px dashed #8ab3cc;
+  text-align:center;
+}
+.stub-bc img{width:100%;height:34px;display:block;}
+.stub-bc-num{font-family:monospace;font-size:7px;color:#777;letter-spacing:.5px;margin-top:2px;}
+
+/* Controls */
+.controls{margin-top:16px;display:flex;gap:10px;}
+button{padding:9px 22px;background:#0c3566;color:white;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;}
+button.close-btn{background:#dde5ed;color:#374151;}
+@media print{
+  body{background:white;padding:0;}
+  .div-wrap::before,.div-wrap::after{background:white;}
+  .controls{display:none!important;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+}
+</style></head>
+<body>
+<div class="wrap">
+<div class="card">
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <div class="main-hdr">
+        <div class="airline">
+            <div class="speed">
+            <div class="sl sl1"></div>
+            <div class="sl sl2"></div>
+            <div class="sl sl3"></div>
+            </div>
+            <!-- <span class="apl">✈</span> -->
+            <img src="${logoUrl}" alt="" style="height:26px;object-fit:contain;" onerror="this.style.display='none'">
+            
+        </div>
+      <div class="bp-title">BOARDING PASS</div>
     </div>
 
-  </body></html>`;
-        openReceiptWindow(html, 780, 620);
+    <div class="main-route">
+      <div class="code">${flight.from_code || "—"}</div>
+      <div class="arrow-wrap">
+        <div class="a-row"></div>
+        <div class="a-row">
+          <div class="a-line"></div>
+          <div class="a-plane">✈</div>
+          <div class="a-line"></div>
+        </div>
+      </div>
+      <div class="code">${flight.to_code || "—"}</div>
+    </div>
+
+    <div class="info">
+      <div class="info-left">
+        <div class="i-row"><div class="i-lbl">NAME</div><div class="i-val">${passengerName}</div></div>
+        <div class="i-row"><div class="i-lbl">DATE</div><div class="i-val">${fmtDate(dep)}</div></div>
+        <div class="i-row"><div class="i-lbl">BOARDING</div><div class="i-val">${fmtTime(dep)}</div></div>
+        <div class="bc-wrap">
+          <img class="bc-img" src="${barcodeUrl}" alt="${p.booking_reference}">
+         <!-- <div class="bc-num">${p.booking_reference}</div> -->
+        </div>
+      </div>
+      <div class="info-right">
+        <div class="f-row"><div class="f-lbl">FLIGHT</div><div class="f-val-sm">${flight.flight_number || "—"}</div></div>
+        <div class="f-row"><div class="f-lbl">GATE</div><div class="f-val">—</div></div>
+        <div class="f-row"><div class="f-lbl">SEAT</div><div class="f-val">${p.seat_number || "—"}</div></div>
+        <div class="info-foot">TROGONAIRWAYS.COM &nbsp;✈</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DIVIDER ═══ -->
+  <div class="div-wrap"></div>
+
+  <!-- ═══ STUB ═══ -->
+  <div class="stub">
+    <div class="stub-hdr">
+      <div class="class-lbl">${cabinLabel}</div>
+    </div>
+    <div class="stub-route">
+      <div class="stub-codes">${flight.from_code || "—"} - ${flight.to_code || "—"}</div>
+    </div>
+    <div class="stub-info">
+      <div class="s-line">
+        <span class="s-lbl">FLIGHT</span><span class="s-val" style="font-size:9px;">${flight.flight_number || "—"}</span>
+        <span class="s-sep"></span>
+        <span class="s-lbl">GATE</span><span class="s-val">—</span>
+      </div>
+      <div class="s-line">
+        <span class="s-lbl">BOARDING</span><span class="s-val">${fmtTime(dep)}</span>
+        <span class="s-sep"></span>
+        <span class="s-lbl">SEAT</span><span class="s-val">${p.seat_number || "—"}</span>
+      </div>
+      <div class="s-full"><span class="s-lbl">NAME</span><span class="s-val">${p.first_name} ${p.last_name}</span></div>
+      <div class="s-full"><span class="s-lbl">DATE</span><span class="s-val">${fmtDate(dep)}</span></div>
+    </div>
+    <div class="stub-bc">
+      <img src="${barcodeUrl}" alt="${p.booking_reference}">
+     <!-- <div class="stub-bc-num">${p.booking_reference}</div> -->
+    </div>
+  </div>
+
+</div>
+<div class="controls">
+  <button onclick="window.print()">🖨️ Imprimer</button>
+  <button class="close-btn" onclick="window.close()">Fermer</button>
+</div>
+</div>
+</body></html>`;
+        openReceiptWindow(html, 850, 500);
     };
 
     // Styles
@@ -1485,34 +1836,44 @@ button.close:hover { background:#cbd5e1; }
                                         <div className="flex-1">
                                             <label className={`block text-xs font-medium mb-1 ${dark ? "text-slate-400" : "text-slate-600"}`}>Poids total (kg)</label>
                                             <input
-                                                type="number" step="0.1" min="0"
+                                                type="number"
+                                                min="0"
+                                                step="0.1"
                                                 value={bagForm.bag_weight_hold}
                                                 onChange={e => setBagForm(f => ({ ...f, bag_weight_hold: e.target.value }))}
-                                                placeholder="0.0"
-                                                className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 ${dark ? "border-slate-600 bg-slate-700 text-white placeholder-slate-500" : "border-slate-200 bg-white text-slate-800"}`}
+                                                placeholder="ex: 22.5"
+                                                className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 ${dark ? "border-slate-600 bg-slate-700 text-white" : "border-slate-200 bg-white text-slate-700"}`}
                                             />
                                         </div>
                                     </div>
 
-                                    {/* Surpoids */}
+                                    {/* Surpoids indicator */}
                                     {excessKg > 0 && (
-                                        <div className={`rounded-xl border px-3 py-2.5 ${dark ? "border-red-700/40 bg-red-900/20" : "border-red-200 bg-red-50"}`}>
-                                            <div className={`text-xs font-semibold ${dark ? "text-red-400" : "text-red-700"}`}>
-                                                ⚠️ Surpoids : {excessKg.toFixed(2)} kg au-dessus de la franchise
-                                            </div>
-                                            <div className="mt-2 flex gap-2">
+                                        <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+                                            ⚠️ Surpoids : <strong>{excessKg.toFixed(2)} kg</strong> au-delà de la franchise
+                                        </div>
+                                    )}
+
+                                    {/* Frais surpoids */}
+                                    {excessKg > 0 && (
+                                        <div>
+                                            <label className={`block text-xs font-medium mb-1 text-red-500`}>Frais de surpoids</label>
+                                            <div className="flex gap-2">
                                                 <input
-                                                    type="number" step="0.01" min="0"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
                                                     value={bagForm.excess_fee}
                                                     onChange={e => setBagForm(f => ({ ...f, excess_fee: e.target.value }))}
-                                                    placeholder="Frais surpoids"
-                                                    className={`flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:border-red-400 ${dark ? "border-slate-600 bg-slate-700 text-white" : "border-red-200 bg-white text-slate-800"}`}
+                                                    placeholder="Montant"
+                                                    className="flex-1 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-sm text-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
                                                 />
-                                                <select value={bagForm.excess_currency}
+                                                <select
+                                                    value={bagForm.excess_currency}
                                                     onChange={e => setBagForm(f => ({ ...f, excess_currency: e.target.value }))}
-                                                    className={`rounded-xl border px-3 py-2 text-sm outline-none ${dark ? "border-slate-600 bg-slate-700 text-white" : "border-red-200 bg-white"}`}>
-                                                    <option>USD</option>
-                                                    <option>HTG</option>
+                                                    className={`rounded-lg border px-2 py-1.5 text-sm focus:outline-none ${dark ? "border-slate-600 bg-slate-700 text-white" : "border-slate-200 bg-white"}`}
+                                                >
+                                                    {["USD","HTG","EUR","CAD"].map(c => <option key={c}>{c}</option>)}
                                                 </select>
                                             </div>
                                         </div>
@@ -1522,7 +1883,7 @@ button.close:hover { background:#cbd5e1; }
                                 {/* Bagages cabine */}
                                 <div className={`rounded-xl border p-4 ${dark ? "border-slate-700 bg-slate-700/30" : "border-slate-200 bg-slate-50"}`}>
                                     <div className={`text-xs font-bold uppercase tracking-wider mb-3 ${dark ? "text-slate-300" : "text-slate-500"}`}>🎒 Bagages cabine</div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                         <button type="button"
                                             onClick={() => setBagForm(f => ({ ...f, bag_count_cabin: Math.max(0, f.bag_count_cabin - 1) }))}
                                             className={`flex h-8 w-8 items-center justify-center rounded-lg border text-lg font-bold transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-600" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}>−</button>
@@ -1530,42 +1891,65 @@ button.close:hover { background:#cbd5e1; }
                                         <button type="button"
                                             onClick={() => setBagForm(f => ({ ...f, bag_count_cabin: f.bag_count_cabin + 1 }))}
                                             className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white text-lg font-bold hover:bg-blue-600 transition-colors">+</button>
-                                        <span className={`ml-2 text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>bagage(s) en cabine</span>
+                                        <span className={`text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>bagage(s) cabine</span>
                                     </div>
                                 </div>
 
                                 {/* Étiquette générée */}
                                 {savedTag && (
-                                    <div className={`flex items-center justify-between rounded-xl border px-4 py-3 ${dark ? "border-green-700/40 bg-green-900/20" : "border-green-200 bg-green-50"}`}>
-                                        <div>
-                                            <div className={`text-xs font-semibold ${dark ? "text-green-400" : "text-green-700"}`}>✓ Étiquette bagage</div>
-                                            <div className={`font-mono text-lg font-bold tracking-widest ${dark ? "text-green-300" : "text-green-800"}`}>{savedTag}</div>
-                                        </div>
-                                        <Package size={24} className={dark ? "text-green-500" : "text-green-600"} />
+                                    <div className={`rounded-xl border p-4 text-center ${dark ? "border-amber-700/50 bg-amber-900/20" : "border-amber-200 bg-amber-50"}`}>
+                                        <div className={`mb-1 text-xs font-semibold uppercase tracking-widest ${dark ? "text-amber-400" : "text-amber-600"}`}>N° Étiquette bagage</div>
+                                        <div className={`font-mono text-2xl font-black tracking-widest ${dark ? "text-amber-300" : "text-amber-800"}`}>{savedTag}</div>
+                                        <button
+                                            onClick={() => printBaggageLabel({
+                                                passengerName: `${bagModal.passenger!.first_name} ${bagModal.passenger!.last_name}`,
+                                                flightNumber:  bagModal.flight!.flight_number,
+                                                fromCode:      bagModal.flight!.from_code,
+                                                toCode:        bagModal.flight!.to_code,
+                                                fromCity:      bagModal.flight!.from_city,
+                                                toCity:        bagModal.flight!.to_city,
+                                                departureTime: bagModal.flight!.departure_time,
+                                                bagTag:        savedTag,
+                                                bagCountHold:  Number(bagForm.bag_count_hold),
+                                                bagWeightHold: bagForm.bag_weight_hold ? parseFloat(bagForm.bag_weight_hold) : null,
+                                                bookingRef:    bagModal.passenger!.booking_reference,
+                                            })}
+                                            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+                                        >
+                                            🖨️ Imprimer l'étiquette
+                                        </button>
                                     </div>
                                 )}
+                            </div>
 
-                                {/* Boutons */}
-                                <div className="flex gap-3 pt-1">
-                                    <button
-                                        onClick={async () => {
-                                            await handleSaveBaggage();
-                                            if (!alreadyCheckedIn) await handleCheckin(p, true);
-                                        }}
-                                        disabled={savingBag}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2.5 text-sm font-bold text-white hover:from-amber-600 hover:to-orange-600 disabled:opacity-60 transition-all shadow">
-                                        {savingBag
-                                            ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> Enregistrement...</>
-                                            : alreadyCheckedIn
-                                                ? <><Package size={15} /> Mettre à jour les bagages</>
-                                                : <><UserCheck size={15} /> Check-in + Enregistrer bagages</>}
-                                    </button>
-                                    <button
-                                        onClick={() => { setBagModal({ open: false, passenger: null, flight: null }); setSavedTag(null); }}
-                                        className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                                        Fermer
-                                    </button>
-                                </div>
+                            {/* Footer */}
+                            <div className={`flex gap-3 border-t px-5 py-4 ${dark ? "border-slate-700" : "border-slate-200"}`}>
+                                <button
+                                    type="button"
+                                    onClick={() => { setBagModal({ open: false, passenger: null, flight: null }); setSavedTag(null); }}
+                                    className={`flex-1 rounded-xl border py-2.5 text-sm font-medium transition-colors ${dark ? "border-slate-600 text-slate-300 hover:bg-slate-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={savingBag}
+                                    onClick={async () => {
+                                        const p = bagModal.passenger!;
+                                        const alreadyIn = p.checked_in;
+                                        await handleSaveBaggage();
+                                        if (!alreadyIn) await handleCheckin(p, true);
+                                        setBagModal({ open: false, passenger: null, flight: null });
+                                    }}
+                                    className="flex-1 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {savingBag ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            Enregistrement...
+                                        </span>
+                                    ) : bagModal.passenger?.checked_in ? "💾 Enregistrer bagages" : "✅ Check-in + Enregistrer bagages"}
+                                </button>
                             </div>
                         </div>
                     </div>
