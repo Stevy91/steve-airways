@@ -49,11 +49,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const pool = mysql.createPool({
-  host: 'mysql-39e03379-trogon.j.aivencloud.com',
-  user: 'avnadmin',
-  password: 'AVNS_n6SRfFhieDImu1FrwC1',
-  database: 'defaultdb',
-  port: 12245,
+  host: process.env.DB_HOST || 'mysql-39e03379-trogon.j.aivencloud.com',
+  user: process.env.DB_USER || 'avnadmin',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'defaultdb',
+  port: Number(process.env.DB_PORT) || 12245,
   ssl: { rejectUnauthorized: false },
   waitForConnections: true,
   connectionLimit: 10,
