@@ -13146,6 +13146,10 @@ app.get('/api/colis/:id/receipt', async (req: any, res: Response) => {
   }
 });
 
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
 server.listen(process.env.PORT || 3000, () => {
   console.log(`Server running on port ${process.env.PORT || 3000}`);
 });
