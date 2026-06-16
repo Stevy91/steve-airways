@@ -49,15 +49,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const pool = mysql.createPool({
-  host: 'srv1387.hstgr.io',
-  user: 'u566035799_trogonAirWays',
-  password: '2024Mapbon@',
-  database: 'u566035799_trogon',
-  port: 3306,
+  host: 'mysql-39e03379-trogon.j.aivencloud.com',
+  user: 'avnadmin',
+  password: 'AVNS_n6SRfFhieDImu1FrwC1',
+  database: 'defaultdb',
+  port: 12245,
+  ssl: { rejectUnauthorized: false },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: 'Z', // 🔹 Utiliser UTC
+  timezone: 'Z',
   dateStrings: true,
   charset: 'utf8mb4',
 });
