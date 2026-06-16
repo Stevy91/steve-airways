@@ -11885,65 +11885,39 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
 // PASSAGERS AVANCÉS — check-in, siège, groupé par vol
 // ============================================================
 
-// Migration automatique : photo_data sur colis (si table existait avant la colonne)
+// Migrations automatiques — exécutées séquentiellement pour ne pas saturer le pool
 (async () => {
-  try {
-    await pool.execute(`ALTER TABLE colis ADD COLUMN photo_data LONGTEXT NULL`);
-    console.log('✅ Colonne photo_data ajoutée à colis');
-  } catch (_) { /* déjà présente */ }
-})();
-
-// Migration automatique : colonnes bagages sur passagers
-(async () => {
-  const cols = [
+  const migrations = [
+    // photo_data sur colis
+    `ALTER TABLE colis ADD COLUMN photo_data LONGTEXT NULL`,
+    // bagages sur passagers
     `ALTER TABLE passengers ADD COLUMN bag_count_hold   TINYINT    NOT NULL DEFAULT 0`,
     `ALTER TABLE passengers ADD COLUMN bag_weight_hold  DECIMAL(6,2)        DEFAULT NULL`,
     `ALTER TABLE passengers ADD COLUMN bag_count_cabin  TINYINT    NOT NULL DEFAULT 0`,
     `ALTER TABLE passengers ADD COLUMN excess_fee       DECIMAL(10,2)       DEFAULT 0`,
     `ALTER TABLE passengers ADD COLUMN excess_currency  VARCHAR(10)         DEFAULT 'USD'`,
     `ALTER TABLE passengers ADD COLUMN bag_tag          VARCHAR(30)         DEFAULT NULL`,
-  ];
-  for (const sql of cols) {
-    try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
-  }
-  console.log('✅ Colonnes bagages prêtes sur passengers');
-})();
-
-// Migration automatique : ajouter les colonnes check-in une par une avec try/catch individuels
-(async () => {
-  const cols = [
+    // check-in sur passagers
     `ALTER TABLE passengers ADD COLUMN checked_in TINYINT(1) NOT NULL DEFAULT 0`,
     `ALTER TABLE passengers ADD COLUMN checked_in_at DATETIME NULL`,
     `ALTER TABLE passengers ADD COLUMN checked_in_by VARCHAR(100) NULL`,
-  ];
-  for (const sql of cols) {
-    try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
-  }
-})();
-
-// Migration automatique : colonnes prix par classe (economy, business, first)
-(async () => {
-  const cols = [
+    // prix par classe sur flights
     `ALTER TABLE flights ADD COLUMN price_economy DECIMAL(10,2) NULL`,
     `ALTER TABLE flights ADD COLUMN price_business DECIMAL(10,2) NULL`,
     `ALTER TABLE flights ADD COLUMN price_first DECIMAL(10,2) NULL`,
+    // cabin_class sur bookings
+    `ALTER TABLE bookings ADD COLUMN cabin_class VARCHAR(20) DEFAULT 'economy'`,
   ];
-  for (const sql of cols) {
+  for (const sql of migrations) {
     try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
   }
-  // Initialiser price_economy = price pour les vols existants qui n'ont pas encore de prix par classe
+  // Initialiser price_economy pour les vols existants
   try {
     await pool.execute(
       `UPDATE flights SET price_economy = price WHERE price_economy IS NULL AND price IS NOT NULL`
     );
   } catch (_) {}
-})();
-
-// Migration automatique : colonne cabin_class dans bookings
-(async () => {
-  try {
-    await pool.execute(`ALTER TABLE bookings ADD COLUMN cabin_class VARCHAR(20) DEFAULT 'economy'`);
-  } catch (_) { /* colonne déjà présente */ }
+  console.log('✅ Migrations séquentielles terminées');
 })();
 
 // GET /api/passengers/by-flight — passagers groupés par vol (pour le manifest check-in)
@@ -12702,7 +12676,7 @@ app.post("/api/promo-codes/use", authMiddleware, async (req: any, res: Response)
 // MODULE COLIS — Gestion des colis (envoi/suivi)
 // ============================================================
 
-// Création automatique de la table colis si elle n'existe pas
+// Création automatique de la table colis si elle n'existe pas (séquentiel — voir migrations ci-dessus)
 (async () => {
   try {
     await pool.query(`
