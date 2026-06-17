@@ -11908,6 +11908,10 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
     `ALTER TABLE flights ADD COLUMN price_first DECIMAL(10,2) NULL`,
     // cabin_class sur bookings
     `ALTER TABLE bookings ADD COLUMN cabin_class VARCHAR(20) DEFAULT 'economy'`,
+    // MySQL 8 strict mode: typecharter ENUM ne tolère pas '' — convertir en VARCHAR
+    `ALTER TABLE bookings MODIFY COLUMN typecharter VARCHAR(50) DEFAULT NULL`,
+    // MySQL 8: flight_number trop court pour les numéros générés
+    `ALTER TABLE flights MODIFY COLUMN flight_number VARCHAR(100) DEFAULT NULL`,
   ];
   for (const sql of migrations) {
     try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
