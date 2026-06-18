@@ -49,11 +49,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const pool = mysql.createPool({
-  host: 'srv1387.hstgr.io',
-  user: 'u566035799_trogonAirWays',
-  password: '2024Mapbon@',
-  database: 'u566035799_trogon',
-  port: 3306,
+  host: process.env.DB_HOST ||'srv1387.hstgr.io',
+  user: process.env.DB_USER || 'u566035799_trogonAirWays',
+  password: process.env.DB_PASSWORD || '2024Mapbon@',
+  database: process.env.DB_NAME || 'u566035799_trogon',
+  port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

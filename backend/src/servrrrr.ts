@@ -8338,19 +8338,16 @@ app.get("/api/flight-charter-export", async (req: Request, res: Response) => {
     f.price,
     f.seats_available,
 
-    COALESCE(
-      JSON_ARRAYAGG(
-        DISTINCT CASE 
-          WHEN p.id IS NOT NULL THEN
-            JSON_OBJECT(
-              'first_name', p.first_name,
-              'last_name', p.last_name,
-              'idClient', p.idClient,
-              'idTypeClient', p.idTypeClient
-            )
-        END
-      ),
-      JSON_ARRAY()
+    (
+      SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+        'first_name', pp.first_name,
+        'last_name', pp.last_name,
+        'idClient', pp.idClient,
+        'idTypeClient', pp.idTypeClient
+      )), JSON_ARRAY())
+      FROM passengers pp
+      INNER JOIN bookings bb ON pp.booking_id = bb.id
+      WHERE bb.flight_id = f.id OR bb.return_flight_id = f.id
     ) AS passengers,
 
     dep.name AS departure_airport_name,
@@ -8863,19 +8860,16 @@ app.get("/api/flight-helico-export", async (req: Request, res: Response) => {
     f.price,
     f.seats_available,
 
-    COALESCE(
-      JSON_ARRAYAGG(
-        DISTINCT CASE 
-          WHEN p.id IS NOT NULL THEN
-            JSON_OBJECT(
-              'first_name', p.first_name,
-              'last_name', p.last_name,
-              'idClient', p.idClient,
-              'idTypeClient', p.idTypeClient
-            )
-        END
-      ),
-      JSON_ARRAY()
+    (
+      SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+        'first_name', pp.first_name,
+        'last_name', pp.last_name,
+        'idClient', pp.idClient,
+        'idTypeClient', pp.idTypeClient
+      )), JSON_ARRAY())
+      FROM passengers pp
+      INNER JOIN bookings bb ON pp.booking_id = bb.id
+      WHERE bb.flight_id = f.id OR bb.return_flight_id = f.id
     ) AS passengers,
 
     dep.name AS departure_airport_name,
@@ -9252,19 +9246,16 @@ app.get("/api/flight-plane-export", async (req: Request, res: Response) => {
     f.price,
     f.seats_available,
 
-    COALESCE(
-      JSON_ARRAYAGG(
-        DISTINCT CASE 
-          WHEN p.id IS NOT NULL THEN
-            JSON_OBJECT(
-              'first_name', p.first_name,
-              'last_name', p.last_name,
-              'idClient', p.idClient,
-              'idTypeClient', p.idTypeClient
-            )
-        END
-      ),
-      JSON_ARRAY()
+    (
+      SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+        'first_name', pp.first_name,
+        'last_name', pp.last_name,
+        'idClient', pp.idClient,
+        'idTypeClient', pp.idTypeClient
+      )), JSON_ARRAY())
+      FROM passengers pp
+      INNER JOIN bookings bb ON pp.booking_id = bb.id
+      WHERE bb.flight_id = f.id OR bb.return_flight_id = f.id
     ) AS passengers,
 
     dep.name AS departure_airport_name,
@@ -11908,6 +11899,11 @@ app.get("/api/passengers", authMiddleware, async (req: any, res: Response) => {
     `ALTER TABLE flights ADD COLUMN price_first DECIMAL(10,2) NULL`,
     // cabin_class sur bookings
     `ALTER TABLE bookings ADD COLUMN cabin_class VARCHAR(20) DEFAULT 'economy'`,
+    // MySQL 8 strict mode: typecharter ENUM ne tolère pas '' — convertir en VARCHAR
+    `ALTER TABLE bookings MODIFY COLUMN typecharter VARCHAR(50) DEFAULT NULL`,
+    `ALTER TABLE passengers MODIFY COLUMN typecharter VARCHAR(50) DEFAULT NULL`,
+    // MySQL 8: flight_number trop court pour les numéros générés
+    `ALTER TABLE flights MODIFY COLUMN flight_number VARCHAR(100) DEFAULT NULL`,
   ];
   for (const sql of migrations) {
     try { await pool.execute(sql); } catch (_) { /* colonne déjà présente */ }
